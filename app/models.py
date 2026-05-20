@@ -37,6 +37,21 @@ class Source(Base):
     __table_args__ = (UniqueConstraint("type", "name", name="uq_sources_type_name"),)
 
 
+class SubChannel(Base):
+    __tablename__ = "sub_channels"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    channel_space_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("channel_spaces.id"), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    sort_order: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("channel_space_id", "name", name="uq_sub_channels_space_name"),
+        Index("ix_sub_channels_space_sort", "channel_space_id", "sort_order"),
+    )
+
+
 class ChannelSource(Base):
     __tablename__ = "channel_sources"
 
@@ -45,6 +60,9 @@ class ChannelSource(Base):
     source_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("sources.id"), nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     fetch_policy: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    sub_channel_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sub_channels.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     __table_args__ = (
@@ -102,6 +120,9 @@ class ProcessedNews(Base):
     tags: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
     entities: Mapped[list[dict]] = mapped_column(JSON, default=list, nullable=False)
     importance_score: Mapped[float] = mapped_column(Numeric, default=0, nullable=False)
+    sub_channel_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("sub_channels.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
 
     __table_args__ = (Index("ix_processed_news_space_published", "channel_space_id", "published_at"),)
