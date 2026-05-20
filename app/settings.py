@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     trust_proxy_headers: bool = False
     http_proxy: Optional[str] = None
     https_proxy: Optional[str] = None
+    x_bearer_token: Optional[str] = None
     task_stale_seconds: int = 600
     llm_max_retries: int = 3
     llm_retry_base_seconds: float = 1.0
