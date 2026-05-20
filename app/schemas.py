@@ -35,6 +35,7 @@ class ChannelSourceBind(BaseModel):
     source_id: uuid.UUID
     enabled: bool = True
     fetch_policy: dict = Field(default_factory=dict)
+    sub_channel_id: Optional[uuid.UUID] = None
 
 
 class ChannelSourceOut(BaseModel):
@@ -43,6 +44,7 @@ class ChannelSourceOut(BaseModel):
     source_id: uuid.UUID
     enabled: bool
     fetch_policy: dict
+    sub_channel_id: Optional[uuid.UUID] = None
     created_at: datetime
 
 
@@ -54,12 +56,14 @@ class ChannelSourceWithSource(BaseModel):
 class ChannelSourceUpdatePolicy(BaseModel):
     enabled: Optional[bool] = None
     fetch_policy: Optional[dict] = None
+    sub_channel_id: Optional[uuid.UUID] = None
 
 
 class ProcessedNewsOut(BaseModel):
     id: uuid.UUID
     channel_space_id: uuid.UUID
     raw_item_id: uuid.UUID
+    sub_channel_id: Optional[uuid.UUID] = None
     title: str
     summary: str
     language: str
@@ -69,6 +73,24 @@ class ProcessedNewsOut(BaseModel):
     tags: list[str]
     entities: list[dict]
     importance_score: float
+    created_at: datetime
+
+
+class SubChannelCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    sort_order: int = Field(default=0, ge=0)
+
+
+class SubChannelUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    sort_order: Optional[int] = Field(default=None, ge=0)
+
+
+class SubChannelOut(BaseModel):
+    id: uuid.UUID
+    channel_space_id: uuid.UUID
+    name: str
+    sort_order: int
     created_at: datetime
 
 
