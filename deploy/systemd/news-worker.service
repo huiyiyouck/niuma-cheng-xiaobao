@@ -1,0 +1,15 @@
+[Unit]
+Description=News Aggregator Worker
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/news-aggregator
+EnvironmentFile=/opt/news-aggregator/.env
+ExecStart=/opt/news-aggregator/.venv/bin/python -m worker.main
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
+
