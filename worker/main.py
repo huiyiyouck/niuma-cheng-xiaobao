@@ -295,11 +295,10 @@ async def fetch_and_ingest(conn, task: dict) -> None:
             items = await parse_github_trending(source_config)
         elif source_type == "semantic_scholar":
             items = await parse_semantic_scholar(source_config)
+        elif source_type == "x_twitter":
+            items, cursor_updates = await parse_x_twitter(source_config, cursor, max_items)
         else:
             raise RuntimeError(f"source_type not supported in MVP: {source_type}")
-
-    if source_type == "x_twitter":
-        items, cursor_updates = await parse_x_twitter(source_config, cursor, max_items)
 
     for item in items:
         inserted = await conn.fetchval(
