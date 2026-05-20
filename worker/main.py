@@ -17,6 +17,7 @@ from worker.fetch_hf import parse_daily_papers, render_text_for_llm as hf_text
 from worker.fetch_github_trending import parse_github_trending, render_text_for_llm as gt_text
 from worker.fetch_hackernews import parse_hackernews, render_text_for_llm as hn_text
 from worker.fetch_semantic_scholar import parse_semantic_scholar, render_text_for_llm as ss_text
+from worker.fetch_x_twitter import parse_x_twitter, render_text_for_llm as xt_text
 from worker.llm import translate_and_summarize
 
 
@@ -297,6 +298,9 @@ async def fetch_and_ingest(conn, task: dict) -> None:
         else:
             raise RuntimeError(f"source_type not supported in MVP: {source_type}")
 
+    if source_type == "x_twitter":
+        items, cursor_updates = await parse_x_twitter(source_config, cursor, max_items)
+
     for item in items:
         inserted = await conn.fetchval(
             """
@@ -319,9 +323,8 @@ async def fetch_and_ingest(conn, task: dict) -> None:
             new_raw_ids.append(str(inserted))
             await _enqueue_process_task(conn, channel_space_id, inserted, datetime.now(tz=UTC), priority=0)
 
-    if source_type == "hf_daily_papers":
-        if isinstance(cursor_updates, dict):
-            cursor.update(cursor_updates)
+    if cursor_updates:
+        cursor.update(cursor_updates)
 
     await conn.execute(
         """
@@ -375,17 +378,46 @@ async def process_one(conn, task: dict) -> None:
         text = gt_text(content)
     elif row["source_type"] == "semantic_scholar":
         text = ss_text(content)
+    elif row["source_type"] == "x_twitter":
+        text = xt_text(content)
     else:
         text = hf_text(content)
+
+    sub_channel_id = await conn.fetchval(
+        """
+        SELECT sub_channel_id FROM channel_sources
+        WHERE source_id = $1 AND channel_space_id = $2
+        LIMIT 1
+        """,
+        row["source_id"],
+        row["channel_space_id"],
+    )
+
+    if sub_channel_id and row["source_item_url"]:
+        existing = await conn.fetchval(
+            """
+            SELECT 1 FROM processed_news pn
+            JOIN raw_items ri ON ri.id = pn.raw_item_id
+            WHERE pn.channel_space_id = $1
+              AND pn.sub_channel_id = $2
+              AND ri.source_item_url = $3
+            LIMIT 1
+            """,
+            row["channel_space_id"],
+            sub_channel_id,
+            row["source_item_url"],
+        )
+        if existing:
+            return
 
     result = await translate_and_summarize(text=text, source_url=row["source_item_url"])
     inserted = await conn.fetchrow(
         """
         insert into processed_news(
           channel_space_id, raw_item_id, title, summary, language, source_refs, published_at,
-          bullets, tags, entities, importance_score, created_at
+          bullets, tags, entities, importance_score, sub_channel_id, created_at
         )
-        values($1, $2, $3, $4, 'zh', $5::jsonb, $6, '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, 0, now())
+        values($1, $2, $3, $4, $5, $6::jsonb, $7, $8::jsonb, $9::jsonb, $10::jsonb, $11, $12, now())
         on conflict (raw_item_id) do nothing
         returning id, channel_space_id, title, published_at
         """,
@@ -393,8 +425,14 @@ async def process_one(conn, task: dict) -> None:
         raw_item_id,
         result.get("title") or "",
         result.get("summary") or "",
+        result.get("language") or "zh",
         json.dumps({"url": row["source_item_url"], "source_id": str(row["source_id"])}),
         row["published_at"],
+        json.dumps(result.get("bullets") or []),
+        json.dumps(result.get("tags") or []),
+        json.dumps(result.get("entities") or []),
+        float(result.get("importance_score") or 0),
+        sub_channel_id,
     )
     if inserted:
         payload = {
