@@ -20,12 +20,25 @@ create table if not exists channel_sources (
   source_id uuid not null references sources(id) on delete cascade,
   enabled boolean not null default true,
   fetch_policy jsonb not null default '{}'::jsonb,
+  sub_channel_id uuid references sub_channels(id) on delete set null,
   created_at timestamptz not null default now(),
   constraint uq_channel_sources_space_source unique (channel_space_id, source_id)
 );
 
 create index if not exists ix_channel_sources_space_enabled
   on channel_sources(channel_space_id, enabled);
+
+create table if not exists sub_channels (
+  id uuid primary key default gen_random_uuid(),
+  channel_space_id uuid not null references channel_spaces(id) on delete cascade,
+  name varchar(100) not null,
+  sort_order int not null default 0,
+  created_at timestamptz not null default now(),
+  constraint uq_sub_channels_space_name unique (channel_space_id, name)
+);
+
+create index if not exists ix_sub_channels_space_sort
+  on sub_channels(channel_space_id, sort_order);
 
 create table if not exists source_states (
   id uuid primary key default gen_random_uuid(),
@@ -71,6 +84,7 @@ create table if not exists processed_news (
   tags jsonb not null default '[]'::jsonb,
   entities jsonb not null default '[]'::jsonb,
   importance_score numeric not null default 0,
+  sub_channel_id uuid references sub_channels(id) on delete set null,
   created_at timestamptz not null default now(),
   constraint uq_processed_news_raw_item unique (raw_item_id)
 );
@@ -114,4 +128,11 @@ create table if not exists alerts (
 
 create index if not exists ix_alerts_space_created
   on alerts(channel_space_id, created_at desc);
+
+create index if not exists ix_processed_news_sub_published
+  on processed_news(channel_space_id, sub_channel_id, published_at desc);
+
+create index if not exists ix_raw_items_url
+  on raw_items(source_item_url)
+  where source_item_url is not null;
 
