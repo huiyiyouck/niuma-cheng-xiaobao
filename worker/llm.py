@@ -26,6 +26,46 @@ def _extract_first_json_object(text: str) -> Optional[dict]:
     return None
 
 
+def validate_llm_output(result: dict) -> dict:
+    """校验并修正 LLM 输出，确保字段完整且类型正确。"""
+    title = result.get("title")
+    if not isinstance(title, str) or not title.strip():
+        result["title"] = "无标题"
+
+    summary = result.get("summary")
+    if not isinstance(summary, str) or not summary.strip():
+        result["summary"] = result.get("title", "")
+
+    bullets = result.get("bullets")
+    if not isinstance(bullets, list):
+        bullets = []
+    result["bullets"] = [str(b) for b in bullets if b][:5]
+
+    tags = result.get("tags")
+    if not isinstance(tags, list):
+        tags = []
+    result["tags"] = [str(t) for t in tags if t][:5]
+
+    entities = result.get("entities")
+    if not isinstance(entities, list):
+        entities = []
+    result["entities"] = [
+        e for e in entities
+        if isinstance(e, dict) and e.get("name")
+    ]
+
+    score = result.get("importance_score")
+    try:
+        score = float(score)
+    except (TypeError, ValueError):
+        score = 0.0
+    result["importance_score"] = max(0.0, min(10.0, score))
+
+    result["language"] = "zh"
+
+    return result
+
+
 async def translate_and_summarize(text: str, source_url: Optional[str]) -> dict:
     if not settings.openai_api_key:
         raise RuntimeError("OPENAI_API_KEY is required")
@@ -36,13 +76,18 @@ async def translate_and_summarize(text: str, source_url: Optional[str]) -> dict:
             {
                 "type": "text",
                 "text": (
-                    "把下面内容处理成中文新闻卡片，只做翻译与摘要。\n"
+                    "把下面内容处理成中文新闻卡片，做翻译与深度摘要。\n"
                     "要求：\n"
                     "1) 如果原文是英文，翻译成中文\n"
                     "2) 输出中文标题(title)和中文摘要(summary)\n"
                     "3) summary 80-200 字\n"
-                    "4) 只输出严格 JSON，不要输出多余文字\n"
-                    "JSON 格式：{\"title\":\"...\",\"summary\":\"...\",\"language\":\"zh\"}\n"
+                    "4) 提炼 3-5 个核心要点(bullets)，每个不超过 50 字\n"
+                    "5) 生成 3-5 个分类标签(tags)\n"
+                    "6) 识别关键实体(entities)，每个包含 name 和 type(person/org/product/tech)\n"
+                    "7) 评估重要性评分(importance_score)，0-10 浮点数，考虑时效性、影响力、相关性\n"
+                    "8) 只输出严格 JSON，不要输出多余文字\n"
+                    'JSON 格式：{"title":"...","summary":"...","bullets":["..."],"tags":["..."],'
+                    '"entities":[{"name":"...","type":"..."}],"importance_score":7.5,"language":"zh"}\n'
                     f"source_url: {source_url or ''}\n\n"
                     f"content:\n{text}"
                 ),
@@ -92,6 +137,6 @@ async def translate_and_summarize(text: str, source_url: Optional[str]) -> dict:
             obj = json.loads(obj)
         except Exception:
             obj = {"title": "", "summary": obj, "language": "zh"}
-    if obj.get("language") != "zh":
-        obj["language"] = "zh"
+
+    obj = validate_llm_output(obj)
     return obj
