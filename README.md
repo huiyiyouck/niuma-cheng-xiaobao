@@ -1,38 +1,61 @@
-# News Aggregator MVP
+# 🐂 牛马程小报
 
-## 1. 创建数据库表（Supabase）
+AI 驱动的多源新闻聚合平台，自动从 RSS、学术论文、社交媒体、开源社区等渠道抓取素材，经 LLM 处理后生成结构化中文新闻卡片。
 
-在 Supabase 项目的 SQL Editor 执行：
-- [schema.sql](file:///Users/ck/Project/New_Project/db/schema.sql)
+## 功能特性
 
-## 2. 配置环境变量
+- **多数据源接入**：支持 RSS、HuggingFace Daily Papers、HackerNews、GitHub Trending、Semantic Scholar、X/Twitter
+- **AI 智能处理**：自动翻译、摘要、要点提取、标签生成、实体识别、重要性评分
+- **频道空间**：按领域（AI、财经等）隔离管理，空间内支持子频道分类
+- **实时推送**：通过 WebSocket 推送新消息，前端实时更新
+- **轻量部署**：FastAPI + Worker 双进程架构，2C2G 即可运行
 
-复制 `.env.example` 为 `.env` 并填写：
-- `DATABASE_URL`：Supabase Postgres 连接串（建议使用 `postgresql+asyncpg://...`）
-- `ADMIN_ALLOWED_IPS`：允许调用写接口与 `/v1/alerts` 的 IP（逗号分隔）
-- `OPENAI_API_KEY`
+## 技术栈
 
-## 3. 安装依赖
+| 层 | 技术 |
+|---|------|
+| 后端 API | FastAPI + SQLAlchemy (async) |
+| Worker | asyncio + asyncpg (直连) |
+| 数据库 | PostgreSQL (Supabase) |
+| LLM | OpenAI 兼容 API (DeepSeek / GPT 等) |
+| 前端 | Vue 3 + TypeScript + Vite |
+
+## 快速开始
+
+### 1. 创建数据库
+
+在 Supabase 的 SQL Editor 中执行 [`db/schema.sql`](db/schema.sql)。
+
+### 2. 配置环境变量
+
+```bash
+cp .env.example .env
+```
+
+填写必要配置：
+
+| 变量 | 说明 |
+|------|------|
+| `DATABASE_URL` | PostgreSQL 连接串 |
+| `OPENAI_API_KEY` | LLM API Key |
+| `X_BEARER_TOKEN` | X/Twitter API Token（可选） |
+
+### 3. 启动后端
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-## 4. 启动 API
-
-```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-## 5. 启动 Worker
+### 4. 启动 Worker
 
 ```bash
 python -m worker.main
 ```
 
-## 6. 启动前端（Vue3 + TS）
+### 5. 启动前端
 
 ```bash
 cd frontend
@@ -40,51 +63,67 @@ npm install
 npm run dev
 ```
 
-默认前端地址：`http://localhost:5173/`
-
-如需指定后端地址，在 `frontend/.env.local` 写入：
+或使用一键启动脚本：
 
 ```bash
-VITE_API_BASE_URL=http://127.0.0.1:8000
-VITE_WS_BASE_URL=ws://127.0.0.1:8000/ws
+bash start.sh
 ```
 
-## 7. 最小可用配置（创建空间/渠道/绑定）
-
-从 `ADMIN_ALLOWED_IPS` 的机器上调用：
+### 6. 创建数据源
 
 ```bash
+# 创建频道空间
 curl -X POST http://localhost:8000/v1/channel-spaces \
   -H "Content-Type: application/json" \
   -d '{"name":"AI","description":"AI news"}'
-```
 
-创建 arXiv RSS source（示例）：
-
-```bash
+# 创建 Source（以 RSS 为例）
 curl -X POST http://localhost:8000/v1/sources \
   -H "Content-Type: application/json" \
-  -d '{"type":"rss","name":"arxiv-cs-ai","config":{"feed_url":"https://rss.arxiv.org/rss/cs.AI"}}'
-```
+  -d '{"type":"rss","name":"arxiv-cs-AI","config":{"feed_url":"https://rss.arxiv.org/rss/cs.AI"}}'
 
-创建 HF Daily Papers source：
-
-```bash
-curl -X POST http://localhost:8000/v1/sources \
-  -H "Content-Type: application/json" \
-  -d '{"type":"hf_daily_papers","name":"hf-daily-papers","config":{}}'
-```
-
-绑定到频道空间（把 `{space_id}`、`{source_id}` 替换成真实值）：
-
-```bash
+# 绑定到频道空间
 curl -X POST http://localhost:8000/v1/channel-spaces/{space_id}/sources \
   -H "Content-Type: application/json" \
-  -d '{"source_id":"{source_id}","enabled":true,"fetch_policy":{"schedule":{"every_seconds":600},"budget":{"max_items_per_run":20}}}'
+  -d '{"source_id":"{source_id}","enabled":true,"fetch_policy":{"schedule":{"every_seconds":600}}}'
 ```
 
-## 8. 前端拉取与 WS
+## 项目结构
 
-- 列表：`GET /v1/channel-spaces/{space_id}/news?limit=20&offset=0`
-- 详情：`GET /v1/news/{news_id}`
-- WS：连接 `ws://{host}:8000/ws`，发送 `{"type":"subscribe","channel_space_id":"{space_id}"}`，接收 `news.processed`
+```
+├── app/                  # FastAPI 后端
+│   ├── main.py          # 入口 + 路由挂载
+│   ├── routes.py        # REST API 路由
+│   ├── models.py        # SQLAlchemy 模型
+│   ├── schemas.py       # Pydantic Schema
+│   ├── ws_manager.py    # WebSocket 管理
+│   └── settings.py      # 配置
+├── worker/              # 抓取 + LLM 处理 Worker
+│   ├── main.py          # 调度器 + 任务执行
+│   ├── llm.py           # LLM 调用与输出校验
+│   ├── fetch_*.py       # 各数据源抓取器
+│   └── db.py            # asyncpg 连接池
+├── frontend/            # Vue 3 前端
+├── db/                  # 数据库 schema + 迁移
+├── deploy/              # 部署配置（systemd）
+└── docs/                # 设计文档
+```
+
+## 支持的数据源
+
+| 类型 | Source Type | 说明 |
+|------|-------------|------|
+| RSS | `rss` | 任意 RSS/Atom Feed |
+| HuggingFace Papers | `hf_daily_papers` | HF Daily Papers API |
+| HackerNews | `hacker_news` | HackerNews Top/Best/New |
+| GitHub Trending | `github_trending` | GitHub 趋势仓库 |
+| Semantic Scholar | `semantic_scholar` | 学术论文搜索 |
+| X/Twitter | `x_twitter` | 关键词搜索 / 账号追踪 |
+
+## API 文档
+
+启动后端后访问 `http://localhost:8000/docs` 查看完整 API 文档（Swagger UI）。
+
+## License
+
+[MIT](LICENSE)
