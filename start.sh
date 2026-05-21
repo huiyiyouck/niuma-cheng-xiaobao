@@ -24,7 +24,7 @@ lsof -ti:$FRONTEND_PORT 2>/dev/null | xargs kill 2>/dev/null || true
 sleep 1
 
 echo "======================================"
-echo "  程牛马小报 一键启动"
+echo "  牛马程小报 一键启动"
 echo "======================================"
 
 # 启动后端 API
