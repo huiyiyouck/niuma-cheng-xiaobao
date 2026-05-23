@@ -30,7 +30,7 @@ bash start.sh 或分别启动后端/Worker/前端，详见 docs/使用说明.md
 ## 怎么干活 → 读 baseline/
 选好角色后，读你的角色手册：docs/baseline/role-{你的角色}.md
 架构/规范上下文：docs/baseline/architecture.md、docs/baseline/conventions.md
-体系设计全貌：docs/superpowers/specs/2026-05-23-multi-agent-collaboration-design.md
+体系设计全貌：docs/multi-agent-collaboration-design.md
 
 ## 干了什么 → 读 progress/
 版本索引：docs/progress/INDEX.md
