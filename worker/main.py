@@ -237,7 +237,8 @@ async def fetch_and_ingest(conn, task: dict) -> None:
     cursor_updates: Optional[dict] = None
 
     proxy = settings.https_proxy or settings.http_proxy
-    async with httpx.AsyncClient(timeout=60, proxy=proxy) as client:
+    headers = {"User-Agent": "NiuMaChengXiaoBao/0.1 (News Aggregator)"}
+    async with httpx.AsyncClient(timeout=60, proxy=proxy, follow_redirects=True, headers=headers) as client:
         if source_type == "rss":
             feed_url = source_config.get("feed_url") or source_config.get("url")
             if not feed_url:
