@@ -240,7 +240,11 @@ async def bind_source(channel_space_id: uuid.UUID, payload: ChannelSourceBind, s
         sub_channel_id=payload.sub_channel_id,
     )
     session.add(obj)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=409, detail="该 Source 已绑定到此 ChannelSpace")
     await session.refresh(obj)
     return _channel_source_out(obj)
 
