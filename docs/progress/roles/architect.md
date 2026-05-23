@@ -24,6 +24,14 @@
 - 关联迭代：v0.1
 - 遗留问题/风险：前端 UX 优化留待后续迭代
 
+## 2026-05-23 — v0.1 实现阶段 R2 Review
+- 本次角色：架构师
+- 动作：Review（审全栈开发 R2 设计对齐修复）
+- 涉及文档：docs/progress/iterations/v0.1.md
+- 结论：9 项变更中 8 项通过，1 项需修复（_handle_auth_failure 在 user_timeline/resolve_usernames 中缺失）
+- 关联迭代：v0.1
+- 遗留问题/风险：无
+
 ## 2026-05-23 — v0.1 设计文档 R3 修订 + 微调
 - 本次角色：架构师
 - 动作：修改（响应 PM R2 + 开发 R3 + PM R3）
