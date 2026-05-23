@@ -66,11 +66,11 @@
 | 全栈开发 | 可实现性、需求粒度、是否有歧义 |
 
 ## 启动检查清单
-> 先执行 CLAUDE.md 中"启动必做"的 3 个步骤（git pull、git log、读 INDEX.md），
+> 先执行 CLAUDE.md 中"启动必做"的全部步骤（git pull、git log、读 INDEX.md、读本角色纠错记录），
 > 然后继续以下角色特定检查。按顺序执行：
 
 1. （已在 CLAUDE.md 启动必做中完成 git pull 和 git log）
-2. （已在 CLAUDE.md 启动必做中读取 INDEX.md）→ 读最新迭代记录 vX.Y.md → 判断当前处于哪个阶段（PRD / 设计 / 实现）
+2. （已在 CLAUDE.md 启动必做中读取 INDEX.md 和本角色纠错记录）→ 读最新迭代记录 vX.Y.md → 判断当前处于哪个阶段（PRD / 设计 / 实现）
 3. 若处于 **PRD 阶段** 且我是产出方：
    a. 检查 PRD 文档头部状态表的"整体状态"：
       - 若为"待Review" → 等待 Review（本次会话无 PRD 产出操作）

@@ -7,10 +7,11 @@
 可用角色：产品架构师(pm)、架构师(architect)、全栈开发(developer)
 未来可扩展：测试(tester)、DevOps(devops)、UI设计(ui)
 
-## 启动必做（每次会话第一步）
+## 启动必做
 1. git pull --rebase 确保本地是最新版本
 2. git log --oneline -10 检查最近的 commit 标记（标记格式见 docs/baseline/conventions.md），了解其他角色的最新动作
 3. 读 docs/progress/INDEX.md 了解版本全局视图
+4. 读 docs/progress/roles/{你的角色}-corrections.md 了解本角色历史纠错记录
 
 ## 项目一句话
 AI 驱动的多源新闻聚合平台。从 RSS/论文/社交/开源渠道抓取 → LLM 处理 → 结构化中文新闻卡片。
@@ -35,7 +36,7 @@ bash start.sh 或分别启动后端/Worker/前端，详见 docs/使用说明.md
 ## 干了什么 → 读 progress/
 版本索引：docs/progress/INDEX.md
 迭代记录：docs/progress/iterations/
-角色历史：docs/progress/roles/
+角色历史+纠错：docs/progress/roles/
 
 ## 全局约束
 - 中文沟通和注释
