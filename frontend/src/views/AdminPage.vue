@@ -41,31 +41,51 @@ async function refreshSpaceData() {
 }
 
 async function onCreateSpace(name: string, desc: string) {
-  await createSpace({ name, description: desc || undefined });
+  try {
+    await createSpace({ name, description: desc || undefined });
+  } catch (e) {
+    errorText.value = e instanceof Error ? e.message : String(e);
+    return;
+  }
   showCreateSpace.value = false;
   await refreshAll();
 }
 
 async function onBindSource(sourceId: UUID, enabled: boolean, everySeconds: number, maxItems: number) {
-  await bindSource(selectedSpaceId.value!, {
-    source_id: sourceId, enabled,
-    fetch_policy: { schedule: { every_seconds: everySeconds }, budget: { max_items_per_run: maxItems } },
-  });
+  try {
+    await bindSource(selectedSpaceId.value!, {
+      source_id: sourceId, enabled,
+      fetch_policy: { schedule: { every_seconds: everySeconds }, budget: { max_items_per_run: maxItems } },
+    });
+  } catch (e) {
+    errorText.value = e instanceof Error ? e.message : String(e);
+    return;
+  }
   showBindSource.value = false;
   await refreshSpaceData();
 }
 
 async function onToggleChannel(cs: ChannelSourceWithSource) {
-  await updateChannelSource(cs.channel_source.id, { enabled: !cs.channel_source.enabled });
+  try {
+    await updateChannelSource(cs.channel_source.id, { enabled: !cs.channel_source.enabled });
+  } catch (e) {
+    errorText.value = e instanceof Error ? e.message : String(e);
+    return;
+  }
   await refreshSpaceData();
 }
 
 async function onEditChannel(enabled: boolean, everySeconds: number, maxItems: number) {
   if (!editingChannel.value) return;
-  await updateChannelSource(editingChannel.value.channel_source.id, {
-    enabled,
-    fetch_policy: { schedule: { every_seconds: everySeconds }, budget: { max_items_per_run: maxItems } },
-  });
+  try {
+    await updateChannelSource(editingChannel.value.channel_source.id, {
+      enabled,
+      fetch_policy: { schedule: { every_seconds: everySeconds }, budget: { max_items_per_run: maxItems } },
+    });
+  } catch (e) {
+    errorText.value = e instanceof Error ? e.message : String(e);
+    return;
+  }
   editingChannel.value = null;
   await refreshSpaceData();
 }

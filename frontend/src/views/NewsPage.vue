@@ -43,7 +43,12 @@ const filteredItems = computed(() => {
 });
 
 async function refreshSpaces() {
-  spaces.value = await listSpaces();
+  try {
+    spaces.value = await listSpaces();
+  } catch (e) {
+    errorText.value = e instanceof Error ? e.message : String(e);
+    return;
+  }
   if (!filterSpaceId.value && spaces.value.length > 0) {
     filterSpaceId.value = spaces.value[0].id;
   }

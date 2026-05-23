@@ -6,8 +6,8 @@
           <RouterLink to="/news" class="brand-link">🐂 牛马程小报</RouterLink>
         </div>
         <nav class="nav">
-          <RouterLink to="/news" class="nav-link" active-class="nav-link--active">浏览</RouterLink>
-          <RouterLink to="/admin" class="nav-link" active-class="nav-link--active">管理</RouterLink>
+          <RouterLink to="/news" class="nav-link" activeClass="nav-link--active">浏览</RouterLink>
+          <RouterLink to="/admin" class="nav-link" activeClass="nav-link--active">管理</RouterLink>
         </nav>
       </div>
     </header>
