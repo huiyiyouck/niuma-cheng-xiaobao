@@ -12,6 +12,9 @@ import httpx
 from app.settings import settings
 from app.utils import as_dict as _as_dict
 from worker.db import create_pool
+from worker.logger import get_logger
+
+log = get_logger()
 from worker.fetch_arxiv import parse_rss as parse_rss_items, render_text_for_llm as arxiv_text
 from worker.fetch_hf import parse_daily_papers, render_text_for_llm as hf_text
 from worker.fetch_github_trending import parse_github_trending, render_text_for_llm as gt_text
@@ -162,6 +165,7 @@ async def scheduler_loop(pool, stop_event: asyncio.Event) -> None:
                     continue
                 every_seconds = _policy_every_seconds(fetch_policy)
                 await _enqueue_fetch_task(conn, channel_space_id, channel_source_id, now, priority=0)
+                log.debug("SCHEDULER enqueued fetch channel_source_id=%s", channel_source_id)
                 await conn.execute(
                     """
                     insert into source_states(channel_source_id, cursor, next_fetch_at, consecutive_failures, updated_at)
@@ -197,6 +201,7 @@ async def _create_alert(conn, channel_space_id, alert_type: str, message: str, m
         "created_at": row["created_at"].isoformat(),
     }
     await conn.execute("select pg_notify('alert_created', $1)", json.dumps(payload, ensure_ascii=False))
+    log.warning("ALERT [%s] channel_space=%s msg=%s", alert_type, channel_space_id, message[:200])
 
 
 async def fetch_and_ingest(conn, task: dict) -> None:
@@ -229,9 +234,12 @@ async def fetch_and_ingest(conn, task: dict) -> None:
     fetch_policy = _as_dict(row["fetch_policy"])
     source_id = row["source_id"]
     source_type = row["source_type"]
+    source_name = row["source_name"]
     source_config = _as_dict(row["source_config"])
     cursor = _as_dict(row["cursor"])
     max_items = _policy_max_items(fetch_policy)
+
+    log.info("FETCH START source=%s type=%s max_items=%d", source_name, source_type, max_items)
 
     new_raw_ids: list[str] = []
     cursor_updates: Optional[dict] = None
@@ -345,6 +353,7 @@ async def fetch_and_ingest(conn, task: dict) -> None:
 
     payload = {"new_raw_items": len(new_raw_ids)}
     await conn.execute("select pg_notify('fetch_succeeded', $1)", json.dumps(payload))
+    log.info("FETCH DONE  source=%s fetched=%d new=%d deduped=%d", source_name, len(items), len(new_raw_ids), len(items) - len(new_raw_ids))
 
 
 async def process_one(conn, task: dict) -> None:
@@ -443,6 +452,9 @@ async def process_one(conn, task: dict) -> None:
             "published_at": inserted["published_at"].isoformat() if inserted["published_at"] else None,
         }
         await conn.execute("select pg_notify('news_processed', $1)", json.dumps(payload, ensure_ascii=False))
+        log.info("NEWS CREATED id=%s title=%s sub_channel=%s", inserted["id"], inserted["title"][:80], sub_channel_id)
+    else:
+        log.debug("NEWS DEDUPED raw_item_id=%s", raw_item_id)
 
 
 async def worker_loop(pool, stop_event: asyncio.Event) -> None:
@@ -478,22 +490,28 @@ async def worker_loop(pool, stop_event: asyncio.Event) -> None:
         local_sem = sem
 
         async def _run(task_dict: dict):
+            task_id = str(task_dict["id"])
+            task_type = task_dict["type"]
+            log.info("TASK START  id=%s type=%s", task_id, task_type)
             try:
                 async with pool.acquire() as conn2:
                     try:
-                        if task_dict["type"] == "fetch":
+                        if task_type == "fetch":
                             await fetch_and_ingest(conn2, task_dict)
-                        elif task_dict["type"] == "process":
+                        elif task_type == "process":
                             await process_one(conn2, task_dict)
                         await _finish_task(conn2, task_dict["id"], "succeeded", None)
+                        log.info("TASK DONE   id=%s type=%s status=succeeded", task_id, task_type)
                     except NonRetryableError:
                         err = traceback.format_exc()
-                        if task_dict["type"] == "fetch":
-                            await _create_alert(conn2, task_dict["channel_space_id"], "fetch_auth_failed", err, {"task_id": str(task_dict["id"])})
+                        log.error("TASK FAIL   id=%s type=%s reason=NonRetryableError\n%s", task_id, task_type, err)
+                        if task_type == "fetch":
+                            await _create_alert(conn2, task_dict["channel_space_id"], "fetch_auth_failed", err, {"task_id": task_id})
                         await _finish_task(conn2, task_dict["id"], "failed", err)
                     except Exception:
                         err = traceback.format_exc()
-                        if task_dict["type"] == "fetch" and task_dict.get("channel_source_id"):
+                        log.error("TASK FAIL   id=%s type=%s reason=retryable\n%s", task_id, task_type, err)
+                        if task_type == "fetch" and task_dict.get("channel_source_id"):
                             await _on_fetch_failed(conn2, task_dict, err)
                         await _requeue_task(conn2, task_dict, err)
             finally:
@@ -615,7 +633,9 @@ async def reclaim_stale_running_loop(pool, stop_event: asyncio.Event) -> None:
 async def main() -> None:
     # 动态生成唯一 worker_id，避免多实例冲突
     settings.worker_id = f"{socket.gethostname()}-{os.getpid()}"
+    log.info("WORKER START worker_id=%s pid=%d", settings.worker_id, os.getpid())
     pool = await create_pool()
+    log.info("DB POOL CREATED")
     stop_event = asyncio.Event()
     loop = asyncio.get_running_loop()
     for sig in (signal.SIGINT, signal.SIGTERM):
@@ -633,6 +653,7 @@ async def main() -> None:
     finally:
         stop_event.set()
         await pool.close()
+        log.info("WORKER STOPPED")
 
 
 if __name__ == "__main__":
