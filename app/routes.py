@@ -3,6 +3,7 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
@@ -149,7 +150,11 @@ async def create_sub_channel(
         sort_order=payload.sort_order,
     )
     session.add(obj)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(status_code=409, detail=f"子频道名称 '{payload.name}' 已存在")
     await session.refresh(obj)
     return SubChannelOut.model_validate(obj, from_attributes=True)
 

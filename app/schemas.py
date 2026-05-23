@@ -2,7 +2,17 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field
+from pydantic import AfterValidator, BaseModel, Field
+from typing_extensions import Annotated
+
+
+def _not_blank(v: str) -> str:
+    if not v.strip():
+        raise ValueError("name 不可为空字符串或纯空格")
+    return v
+
+
+NonBlankStr = Annotated[str, AfterValidator(_not_blank)]
 
 
 class ChannelSpaceCreate(BaseModel):
@@ -77,7 +87,7 @@ class ProcessedNewsOut(BaseModel):
 
 
 class SubChannelCreate(BaseModel):
-    name: str = Field(min_length=1, max_length=100)
+    name: NonBlankStr = Field(min_length=1, max_length=100)
     sort_order: int = Field(default=0, ge=0)
 
 
