@@ -24,6 +24,33 @@
 - 关联迭代：v0.1
 - 遗留问题/风险：无
 
+## 2026-05-23 — v0.1 线上验证 + Bug 修复
+- 本次角色：全栈开发
+- 动作：验证 + 修改
+- 涉及文档：app/schemas.py、app/routes.py（2 次）
+- 结论：API 全量验证通过（14 项）；发现并修复 3 个 Bug：
+  1. SubChannelCreate.name 类型为 str 导致纯空格绕过 NonBlankStr 校验
+  2. create_sub_channel 和 bind_source 缺少 IntegrityError 处理 → 500 而非 409
+  3. Worker httpx 未开启 follow_redirects → deepmind.com 302 重定向失败；openai-blog feed URL 失效
+- 关联迭代：v0.1
+- 遗留问题/风险：无
+
+## 2026-05-23 — v0.1 前端警告消除
+- 本次角色：全栈开发
+- 动作：修改
+- 涉及文档：frontend/src/App.vue、frontend/src/views/NewsPage.vue、frontend/src/views/AdminPage.vue
+- 结论：消除浏览器控制台 3 类警告（Vue Router active-class 废弃、5 处未处理 Promise 拒绝）
+- 关联迭代：v0.1
+- 遗留问题/风险：无
+
+## 2026-05-23 — v0.1 Git Tag + 迭代收尾
+- 本次角色：全栈开发
+- 动作：定稿
+- 涉及文档：Git tag v0.1
+- 结论：v0.1 迭代全部完成，tag 已打。PRD/设计/实现三阶段均定稿，线上验证通过。
+- 关联迭代：v0.1
+- 遗留问题/风险：无
+
 ## 2026-05-23 — v0.1 设计对齐修复（R2）
 - 本次角色：全栈开发
 - 动作：产出
