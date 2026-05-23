@@ -32,6 +32,7 @@
   - R3 修订：修复 PM R2 5项——9.1 改技术债务、NonBlankStr 校验、NonRetryableError、空结果游标、listNews 对象参数
   - R3 微调：修复开发 R3 6项——文档状态标记、冗余 if 移除、render_text 格式补充、NonRetryableError 位置明确(worker/errors.py)、import 补充、TOCTOU 文档化
   - 当前待开发复审微调项
+  - 2026-05-23 全栈开发复审通过，设计定稿
 - 关联迭代：v0.1
 - 遗留问题/风险：无
 
