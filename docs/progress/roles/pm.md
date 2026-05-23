@@ -55,6 +55,6 @@
 - 本次角色：产品架构师(PM)
 - 动作：Review
 - 涉及文档：docs/progress/iterations/v0.1-design.md
-- 结论：R2 五条意见全部关闭，开发 R3 六条意见做最终裁定。NonRetryableError 位置决议为新增 worker/errors.py，其余轻微项实现时顺手修正。设计文档通过，移交全栈开发进入实现阶段
+- 结论：R2 五条意见全部关闭，开发 R3 六条意见做最终裁定。NonRetryableError 位置决议为新增 worker/errors.py，其余轻微项由架构师在 R4 修复。架构师修改完成后进入实现阶段
 - 关联迭代：v0.1
-- 遗留问题/风险：无阻塞项
+- 遗留问题/风险：待架构师出 R4
