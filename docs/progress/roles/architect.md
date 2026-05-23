@@ -24,11 +24,14 @@
 - 关联迭代：v0.1
 - 遗留问题/风险：前端 UX 优化留待后续迭代
 
-## 2026-05-23 — v0.1 设计文档 R3 修订
+## 2026-05-23 — v0.1 设计文档 R3 修订 + 微调
 - 本次角色：架构师
-- 动作：修改（响应 PM R2 Review）
+- 动作：修改（响应 PM R2 + 开发 R3 + PM R3）
 - 涉及文档：docs/progress/iterations/v0.1-design.md、docs/progress/iterations/v0.1.md
-- 结论：修复 PM 5 项意见——9.1 节改技术债务、name 纯空格校验、NonRetryableError 异常标记、空结果游标说明、listNews 对象参数模式
+- 结论：
+  - R3 修订：修复 PM R2 5项——9.1 改技术债务、NonBlankStr 校验、NonRetryableError、空结果游标、listNews 对象参数
+  - R3 微调：修复开发 R3 6项——文档状态标记、冗余 if 移除、render_text 格式补充、NonRetryableError 位置明确(worker/errors.py)、import 补充、TOCTOU 文档化
+  - 当前待开发复审微调项
 - 关联迭代：v0.1
 - 遗留问题/风险：无
 
