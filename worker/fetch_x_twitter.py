@@ -81,7 +81,7 @@ async def _fetch_user_timelines(
     cursor: dict,
     max_items: int,
 ) -> tuple[list[dict], dict]:
-    """账号追踪模式。逐用户拉取。"""
+    """账号追踪模式。逐用户拉取，排序截断后仅对保留推文更新游标。"""
     usernames = config.get("usernames")
     if not usernames:
         raise RuntimeError("x_twitter user_timeline mode requires config.usernames")
@@ -91,7 +91,7 @@ async def _fetch_user_timelines(
     proxy = settings.https_proxy or settings.http_proxy
     all_items: list[dict] = []
     user_cursors = dict(cursor.get("user_cursors", {}))
-    updated_cursors = dict(user_cursors)
+    user_items: dict[str, list[dict]] = {}
 
     async with httpx.AsyncClient(timeout=30, proxy=proxy) as client:
         user_ids = await _resolve_usernames(client, usernames)
@@ -110,39 +110,52 @@ async def _fetch_user_timelines(
                 params["since_id"] = since
 
             r = await client.get(url, headers=_auth_headers(), params=params)
+            _handle_auth_failure(r)
             _handle_rate_limit(r)
             r.raise_for_status()
             data = r.json()
 
             tweets = _parse_tweets(data)
+            user_items[username] = tweets
             all_items.extend(tweets)
 
-            if tweets:
-                tweet_ids = [int(t["source_item_id"]) for t in tweets if t["source_item_id"].isdigit()]
-                if tweet_ids:
-                    updated_cursors[username] = str(max(tweet_ids))
+    # 按 published_at DESC 排序后截断
+    all_items.sort(key=lambda x: x.get("published_at") or datetime.min.replace(tzinfo=timezone.utc), reverse=True)
+    retained = all_items[:max_items]
+    retained_ids = {item["source_item_id"] for item in retained}
 
-    cursor_updates = {"user_cursors": updated_cursors}
-    return all_items[:max_items], cursor_updates
+    # 仅对保留推文对应的用户更新游标
+    updated_cursors = dict(user_cursors)
+    for username, tweets in user_items.items():
+        retained_tweets = [t for t in tweets if t["source_item_id"] in retained_ids]
+        if retained_tweets:
+            tweet_ids = [int(t["source_item_id"]) for t in retained_tweets if t["source_item_id"].isdigit()]
+            if tweet_ids:
+                updated_cursors[username] = str(max(tweet_ids))
+
+    return retained, {"user_cursors": updated_cursors}
 
 
 async def _resolve_usernames(
     client: httpx.AsyncClient,
     usernames: list[str],
 ) -> dict[str, Optional[str]]:
-    """通过用户名查询 user_id。"""
+    """通过用户名查询 user_id。404 静默跳过，非 404 错误抛出触发重试。"""
     result = {}
     for username in usernames:
         r = await client.get(
             f"https://api.twitter.com/2/users/by/username/{username}",
             headers=_auth_headers(),
         )
+        _handle_auth_failure(r)
         _handle_rate_limit(r)
         if r.status_code == 200:
             data = r.json()
             result[username] = data.get("data", {}).get("id")
-        else:
+        elif r.status_code == 404:
             result[username] = None
+        else:
+            r.raise_for_status()
     return result
 
 

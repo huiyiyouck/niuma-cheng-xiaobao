@@ -8,7 +8,15 @@
 - 关联迭代：v0.1
 - 遗留问题/风险：无
 
-## 2026-05-23 — v0.1 设计对齐修复
+## 2026-05-23 — v0.1 实现 R3 修复
+- 本次角色：全栈开发
+- 动作：修改
+- 涉及文档：worker/fetch_x_twitter.py
+- 结论：修复 PM R2 #1（游标截断前更新→截断后更新）+ PM R2 #2/架构师 R2 #1（_resolve_usernames 和 _fetch_user_timelines 补充 _handle_auth_failure）
+- 关联迭代：v0.1
+- 遗留问题/风险：无
+
+## 2026-05-23 — v0.1 设计对齐修复（R2）
 - 本次角色：全栈开发
 - 动作：产出
 - 涉及文档：worker/errors.py（新增）、db/migrations/v0.1_rollback.sql（新增）、worker/llm.py、worker/fetch_x_twitter.py、worker/main.py、app/routes.py、frontend/src/lib/types.ts、frontend/src/lib/api.ts、frontend/src/views/NewsPage.vue
