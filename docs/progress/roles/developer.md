@@ -8,6 +8,14 @@
 - 关联迭代：v0.1
 - 遗留问题/风险：无
 
+## 2026-05-23 — v0.1 设计对齐修复
+- 本次角色：全栈开发
+- 动作：产出
+- 涉及文档：worker/errors.py（新增）、db/migrations/v0.1_rollback.sql（新增）、worker/llm.py、worker/fetch_x_twitter.py、worker/main.py、app/routes.py、frontend/src/lib/types.ts、frontend/src/lib/api.ts、frontend/src/views/NewsPage.vue
+- 结论：根据设计文档 R3 修复 8 项偏差（NonRetryableError 异常体系、language 字段保留 LLM 输出、_handle_auth_failure、PUT 路由空 body 校验、前端类型/API/调用方同步）
+- 关联迭代：v0.1
+- 遗留问题/风险：无
+
 ## 2026-05-23 — v0.1 设计文档 R3 Review
 - 本次角色：全栈开发
 - 动作：Review

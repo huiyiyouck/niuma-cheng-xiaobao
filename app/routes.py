@@ -184,11 +184,12 @@ async def update_sub_channel(
         values["name"] = payload.name
     if payload.sort_order is not None:
         values["sort_order"] = payload.sort_order
-    if values:
-        await session.execute(
-            update(SubChannel).where(SubChannel.id == sub_channel_id).values(**values)
-        )
-        await session.commit()
+    if not values:
+        raise HTTPException(status_code=400, detail="at least one field required")
+    await session.execute(
+        update(SubChannel).where(SubChannel.id == sub_channel_id).values(**values)
+    )
+    await session.commit()
     row = (await session.execute(
         select(SubChannel).where(SubChannel.id == sub_channel_id)
     )).scalar_one()

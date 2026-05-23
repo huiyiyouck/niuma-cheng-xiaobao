@@ -18,6 +18,7 @@ from worker.fetch_github_trending import parse_github_trending, render_text_for_
 from worker.fetch_hackernews import parse_hackernews, render_text_for_llm as hn_text
 from worker.fetch_semantic_scholar import parse_semantic_scholar, render_text_for_llm as ss_text
 from worker.fetch_x_twitter import parse_x_twitter, render_text_for_llm as xt_text
+from worker.errors import NonRetryableError
 from worker.llm import translate_and_summarize
 
 
@@ -484,6 +485,11 @@ async def worker_loop(pool, stop_event: asyncio.Event) -> None:
                         elif task_dict["type"] == "process":
                             await process_one(conn2, task_dict)
                         await _finish_task(conn2, task_dict["id"], "succeeded", None)
+                    except NonRetryableError:
+                        err = traceback.format_exc()
+                        if task_dict["type"] == "fetch":
+                            await _create_alert(conn2, task_dict["channel_space_id"], "fetch_auth_failed", err, {"task_id": str(task_dict["id"])})
+                        await _finish_task(conn2, task_dict["id"], "failed", err)
                     except Exception:
                         err = traceback.format_exc()
                         if task_dict["type"] == "fetch" and task_dict.get("channel_source_id"):

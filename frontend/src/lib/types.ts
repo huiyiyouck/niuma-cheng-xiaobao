@@ -15,12 +15,21 @@ export type Source = {
   created_at: string;
 };
 
+export type SubChannel = {
+  id: UUID;
+  channel_space_id: UUID;
+  name: string;
+  sort_order: number;
+  created_at: string;
+};
+
 export type ChannelSource = {
   id: UUID;
   channel_space_id: UUID;
   source_id: UUID;
   enabled: boolean;
   fetch_policy: FetchPolicy;
+  sub_channel_id?: UUID | null;
   created_at: string;
 };
 
@@ -42,15 +51,17 @@ export type ProcessedNews = {
   id: UUID;
   channel_space_id: UUID;
   raw_item_id: UUID;
+  sub_channel_id?: UUID | null;
   title: string;
   summary: string;
   language: string;
   source_refs: Record<string, unknown>;
   published_at: string | null;
+  bullets: string[];
+  tags: string[];
+  entities: { name: string; type: string }[];
+  importance_score: number;
   created_at: string;
-  importance_score?: number | null;
-  tags?: string[];
-  bullets?: string[];
 };
 
 export type Alert = {

@@ -5,6 +5,7 @@ from typing import Optional
 import httpx
 
 from app.settings import settings
+from worker.errors import NonRetryableError
 
 
 TWEET_FIELDS = "created_at,public_metrics,author_id,text,entities,referenced_tweets"
@@ -56,6 +57,7 @@ async def _fetch_search(
             params["since_id"] = since_id
 
         r = await client.get(url, headers=_auth_headers(), params=params)
+        _handle_auth_failure(r)
         _handle_rate_limit(r)
         r.raise_for_status()
         data = r.json()
@@ -199,6 +201,15 @@ def _parse_tweets(api_response: dict) -> list[dict]:
 
 def _auth_headers() -> dict:
     return {"Authorization": f"Bearer {settings.x_bearer_token}"}
+
+
+def _handle_auth_failure(response: httpx.Response):
+    """401/403 立即抛出 NonRetryableError，不重试。"""
+    if response.status_code in (401, 403):
+        raise NonRetryableError(
+            f"X API authentication failed (HTTP {response.status_code}). "
+            "Check X_BEARER_TOKEN in .env"
+        )
 
 
 def _handle_rate_limit(response: httpx.Response):

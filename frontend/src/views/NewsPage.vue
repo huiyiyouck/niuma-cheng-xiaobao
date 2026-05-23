@@ -53,7 +53,7 @@ async function refreshNews() {
   if (!filterSpaceId.value) return;
   loading.value = true; errorText.value = null; offset.value = 0;
   try {
-    const page = await listNews(filterSpaceId.value, limit, 0);
+    const page = await listNews(filterSpaceId.value, { limit, offset: 0 });
     items.value = page;
     canLoadMore.value = page.length >= limit;
   } catch (e) {
@@ -66,7 +66,7 @@ async function loadMore() {
   loading.value = true;
   const nextOffset = offset.value + limit;
   try {
-    const page = await listNews(filterSpaceId.value, limit, nextOffset);
+    const page = await listNews(filterSpaceId.value, { limit, offset: nextOffset });
     items.value = items.value.concat(page);
     offset.value = nextOffset;
     canLoadMore.value = page.length >= limit;

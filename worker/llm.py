@@ -61,7 +61,9 @@ def validate_llm_output(result: dict) -> dict:
         score = 0.0
     result["importance_score"] = max(0.0, min(10.0, score))
 
-    result["language"] = "zh"
+    lang = result.get("language")
+    if not isinstance(lang, str) or not lang.strip():
+        result["language"] = "zh"
 
     return result
 
