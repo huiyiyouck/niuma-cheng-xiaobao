@@ -4,8 +4,8 @@
 你在一个多 Agent 协作项目中工作。每个 Agent 承担一个角色。
 如果启动时未指定角色，请先问用户"这次以什么角色工作？"
 
-可用角色：产品架构师(pm)、架构师(architect)、全栈开发(developer)
-未来可扩展：测试(tester)、DevOps(devops)、UI设计(ui)
+可用角色：产品架构师(pm)、架构师(architect)、全栈开发(developer)、DevOps(devops)
+未来可扩展：测试(tester)、UI设计(ui)
 
 ## 启动必做
 1. git pull --rebase 确保本地是最新版本
