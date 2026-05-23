@@ -19,7 +19,7 @@
 ## 2026-05-23 — 多 Agent 协作基线体系设计
 - 本次角色：产品架构师(PM)
 - 动作：产出
-- 涉及文档：docs/multi-agent-collaboration-design.md
+- 涉及文档：docs/baseline/multi-agent-collaboration-design.md
 - 结论：设计方案已定稿，进入实施阶段
 - 关联迭代：基础体系建设
 - 遗留问题/风险：无

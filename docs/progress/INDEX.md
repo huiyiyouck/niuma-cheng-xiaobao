@@ -17,3 +17,4 @@
 | 产品架构师(PM) | [roles/pm.md](roles/pm.md) |
 | 架构师 | [roles/architect.md](roles/architect.md) |
 | 全栈开发 | [roles/developer.md](roles/developer.md) |
+| DevOps | [roles/devops.md](roles/devops.md) |

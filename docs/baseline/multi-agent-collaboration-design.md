@@ -8,6 +8,8 @@
 | 作者 | Claude + 用户协作 |
 | 变更 | v1.4 → v1.5：新增 DevOps 角色 + 部署就绪检查机制（独立检查，不入标准 Review 门禁）。经 Review 修正 4 项问题后定稿。 |
 
+> **本文档的特殊地位**：本文件定义了所有 Agent 如何协作的规则，是"宪法之上的宪法"。它不属于标准 PRD→设计→实现 Review 流水线，由用户（人）直接审核修改。任何 Agent 启动时均自动加载此文件，修改时需人工确认。
+
 ---
 
 ## 1. 术语定义
@@ -50,6 +52,7 @@
 CLAUDE.md                         ← 每个 Agent 启动时自动加载（精简索引，≤60行）
 │
 ├── docs/baseline/                ← 静态知识库（"怎么做"）
+│   ├── multi-agent-collaboration-design.md ← 本文件，多 Agent 协作体系宪法
 │   ├── architecture.md           ← 架构决策（ADR格式）、数据流、扩展点
 │   ├── conventions.md            ← 代码规范、命名约定、Git 协作规范
 │   ├── role-pm.md                ← 产品架构师角色手册
