@@ -10,3 +10,4 @@ docs/superpowers/
 frontend/node_modules/
 frontend/dist/
 logs/
+.vite/
