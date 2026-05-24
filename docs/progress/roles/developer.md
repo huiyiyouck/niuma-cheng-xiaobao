@@ -1,5 +1,13 @@
 # 全栈开发工作日志
 
+## 2026-05-24 — v0.2 实现 R5（数据清理遗漏修复）
+- 本次角色：全栈开发
+- 动作：产出
+- 涉及文件：db/migrations/v0.2_data_cleanup.sql（新增）
+- 结论：创建数据清理脚本并执行，清空 6 张数据表（sources→processed_news 全链路），保留 channel_spaces/sub_channels。验证通过：6 张数据表 count=0，channel_spaces(1) + sub_channels(3) 保留。对应设计文档 §2.3 + §9.1 第 2 步。
+- 关联迭代：v0.2
+- 遗留问题/风险：无
+
 ## 2026-05-24 — v0.2 实现 R4 定稿
 - 本次角色：全栈开发
 - 动作：定稿
