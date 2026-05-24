@@ -1,5 +1,13 @@
 # 架构师工作日志
 
+## 2026-05-24 — v0.2 设计文档初版产出
+- 本次角色：架构师
+- 动作：产出
+- 涉及文档：docs/progress/iterations/v0.2-design.md、docs/progress/iterations/v0.2.md
+- 结论：产出完成，进入 Review。覆盖数据库变更（name→display_name 重命名 + 新增 status/source_url/last_verified_at/verify_error 列）、Source CRUD API、验证/标记端点、统计端点、Admin 日志端点、Worker 清理（删5个旧抓取器+scheduler JOIN过滤+默认NonRetryableError）、API 日志系统、前端数据层适配
+- 关联迭代：v0.2
+- 遗留问题/风险：设计文档待 PM 和全栈开发 Review
+
 ## 2026-05-24 — v0.2 PRD R2 Review
 - 本次角色：架构师
 - 动作：Review（审 PM 的 v0.2 PRD R2 修订）
