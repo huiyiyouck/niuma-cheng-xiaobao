@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime
+from enum import Enum
 from typing import Optional
 
 from pydantic import AfterValidator, BaseModel, Field
@@ -15,6 +16,18 @@ def _not_blank(v: str) -> str:
 NonBlankStr = Annotated[str, AfterValidator(_not_blank)]
 
 
+class SourceType(str, Enum):
+    x_twitter = "x_twitter"
+    rss = "rss"
+    github_trending = "github_trending"
+    hf_daily_papers = "hf_daily_papers"
+    hacker_news = "hacker_news"
+    semantic_scholar = "semantic_scholar"
+    unknown = "unknown"
+
+
+# ── ChannelSpace ──────────────────────────────
+
 class ChannelSpaceCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: Optional[str] = None
@@ -27,19 +40,64 @@ class ChannelSpaceOut(BaseModel):
     created_at: datetime
 
 
+# ── Source (v0.2 重构版) ──────────────────────
+
 class SourceCreate(BaseModel):
-    type: str = Field(min_length=1, max_length=50)
-    name: str = Field(min_length=1, max_length=200)
+    display_name: str = Field(min_length=1, max_length=200)
+    source_url: Optional[str] = None
+    type: Optional[str] = None
     config: dict = Field(default_factory=dict)
+
+
+class SourceUpdate(BaseModel):
+    display_name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    source_url: Optional[str] = None
+    type: Optional[str] = None
+    config: Optional[dict] = None
 
 
 class SourceOut(BaseModel):
     id: uuid.UUID
     type: str
-    name: str
+    display_name: str
+    source_url: Optional[str] = None
+    status: str
     config: dict
+    last_verified_at: Optional[datetime] = None
+    verify_error: Optional[str] = None
     created_at: datetime
 
+
+class SourceBindingInfo(BaseModel):
+    channel_space_id: uuid.UUID
+    channel_space_name: str
+    sub_channel_id: Optional[uuid.UUID] = None
+    sub_channel_name: Optional[str] = None
+    enabled: bool
+
+
+class SourceWithBindings(SourceOut):
+    channel_spaces: list[SourceBindingInfo] = []
+
+
+# ── Source 验证 ───────────────────────────────
+
+class VerifyItem(BaseModel):
+    source_item_id: str
+    source_item_url: Optional[str] = None
+    title: Optional[str] = None
+    content_preview: Optional[str] = None
+    published_at: Optional[str] = None
+
+
+class SourceVerifyResponse(BaseModel):
+    status: str
+    items: list[VerifyItem] = []
+    total_fetched: int = 0
+    error: Optional[str] = None
+
+
+# ── ChannelSource (保持兼容) ──────────────────
 
 class ChannelSourceBind(BaseModel):
     source_id: uuid.UUID
@@ -69,6 +127,8 @@ class ChannelSourceUpdatePolicy(BaseModel):
     sub_channel_id: Optional[uuid.UUID] = None
 
 
+# ── News ──────────────────────────────────────
+
 class ProcessedNewsOut(BaseModel):
     id: uuid.UUID
     channel_space_id: uuid.UUID
@@ -85,6 +145,17 @@ class ProcessedNewsOut(BaseModel):
     importance_score: float
     created_at: datetime
 
+
+# ── Stats ─────────────────────────────────────
+
+class ChannelStats(BaseModel):
+    total_news: int
+    today_new: int
+    active_sources: int
+    sub_channel_count: int
+
+
+# ── SubChannel ────────────────────────────────
 
 class SubChannelCreate(BaseModel):
     name: NonBlankStr = Field(min_length=1, max_length=100)
@@ -104,6 +175,24 @@ class SubChannelOut(BaseModel):
     created_at: datetime
 
 
+# ── Admin Logs ────────────────────────────────
+
+class LogEntry(BaseModel):
+    timestamp: str
+    level: str
+    logger: str
+    message: str
+    extra: Optional[dict] = None
+
+
+class LogQueryResponse(BaseModel):
+    entries: list[LogEntry]
+    total: int
+    has_more: bool
+
+
+# ── Alert ─────────────────────────────────────
+
 class AlertOut(BaseModel):
     id: uuid.UUID
     channel_space_id: uuid.UUID
@@ -113,6 +202,8 @@ class AlertOut(BaseModel):
     meta: dict
     created_at: datetime
 
+
+# ── WebSocket ─────────────────────────────────
 
 class WSClientMessage(BaseModel):
     type: str

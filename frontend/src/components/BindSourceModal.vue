@@ -23,7 +23,7 @@ function onSubmit() {
       <div class="modal-title">绑定新渠道</div>
       <select class="select" v-model="form.sourceId">
         <option value="">选择 Source</option>
-        <option v-for="s in sources" :key="s.id" :value="s.id">{{ s.name }} ({{ s.type }})</option>
+        <option v-for="s in sources" :key="s.id" :value="s.id">{{ s.display_name }} ({{ s.type }})</option>
       </select>
       <div class="row" style="margin-top:12px">
         <label class="pill"><input type="checkbox" v-model="form.enabled" /> 启用</label>

@@ -15,11 +15,6 @@ from worker.db import create_pool
 from worker.logger import get_logger
 
 log = get_logger()
-from worker.fetch_arxiv import parse_rss as parse_rss_items, render_text_for_llm as arxiv_text
-from worker.fetch_hf import parse_daily_papers, render_text_for_llm as hf_text
-from worker.fetch_github_trending import parse_github_trending, render_text_for_llm as gt_text
-from worker.fetch_hackernews import parse_hackernews, render_text_for_llm as hn_text
-from worker.fetch_semantic_scholar import parse_semantic_scholar, render_text_for_llm as ss_text
 from worker.fetch_x_twitter import parse_x_twitter, render_text_for_llm as xt_text
 from worker.errors import NonRetryableError
 from worker.llm import translate_and_summarize
@@ -141,8 +136,10 @@ async def scheduler_loop(pool, stop_event: asyncio.Event) -> None:
                   ss.id as state_id,
                   ss.next_fetch_at
                 from channel_sources cs
+                join sources s on s.id = cs.source_id
                 left join source_states ss on ss.channel_source_id = cs.id
                 where cs.enabled = true
+                  and s.status = 'active'
                 """
             )
             now = datetime.now(tz=UTC)
@@ -216,7 +213,7 @@ async def fetch_and_ingest(conn, task: dict) -> None:
           cs.fetch_policy,
           s.id as source_id,
           s.type as source_type,
-          s.name as source_name,
+          s.display_name as source_name,
           s.config as source_config,
           ss.cursor as cursor,
           ss.consecutive_failures as consecutive_failures
@@ -234,7 +231,7 @@ async def fetch_and_ingest(conn, task: dict) -> None:
     fetch_policy = _as_dict(row["fetch_policy"])
     source_id = row["source_id"]
     source_type = row["source_type"]
-    source_name = row["source_name"]
+    source_name = row["display_name"]
     source_config = _as_dict(row["source_config"])
     cursor = _as_dict(row["cursor"])
     max_items = _policy_max_items(fetch_policy)
@@ -247,68 +244,10 @@ async def fetch_and_ingest(conn, task: dict) -> None:
     proxy = settings.https_proxy or settings.http_proxy
     headers = {"User-Agent": "NiuMaChengXiaoBao/0.1 (News Aggregator)"}
     async with httpx.AsyncClient(timeout=60, proxy=proxy, follow_redirects=True, headers=headers) as client:
-        if source_type == "rss":
-            feed_url = source_config.get("feed_url") or source_config.get("url")
-            if not feed_url:
-                raise RuntimeError("rss source requires config.feed_url")
-            resp = await client.get(feed_url)
-            resp.raise_for_status()
-            items = parse_rss_items(resp.text)[:max_items]
-        elif source_type == "hf_daily_papers":
-            today = datetime.now(tz=UTC).date()
-            next_date = cursor.get("next_date")
-            next_index = cursor.get("next_index")
-            if isinstance(next_index, int) and next_index >= 0:
-                start_index = next_index
-            else:
-                start_index = 0
-            if not next_date and cursor.get("last_date"):
-                next_date = cursor.get("last_date")
-            if next_date:
-                try:
-                    start = datetime.fromisoformat(next_date).date()
-                except Exception:
-                    start = today
-            else:
-                start = today
-            all_items: list[dict] = []
-            cursor_date = start
-            cursor_index = start_index
-            next_cursor_date = cursor_date
-            next_cursor_index = cursor_index
-            while cursor_date <= today and len(all_items) < max_items:
-                url = f"https://huggingface.co/api/daily_papers?date={cursor_date.isoformat()}"
-                r = await client.get(url)
-                if r.status_code == 404:
-                    cursor_date = cursor_date + timedelta(days=1)
-                    cursor_index = 0
-                    continue
-                r.raise_for_status()
-                full_day_items = parse_daily_papers(r.json())
-                day_items = full_day_items
-                if cursor_index > 0:
-                    day_items = day_items[cursor_index:]
-                remaining = max_items - len(all_items)
-                chunk = day_items[:remaining]
-                all_items.extend(chunk)
-                cursor_index += len(chunk)
-                if cursor_index >= len(full_day_items):
-                    cursor_date = cursor_date + timedelta(days=1)
-                    cursor_index = 0
-                next_cursor_date = cursor_date
-                next_cursor_index = cursor_index
-            items = all_items
-            cursor_updates = {"next_date": next_cursor_date.isoformat(), "next_index": next_cursor_index}
-        elif source_type == "hacker_news":
-            items = await parse_hackernews(source_config)
-        elif source_type == "github_trending":
-            items = await parse_github_trending(source_config)
-        elif source_type == "semantic_scholar":
-            items = await parse_semantic_scholar(source_config)
-        elif source_type == "x_twitter":
+        if source_type == "x_twitter":
             items, cursor_updates = await parse_x_twitter(source_config, cursor, max_items)
         else:
-            raise RuntimeError(f"source_type not supported in MVP: {source_type}")
+            raise NonRetryableError(f"该 Source 类型的抓取器尚未实现：{source_type}")
 
     for item in items:
         inserted = await conn.fetchval(
@@ -380,18 +319,10 @@ async def process_one(conn, task: dict) -> None:
         raise RuntimeError("raw_item not found")
 
     content = _as_dict(row["content"])
-    if row["source_type"] == "rss":
-        text = arxiv_text(content)
-    elif row["source_type"] == "hacker_news":
-        text = hn_text(content)
-    elif row["source_type"] == "github_trending":
-        text = gt_text(content)
-    elif row["source_type"] == "semantic_scholar":
-        text = ss_text(content)
-    elif row["source_type"] == "x_twitter":
+    if row["source_type"] == "x_twitter":
         text = xt_text(content)
     else:
-        text = hf_text(content)
+        text = json.dumps(content, ensure_ascii=False)
 
     sub_channel_id = await conn.fetchval(
         """
@@ -420,7 +351,10 @@ async def process_one(conn, task: dict) -> None:
         if existing:
             return
 
+    t0 = datetime.now(tz=UTC)
     result = await translate_and_summarize(text=text, source_url=row["source_item_url"])
+    elapsed = (datetime.now(tz=UTC) - t0).total_seconds()
+    log.info("LLM CALL source_type=%s duration=%.2fs", row["source_type"], elapsed)
     inserted = await conn.fetchrow(
         """
         insert into processed_news(
@@ -560,7 +494,7 @@ async def zero_new_monitor_loop(pool, stop_event: asyncio.Event) -> None:
                 select
                   cs.id as channel_source_id,
                   cs.channel_space_id,
-                  s.name as source_name,
+                  s.display_name as source_name,
                   ss.last_success_at
                 from channel_sources cs
                 join sources s on s.id = cs.source_id

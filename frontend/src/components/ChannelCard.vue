@@ -16,7 +16,7 @@ function getMaxItems(cs: ChannelSourceWithSource): number {
   <div class="ch-card">
     <div class="ch-body">
       <div class="ch-header">
-        <span class="ch-name">{{ cs.source.name }}</span>
+        <span class="ch-name">{{ cs.source.display_name }}</span>
         <span class="badge" :class="cs.channel_source.enabled ? 'badge--success' : 'badge--warning'">
           {{ cs.channel_source.enabled ? '运行中' : '暂停' }}
         </span>

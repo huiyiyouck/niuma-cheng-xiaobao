@@ -42,6 +42,19 @@ def create_app() -> FastAPI:
     app.add_middleware(AdminIPWhitelistMiddleware, api_prefix="/v1")
     app.include_router(v1_router, prefix="/v1")
 
+    # HTTP 请求日志中间件
+    from app.logger import get_logger
+    import time
+    log = get_logger()
+
+    @app.middleware("http")
+    async def log_requests(request: Request, call_next):
+        t0 = time.monotonic()
+        response = await call_next(request)
+        duration_ms = round((time.monotonic() - t0) * 1000)
+        log.info("HTTP %s %s → %d (%.0fms)", request.method, request.url.path, response.status_code, duration_ms)
+        return response
+
     @app.get("/", response_class=HTMLResponse)
     async def index():
         return """

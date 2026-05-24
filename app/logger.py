@@ -7,13 +7,13 @@ from pathlib import Path
 from typing import Optional
 
 LOG_DIR = Path(__file__).resolve().parent.parent / "logs"
-LOG_FILE = LOG_DIR / "worker.log"
+LOG_FILE = LOG_DIR / "api.log"
 
 _logger: Optional[logging.Logger] = None
 
 
 class JsonFormatter(logging.Formatter):
-    """JSON 行格式化器——与 API 完全一致。"""
+    """JSON 行格式化器——与 Worker 完全一致。"""
 
     def format(self, record):
         entry = {
@@ -27,15 +27,12 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(entry, ensure_ascii=False)
 
 
-def get_logger() -> logging.Logger:
+def get_logger(name: str = "api") -> logging.Logger:
     global _logger
     if _logger is not None:
         return _logger
 
     LOG_DIR.mkdir(parents=True, exist_ok=True)
-
-    _logger = logging.getLogger("worker")
-    _logger.setLevel(logging.DEBUG)
 
     # 文件输出：JSON 格式，按天轮转，保留 7 天
     json_fmt = JsonFormatter()
@@ -44,16 +41,19 @@ def get_logger() -> logging.Logger:
     )
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(json_fmt)
-    _logger.addHandler(fh)
 
     # 控制台输出：可读格式，INFO 及以上
     console_fmt = logging.Formatter(
-        "%(asctime)s [%(levelname)-5s] %(message)s",
+        "%(asctime)s [%(levelname)-5s] %(name)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     ch = logging.StreamHandler(sys.stderr)
     ch.setLevel(logging.INFO)
     ch.setFormatter(console_fmt)
+
+    _logger = logging.getLogger(name)
+    _logger.setLevel(logging.DEBUG)
+    _logger.addHandler(fh)
     _logger.addHandler(ch)
 
     return _logger

@@ -26,15 +26,16 @@ class ChannelSpace(Base):
 
 class Source(Base):
     __tablename__ = "sources"
-    # type: rss | hf_daily_papers | hacker_news | github_trending | semantic_scholar
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     type: Mapped[str] = mapped_column(String(50), nullable=False)
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
+    display_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    source_url: Mapped[Optional[str]] = mapped_column(Text(), nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="unverified")
     config: Mapped[dict] = mapped_column(JSON, default=dict, nullable=False)
+    last_verified_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    verify_error: Mapped[Optional[str]] = mapped_column(Text(), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
-
-    __table_args__ = (UniqueConstraint("type", "name", name="uq_sources_type_name"),)
 
 
 class SubChannel(Base):

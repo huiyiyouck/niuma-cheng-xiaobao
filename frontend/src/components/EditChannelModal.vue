@@ -23,7 +23,7 @@ function onSubmit() {
 <template>
   <div class="modal-overlay" @click.self="emit('close')">
     <div class="modal-box">
-      <div class="modal-title">编辑渠道：{{ cs.source.name }}</div>
+      <div class="modal-title">编辑渠道：{{ cs.source.display_name }}</div>
       <label class="pill"><input type="checkbox" v-model="form.enabled" /> 启用</label>
       <div class="row" style="margin-top:12px">
         <div class="grow"><div class="muted" style="font-size:11px">抓取间隔（秒）</div><input class="input" type="number" v-model.number="form.everySeconds" /></div>

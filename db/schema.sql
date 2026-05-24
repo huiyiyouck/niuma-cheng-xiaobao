@@ -8,10 +8,13 @@ create table if not exists channel_spaces (
 create table if not exists sources (
   id uuid primary key default gen_random_uuid(),
   type varchar(50) not null,
-  name text not null,
+  display_name varchar(200) not null,
+  source_url text,
+  status varchar(20) not null default 'unverified',
   config jsonb not null default '{}'::jsonb,
-  created_at timestamptz not null default now(),
-  constraint uq_sources_type_name unique (type, name)
+  last_verified_at timestamptz,
+  verify_error text,
+  created_at timestamptz not null default now()
 );
 
 create table if not exists channel_sources (

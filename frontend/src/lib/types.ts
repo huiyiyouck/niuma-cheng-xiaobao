@@ -10,9 +10,40 @@ export type ChannelSpace = {
 export type Source = {
   id: UUID;
   type: string;
-  name: string;
+  display_name: string;
+  source_url: string | null;
+  status: string;
   config: Record<string, unknown>;
+  last_verified_at: string | null;
+  verify_error: string | null;
   created_at: string;
+};
+
+export type SourceBindingInfo = {
+  channel_space_id: UUID;
+  channel_space_name: string;
+  sub_channel_id?: UUID | null;
+  sub_channel_name?: string | null;
+  enabled: boolean;
+};
+
+export type SourceWithBindings = Source & {
+  channel_spaces: SourceBindingInfo[];
+};
+
+export type VerifyItem = {
+  source_item_id: string;
+  source_item_url?: string | null;
+  title?: string | null;
+  content_preview?: string | null;
+  published_at?: string | null;
+};
+
+export type SourceVerifyResponse = {
+  status: string;
+  items: VerifyItem[];
+  total_fetched: number;
+  error?: string | null;
 };
 
 export type SubChannel = {
@@ -85,3 +116,26 @@ export type StatsOverview = {
   total_channels: number;
   pending_tasks: number;
 };
+
+export type ChannelStats = {
+  total_news: number;
+  today_new: number;
+  active_sources: number;
+  sub_channel_count: number;
+};
+
+export type LogEntry = {
+  timestamp: string;
+  level: string;
+  logger: string;
+  message: string;
+  extra?: Record<string, unknown> | null;
+};
+
+export type LogQueryResponse = {
+  entries: LogEntry[];
+  total: number;
+  has_more: boolean;
+};
+
+export type NewsSort = "published_desc" | "score_desc" | "score_asc";
