@@ -56,12 +56,6 @@ def _source_out_v2(r: Source) -> SourceOut:
     })
 
 
-def _source_out_legacy(r: Source) -> SourceOut:
-    """兼容旧 ChannelSourceWithSource.source——仍引用 name 字段的场景。"""
-    d = _source_out_v2(r).model_dump()
-    d["name"] = r.display_name
-    return SourceOut.model_validate(d)
-
 
 def _channel_source_out(r: ChannelSource) -> ChannelSourceOut:
     return ChannelSourceOut.model_validate({
@@ -398,7 +392,7 @@ async def list_channel_sources(channel_space_id: uuid.UUID, session: AsyncSessio
     for cs, src in rows:
         result.append(ChannelSourceWithSource(
             channel_source=_channel_source_out(cs),
-            source=_source_out_legacy(src),
+            source=_source_out_v2(src),
         ))
     return result
 

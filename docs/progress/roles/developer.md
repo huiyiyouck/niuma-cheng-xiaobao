@@ -1,5 +1,13 @@
 # 全栈开发工作日志
 
+## 2026-05-24 — v0.2 实现 R2 修复
+- 本次角色：全栈开发
+- 动作：修改（响应 PM + 架构师 R1 Review）
+- 涉及文件：app/main.py、app/routes.py
+- 结论：修复 2 项意见。#1（阻断）app/main.py 补充 `Request` 导入，消除 NameError；#2（轻微）删除 `_source_out_legacy` 死代码（Pydantic v2 丢弃 extra fields → name 映射无效），调用点统一使用 `_source_out_v2`。Python 导入验证通过。
+- 关联迭代：v0.2
+- 遗留问题/风险：无
+
 ## 2026-05-24 — v0.2 实现 R1 前端组件
 - 本次角色：全栈开发
 - 动作：产出（代码实现）
