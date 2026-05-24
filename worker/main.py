@@ -231,7 +231,7 @@ async def fetch_and_ingest(conn, task: dict) -> None:
     fetch_policy = _as_dict(row["fetch_policy"])
     source_id = row["source_id"]
     source_type = row["source_type"]
-    source_name = row["display_name"]
+    source_name = row["source_name"]
     source_config = _as_dict(row["source_config"])
     cursor = _as_dict(row["cursor"])
     max_items = _policy_max_items(fetch_policy)
