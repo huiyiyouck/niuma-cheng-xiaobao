@@ -5,7 +5,7 @@
 | 版本 | 迭代记录 | PRD | 设计文档 | Git Tag | 状态 |
 |------|---------|-----|---------|---------|------|
 | v0.1 | [iterations/v0.1.md](iterations/v0.1.md) | [iterations/v0.1-prd.md](iterations/v0.1-prd.md) | [iterations/v0.1-design.md](iterations/v0.1-design.md) | 待补充 | 已完成 |
-| v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | [iterations/v0.2-design.md](iterations/v0.2-design.md) | - | 实现 R2 已定稿 / PM UI 规范 [v0.2-ui-spec.md](iterations/v0.2-ui-spec.md) 待架构师纳入设计 |
+| v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | [iterations/v0.2-design.md](iterations/v0.2-design.md) | v0.2 | 已完成 |
 
 ## 当前迭代
 

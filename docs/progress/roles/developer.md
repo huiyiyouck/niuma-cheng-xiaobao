@@ -1,5 +1,13 @@
 # 全栈开发工作日志
 
+## 2026-05-24 — v0.2 收尾：INDEX.md 同步 + baseline 变更提交
+- 本次角色：全栈开发
+- 动作：定稿
+- 涉及文件：docs/progress/INDEX.md、docs/progress/roles/developer.md
+- 结论：v0.2 迭代全部完成。INDEX.md 更新至 v0.2 终态；PM/架构师 baseline 角色手册变更（文档操作边界+原型图流程+并行Review规则）一并提交。PM UI 重设计原型待 v0.3 纳入。本地领先 origin/main 的 commit 已推送。
+- 关联迭代：v0.2
+- 遗留问题/风险：无
+
 ## 2026-05-24 — v0.2 实现 R5（数据清理遗漏修复）
 - 本次角色：全栈开发
 - 动作：产出
