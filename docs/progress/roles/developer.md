@@ -1,5 +1,13 @@
 # 全栈开发工作日志
 
+## 2026-05-24 — v0.2 实现 R1
+- 本次角色：全栈开发
+- 动作：产出（代码实现）
+- 涉及文件：21 文件（见 commit 7cbcd98）
+- 结论：Source 重构（models/schemas/Source CRUD/Verify/Mark）+ 日志系统（API+Worker JSON 行+轮转+admin/logs）+ Worker 清理（删 5 个旧抓取器+调度 JOIN 过滤+LLM 耗时）+ 前端适配（types/api 全量更新+name→display_name）。前端 Vue 组件（SourceManager/LogViewer 等）待后续提交。
+- 关联迭代：v0.2
+- 遗留问题/风险：前端新组件待创建
+
 ## 2026-05-24 — v0.2 设计文档 R2 Review
 - 本次角色：全栈开发
 - 动作：Review（复审）
