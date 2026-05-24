@@ -5,10 +5,11 @@
 | 版本 | 迭代记录 | PRD | 设计文档 | Git Tag | 状态 |
 |------|---------|-----|---------|---------|------|
 | v0.1 | [iterations/v0.1.md](iterations/v0.1.md) | [iterations/v0.1-prd.md](iterations/v0.1-prd.md) | [iterations/v0.1-design.md](iterations/v0.1-design.md) | 待补充 | 已完成 |
+| v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | - | - | PRD 阶段 |
 
 ## 当前迭代
 
-无进行中的迭代。
+v0.2 — Source 重构 + 前端体验 + 日志系统（PRD 待Review）
 
 ## 角色日志
 
