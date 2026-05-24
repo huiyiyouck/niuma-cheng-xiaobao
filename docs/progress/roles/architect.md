@@ -1,5 +1,13 @@
 # 架构师工作日志
 
+## 2026-05-24 — v0.2 设计 R3 UI 规范 Review
+- 本次角色：架构师
+- 动作：Review（审 PM 产出的前端 UI 规范文档 v0.2-ui-spec.md + HTML mockup）
+- 涉及文档：docs/progress/iterations/v0.2-ui-spec.md、docs/progress/iterations/v0.2.md
+- 结论：✅通过。UI 规范覆盖 PRD 全部 9 项前端需求，与设计文档 7.3 节组件清单一致。5 个 HTML mockup 视觉风格统一。设计文档已引用视觉参考路径。
+- 关联迭代：v0.2
+- 遗留问题/风险：无
+
 ## 2026-05-24 — v0.2 实现 R2 Review
 - 本次角色：架构师
 - 动作：Review（审全栈开发的 v0.2 实现 R2 修订）
