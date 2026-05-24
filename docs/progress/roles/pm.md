@@ -106,3 +106,11 @@
 - 结论：架构师 Review（13项：2阻断+6中等+5轻微）和全栈开发 Review（10项：2阻断+4中等+4轻微）共 23 条意见。4 项阻断全部修复：验证架构路径明确（API 直调共享抓取函数）、display_name 字段策略（name→display_name + 移除 UNIQUE 约束）、验证超时处理（15s + 响应格式）、首次使用引导（保留频道空间不清空 + 空状态提示）。中等和轻微项同步修复（RSS 检测、scheduler 过滤、编辑后状态重置、级联补充 tasks、日志 offset 语义、统计 API 全局路径、子频道 SET NULL、SourceType 枚举建议、mark-verified 幂等性、前端优先级等）。PRD 进入 R2 Review。
 - 关联迭代：v0.2
 - 遗留问题/风险：无
+
+## 2026-05-24 — v0.2 设计文档 R1 PM Review
+- 本次角色：产品架构师(PM)
+- 动作：Review
+- 涉及文档：docs/progress/iterations/v0.2-design.md、v0.2.md
+- 结论：❌需修改。设计整体覆盖 PRD 20 条用户故事，API 定义匹配度较高。发现 3 项问题：中等 #1 日志查询端点缺少 from/to 时间范围参数（PRD 3.4.3 要求）、中等 #2 Source 状态 verified→active 转换触发点未明确（Worker scheduler 要求 status='active' 但缺少升级逻辑）、轻微 #3 日志轮转策略降级与 PRD 存在偏差。等待架构师在 R2 修正。
+- 关联迭代：v0.2
+- 遗留问题/风险：3 项待修正
