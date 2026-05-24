@@ -178,3 +178,11 @@
 - 结论：❌需修改。R3 全面对齐 UI 规范，22/23 项检查通过。#1 SourceManager verified 状态缺少"绑定"按钮（UI 规范 §3 要求 verified 显示 绑定/编辑/删除，实现为 验证/编辑/删除），需补充。
 - 关联迭代：v0.2
 - 遗留问题/风险：1 项待修复（verified 状态绑定按钮）
+
+## 2026-05-24 — v0.2 实现 R3 修复复审
+- 本次角色：产品架构师(PM)
+- 动作：Review（复审）
+- 涉及文档：frontend/src/components/SourceManager.vue、BindSourceModal.vue、AdminPage.vue
+- 结论：✅通过。R3 #1 已修复——verified 状态"验证"按钮改为"绑定"按钮，emit→AdminPage→BindSourceModal(preSelectedSourceId) 链路完整。无遗留问题。
+- 关联迭代：v0.2
+- 遗留问题/风险：无
