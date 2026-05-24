@@ -11,6 +11,13 @@ import AlertList from "@/components/AlertList.vue";
 import CreateSpaceModal from "@/components/CreateSpaceModal.vue";
 import BindSourceModal from "@/components/BindSourceModal.vue";
 import EditChannelModal from "@/components/EditChannelModal.vue";
+import SourceManager from "@/components/SourceManager.vue";
+import SubChannelManager from "@/components/SubChannelManager.vue";
+import LogViewer from "@/components/LogViewer.vue";
+
+type AdminTab = "channels" | "sources" | "subchannels" | "logs";
+
+const activeTab = ref<AdminTab>("channels");
 
 const spaces = ref<ChannelSpace[]>([]);
 const sources = ref<Source[]>([]);
@@ -90,6 +97,13 @@ async function onEditChannel(enabled: boolean, everySeconds: number, maxItems: n
   await refreshSpaceData();
 }
 
+const tabs: { key: AdminTab; label: string }[] = [
+  { key: "channels", label: "📡 频道管理" },
+  { key: "sources", label: "🔗 Source 管理" },
+  { key: "subchannels", label: "📂 子频道" },
+  { key: "logs", label: "📋 日志" },
+];
+
 watch(selectedSpaceId, () => refreshSpaceData());
 onMounted(refreshAll);
 </script>
@@ -97,22 +111,54 @@ onMounted(refreshAll);
 <template>
   <div class="page">
     <div v-if="errorText" class="error">{{ errorText }}</div>
+
     <SpaceSelector :spaces="spaces" :selectedId="selectedSpaceId" @select="(id) => selectedSpaceId = id" @create="showCreateSpace = true" />
 
-    <div class="section-card">
-      <div class="section-top">
-        <div class="section-title">📡 已绑定的渠道</div>
-        <button class="btn primary" style="padding:6px 14px;font-size:12px;border-radius:10px" @click="showBindSource = true">+ 绑定新渠道</button>
-      </div>
-      <div v-if="bindings.length === 0" class="muted" style="padding:10px 0">暂无绑定</div>
-      <ChannelCard
-        v-for="cs in bindings" :key="cs.channel_source.id" :cs="cs"
-        @toggle="onToggleChannel(cs)"
-        @edit="editingChannel = cs"
-      />
+    <!-- Tab 导航 -->
+    <div class="tab-bar">
+      <button
+        v-for="t in tabs" :key="t.key"
+        class="tab-btn"
+        :class="{ active: activeTab === t.key }"
+        @click="activeTab = t.key"
+      >{{ t.label }}</button>
     </div>
 
-    <AlertList :alerts="alerts" />
+    <!-- 频道管理 Tab -->
+    <div v-if="activeTab === 'channels'">
+      <div class="section-card">
+        <div class="section-top">
+          <div class="section-title">📡 已绑定的渠道</div>
+          <button class="btn primary" style="padding:6px 14px;font-size:12px;border-radius:10px" @click="showBindSource = true">+ 绑定新渠道</button>
+        </div>
+        <div v-if="bindings.length === 0" class="muted" style="padding:10px 0">暂无绑定</div>
+        <ChannelCard
+          v-for="cs in bindings" :key="cs.channel_source.id" :cs="cs"
+          @toggle="onToggleChannel(cs)"
+          @edit="editingChannel = cs"
+        />
+      </div>
+      <AlertList :alerts="alerts" />
+    </div>
+
+    <!-- Source 管理 Tab -->
+    <div v-if="activeTab === 'sources'">
+      <SourceManager />
+    </div>
+
+    <!-- 子频道 Tab -->
+    <div v-if="activeTab === 'subchannels'">
+      <div class="section-card">
+        <div class="section-title" style="margin-bottom:12px">📂 子频道管理</div>
+        <div v-if="!selectedSpaceId" class="muted" style="padding:10px 0">请先选择一个频道空间</div>
+        <SubChannelManager v-else :spaceId="selectedSpaceId" />
+      </div>
+    </div>
+
+    <!-- 日志 Tab -->
+    <div v-if="activeTab === 'logs'">
+      <LogViewer />
+    </div>
 
     <CreateSpaceModal v-if="showCreateSpace" @close="showCreateSpace = false" @submit="onCreateSpace" />
     <BindSourceModal v-if="showBindSource" :sources="sources" @close="showBindSource = false" @submit="onBindSource" />
@@ -122,6 +168,21 @@ onMounted(refreshAll);
 
 <style scoped>
 .page { display: flex; flex-direction: column; gap: 16px; }
+.tab-bar { display: flex; gap: 4px; border-bottom: 2px solid var(--border); padding-bottom: 0; }
+.tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
 .section-card {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-soft);

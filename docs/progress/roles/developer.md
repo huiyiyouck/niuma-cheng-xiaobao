@@ -1,12 +1,20 @@
 # 全栈开发工作日志
 
-## 2026-05-24 — v0.2 实现 R1
+## 2026-05-24 — v0.2 实现 R1 前端组件
+- 本次角色：全栈开发
+- 动作：产出（代码实现）
+- 涉及文件：frontend/src/components/TagChip.vue（新增）、EntityBadge.vue（新增）、NewsDetailPanel.vue（新增）、VerifyDialog.vue（新增）、SourceManager.vue（新增）、SubChannelManager.vue（新增）、LogViewer.vue（新增）；frontend/src/views/NewsPage.vue（修改）、AdminPage.vue（修改）；frontend/src/components/StatsCards.vue（修改）、ChannelFilter.vue（修改）
+- 结论：7 个新前端 Vue 组件全部创建完成（TagChip/EntityBadge/NewsDetailPanel/VerifyDialog/SourceManager/SubChannelManager/LogViewer），NewsPage 接入排序/子频道筛选/真实统计/详情面板，AdminPage 新增 Tab 导航（频道/Source管理/子频道/日志）。TypeScript 编译通过。
+- 关联迭代：v0.2
+- 遗留问题/风险：无
+
+## 2026-05-24 — v0.2 实现 R1（后端）
 - 本次角色：全栈开发
 - 动作：产出（代码实现）
 - 涉及文件：21 文件（见 commit 7cbcd98）
-- 结论：Source 重构（models/schemas/Source CRUD/Verify/Mark）+ 日志系统（API+Worker JSON 行+轮转+admin/logs）+ Worker 清理（删 5 个旧抓取器+调度 JOIN 过滤+LLM 耗时）+ 前端适配（types/api 全量更新+name→display_name）。前端 Vue 组件（SourceManager/LogViewer 等）待后续提交。
+- 结论：Source 重构（models/schemas/Source CRUD/Verify/Mark）+ 日志系统（API+Worker JSON 行+轮转+admin/logs）+ Worker 清理（删 5 个旧抓取器+调度 JOIN 过滤+LLM 耗时）+ 前端适配（types/api 全量更新+name→display_name）
 - 关联迭代：v0.2
-- 遗留问题/风险：前端新组件待创建
+- 遗留问题/风险：无
 
 ## 2026-05-24 — v0.2 设计文档 R2 Review
 - 本次角色：全栈开发

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ChannelSpace, UUID } from "@/lib/types";
+import type { ChannelSpace, UUID, NewsSort } from "@/lib/types";
 
 defineProps<{
   spaces: ChannelSpace[];
@@ -10,7 +10,7 @@ defineProps<{
 const emit = defineEmits<{
   select: [id: UUID | null];
   changeScore: [val: number];
-  changeSort: [val: "latest" | "score"];
+  changeSort: [val: NewsSort];
 }>();
 </script>
 
@@ -31,9 +31,10 @@ const emit = defineEmits<{
         <input type="range" min="0" max="10" step="0.5" :value="minScore"
           @input="emit('changeScore', parseFloat(($event.target as HTMLInputElement).value))" />
       </label>
-      <select class="sort-select" @change="emit('changeSort', ($event.target as HTMLSelectElement).value as any)">
-        <option value="latest">最新</option>
-        <option value="score">评分最高</option>
+      <select class="sort-select" @change="emit('changeSort', ($event.target as HTMLSelectElement).value as NewsSort)">
+        <option value="published_desc">最新</option>
+        <option value="score_desc">评分最高</option>
+        <option value="score_asc">评分最低</option>
       </select>
     </div>
   </div>
