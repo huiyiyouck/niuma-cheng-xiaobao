@@ -170,3 +170,11 @@
 - 结论：✅通过。R3 改动范围明确——文档头部新增"关联 UI 规范"字段指向已定稿的 v0.2-ui-spec.md，设计正文无变更，PRD 覆盖与 R2 一致。轻微备注：文档整体状态应为"Review中"而非"修改中"（架构师完成修改后未更新状态）。
 - 关联迭代：v0.2
 - 遗留问题/风险：无
+
+## 2026-05-24 — v0.2 实现 R3 PM Review
+- 本次角色：产品架构师(PM)
+- 动作：Review
+- 涉及文档：frontend/src/App.vue、TagChip.vue、EntityBadge.vue、LogViewer.vue、SourceManager.vue、SubChannelManager.vue、NewsPage.vue、StatsCards.vue、NewsDetailPanel.vue、lib/api.ts、AdminPage.vue；app/routes.py
+- 结论：❌需修改。R3 全面对齐 UI 规范，22/23 项检查通过。#1 SourceManager verified 状态缺少"绑定"按钮（UI 规范 §3 要求 verified 显示 绑定/编辑/删除，实现为 验证/编辑/删除），需补充。
+- 关联迭代：v0.2
+- 遗留问题/风险：1 项待修复（verified 状态绑定按钮）
