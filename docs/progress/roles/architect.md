@@ -1,6 +1,12 @@
 # 架构师工作日志
 
-## 2026-05-24 — v0.2 设计 R3 UI 规范 R2 Review
+## 2026-05-24 — v0.2 设计文档 R3 修订（纳入已定稿 UI 规范）
+- 本次角色：架构师
+- 动作：修改（将已定稿 v0.2-ui-spec.md 正式纳入设计文档头部元数据）
+- 涉及文档：docs/progress/iterations/v0.2-design.md、docs/progress/iterations/v0.2.md
+- 结论：R3 修订完成，进入 Review。变更：头部新增"关联 UI 规范"字段指向已定稿 UI 规范文档；PM/Dev Review 状态重置为 ⏳待审。7.3 节已有 UI 规范引用，本次仅补头部元数据。
+- 关联迭代：v0.2
+- 遗留问题/风险：等待 PM 和全栈开发 R3 Review
 - 本次角色：架构师
 - 动作：Review（审 PM 的 v0.2-ui-spec.md R2 修订）
 - 涉及文档：docs/progress/iterations/v0.2-ui-spec.md（Review 追加于此文件末尾）
