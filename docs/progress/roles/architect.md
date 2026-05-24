@@ -1,5 +1,13 @@
 # 架构师工作日志
 
+## 2026-05-24 — v0.2 设计文档 R2 修订
+- 本次角色：架构师
+- 动作：修改（响应 PM R1 + 全栈开发 R1 Review 意见）
+- 涉及文档：docs/progress/iterations/v0.2-design.md、docs/progress/iterations/v0.2.md
+- 结论：R2 修订完成，共 9 项修改：日志时间范围过滤（PM#1+Dev#1）、域名匹配修正（Dev#2）、空字符串 source_url 检查（Dev#5）、verified→active 触发点（PM#2）、VerifyItem 映射对齐（Dev#3）、TimedRotatingFileHandler 替换 FileHandler（PM#3+Dev#4+Dev#6）、_source_out_legacy 适配器（Dev#7）、9.4 节更新、文档元数据更新。进入 R2 Review。
+- 关联迭代：v0.2
+- 遗留问题/风险：等待 PM 和全栈开发 R2 Review
+
 ## 2026-05-24 — v0.2 设计文档初版产出
 - 本次角色：架构师
 - 动作：产出
