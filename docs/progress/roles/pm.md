@@ -138,3 +138,11 @@
 - 结论：✅通过。R1 阻断项（Request 导入）已修复，`_source_out_legacy` 死代码已删除。应用可正常启动，无遗留问题。等待架构师 R2 Review。
 - 关联迭代：v0.2
 - 遗留问题/风险：无
+
+## 2026-05-24 — v0.2 前端 UI 规范文档产出
+- 本次角色：产品架构师(PM)
+- 动作：产出
+- 涉及文档：docs/progress/iterations/v0.2-ui-spec.md、v0.2-design.md（7.3 节回退为架构师组件表+UI 规范引用）
+- 结论：PM 产出独立的 UI 规范文档（8 节：全局布局、NewsPage、SourceManager、VerifyDialog、SubChannelManager、LogViewer、TagChip/EntityBadge、视觉参考文件），覆盖 v0.2 全部前端组件视觉要求。设计文档 7.3 节回退为 PM 产出前的组件表格+UI 规范引用，视觉细节统一在 PM 规范文档中维护。等待架构师审阅并纳入详细设计。
+- 关联迭代：v0.2
+- 遗留问题/风险：架构师需审阅 UI 规范并决定是否需要补充设计细节
