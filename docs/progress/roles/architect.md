@@ -1,5 +1,16 @@
 # 架构师工作日志
 
+## 2026-05-24 — v0.2 PRD R1 Review
+- 本次角色：架构师
+- 动作：Review（审 PM 的 v0.2 PRD）
+- 涉及文档：docs/progress/iterations/v0.2-prd.md、docs/progress/iterations/v0.2.md
+- 结论：❌需修改。共 13 条意见：
+  - 2 项阻断：#1 Source 验证机制架构路径不明确、#2 sources.display_name 与 name 字段关系不清
+  - 6 项中等：#3 scheduler 未感知 Source status、#4 数据全清范围、#5 RSS 识别漏判、#6 编辑后状态处理、#7 日志查看器架构、#8 级联遗漏 tasks 表
+  - 5 项轻微：#9 preview 长度、#10 mark-verified 幂等性、#11 全局统计路径、#12 共享枚举、#13 NonRetryableError
+- 关联迭代：v0.2
+- 遗留问题/风险：等待 PM 在 R2 回应阻断项
+
 ## 2026-05-20 — v0.1 设计文档初版产出
 - 本次角色：架构师
 - 动作：产出
