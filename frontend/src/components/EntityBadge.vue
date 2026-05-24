@@ -5,20 +5,15 @@ const props = defineProps<{
   entities: { name: string; type: string }[];
 }>();
 
-const typeColors: Record<string, string> = {
-  person: "#4f46e5",
-  org: "#0891b2",
-  company: "#0891b2",
-  product: "#d97706",
-  location: "#16a34a",
-  event: "#dc2626",
-  topic: "#7c3aed",
-  technology: "#2563eb",
+const typeStyle = (type: string) => {
+  const t = type.toLowerCase();
+  if (t === "person") return { bg: "#fde8e8", text: "#c0392b", label: "人物" };
+  if (t === "org" || t === "organization") return { bg: "#e8f4fd", text: "#2980b9", label: "组织" };
+  if (t === "company") return { bg: "#e8f4fd", text: "#2980b9", label: "公司" };
+  if (t === "product") return { bg: "#e8f8e8", text: "#27ae60", label: "产品" };
+  if (t === "technology" || t === "tech") return { bg: "#f3e8ff", text: "#8e44ad", label: "技术" };
+  return { bg: "#f5f5f5", text: "#888", label: type };
 };
-
-function colorFor(type: string): string {
-  return typeColors[type.toLowerCase()] ?? "#64748b";
-}
 
 const grouped = computed(() => {
   const map: Record<string, string[]> = {};
@@ -32,7 +27,9 @@ const grouped = computed(() => {
 <template>
   <div class="entity-list" v-if="entities.length">
     <div class="entity-group" v-for="(names, type) in grouped" :key="type">
-      <span class="entity-type" :style="{ background: colorFor(type) }">{{ type }}</span>
+      <span class="entity-type" :style="{ background: typeStyle(type).bg, color: typeStyle(type).text }">
+        {{ typeStyle(type).label }}
+      </span>
       <span class="entity-name" v-for="n in names" :key="n">{{ n }}</span>
     </div>
   </div>
@@ -53,17 +50,15 @@ const grouped = computed(() => {
 .entity-type {
   font-size: 9px;
   font-weight: 700;
-  color: #fff;
   padding: 2px 6px;
   border-radius: 4px;
-  text-transform: uppercase;
 }
 .entity-name {
   font-size: 11px;
   color: var(--muted);
   background: #f8fafc;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: 4px;
   border: 1px solid var(--border);
 }
 </style>

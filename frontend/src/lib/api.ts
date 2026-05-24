@@ -75,6 +75,10 @@ export async function markVerified(id: UUID): Promise<{ status: string }> {
   return requestJson(buildUrl(`/v1/sources/${id}/mark-verified`), { method: "POST" });
 }
 
+export async function detectSourceType(url: string): Promise<{ type: string; url: string }> {
+  return requestJson(buildUrl(`/v1/sources/detect-type?url=${encodeURIComponent(url)}`));
+}
+
 // ── ChannelSource 绑定 ───────────────────────────────────
 
 export async function listChannelSources(spaceId: UUID): Promise<ChannelSourceWithSource[]> {
@@ -99,7 +103,7 @@ export async function updateChannelSource(
 
 export async function listNews(
   spaceId: UUID,
-  opts?: { limit?: number; offset?: number; subChannelId?: UUID; sort?: NewsSort },
+  opts?: { limit?: number; offset?: number; subChannelId?: string; sort?: NewsSort },
 ): Promise<ProcessedNews[]> {
   const limit = opts?.limit ?? 20;
   const offset = opts?.offset ?? 0;

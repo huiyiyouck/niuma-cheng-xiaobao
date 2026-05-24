@@ -15,7 +15,13 @@ const filterSpaceId = ref<UUID | null>(null);
 const minScore = ref(0);
 const sortBy = ref<NewsSort>("published_desc");
 const subChannels = ref<SubChannel[]>([]);
-const filterSubChannelId = ref<UUID | null>(null);
+const filterSubChannelIds = ref<Set<UUID>>(new Set());
+
+function toggleSubChannel(id: UUID) {
+  const next = new Set(filterSubChannelIds.value);
+  if (next.has(id)) next.delete(id); else next.add(id);
+  filterSubChannelIds.value = next;
+}
 
 const items = ref<ProcessedNews[]>([]);
 const limit = 30;
@@ -72,7 +78,7 @@ async function refreshNews() {
     const page = await listNews(filterSpaceId.value, {
       limit, offset: 0,
       sort: sortBy.value,
-      subChannelId: filterSubChannelId.value ?? undefined,
+      subChannelId: filterSubChannelIds.value.size > 0 ? [...filterSubChannelIds.value].join(",") as any : undefined,
     });
     items.value = page;
     canLoadMore.value = page.length >= limit;
@@ -89,7 +95,7 @@ async function loadMore() {
     const page = await listNews(filterSpaceId.value, {
       limit, offset: nextOffset,
       sort: sortBy.value,
-      subChannelId: filterSubChannelId.value ?? undefined,
+      subChannelId: filterSubChannelIds.value.size > 0 ? [...filterSubChannelIds.value].join(",") as any : undefined,
     });
     items.value = items.value.concat(page);
     offset.value = nextOffset;
@@ -109,7 +115,7 @@ watch(filterSpaceId, () => {
   refreshSubChannels();
 });
 watch(sortBy, () => refreshNews());
-watch(filterSubChannelId, () => refreshNews());
+watch(filterSubChannelIds, () => refreshNews(), { deep: true });
 
 onMounted(async () => {
   await refreshSpaces();
@@ -132,18 +138,18 @@ onBeforeUnmount(() => wsDisconnect());
       @changeScore="(v) => minScore = v"
       @changeSort="(v) => sortBy = v"
     />
-    <!-- 子频道筛选 -->
+    <!-- 子频道筛选（多选） -->
     <div class="sub-filter" v-if="subChannels.length > 0">
       <button
-        class="pill"
-        :class="{ active: filterSubChannelId === null }"
-        @click="filterSubChannelId = null"
+        class="sub-pill"
+        :class="{ active: filterSubChannelIds.size === 0 }"
+        @click="filterSubChannelIds = new Set()"
       >全部</button>
       <button
         v-for="sc in subChannels" :key="sc.id"
-        class="pill"
-        :class="{ active: filterSubChannelId === sc.id }"
-        @click="filterSubChannelId = sc.id"
+        class="sub-pill"
+        :class="{ active: filterSubChannelIds.has(sc.id) }"
+        @click="toggleSubChannel(sc.id)"
       >{{ sc.name }}</button>
     </div>
     <div class="ws-bar">
@@ -152,7 +158,7 @@ onBeforeUnmount(() => wsDisconnect());
     </div>
     <div v-if="errorText" class="error">{{ errorText }}</div>
     <div v-if="loading" class="muted loading">加载中…</div>
-    <div v-if="items.length === 0 && !loading" class="card empty muted">暂无新闻，等 Worker 处理一会儿再刷新</div>
+    <div v-if="items.length === 0 && !loading" class="card empty muted">暂无新闻，请先在管理页添加信息来源</div>
     <div class="list" v-if="filteredItems.length > 0">
       <NewsListItem
         v-for="item in filteredItems" :key="item.id" :item="item"
@@ -178,10 +184,11 @@ onBeforeUnmount(() => wsDisconnect());
 .more { display: flex; justify-content: center; padding-top: 12px; }
 .error { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(239,68,68,.25); background: rgba(239,68,68,.06); color: #991b1b; font-size: 13px; }
 .sub-filter { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 0 8px; }
-.sub-filter .pill {
-  padding: 4px 10px; border-radius: 999px; font-size: 11px;
+.sub-pill {
+  padding: 4px 12px; border-radius: 20px; font-size: 11px;
   font-weight: 600; border: 1px solid var(--border);
   background: var(--card); color: var(--muted); cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.sub-filter .pill.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.sub-pill.active { background: #e8f4fd; color: #3498db; border-color: #3498db; }
 </style>

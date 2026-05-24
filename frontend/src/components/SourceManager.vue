@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { onMounted, reactive, ref, watch } from "vue";
 import {
   listSources, createSource, updateSource, deleteSource,
+  detectSourceType,
 } from "@/lib/api";
 import type { SourceWithBindings, Source } from "@/lib/types";
 import VerifyDialog from "@/components/VerifyDialog.vue";
@@ -15,6 +16,7 @@ const typeFilter = ref("");
 const showAdd = ref(false);
 const addForm = reactive({ display_name: "", source_url: "", type: "" });
 const adding = ref(false);
+const detectingType = ref(false);
 
 const editing = ref<SourceWithBindings | null>(null);
 const editForm = reactive({ display_name: "", source_url: "", type: "" });
@@ -34,6 +36,19 @@ async function refresh() {
   } finally {
     loading.value = false;
   }
+}
+
+async function onUrlBlur() {
+  const url = addForm.source_url.trim();
+  if (!url || addForm.type) return;
+  detectingType.value = true;
+  try {
+    const detected = await detectSourceType(url);
+    if (detected.type && detected.type !== "unknown") {
+      addForm.type = detected.type;
+    }
+  } catch { /* 识别失败不影响表单 */ }
+  finally { detectingType.value = false; }
 }
 
 async function doAdd() {
@@ -92,22 +107,46 @@ async function doDelete(s: SourceWithBindings) {
   }
 }
 
-function statusBadge(s: string) {
-  if (s === "active") return "badge--success";
-  if (s === "verified") return "badge--success";
-  if (s === "error") return "badge--danger";
-  return "badge--warning";
+function typeBadgeStyle(t: string) {
+  const map: Record<string, { bg: string; text: string }> = {
+    x_twitter: { bg: "#e8f4fd", text: "#3498db" },
+    rss: { bg: "#fef3e2", text: "#f39c12" },
+    huggingface_papers: { bg: "#f3e8ff", text: "#8e44ad" },
+    hf_daily_papers: { bg: "#f3e8ff", text: "#8e44ad" },
+  };
+  return map[t] ?? { bg: "#f1f5f9", text: "#64748b" };
+}
+
+function typeLabel(t: string) {
+  const map: Record<string, string> = {
+    x_twitter: "X/Twitter", rss: "RSS",
+    github_trending: "GitHub", hf_daily_papers: "HF Papers",
+    hacker_news: "HN", semantic_scholar: "Scholar", unknown: "未识别",
+  };
+  return map[t] ?? t;
+}
+
+function statusStyle(s: string) {
+  if (s === "active" || s === "verified") return { bg: "#e8f8e8", text: "#27ae60" };
+  if (s === "error") return { bg: "#fde8e8", text: "#e74c3c" };
+  return { bg: "#f1f5f9", text: "#64748b" };
 }
 
 function statusLabel(s: string) {
   const map: Record<string, string> = {
-    unverified: "未验证",
-    verified: "已验证",
-    active: "运行中",
-    error: "错误",
+    unverified: "未验证", verified: "已验证", active: "已启用", error: "错误",
   };
   return map[s] ?? s;
 }
+
+function bindingSummary(s: SourceWithBindings): string {
+  if (!s.channel_spaces.length) return "—";
+  return s.channel_spaces.map(b =>
+    `${b.channel_space_name}${b.sub_channel_name ? " / " + b.sub_channel_name : ""}`
+  ).join(", ");
+}
+
+watch([statusFilter, typeFilter], () => refresh());
 
 onMounted(refresh);
 </script>
@@ -117,35 +156,53 @@ onMounted(refresh);
     <div v-if="errorText" class="error">{{ errorText }}</div>
 
     <div class="sm-toolbar">
-      <div class="row">
-        <select class="select" v-model="statusFilter" @change="refresh" style="width:auto">
-          <option value="">全部状态</option>
-          <option value="unverified">未验证</option>
-          <option value="verified">已验证</option>
-          <option value="active">运行中</option>
-          <option value="error">错误</option>
-        </select>
-        <select class="select" v-model="typeFilter" @change="refresh" style="width:auto">
-          <option value="">全部类型</option>
-          <option value="x_twitter">X/Twitter</option>
-          <option value="rss">RSS</option>
-          <option value="github_trending">GitHub Trending</option>
-          <option value="hf_daily_papers">HF Daily Papers</option>
-          <option value="hacker_news">Hacker News</option>
-          <option value="semantic_scholar">Semantic Scholar</option>
-          <option value="unknown">未知</option>
-        </select>
-        <button class="btn primary btn-sm" @click="showAdd = !showAdd">{{ showAdd ? "取消" : "+ 添加 Source" }}</button>
-      </div>
+      <select class="select" v-model="statusFilter" style="width:auto">
+        <option value="">全部状态</option>
+        <option value="unverified">未验证</option>
+        <option value="verified">已验证</option>
+        <option value="active">已启用</option>
+        <option value="error">错误</option>
+      </select>
+      <select class="select" v-model="typeFilter" style="width:auto">
+        <option value="">全部类型</option>
+        <option value="x_twitter">X/Twitter</option>
+        <option value="rss">RSS</option>
+        <option value="github_trending">GitHub Trending</option>
+        <option value="hf_daily_papers">HF Daily Papers</option>
+        <option value="hacker_news">Hacker News</option>
+        <option value="semantic_scholar">Semantic Scholar</option>
+        <option value="unknown">未知</option>
+      </select>
+      <button class="btn primary btn-sm" @click="showAdd = !showAdd">{{ showAdd ? "取消" : "+ 添加 Source" }}</button>
     </div>
 
-    <!-- 添加表单 -->
-    <div v-if="showAdd" class="sm-form card">
-      <input class="input" placeholder="显示名称" v-model="addForm.display_name" @keydown.enter="doAdd" />
-      <input class="input" style="margin-top:8px" placeholder="URL（可选，留空自动识别类型）" v-model="addForm.source_url" />
-      <input class="input" style="margin-top:8px" placeholder="类型（可选，留空自动识别）" v-model="addForm.type" />
-      <div class="row" style="margin-top:10px;justify-content:flex-end">
-        <button class="btn primary btn-sm" :disabled="adding" @click="doAdd">{{ adding ? "创建中…" : "创建" }}</button>
+    <!-- 添加弹窗 -->
+    <div v-if="showAdd" class="modal-overlay" @click.self="showAdd = false">
+      <div class="modal-box">
+        <div class="modal-title">添加 Source</div>
+        <label class="sm-field">名称 *</label>
+        <input class="input" placeholder="显示名称" v-model="addForm.display_name" />
+        <label class="sm-field" style="margin-top:10px">URL *</label>
+        <input class="input" placeholder="https://…" v-model="addForm.source_url" @blur="onUrlBlur" />
+        <label class="sm-field" style="margin-top:10px">类型</label>
+        <div class="sm-type-row">
+          <select class="select" v-model="addForm.type" style="flex:1">
+            <option value="">自动识别</option>
+            <option value="x_twitter">X/Twitter</option>
+            <option value="rss">RSS</option>
+            <option value="github_trending">GitHub Trending</option>
+            <option value="hf_daily_papers">HF Daily Papers</option>
+            <option value="hacker_news">Hacker News</option>
+            <option value="semantic_scholar">Semantic Scholar</option>
+            <option value="unknown">未知</option>
+          </select>
+          <span v-if="detectingType" class="muted" style="font-size:11px">识别中…</span>
+          <span v-else-if="addForm.type" class="muted" style="font-size:11px">已选</span>
+        </div>
+        <div class="row" style="margin-top:16px;justify-content:flex-end">
+          <button class="btn" @click="showAdd = false">取消</button>
+          <button class="btn primary" :disabled="adding" @click="doAdd">{{ adding ? "创建中…" : "创建" }}</button>
+        </div>
       </div>
     </div>
 
@@ -154,51 +211,57 @@ onMounted(refresh);
 
     <!-- 空状态 -->
     <div v-if="!loading && sources.length === 0" class="card empty muted">
-      暂无 Source，点击「+ 添加 Source」创建第一个
+      暂无信息来源，点击「+ 添加 Source」开始
     </div>
 
-    <!-- Source 列表 -->
-    <div v-for="s in sources" :key="s.id" class="sm-card card">
-      <div class="sm-card-top">
-        <div class="sm-card-info">
-          <span class="sm-name">{{ s.display_name }}</span>
-          <span class="badge" :class="statusBadge(s.status)">{{ statusLabel(s.status) }}</span>
-          <span class="badge badge--muted">{{ s.type }}</span>
-          <span class="muted" style="font-size:10px" v-if="s.source_url">{{ s.source_url }}</span>
-        </div>
-        <div class="sm-card-actions">
-          <button class="btn btn-sm" @click="startEdit(s)">编辑</button>
-          <button
-            v-if="s.status === 'unverified'"
-            class="btn btn-sm primary"
-            @click="verifying = s"
-          >验证</button>
-          <button
-            v-if="s.status === 'verified'"
-            class="btn btn-sm primary"
-            @click="verifying = s"
-          >验证</button>
-          <button class="btn btn-sm danger" @click="doDelete(s)">删除</button>
-        </div>
-      </div>
-      <!-- 绑定信息 -->
-      <div class="sm-bindings" v-if="s.channel_spaces.length">
-        <div class="muted" style="font-size:10px;margin-bottom:4px">已绑定频道空间：</div>
-        <span
-          v-for="b in s.channel_spaces"
-          :key="b.channel_space_id"
-          class="badge badge--muted"
-          style="margin-right:4px;margin-bottom:4px"
-        >
-          {{ b.channel_space_name }}
-          <template v-if="b.sub_channel_name"> / {{ b.sub_channel_name }}</template>
-          ({{ b.enabled ? '启用' : '暂停' }})
-        </span>
-      </div>
-      <div class="sm-error" v-if="s.verify_error">
-        <span class="muted" style="font-size:10px">验证错误：</span>{{ s.verify_error }}
-      </div>
-    </div>
+    <!-- Source 表格 -->
+    <table v-if="sources.length > 0" class="sm-table">
+      <thead>
+        <tr>
+          <th>名称</th>
+          <th>URL</th>
+          <th>类型</th>
+          <th>状态</th>
+          <th>绑定空间</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="s in sources" :key="s.id">
+          <td class="sm-name-cell">{{ s.display_name }}</td>
+          <td class="sm-url-cell">
+            <span class="muted" style="font-size:10px;word-break:break-all">{{ s.source_url || "—" }}</span>
+          </td>
+          <td>
+            <span class="sm-tag" :style="{ background: typeBadgeStyle(s.type).bg, color: typeBadgeStyle(s.type).text }">
+              {{ typeLabel(s.type) }}
+            </span>
+          </td>
+          <td>
+            <span class="sm-status" :style="{ background: statusStyle(s.status).bg, color: statusStyle(s.status).text }">
+              {{ statusLabel(s.status) }}
+            </span>
+          </td>
+          <td class="sm-bind-cell">
+            <span class="muted" style="font-size:11px">{{ bindingSummary(s) }}</span>
+          </td>
+          <td class="sm-actions-cell">
+            <button
+              v-if="s.status === 'unverified' || s.status === 'error'"
+              class="btn btn-sm primary"
+              @click="verifying = s"
+            >{{ s.status === 'error' ? '重试' : '验证' }}</button>
+            <button
+              v-if="s.status === 'verified'"
+              class="btn btn-sm"
+              @click="verifying = s"
+            >验证</button>
+            <button class="btn btn-sm" @click="startEdit(s)">编辑</button>
+            <button class="btn btn-sm danger" @click="doDelete(s)">删除</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
     <!-- 编辑弹窗 -->
     <div v-if="editing" class="modal-overlay" @click.self="editing = null">
@@ -226,16 +289,32 @@ onMounted(refresh);
 
 <style scoped>
 .sm { display: flex; flex-direction: column; gap: 10px; }
-.sm-toolbar { margin-bottom: 4px; }
+.sm-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .sm-toolbar .select { width: auto; min-width: 120px; }
-.sm-form { padding: 16px; }
-.sm-card { padding: 16px; }
-.sm-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
-.sm-card-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; flex: 1; }
-.sm-name { font-weight: 900; font-size: 14px; }
-.sm-card-actions { display: flex; gap: 4px; flex-shrink: 0; }
-.sm-bindings { margin-top: 10px; padding-top: 8px; border-top: 1px solid #f1f5f9; }
-.sm-error { margin-top: 8px; font-size: 11px; color: var(--danger); padding: 6px 10px; background: #fef2f2; border-radius: 6px; }
+.sm-field { font-size: 11px; font-weight: 700; color: var(--muted); display: block; margin-bottom: 4px; }
+.sm-type-row { display: flex; align-items: center; gap: 8px; }
+/* 表格 */
+.sm-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sm-table th {
+  text-align: left; padding: 10px 12px;
+  font-size: 10px; font-weight: 700; color: var(--muted);
+  text-transform: uppercase; border-bottom: 2px solid var(--border);
+}
+.sm-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.sm-table tbody tr:hover { background: #f8fafc; }
+.sm-name-cell { font-weight: 700; min-width: 100px; }
+.sm-url-cell { max-width: 180px; }
+.sm-bind-cell { max-width: 150px; }
+.sm-actions-cell { display: flex; gap: 4px; flex-wrap: wrap; white-space: nowrap; }
+/* Badge */
+.sm-tag {
+  padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;
+  white-space: nowrap;
+}
+.sm-status {
+  padding: 2px 8px; border-radius: 999px; font-size: 10px; font-weight: 600;
+  white-space: nowrap;
+}
 .btn-sm { padding: 6px 10px; font-size: 11px; border-radius: 8px; }
 .empty { padding: 28px 16px; text-align: center; }
 .error {

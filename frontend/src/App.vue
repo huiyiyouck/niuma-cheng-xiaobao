@@ -21,7 +21,7 @@
 .shell { min-height: 100vh; background: var(--bg-page); }
 .topbar {
   position: sticky; top: 0; z-index: 20;
-  background: var(--card); border-bottom: 1px solid var(--border);
+  background: #1a1a2e; border-bottom: none;
 }
 .topbar-inner {
   max-width: 1100px; margin: 0 auto;
@@ -30,14 +30,16 @@
 }
 .brand-link {
   font-weight: 900; font-size: 16px; letter-spacing: -0.3px;
-  color: var(--text); text-decoration: none;
+  color: #fff; text-decoration: none;
 }
-.nav { display: flex; gap: 8px; }
+.nav { display: flex; gap: 12px; }
 .nav-link {
-  padding: 6px 14px; border-radius: 999px; font-size: 12px;
-  font-weight: 600; color: var(--muted); text-decoration: none;
+  padding: 6px 0; font-size: 13px;
+  font-weight: 600; color: rgba(255,255,255,0.65); text-decoration: none;
+  border-bottom: 2px solid transparent; border-radius: 0;
+  transition: color 0.15s, border-color 0.15s;
 }
-.nav-link:hover { background: #f1f5f9; color: var(--text); }
-.nav-link--active { background: #eff6ff; color: var(--primary); }
+.nav-link:hover { color: rgba(255,255,255,0.9); }
+.nav-link--active { color: #fff; border-bottom-color: #fff; }
 .main-content { max-width: 1100px; margin: 0 auto; padding: 16px 20px 80px; }
 </style>

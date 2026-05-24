@@ -1,5 +1,13 @@
 # 全栈开发工作日志
 
+## 2026-05-24 — v0.2 实现 R3（对齐定稿设计）
+- 本次角色：全栈开发
+- 动作：产出（代码修改）
+- 涉及文件：frontend/src/App.vue、TagChip.vue、EntityBadge.vue、LogViewer.vue、SourceManager.vue、SubChannelManager.vue、NewsPage.vue、StatsCards.vue、NewsDetailPanel.vue、lib/api.ts、AdminPage.vue；app/routes.py
+- 结论：对齐定稿 UI 规范与设计的 11 项缺口全部实现。#1 全局深色顶栏；#2 TagChip 4 色调色板首字母哈希轮转；#3 EntityBadge 按 UI 规范颜色+灰底降级；#4 LogViewer Chip 多选按钮组（OR）+等宽字体+级别方块 Badge+展开详情+时间范围控件；#5 SourceManager 表格布局+按状态操作列+类型/状态彩色 Badge+添加弹窗自动识别；#6 后端 level/source 逗号分隔多选+sub_channel_id 多选+detect-type 端点；#7 SubChannelManager channelSpaceId prop+拖拽手柄+序号+蓝色虚线新建行；#8 NewsPage 子频道多选+蓝色 Pill 样式+空状态文案；#9 StatsCards 按 UI 规范颜色和顺序；#10 NewsDetailPanel 空摘要；#11 子频道筛选多选 OR 后端支持。TypeScript 编译通过，Python 语法通过。
+- 关联迭代：v0.2
+- 遗留问题/风险：无
+
 ## 2026-05-24 — v0.2 设计文档 R3 Review
 - 本次角色：全栈开发
 - 动作：Review

@@ -151,7 +151,7 @@ onMounted(refreshAll);
       <div class="section-card">
         <div class="section-title" style="margin-bottom:12px">📂 子频道管理</div>
         <div v-if="!selectedSpaceId" class="muted" style="padding:10px 0">请先选择一个频道空间</div>
-        <SubChannelManager v-else :spaceId="selectedSpaceId" />
+        <SubChannelManager v-else :channelSpaceId="selectedSpaceId" />
       </div>
     </div>
 

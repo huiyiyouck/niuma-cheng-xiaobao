@@ -32,7 +32,8 @@ function sourceUrl(item: ProcessedNews): string | null {
             <span v-if="item.published_at">{{ fmtTime(item.published_at) }}</span>
             <span>语言: {{ item.language }}</span>
           </div>
-          <p class="panel-summary">{{ item.summary }}</p>
+          <p class="panel-summary" v-if="item.summary">{{ item.summary }}</p>
+          <p class="panel-summary muted" v-else>暂无摘要</p>
 
           <div class="panel-section" v-if="item.bullets && item.bullets.length">
             <div class="panel-section-title">要点</div>

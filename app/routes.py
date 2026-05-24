@@ -187,6 +187,14 @@ async def create_source_v2(payload: SourceCreate, session: AsyncSession = Depend
     return _source_out_v2(obj)
 
 
+@router.get("/sources/detect-type")
+async def detect_source_type(url: str = Query(..., min_length=1)):
+    """根据 URL 识别 Source 类型，供前端添加弹窗失焦后调用。"""
+    from app.source_detector import detect_type_from_url
+    detected = detect_type_from_url(url)
+    return {"type": detected.value, "url": url}
+
+
 @router.get("/sources/{source_id}", response_model=SourceWithBindings)
 async def get_source_v2(source_id: uuid.UUID, session: AsyncSession = Depends(get_session)):
     row = (await session.execute(
@@ -591,7 +599,7 @@ async def list_news(
     channel_space_id: uuid.UUID,
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    sub_channel_id: Optional[uuid.UUID] = Query(default=None),
+    sub_channel_id: Optional[str] = Query(default=None, description="UUID 或逗号分隔的多个 UUID（多选取并集）"),
     sort: Optional[str] = Query(default="published_desc"),
     session: AsyncSession = Depends(get_session),
 ):
@@ -610,7 +618,11 @@ async def list_news(
         .offset(offset)
     )
     if sub_channel_id is not None:
-        stmt = stmt.where(ProcessedNews.sub_channel_id == sub_channel_id)
+        ids = [uuid.UUID(s.strip()) for s in sub_channel_id.split(",") if s.strip()]
+        if len(ids) == 1:
+            stmt = stmt.where(ProcessedNews.sub_channel_id == ids[0])
+        elif ids:
+            stmt = stmt.where(ProcessedNews.sub_channel_id.in_(ids))
     rows = (await session.execute(stmt)).scalars().all()
     return [_processed_news_out(r) for r in rows]
 
@@ -706,8 +718,10 @@ def _read_log_lines(
 
     files_to_read = []
     if source:
-        if source in LOG_FILES:
-            files_to_read.append(LOG_FILES[source])
+        source_list = [s.strip() for s in source.split(",") if s.strip()]
+        for s in source_list:
+            if s in LOG_FILES:
+                files_to_read.append(LOG_FILES[s])
     else:
         files_to_read = list(LOG_FILES.values())
 
@@ -731,7 +745,8 @@ def _read_log_lines(
     if to_dt:
         all_lines = [e for e in all_lines if e.get("timestamp", "") <= to_dt]
     if level:
-        all_lines = [e for e in all_lines if e.get("level", "").upper() == level.upper()]
+        level_list = set(lv.strip().upper() for lv in level.split(",") if lv.strip())
+        all_lines = [e for e in all_lines if e.get("level", "").upper() in level_list]
     if keyword:
         kw = keyword.lower()
         all_lines = [e for e in all_lines if kw in e.get("message", "").lower()]
