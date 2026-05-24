@@ -1,5 +1,13 @@
 # 全栈开发工作日志
 
+## 2026-05-24 — v0.2 实现 R3 修复（响应 PM + 架构师 Review）
+- 本次角色：全栈开发
+- 动作：修改
+- 涉及文件：frontend/src/components/SourceManager.vue、BindSourceModal.vue、AdminPage.vue
+- 结论：修复 PM #1 + 架构师 #1（verified 状态缺少"绑定"按钮）。SourceManager verified 状态行: 验证→绑定 + emit('bind')；BindSourceModal 新增 preSelectedSourceId prop；AdminPage 接收 @bind 事件并打开预填绑定弹窗。TypeScript 编译通过。
+- 关联迭代：v0.2
+- 遗留问题/风险：无
+
 ## 2026-05-24 — v0.2 实现 R3（对齐定稿设计）
 - 本次角色：全栈开发
 - 动作：产出（代码修改）

@@ -7,6 +7,8 @@ import {
 import type { SourceWithBindings, Source } from "@/lib/types";
 import VerifyDialog from "@/components/VerifyDialog.vue";
 
+const emit = defineEmits<{ bind: [s: SourceWithBindings] }>();
+
 const sources = ref<SourceWithBindings[]>([]);
 const errorText = ref<string | null>(null);
 const loading = ref(false);
@@ -253,9 +255,9 @@ onMounted(refresh);
             >{{ s.status === 'error' ? '重试' : '验证' }}</button>
             <button
               v-if="s.status === 'verified'"
-              class="btn btn-sm"
-              @click="verifying = s"
-            >验证</button>
+              class="btn btn-sm primary"
+              @click="emit('bind', s)"
+            >绑定</button>
             <button class="btn btn-sm" @click="startEdit(s)">编辑</button>
             <button class="btn btn-sm danger" @click="doDelete(s)">删除</button>
           </td>

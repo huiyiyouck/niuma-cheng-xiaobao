@@ -2,13 +2,18 @@
 import { reactive, ref } from "vue";
 import type { Source, UUID } from "@/lib/types";
 
-defineProps<{ sources: Source[] }>();
+const props = defineProps<{ sources: Source[]; preSelectedSourceId?: UUID }>();
 const emit = defineEmits<{
   close: [];
   submit: [sourceId: UUID, enabled: boolean, everySeconds: number, maxItems: number];
 }>();
 
-const form = reactive({ sourceId: "" as UUID | "", enabled: true, everySeconds: 600, maxItems: 20 });
+const form = reactive({
+  sourceId: (props.preSelectedSourceId ?? "") as UUID | "",
+  enabled: true,
+  everySeconds: 600,
+  maxItems: 20,
+});
 const loading = ref(false);
 
 function onSubmit() {

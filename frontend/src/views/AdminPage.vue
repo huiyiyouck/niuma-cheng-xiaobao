@@ -28,6 +28,12 @@ const errorText = ref<string | null>(null);
 
 const showCreateSpace = ref(false);
 const showBindSource = ref(false);
+const bindSourceId = ref<UUID | undefined>(undefined);
+
+function onBindRequest(s: { id: UUID }) {
+  bindSourceId.value = s.id;
+  showBindSource.value = true;
+}
 const editingChannel = ref<ChannelSourceWithSource | null>(null);
 
 async function refreshAll() {
@@ -143,7 +149,7 @@ onMounted(refreshAll);
 
     <!-- Source 管理 Tab -->
     <div v-if="activeTab === 'sources'">
-      <SourceManager />
+      <SourceManager @bind="onBindRequest" />
     </div>
 
     <!-- 子频道 Tab -->
@@ -161,7 +167,7 @@ onMounted(refreshAll);
     </div>
 
     <CreateSpaceModal v-if="showCreateSpace" @close="showCreateSpace = false" @submit="onCreateSpace" />
-    <BindSourceModal v-if="showBindSource" :sources="sources" @close="showBindSource = false" @submit="onBindSource" />
+    <BindSourceModal v-if="showBindSource" :sources="sources" :preSelectedSourceId="bindSourceId" @close="showBindSource = false; bindSourceId = undefined" @submit="onBindSource" />
     <EditChannelModal v-if="editingChannel" :cs="editingChannel" @close="editingChannel = null" @submit="onEditChannel" />
   </div>
 </template>
