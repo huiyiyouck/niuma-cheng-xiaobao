@@ -17,6 +17,7 @@ const typeFilter = ref("");
 
 const showAdd = ref(false);
 const addForm = reactive({ display_name: "", source_url: "", type: "" });
+const addFormConfig = reactive({ mode: "search", search_query: "", usernames: "" });
 const adding = ref(false);
 const detectingType = ref(false);
 
@@ -57,14 +58,27 @@ async function doAdd() {
   if (!addForm.display_name.trim()) return;
   adding.value = true;
   try {
-    await createSource({
+    const payload: { display_name: string; source_url?: string; type?: string; config?: Record<string, unknown> } = {
       display_name: addForm.display_name.trim(),
       source_url: addForm.source_url.trim() || undefined,
       type: addForm.type.trim() || undefined,
-    });
+    };
+    if (addForm.type === "x_twitter") {
+      const config: Record<string, unknown> = { mode: addFormConfig.mode };
+      if (addFormConfig.mode === "search") {
+        config.search_query = addFormConfig.search_query.trim();
+      } else {
+        config.usernames = addFormConfig.usernames.split(",").map(s => s.trim()).filter(Boolean);
+      }
+      payload.config = config;
+    }
+    await createSource(payload);
     addForm.display_name = "";
     addForm.source_url = "";
     addForm.type = "";
+    addFormConfig.mode = "search";
+    addFormConfig.search_query = "";
+    addFormConfig.usernames = "";
     showAdd.value = false;
     await refresh();
   } catch (e) {
@@ -201,6 +215,22 @@ onMounted(refresh);
           <span v-if="detectingType" class="muted" style="font-size:11px">识别中…</span>
           <span v-else-if="addForm.type" class="muted" style="font-size:11px">已选</span>
         </div>
+        <!-- X/Twitter 配置 -->
+        <template v-if="addForm.type === 'x_twitter'">
+          <label class="sm-field" style="margin-top:10px">抓取模式</label>
+          <select class="select" v-model="addFormConfig.mode" style="width:100%">
+            <option value="search">关键词搜索</option>
+            <option value="user_timeline">账号追踪</option>
+          </select>
+          <template v-if="addFormConfig.mode === 'search'">
+            <label class="sm-field" style="margin-top:10px">搜索关键词</label>
+            <input class="input" placeholder="例：AI news OR LLM" v-model="addFormConfig.search_query" />
+          </template>
+          <template v-else>
+            <label class="sm-field" style="margin-top:10px">追踪账号（逗号分隔）</label>
+            <input class="input" placeholder="例：elonmusk,OpenAI" v-model="addFormConfig.usernames" />
+          </template>
+        </template>
         <div class="row" style="margin-top:16px;justify-content:flex-end">
           <button class="btn" @click="showAdd = false">取消</button>
           <button class="btn primary" :disabled="adding" @click="doAdd">{{ adding ? "创建中…" : "创建" }}</button>

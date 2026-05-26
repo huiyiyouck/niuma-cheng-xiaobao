@@ -1,5 +1,18 @@
 # 全栈开发工作日志
 
+## 2026-05-26 — 生产环境 Bug 修复：Failed to fetch + X/Twitter 集成 + Worker 调度饥饿修复
+- 本次角色：全栈开发
+- 动作：修改
+- 涉及文件：frontend/src/config.ts、.env、app/settings.py、worker/fetch_x_twitter.py、worker/main.py
+- 结论：修复/完成以下问题：
+  1. **"Failed to fetch"**：`config.ts` 中 `||` 改为 `??`，空字符串 `VITE_API_BASE_URL` 作为合法值（同源请求），前端重建部署。
+  2. **X Bearer Token**：配置 token + 修正 URL 编码 `%3D`→`=`
+  3. **X/Twitter 局部代理**：新增 `X_PROXY_URL` 配置项，仅 X fetcher 走代理 (`socks5://127.0.0.1:10809`)，不影响其他服务。
+  4. **Worker 调度饥饿 Bug**：原逻辑 fetch 优先→无 fetch 任务时 sleep 1s → 永不到 process。修复为 fetch 无任务时 fallthrough 尝试 process。
+  5. **端到端验证**：创建"默认空间"频道+ `@alpha123cc` X源 → 验证 5 条推文获取成功 → 绑定后 Worker 抓取 20 条 → LLM 生成中文新闻，全链路通过。
+- 关联迭代：无（生产热修复）
+- 遗留问题/风险：无
+
 ## 2026-05-24 — v0.2 收尾：INDEX.md 同步 + baseline 变更提交
 - 本次角色：全栈开发
 - 动作：定稿

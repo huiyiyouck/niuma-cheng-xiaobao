@@ -42,7 +42,7 @@ async def _fetch_search(
     if not query:
         raise RuntimeError("x_twitter search mode requires config.search_query")
 
-    proxy = settings.https_proxy or settings.http_proxy
+    proxy = settings.x_proxy_url or settings.https_proxy or settings.http_proxy
     async with httpx.AsyncClient(timeout=30, proxy=proxy) as client:
         url = "https://api.twitter.com/2/tweets/search/recent"
         params = {
@@ -88,7 +88,7 @@ async def _fetch_user_timelines(
 
     max_per_user = config.get("max_results_per_user", 20)
 
-    proxy = settings.https_proxy or settings.http_proxy
+    proxy = settings.x_proxy_url or settings.https_proxy or settings.http_proxy
     all_items: list[dict] = []
     user_cursors = dict(cursor.get("user_cursors", {}))
     user_items: dict[str, list[dict]] = {}

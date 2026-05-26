@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { queryLogs, getLogsConfig } from "@/lib/api";
+import { queryLogs } from "@/lib/api";
 import type { LogEntry } from "@/lib/types";
 
 const entries = ref<LogEntry[]>([]);

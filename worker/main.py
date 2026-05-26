@@ -398,27 +398,35 @@ async def worker_loop(pool, stop_event: asyncio.Event) -> None:
     while not stop_event.is_set():
         sem: Optional[asyncio.Semaphore] = None
         task_type: Optional[str] = None
+        task: Optional[dict] = None
         try:
             await asyncio.wait_for(fetch_sem.acquire(), timeout=0.001)
             sem = fetch_sem
-            task_type = "fetch"
+            async with pool.acquire() as conn:
+                task = await _claim_task(conn, settings.worker_id, "fetch")
+            if not task:
+                # 无 fetch 任务时 fallthrough 尝试 process，避免饥饿
+                sem.release()
+                sem = None
+            else:
+                task_type = "fetch"
         except Exception:
+            pass
+        if not task:
             try:
                 await asyncio.wait_for(process_sem.acquire(), timeout=0.001)
                 sem = process_sem
-                task_type = "process"
+                async with pool.acquire() as conn:
+                    task = await _claim_task(conn, settings.worker_id, "process")
+                if not task:
+                    sem.release()
+                    sem = None
+                else:
+                    task_type = "process"
             except Exception:
-                await asyncio.sleep(0.05)
-                continue
-        task: Optional[dict] = None
-        async with pool.acquire() as conn:
-            task = await _claim_task(conn, settings.worker_id, task_type) if task_type else None
-        # conn released immediately after claim — _run acquires its own
-
+                pass
         if not task:
-            if sem:
-                sem.release()
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.05)
             continue
 
         local_sem = sem
