@@ -10,4 +10,5 @@ docs/superpowers/
 frontend/node_modules/
 frontend/dist/
 logs/
-.vite/
+.vite/server/node_modules/
+server/dist/

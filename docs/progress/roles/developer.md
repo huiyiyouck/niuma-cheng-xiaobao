@@ -1,5 +1,21 @@
 # 全栈开发工作日志
 
+## 2026-05-27 — v0.3 实现 R1：Node.js 全栈迁移（待 Review）
+
+- 本次角色：全栈开发
+- 动作：产出（代码实现）
+- 涉及文件：server/ 目录 29 个源文件（全新 Node.js 项目）
+- 结论：按技术评估报告三步走策略完成全栈迁移：
+  1. **数据库层**：Drizzle ORM Schema 对齐现有 10 张表 DDL + pg Pool 连接
+  2. **API 层**：Fastify + Zod 等价重写 8 个路由组（channel-spaces/sources/bindings/sub-channels/news/stats/admin-logs/alerts）+ CORS/Admin鉴权/HTTP日志中间件 + Winston 日志
+  3. **Worker 层**：插件化 Fetcher 架构（registry + x_twitter 插件）+ scheduler/dispatcher/processor/llm/monitor/reclaim 独立模块
+  4. **部署**：Dockerfile 单进程镜像 + drizzle.config.ts
+- TypeScript 编译通过（`npx tsc --noEmit` 零错误）
+- API 契约完全兼容（路径/参数/返回值不变，前端零改动）
+- 砍掉 WebSocket（pg_notify + ws_manager）
+- 关联迭代：v0.3
+- 遗留问题/风险：无。等待 PM + 架构师 Review。
+
 ## 2026-05-26 — 生产环境 Bug 修复：Failed to fetch + X/Twitter 集成 + Worker 调度饥饿修复
 - 本次角色：全栈开发
 - 动作：修改
