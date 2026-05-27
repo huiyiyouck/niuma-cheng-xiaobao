@@ -1,5 +1,13 @@
 # 架构师工作日志
 
+## 2026-05-27 — v0.3 技术预研评估
+- 本次角色：架构师
+- 动作：产出（技术预研评估报告）
+- 涉及文档：docs/progress/iterations/v0.3-tech-eval.md
+- 结论：v0.3 后端 Python→Node.js 迁移技术上可行，无硬阻塞。推荐方案：Fastify + Zod + Drizzle + 同进程 Worker，Fetcher 插件化注册。砍掉 WebSocket（前端调 API 拿数据）减少 180 行无用链路。预估 16 人天，3 步走。Worker 重构核心：Fetcher 接口 → 注册表 → Dispatcher 分发，新增数据源只需写 1 个文件。
+- 关联迭代：v0.3（预研阶段）
+- 遗留问题/风险：等待 PM Review 本评估报告
+
 ## 2026-05-24 — v0.2 实现 R4 Review
 - 本次角色：架构师
 - 动作：Review（审全栈开发的 R3 修复——verified 状态绑定按钮）
