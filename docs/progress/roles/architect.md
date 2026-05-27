@@ -1,5 +1,13 @@
 # 架构师工作日志
 
+## 2026-05-27 — v0.3 实现 R1 Review
+- 本次角色：架构师
+- 动作：Review（审全栈开发的 v0.3 Node.js 迁移实现）
+- 涉及文档：docs/progress/iterations/v0.3.md
+- 结论：❌需修改。3 项需修：①Fetcher 注册表写了但 dispatcher 没调（架构阻断，新增数据源仍需改 3 处 hardcode）②Worker 模块未按评估方案拆分为独立文件 ③Drizzle schema 缺两个索引。2 项建议：source-detector 加 URL scheme 白名单防 SSRF、news.ts 排序参数用 Zod 校验。API 层翻译质量高，路由/Schema/中间件与 Python 一致。
+- 关联迭代：v0.3
+- 遗留问题/风险：等待开发 R2 修复
+
 ## 2026-05-27 — v0.3 技术预研评估 已定稿
 - 本次角色：架构师
 - 动作：产出 + 定稿（PM Review ✅通过 R1）
