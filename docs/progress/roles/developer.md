@@ -1,20 +1,21 @@
 # 全栈开发工作日志
 
-## 2026-05-27 — v0.3 实现 R2：修复架构师 5 项 Review 意见（Review中）
+## 2026-05-27 — v0.3 实现 R2：修复架构师 5 项 Review 意见（架构师 ✅通过，待 PM Review）
 
 - 本次角色：全栈开发
-- 动作：修改（响应架构师 R1 Review）
-- 涉及文件：11 个文件（5 新增 + 6 修改），详见迭代记录 R2 变更清单
-- 结论：全部 5 项意见修复完毕：
-  1. **#1 Fetcher 注册表接入**：`dispatcher.ts` 和 `sources.ts` 三处 hardcode `=== "x_twitter"` 改为 `find(type)` 调用，新增 `fetchers/index.ts` 副作用导入触发自注册
-  2. **#2 Worker 模块拆分**：`dispatcher.ts`（415行）拆为 `scheduler.ts` / `dispatcher.ts` / `processor.ts` / `monitor.ts` / `reclaim.ts` 5 个独立文件
-  3. **#3 补 DB 索引**：`schema.ts` 新增 `ix_processed_news_sub_published` 和 `ix_raw_items_url` 两个索引
-  4. **#4 SSRF 防护**：`source-detector.ts` fetch 前增加 `https?://` scheme 白名单
-  5. **#5 Zod 校验一致性**：`news.ts` 使用 `NewsQuery.parse()` 替代手动参数读取
-- 附带修复：`log.warning`→`log.warn`、`nonBlankStr` 工厂函数统一、`sql` 导入修正
+- 动作：修改（响应架构师 R1 Review）+ 部署（兼职 DevOps）
+- 涉及文件：11 个源文件 + start.sh + 3 个文档，详见迭代记录
+- 结论：全部 5 项意见修复完毕，架构师 R2 ✅通过：
+  1. **#1 Fetcher 注册表接入**：三处 hardcode 改为 `find(type)` 调用，新增 `fetchers/index.ts`
+  2. **#2 Worker 模块拆分**：拆为 `scheduler.ts` / `dispatcher.ts` / `processor.ts` / `monitor.ts` / `reclaim.ts`
+  3. **#3 补 DB 索引**：`ix_processed_news_sub_published` + `ix_raw_items_url`
+  4. **#4 SSRF 防护**：fetch 前增加 scheme 白名单
+  5. **#5 Zod 校验一致性**：`news.ts` 使用 `NewsQuery.parse()`
+- 附带修复：`log.warning`→`log.warn`、`nonBlankStr` 工厂函数、`sql` 导入、`.gitignore` 补 `server/node_modules/`
+- 本地部署验证通过：`start.sh` → 健康检查 → API 全链路 → nginx/news.huiyiyou.cloud 外网可达
 - TypeScript 编译通过，11 项 API 测试全部通过
 - 关联迭代：v0.3
-- 遗留问题/风险：无。等待架构师复审。
+- 遗留问题/风险：无。等待 PM R2 Review。
 
 ## 2026-05-27 — v0.3 实现 R1：Node.js 全栈迁移（待 Review）
 
