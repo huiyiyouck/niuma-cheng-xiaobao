@@ -8,10 +8,10 @@ import {
   integer,
   numeric,
   timestamp,
-  uniqueIndex,
   index,
   unique,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ── channel_spaces ────────────────────────────────────────
 
@@ -122,6 +122,7 @@ export const rawItems = pgTable(
   (table) => [
     unique("uq_raw_items_source_item").on(table.sourceId, table.sourceItemId),
     index("ix_raw_items_space_published").on(table.channelSpaceId, table.publishedAt),
+    index("ix_raw_items_url").on(table.sourceItemUrl).where(sql`${table.sourceItemUrl} IS NOT NULL`),
   ],
 );
 
@@ -154,6 +155,7 @@ export const processedNews = pgTable(
   },
   (table) => [
     index("ix_processed_news_space_published").on(table.channelSpaceId, table.publishedAt),
+    index("ix_processed_news_sub_published").on(table.channelSpaceId, table.subChannelId, table.publishedAt),
   ],
 );
 

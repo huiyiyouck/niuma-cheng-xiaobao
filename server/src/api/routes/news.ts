@@ -1,35 +1,32 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { pool } from "../../db/pool.ts";
 import { asDict } from "../../shared/utils.ts";
+import { NewsQuery } from "../schemas/index.ts";
 
 export async function newsRoutes(app: FastifyInstance): Promise<void> {
   // 列表
   app.get("/channel-spaces/:space_id/news", async (req: FastifyRequest, reply: FastifyReply) => {
     const { space_id } = req.params as { space_id: string };
-    const query = req.query as Record<string, string>;
-    const limit = Math.min(Math.max(parseInt(query.limit || "20"), 1), 100);
-    const offset = Math.max(parseInt(query.offset || "0"), 0);
-    const sort = query.sort || "published_desc";
-    const subChannelId = query.sub_channel_id;
+    const q = NewsQuery.parse(req.query);
 
     let orderCol: string;
-    if (sort === "score_desc") {
+    if (q.sort === "score_desc") {
       orderCol = "pn.importance_score DESC NULLS LAST";
-    } else if (sort === "score_asc") {
+    } else if (q.sort === "score_asc") {
       orderCol = "pn.importance_score ASC NULLS LAST";
     } else {
       orderCol = "pn.published_at DESC NULLS LAST";
     }
 
-    const params: any[] = [space_id, limit, offset];
+    const params: any[] = [space_id, q.limit, q.offset];
     let subFilter = "";
-    if (subChannelId) {
-      const ids = subChannelId.split(",").map((s) => s.trim()).filter(Boolean);
+    if (q.sub_channel_id) {
+      const ids = q.sub_channel_id.split(",").map((s) => s.trim()).filter(Boolean);
       if (ids.length === 1) {
         subFilter = "AND pn.sub_channel_id = $4";
         params.push(ids[0]);
       } else if (ids.length > 1) {
-        subFilter = `AND pn.sub_channel_id = ANY($4)`;
+        subFilter = "AND pn.sub_channel_id = ANY($4)";
         params.push(ids);
       }
     }

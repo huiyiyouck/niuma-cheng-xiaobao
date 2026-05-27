@@ -2,12 +2,11 @@ import os from "node:os";
 import { pool as dbPool } from "../db/pool.ts";
 import { config } from "../shared/config.ts";
 import { workerLogger } from "../shared/logger.ts";
-import {
-  schedulerTick,
-  workerLoop,
-  zeroNewMonitorTick,
-  reclaimStaleTick,
-} from "./dispatcher.ts";
+import { schedulerTick } from "./scheduler.ts";
+import { workerLoop } from "./dispatcher.ts";
+import { zeroNewMonitorTick } from "./monitor.ts";
+import { reclaimStaleTick } from "./reclaim.ts";
+import "./fetchers/index.ts";
 
 const log = workerLogger;
 

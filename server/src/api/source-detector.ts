@@ -63,8 +63,8 @@ export async function detectTypeWithHttp(
   const base = detectTypeFromUrl(sourceUrl);
   if (base !== SourceType.unknown) return base;
 
-  const { config } = await import("../shared/config.ts");
-  const proxy = config.xProxyUrl || config.httpsProxy || config.httpProxy;
+  // 仅允许 http/https 协议，阻断 file:// 等 SSRF 风险
+  if (!/^https?:\/\//i.test(sourceUrl)) return SourceType.unknown;
 
   try {
     const controller = new AbortController();
@@ -73,7 +73,6 @@ export async function detectTypeWithHttp(
       method: "HEAD",
       redirect: "follow",
       signal: controller.signal,
-      // proxy handled by system env, not fetch API
     });
     clearTimeout(t);
     const ct = resp.headers.get("content-type") || "";

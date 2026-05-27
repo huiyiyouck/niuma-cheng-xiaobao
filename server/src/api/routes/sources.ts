@@ -210,13 +210,14 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
 }
 
 async function verifyFetch(sourceType: string, config: Record<string, unknown>): Promise<any[]> {
-  if (sourceType === "x_twitter") {
-    const { parseXTweets } = await import("../../worker/fetchers/x_twitter.ts");
-    const [items] = await parseXTweets(config, {}, 5);
-    return items;
+  const { find } = await import("../../worker/fetchers/registry.ts");
+  const fetcher = find(sourceType);
+  if (!fetcher) {
+    const { NonRetryableError } = await import("../../worker/errors.ts");
+    throw new NonRetryableError(`未注册的 Source 类型：${sourceType}`);
   }
-  const { NonRetryableError } = await import("../../worker/errors.ts");
-  throw new NonRetryableError(`该 Source 类型的抓取器尚未实现：${sourceType}`);
+  const { items } = await fetcher.fetch(config, {}, 5);
+  return items;
 }
 
 function truncatePreview(item: any, maxChars: number): string {

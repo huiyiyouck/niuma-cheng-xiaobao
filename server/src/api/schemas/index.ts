@@ -2,29 +2,31 @@ import { z } from "zod";
 
 // ── 通用 ──────────────────────────────────────────────────
 
-// 非空字符串（等价 Pydantic NonBlankStr）
-const nonBlankStr = z.string().refine((v) => v.trim().length > 0, {
-  message: "name 不可为空字符串或纯空格",
-}).pipe(z.string().min(1));
+// 非空字符串（等价 Pydantic NonBlankStr），先 max 后 refine 保证 ZodString.max() 可用
+function nonBlankStr(maxLen: number) {
+  return z.string().min(1).max(maxLen).refine((v) => v.trim().length > 0, {
+    message: "不可为空字符串或纯空格",
+  });
+}
 
 // ── ChannelSpace ──────────────────────────────────────────
 
 export const ChannelSpaceCreate = z.object({
-  name: z.string().min(1).max(200),
+  name: nonBlankStr(200),
   description: z.string().nullable().optional(),
 });
 
 // ── Source ────────────────────────────────────────────────
 
 export const SourceCreate = z.object({
-  display_name: z.string().min(1).max(200),
+  display_name: nonBlankStr(200),
   source_url: z.string().nullable().optional(),
   type: z.string().optional(),
   config: z.record(z.unknown()).default({}),
 });
 
 export const SourceUpdate = z.object({
-  display_name: z.string().min(1).max(200).optional(),
+  display_name: nonBlankStr(200).optional(),
   source_url: z.string().nullable().optional(),
   type: z.string().optional(),
   config: z.record(z.unknown()).optional(),
@@ -48,14 +50,12 @@ export const ChannelSourceUpdatePolicy = z.object({
 // ── SubChannel ────────────────────────────────────────────
 
 export const SubChannelCreate = z.object({
-  name: z.string().min(1).max(100).refine((v) => v.trim().length > 0, {
-    message: "name 不可为空字符串或纯空格",
-  }),
+  name: nonBlankStr(100),
   sort_order: z.number().int().min(0).default(0),
 });
 
 export const SubChannelUpdate = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: nonBlankStr(100).optional(),
   sort_order: z.number().int().min(0).optional(),
 });
 
