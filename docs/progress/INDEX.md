@@ -6,11 +6,11 @@
 |------|---------|-----|---------|---------|------|
 | v0.1 | [iterations/v0.1.md](iterations/v0.1.md) | [iterations/v0.1-prd.md](iterations/v0.1-prd.md) | [iterations/v0.1-design.md](iterations/v0.1-design.md) | 待补充 | 已完成 |
 | v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | [iterations/v0.2-design.md](iterations/v0.2-design.md) | v0.2 | 已完成 |
-| v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | 待定 | 实现阶段 |
+| v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | 待定 | 已完成 |
 
 ## 当前迭代
 
-v0.3 — 后端技术栈迁移 Python → Node.js（纯迁移，跳 PRD，直接进入实现阶段）
+无进行中的迭代
 
 ## 角色日志
 
