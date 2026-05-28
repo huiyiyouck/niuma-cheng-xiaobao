@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>牛马程小报 — 浏览</title>
+<style>
+/* ── Reset & Variables ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAFAFA; --card:#FFF; --border:#E6E7EB; --border-light:#F0F1F3;
+  --text:#1a1a2e; --text-secondary:#5F6B7A; --text-muted:#94A3B8;
+  --accent:#3498db; --accent-light:#EBF5FB; --accent-soft:#D6EAF8;
+  --success:#27ae60; --success-light:#E8F8F0;
+  --warning:#f39c12; --warning-light:#FEF9E7;
+  --danger:#e74c3c; --danger-light:#FDEDEC;
+  --shadow:0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg:0 12px 32px rgba(0,0,0,0.12);
+  --radius:12px; --radius-sm:8px; --radius-pill:20px;
+  --transition:150ms cubic-bezier(0.4,0,0.2,1);
+}
+body{
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg); color: var(--text); line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Topbar ── */
+.topbar{
+  position:sticky;top:0;z-index:30;
+  background:#FFF; border-bottom:1px solid var(--border);
+  backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+  background:rgba(255,255,255,0.92);
+}
+.topbar-inner{
+  max-width:960px;margin:0 auto;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;height:52px;
+}
+.brand{font-weight:800;font-size:16px;letter-spacing:-0.3px;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:6px;}
+.brand .icon{font-size:18px}
+.nav{display:flex;gap:4px}
+.nav-link{
+  padding:6px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;
+  color:var(--text-secondary);text-decoration:none;transition:all var(--transition);
+}
+.nav-link:hover{color:var(--text);background:#F4F5F7}
+.nav-link.active{color:var(--accent);background:var(--accent-light)}
+
+/* ── Main Content ── */
+.main{max-width:960px;margin:0 auto;padding:20px 24px 80px}
+
+/* ── Stats Row ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.stat-card{
+  background:var(--card);border:1px solid var(--border-light);border-radius:var(--radius);
+  padding:16px 18px;box-shadow:var(--shadow);transition:box-shadow var(--transition);
+}
+.stat-card:hover{box-shadow:var(--shadow-md)}
+.stat-label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.stat-value{font-size:26px;font-weight:800;color:var(--text);letter-spacing:-0.5px;line-height:1.1}
+.stat-sub{font-size:11px;color:var(--text-muted);margin-top:2px}
+.stat-card.accent .stat-value{color:var(--accent)}
+.stat-card.success .stat-value{color:var(--success)}
+
+/* ── Filter Bar ── */
+.filter-bar{
+  display:flex;align-items:center;gap:12px;margin-bottom:14px;
+  background:var(--card);border:1px solid var(--border-light);
+  border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow);
+}
+.filter-select{
+  padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:13px;color:var(--text);background:#FFF;cursor:pointer;
+  font-family:inherit;outline:none;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F6B7A' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 8px center;padding-right:28px;
+  min-width:140px;
+}
+.filter-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(52,152,219,0.1)}
+.filter-divider{width:1px;height:20px;background:var(--border);margin:0 4px}
+.score-slider-group{display:flex;align-items:center;gap:8px;margin-left:auto}
+.score-label{font-size:11px;font-weight:600;color:var(--text-muted);white-space:nowrap}
+.score-slider{
+  -webkit-appearance:none;appearance:none;width:100px;height:4px;
+  border-radius:2px;background:var(--border);outline:none;
+}
+.score-slider::-webkit-slider-thumb{
+  -webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--accent);cursor:pointer;box-shadow:var(--shadow);
+}
+.score-val{font-size:12px;font-weight:700;color:var(--accent);min-width:24px;text-align:center}
+
+/* ── Sub-channel pills ── */
+.sub-filter{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.sub-pill{
+  padding:5px 14px;border-radius:var(--radius-pill);font-size:12px;font-weight:600;
+  border:1px solid var(--border);background:var(--card);color:var(--text-secondary);
+  cursor:pointer;transition:all var(--transition);font-family:inherit;
+}
+.sub-pill:hover{border-color:var(--accent);color:var(--accent)}
+.sub-pill.active{background:var(--accent);color:#FFF;border-color:var(--accent)}
+
+/* ── WS Status ── */
+.ws-bar{display:flex;align-items:center;gap:6px;margin-bottom:14px}
+.ws-dot{width:6px;height:6px;border-radius:50%}
+.ws-dot.ok{background:var(--success)}
+.ws-dot.warn{background:var(--warning);animation:pulse 1.5s infinite}
+.ws-dot.err{background:var(--danger)}
+.ws-text{font-size:11px;color:var(--text-muted)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* ── Error ── */
+.error-bar{
+  padding:10px 14px;border-radius:var(--radius-sm);
+  background:var(--danger-light);border:1px solid rgba(231,76,60,0.2);
+  color:#991b1b;font-size:12px;font-weight:500;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px
+}
+.error-bar .close-err{background:none;border:none;color:#991b1b;cursor:pointer;font-size:16px;margin-left:auto;line-height:1}
+
+/* ── Skeleton ── */
+.skeleton-card{
+  background:var(--card);border:1px solid var(--border-light);
+  border-radius:var(--radius);padding:18px 20px;margin-bottom:8px;
+}
+.skel-line{height:12px;background:linear-gradient(90deg,#f0f1f3 25%,#e6e7eb 50%,#f0f1f3 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px}
+.skel-line.title{width:65%;height:16px;margin-bottom:10px}
+.skel-line.body{width:90%;margin-bottom:6px}
+.skel-line.body.short{width:75%}
+.skel-tags{display:flex;gap:8px;margin-top:12px}
+.skel-tag{width:48px;height:22px;border-radius:var(--radius-pill);background:linear-gradient(90deg,#f0f1f3 25%,#e6e7eb 50%,#f0f1f3 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Empty State ── */
+.empty-state{text-align:center;padding:48px 24px}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:0.4}
+.empty-title{font-size:15px;font-weight:700;color:var(--text-secondary);margin-bottom:4px}
+.empty-desc{font-size:12px;color:var(--text-muted)}
+
+/* ── News Cards ── */
+.news-list{display:flex;flex-direction:column;gap:8px}
+.news-card{
+  background:var(--card);border:1px solid var(--border-light);
+  border-radius:var(--radius);padding:18px 20px;
+  box-shadow:var(--shadow);cursor:pointer;
+  transition:all var(--transition);position:relative;
+}
+.news-card:hover{border-color:#CBD5E1;box-shadow:var(--shadow-md);transform:translateY(-1px)}
+.news-card-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:8px}
+.news-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.4;flex:1}
+.news-score{
+  flex-shrink:0;padding:3px 10px;border-radius:var(--radius-pill);
+  font-size:12px;font-weight:700;white-space:nowrap;
+}
+.news-score.high{background:var(--success-light);color:var(--success)}
+.news-score.mid{background:var(--warning-light);color:var(--warning)}
+.news-score.low{background:#F1F5F9;color:var(--text-muted)}
+.news-summary{font-size:13px;color:var(--text-secondary);line-height:1.6;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:10px}
+.news-meta{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.news-tag{
+  padding:2px 10px;border-radius:var(--radius-pill);
+  font-size:10px;font-weight:700;white-space:nowrap;
+}
+.news-entity{
+  font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:3px;
+}
+.news-time{font-size:11px;color:var(--text-muted);margin-left:auto}
+.news-source{
+  font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:4px
+}
+
+/* ── Detail Panel (slide-out) ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:40;
+  opacity:0;pointer-events:none;transition:opacity 0.25s;
+}
+.overlay.show{opacity:1;pointer-events:auto}
+.detail-panel{
+  position:fixed;top:0;right:0;width:480px;max-width:100vw;height:100vh;
+  background:#FFF;z-index:50;box-shadow:var(--shadow-lg);
+  transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;overflow-y:auto;
+}
+.detail-panel.show{transform:translateX(0)}
+.detail-header{
+  position:sticky;top:0;background:#FFF;z-index:5;
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.detail-close{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+  background:#FFF;font-size:18px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;color:var(--text-secondary);transition:all var(--transition);
+}
+.detail-close:hover{background:#F4F5F7;color:var(--text)}
+.detail-body{padding:24px 20px}
+.detail-title{font-size:20px;font-weight:800;line-height:1.4;margin-bottom:16px;color:var(--text)}
+.detail-summary{font-size:14px;color:var(--text-secondary);line-height:1.8;margin-bottom:20px}
+.detail-section{margin-bottom:20px}
+.detail-section-title{font-size:11px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.detail-bullets{list-style:none}
+.detail-bullets li{
+  padding:6px 0;font-size:13px;color:var(--text-secondary);
+  padding-left:16px;position:relative;
+}
+.detail-bullets li::before{
+  content:'';position:absolute;left:0;top:12px;
+  width:5px;height:5px;border-radius:50%;background:var(--accent);
+}
+.detail-tags{display:flex;gap:6px;flex-wrap:wrap}
+.detail-entities{display:flex;gap:6px;flex-wrap:wrap}
+.detail-source{
+  display:inline-flex;align-items:center;gap:4px;padding:6px 12px;
+  border-radius:var(--radius-sm);background:#F4F5F7;
+  font-size:12px;color:var(--accent);text-decoration:none;font-weight:600;
+}
+
+/* ── Load More ── */
+.load-more-wrap{display:flex;justify-content:center;padding:20px 0}
+.load-more-btn{
+  padding:10px 28px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;
+  border:1px solid var(--border);background:var(--card);color:var(--text-secondary);
+  cursor:pointer;transition:all var(--transition);font-family:inherit;
+}
+.load-more-btn:hover{background:#F4F5F7;color:var(--text);border-color:#CBD5E1}
+.load-more-btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .filter-bar{flex-wrap:wrap}
+  .detail-panel{width:100vw}
+}
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#" class="brand"><span class="icon">🐂</span>牛马程小报</a>
+    <nav class="nav">
+      <a href="#" class="nav-link active">浏览</a>
+      <a href="#" class="nav-link">管理</a>
+    </nav>
+  </div>
+</header>
+
+<main class="main" id="app">
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card accent">
+      <div class="stat-label">今日新增</div>
+      <div class="stat-value">12</div>
+      <div class="stat-sub">较昨日 +3</div>
+    </div>
+    <div class="stat-card success">
+      <div class="stat-label">活跃信源</div>
+      <div class="stat-value">5</div>
+      <div class="stat-sub">共 8 个信源</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">总新闻数</div>
+      <div class="stat-value">1,284</div>
+      <div class="stat-sub">本周新增 86</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">子频道</div>
+      <div class="stat-value">6</div>
+      <div class="stat-sub">分布在 2 个频道</div>
+    </div>
+  </div>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <select class="filter-select" id="spaceSelect">
+      <option value="ai">🤖 AI 资讯</option>
+      <option value="finance">📈 财经</option>
+    </select>
+    <div class="filter-divider"></div>
+    <select class="filter-select" id="sortSelect" style="min-width:110px">
+      <option value="published_desc">最新优先</option>
+      <option value="score_desc">最高评分</option>
+      <option value="score_asc">最低评分</option>
+    </select>
+    <div class="score-slider-group">
+      <span class="score-label">最低评分</span>
+      <input type="range" class="score-slider" id="scoreSlider" min="0" max="10" value="0" step="1">
+      <span class="score-val" id="scoreVal">不限</span>
+    </div>
+  </div>
+
+  <!-- Sub-channel Pills -->
+  <div class="sub-filter" id="subFilter">
+    <button class="sub-pill active" data-id="">全部</button>
+    <button class="sub-pill" data-id="llm">大模型</button>
+    <button class="sub-pill" data-id="agents">AI Agents</button>
+    <button class="sub-pill" data-id="apps">AI 应用</button>
+    <button class="sub-pill" data-id="research">学术前沿</button>
+  </div>
+
+  <!-- WS Status -->
+  <div class="ws-bar">
+    <span class="ws-dot ok"></span>
+    <span class="ws-text">WS 已连接</span>
+  </div>
+
+  <!-- Error (hidden by default) -->
+  <div class="error-bar" id="errorBar" style="display:none">
+    <span>⚠️</span><span id="errorMsg"></span>
+    <button class="close-err" onclick="dismissError()">&times;</button>
+  </div>
+
+  <!-- News List Area -->
+  <div id="newsArea"></div>
+</main>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closeDetail()"></div>
+
+<!-- Detail Panel -->
+<div class="detail-panel" id="detailPanel">
+  <div class="detail-header">
+    <span style="font-size:13px;font-weight:700;color:var(--text-muted)">新闻详情</span>
+    <button class="detail-close" onclick="closeDetail()">&times;</button>
+  </div>
+  <div class="detail-body" id="detailBody"></div>
+</div>
+
+<script>
+// ── Sample Data ──
+const sampleNews = [
+  {id:1,title:"GPT-5 发布：多模态推理能力大幅提升，基准测试全面超越前代",summary:"OpenAI 今日正式发布 GPT-5 模型，在 MMLU、HumanEval 等多项基准测试中取得突破性成绩。新模型支持文本、图像、音频的多模态输入，推理速度提升 3 倍。",tags:["GPT-5","OpenAI"],entities:[{name:"OpenAI",type:"org"},{name:"GPT-5",type:"product"}],score:9.2,time:"18 分钟前",source:"OpenAI Blog",subChannel:"llm"},
+  {id:2,title:"Claude 推出新一代 Code Agent：自主完成复杂软件工程任务",summary:"Anthropic 发布 Claude Code Agent，能够在隔离环境中自主完成从需求分析到代码实现的全流程。在 SWE-bench 上达到 92% 的解决率。",tags:["Claude","Agent"],entities:[{name:"Anthropic",type:"org"},{name:"Claude",type:"product"}],score:8.7,time:"42 分钟前",source:"Anthropic Blog",subChannel:"agents"},
+  {id:3,title:"深度解读：2026 年 AI 应用落地五大趋势",summary:"从企业级 AI 助手到垂直行业大模型，本文梳理了 2026 年 AI 应用落地的五个关键趋势，包括 Agent 化、多模态融合、端侧推理、RAG 2.0 和 AI 原生工作流。",tags:["趋势分析","AI应用"],entities:[{name:"AI",type:"concept"}],score:7.5,time:"1 小时前",source:"机器之心",subChannel:"apps"},
+  {id:4,title:"Meta 开源 Llama 4：千亿参数模型性能对标 GPT-4",summary:"Meta 正式开源 Llama 4 系列模型，包含 70B 和 405B 两个版本。405B 版本在多项基准测试中与 GPT-4 性能持平，采用全新 MoE 架构。",tags:["Llama","Meta","开源"],entities:[{name:"Meta",type:"org"},{name:"Llama 4",type:"product"}],score:8.9,time:"2 小时前",source:"Meta AI Blog",subChannel:"llm"},
+  {id:5,title:"AI 编程助手市场格局变化：Cursor 估值突破 100 亿美元",summary:"AI 编程助手 Cursor 完成新一轮融资，估值达到 100 亿美元。该领域竞争日趋白热化，GitHub Copilot、Codeium、Augment 等玩家持续迭代。",tags:["Cursor","AI编程","融资"],entities:[{name:"Cursor",type:"product"},{name:"GitHub",type:"org"}],score:6.8,time:"3 小时前",source:"TechCrunch",subChannel:"apps"},
+  {id:6,title:"多智能体协作系统的最新研究进展综述",summary:"斯坦福大学发布综述论文，系统梳理了多智能体协作系统的最新进展，涵盖任务分配、通信协议、冲突解决等关键问题。",tags:["Multi-Agent","论文"],entities:[{name:"Stanford",type:"org"}],score:8.1,time:"4 小时前",source:"arXiv",subChannel:"agents"},
+  {id:7,title:"Apple 在 WWDC 上公布设备端 AI 战略：隐私优先的智能体验",summary:"Apple 在 WWDC 2026 上展示了全新的设备端 AI 能力，强调所有数据处理均在本地完成。新 Siri 基于端侧大模型，支持跨应用上下文理解。",tags:["Apple","WWDC","端侧AI"],entities:[{name:"Apple",type:"org"},{name:"Siri",type:"product"}],score:7.9,time:"5 小时前",source:"Apple Newsroom",subChannel:"apps"},
+  {id:8,title:"Transformer 架构的下一代演进：状态空间模型能否取代注意力机制？",summary:"Mamba、Mamba-2 等状态空间模型在长序列任务上展现出线性复杂度的优势。本文分析了 SSM 与 Transformer 在效率、效果上的详细对比。",tags:["Transformer","SSM","Mamba"],entities:[{name:"Transformer",type:"concept"}],score:7.2,time:"6 小时前",source:"Hugging Face Blog",subChannel:"research"},
+];
+
+// ── State ──
+let state = {loading:false,error:null,news:[],filteredNews:[],subFilter:"",minScore:0,detailItem:null};
+
+const scoreSlider = document.getElementById('scoreSlider');
+const scoreVal = document.getElementById('scoreVal');
+const newsArea = document.getElementById('newsArea');
+const overlay = document.getElementById('overlay');
+const detailPanel = document.getElementById('detailPanel');
+const detailBody = document.getElementById('detailBody');
+const errorBar = document.getElementById('errorBar');
+const errorMsg = document.getElementById('errorMsg');
+
+// ── Render Skeleton ──
+function renderSkeleton(){
+  let h='';
+  for(let i=0;i<4;i++){
+    h+=`<div class="skeleton-card"><div class="skel-line title"></div><div class="skel-line body"></div><div class="skel-line body short"></div><div class="skel-tags"><span class="skel-tag"></span><span class="skel-tag"></span></div></div>`;
+  }
+  newsArea.innerHTML=h;
+}
+
+// ── Render News Cards ──
+function renderNews(items){
+  if(!items || items.length===0){
+    if(state.subFilter){
+      newsArea.innerHTML=`<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">筛选条件下无匹配新闻</div><div class="empty-desc">试试调整最低评分或切换子频道</div></div>`;
+    }else{
+      newsArea.innerHTML=`<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-title">暂无新闻</div><div class="empty-desc">请先在管理页添加信息来源</div></div>`;
+    }
+    return;
+  }
+  let h='<div class="news-list">';
+  items.forEach(n=>{
+    let sc='low';
+    if(n.score>=8)sc='high';else if(n.score>=6)sc='mid';
+    const tagsHtml=n.tags.map(t=>`<span class="news-tag" style="background:var(--accent-light);color:var(--accent)">${t}</span>`).join('');
+    const entitiesHtml=n.entities.map(e=>`<span class="news-entity">📎 ${e.name}</span>`).join('');
+    h+=`<div class="news-card" onclick="openDetail(${n.id})">
+      <div class="news-card-header">
+        <span class="news-title">${n.title}</span>
+        <span class="news-score ${sc}">${n.score.toFixed(1)}</span>
+      </div>
+      <div class="news-summary">${n.summary}</div>
+      <div class="news-meta">
+        ${tagsHtml}
+        ${entitiesHtml}
+        <span class="news-source">🔗 ${n.source}</span>
+        <span class="news-time">${n.time}</span>
+      </div>
+    </div>`;
+  });
+  h+=`</div><div class="load-more-wrap"><button class="load-more-btn" onclick="loadMore()">加载更多</button></div>`;
+  newsArea.innerHTML=h;
+}
+
+// ── Apply Filters ──
+function applyFilters(){
+  let result = state.news;
+  if(state.subFilter){
+    result = result.filter(n=>n.subChannel===state.subFilter);
+  }
+  if(state.minScore>0){
+    result = result.filter(n=>n.importance_score>=state.minScore || n.score>=state.minScore);
+  }
+  state.filteredNews = result;
+  renderNews(result);
+}
+
+// ── Simulate Loading ──
+function simulateLoad(){
+  state.loading=true;state.error=null;
+  errorBar.style.display='none';
+  renderSkeleton();
+  setTimeout(()=>{
+    state.news=[...sampleNews];
+    state.loading=false;
+    applyFilters();
+  },1200);
+}
+
+// ── Load More ──
+function loadMore(){alert('加载更多（演示模式）')}
+
+// ── Detail Panel ──
+function openDetail(id){
+  const n = state.news.find(x=>x.id===id);
+  if(!n)return;
+  state.detailItem=n;
+  let sc='low';
+  if(n.score>=8)sc='high';else if(n.score>=6)sc='mid';
+  detailBody.innerHTML=`
+    <h2 class="detail-title">${n.title}</h2>
+    <p class="detail-summary">${n.summary}</p>
+    <div class="detail-section">
+      <div class="detail-section-title">要点</div>
+      <ul class="detail-bullets">
+        <li>关键发现一：该新闻涉及的行业影响评估</li>
+        <li>关键发现二：相关技术与产品的迭代分析</li>
+        <li>关键发现三：对从业者和用户的实质影响</li>
+      </ul>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">标签</div>
+      <div class="detail-tags">${n.tags.map(t=>`<span class="news-tag" style="background:var(--accent-light);color:var(--accent)">${t}</span>`).join('')}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">实体</div>
+      <div class="detail-entities">${n.entities.map(e=>`<span class="news-entity">📎 ${e.name}</span>`).join('')}</div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">来源</div>
+      <a href="#" class="detail-source">🔗 ${n.source}</a>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">时间</div>
+      <span style="font-size:13px;color:var(--text-secondary)">${n.time}</span>
+      <span class="news-score ${sc}" style="margin-left:12px">评分 ${n.score.toFixed(1)}</span>
+    </div>`;
+  overlay.classList.add('show');
+  detailPanel.classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+function closeDetail(){
+  overlay.classList.remove('show');
+  detailPanel.classList.remove('show');
+  document.body.style.overflow='';
+  state.detailItem=null;
+}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDetail()});
+
+// ── Filter Events ──
+document.getElementById('subFilter').addEventListener('click',e=>{
+  if(!e.target.classList.contains('sub-pill'))return;
+  document.querySelectorAll('.sub-pill').forEach(p=>p.classList.remove('active'));
+  e.target.classList.add('active');
+  state.subFilter=e.target.dataset.id;
+  applyFilters();
+});
+
+scoreSlider.addEventListener('input',()=>{
+  const v=parseInt(scoreSlider.value);
+  scoreVal.textContent=v===0?'不限':v+' 分';
+  state.minScore=v;
+  applyFilters();
+});
+
+// ── Error Simulation ──
+function showError(msg){
+  errorBar.style.display='flex';
+  errorMsg.textContent=msg;
+}
+
+function dismissError(){
+  errorBar.style.display='none';
+  state.error=null;
+}
+
+// ── START ──
+simulateLoad();
+</script>
+</body>
+</html>

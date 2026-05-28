@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v0.4 原型图导航</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;
+  background:#FAFAFA;color:#1a1a2e;min-height:100vh;
+  display:flex;align-items:center;justify-content:center;
+}
+.card{
+  background:#FFF;border:1px solid #E6E7EB;border-radius:16px;
+  padding:40px 48px;box-shadow:0 1px 3px rgba(0,0,0,0.06);
+  text-align:center;max-width:480px;width:100%;
+}
+h1{font-size:20px;font-weight:800;margin-bottom:4px;letter-spacing:-0.3px}
+.sub{font-size:13px;color:#94A3B8;margin-bottom:28px}
+.links{display:flex;flex-direction:column;gap:10px}
+.links a{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;border:1px solid #E6E7EB;border-radius:12px;
+  text-decoration:none;color:#1a1a2e;font-weight:700;font-size:15px;
+  transition:all 150ms;
+}
+.links a:hover{border-color:#3498db;box-shadow:0 4px 12px rgba(0,0,0,0.06)}
+.links a .arrow{color:#94A3B8;font-size:14px}
+.desc{font-size:11px;color:#94A3B8;font-weight:400;margin-top:2px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🐂 牛马程小报 v0.4</h1>
+  <p class="sub">UI 重构原型图 · 轻量化双模块</p>
+  <div class="links">
+    <a href="browse.html">
+      <span><span style="margin-right:8px">📰</span>浏览页<span class="desc" style="display:block">新闻浏览 · 统计 · 筛选 · 详情面板</span></span>
+      <span class="arrow">→</span>
+    </a>
+    <a href="admin.html">
+      <span><span style="margin-right:8px">⚙️</span>管理页<span class="desc" style="display:block">统一管理视图 · 信息源列表 · 子频道抽屉</span></span>
+      <span class="arrow">→</span>
+    </a>
+  </div>
+</div>
+</body>
+</html>

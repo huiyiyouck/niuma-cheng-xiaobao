@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>牛马程小报 — 管理</title>
+<style>
+/* ── Reset & Variables ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAFAFA; --card:#FFF; --border:#E6E7EB; --border-light:#F0F1F3;
+  --text:#1a1a2e; --text-secondary:#5F6B7A; --text-muted:#94A3B8;
+  --accent:#3498db; --accent-light:#EBF5FB;
+  --success:#27ae60; --success-light:#E8F8F0;
+  --warning:#f39c12; --warning-light:#FEF9E7;
+  --danger:#e74c3c; --danger-light:#FDEDEC;
+  --shadow:0 1px 3px rgba(0,0,0,0.06),0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,0.08),0 2px 4px rgba(0,0,0,0.04);
+  --shadow-lg:0 12px 32px rgba(0,0,0,0.12);
+  --radius:12px; --radius-sm:8px; --radius-pill:20px;
+  --transition:150ms cubic-bezier(0.4,0,0.2,1);
+}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--text);line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;cursor:pointer}
+input,select{font-family:inherit}
+
+/* ── Topbar ── */
+.topbar{
+  position:sticky;top:0;z-index:30;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+}
+.topbar-inner{
+  max-width:960px;margin:0 auto;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;height:52px;
+}
+.brand{font-weight:800;font-size:16px;letter-spacing:-0.3px;color:var(--text);text-decoration:none;display:flex;align-items:center;gap:6px}
+.nav{display:flex;gap:4px}
+.nav-link{
+  padding:6px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:600;
+  color:var(--text-secondary);text-decoration:none;transition:all var(--transition);
+}
+.nav-link:hover{color:var(--text);background:#F4F5F7}
+.nav-link.active{color:var(--accent);background:var(--accent-light)}
+
+/* ── Main ── */
+.main{max-width:960px;margin:0 auto;padding:20px 24px 80px}
+
+/* ── Space Row ── */
+.space-row{
+  display:flex;align-items:center;gap:12px;margin-bottom:20px;
+  background:var(--card);border:1px solid var(--border-light);
+  border-radius:var(--radius);padding:10px 16px;box-shadow:var(--shadow);
+}
+.space-pills{display:flex;gap:6px;flex:1}
+.space-pill{
+  padding:6px 16px;border-radius:var(--radius-pill);font-size:12px;font-weight:700;
+  border:1px solid var(--border);background:var(--card);color:var(--text-secondary);
+  transition:all var(--transition);white-space:nowrap;
+}
+.space-pill:hover{border-color:var(--accent);color:var(--accent)}
+.space-pill.active{background:var(--accent);color:#FFF;border-color:var(--accent)}
+.space-actions{display:flex;gap:6px;flex-shrink:0}
+.btn{
+  padding:6px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;
+  border:1px solid var(--border);background:var(--card);color:var(--text-secondary);
+  transition:all var(--transition);display:inline-flex;align-items:center;gap:4px;
+}
+.btn:hover{background:#F4F5F7;color:var(--text);border-color:#CBD5E1}
+.btn.primary{background:var(--accent);color:#FFF;border-color:var(--accent)}
+.btn.primary:hover{background:#2e86c1;border-color:#2e86c1}
+.btn.danger{color:var(--danger)}
+.btn.danger:hover{background:var(--danger-light);border-color:rgba(231,76,60,0.3)}
+.btn.success{color:var(--success)}
+.btn.success:hover{background:var(--success-light);border-color:rgba(39,174,96,0.3)}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:6px}
+.btn-xs{padding:2px 8px;font-size:10px;border-radius:4px}
+
+/* ── Section Header ── */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-title{font-size:14px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:6px}
+.section-count{font-size:11px;font-weight:600;color:var(--text-muted);background:#F4F5F7;padding:2px 8px;border-radius:var(--radius-pill)}
+
+/* ── Inline Add Form ── */
+.add-form{
+  background:var(--card);border:2px dashed var(--accent);border-radius:var(--radius);
+  padding:20px;margin-bottom:14px;box-shadow:var(--shadow);
+  animation:slideDown 0.25s ease-out;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.form-row{display:flex;gap:10px;margin-bottom:12px;align-items:flex-end}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.grow{flex:1}
+.form-label{font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px}
+.form-input,.form-select{
+  padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:13px;color:var(--text);background:#FFF;outline:none;transition:border-color var(--transition);
+}
+.form-input:focus,.form-select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(52,152,219,0.1)}
+.form-input{min-width:0}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235F6B7A' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px}
+.form-hint{font-size:10px;color:var(--text-muted);margin-top:2px}
+.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+
+/* ── Verify Preview ── */
+.verify-preview{
+  margin-top:12px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  overflow:hidden;
+}
+.verify-header{
+  padding:8px 12px;background:#F8FAFB;font-size:11px;font-weight:700;color:var(--text-secondary);
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;
+}
+.verify-item{padding:8px 12px;border-bottom:1px solid var(--border-light);font-size:12px;display:flex;align-items:center;gap:8px}
+.verify-item:last-child{border-bottom:none}
+.verify-item .vi-title{flex:1;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.verify-item .vi-time{font-size:10px;color:var(--text-muted);white-space:nowrap}
+
+/* ── Source Cards ── */
+.source-list{display:flex;flex-direction:column;gap:10px}
+.source-card{
+  background:var(--card);border:1px solid var(--border-light);
+  border-radius:var(--radius);padding:16px 20px;
+  box-shadow:var(--shadow);transition:all var(--transition);
+}
+.source-card:hover{border-color:#CBD5E1;box-shadow:var(--shadow-md)}
+.source-card.has-alert{border-left:3px solid var(--warning)}
+.source-card-row1{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.source-name{font-size:14px;font-weight:800;color:var(--text)}
+.source-type-tag{
+  padding:2px 10px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;white-space:nowrap;
+}
+.source-status-tag{
+  padding:2px 10px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;white-space:nowrap;
+}
+.source-card-row2{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.source-meta{font-size:11px;color:var(--text-secondary);display:flex;align-items:center;gap:4px}
+.source-meta .sep{color:var(--border);margin:0 2px}
+.source-card-row3{display:flex;align-items:center;gap:16px;margin-bottom:10px}
+.source-stat{font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:3px}
+.source-stat .val{font-weight:700;color:var(--text-secondary)}
+.source-stat .val.error{color:var(--danger)}
+.source-card-actions{display:flex;gap:6px}
+
+/* ── Alert Banner in Card ── */
+.card-alert{
+  margin-top:10px;padding:8px 12px;background:var(--warning-light);
+  border-radius:var(--radius-sm);font-size:11px;color:#92400e;
+  display:flex;align-items:center;gap:6px;
+}
+
+/* ── Skeleton ── */
+.skeleton-card{
+  background:var(--card);border:1px solid var(--border-light);
+  border-radius:var(--radius);padding:18px 20px;margin-bottom:10px;
+}
+.skel-line{height:12px;background:linear-gradient(90deg,#f0f1f3 25%,#e6e7eb 50%,#f0f1f3 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px}
+.skel-line.w1{width:40%;height:15px;margin-bottom:8px}
+.skel-line.w2{width:65%;margin-bottom:6px}
+.skel-line.w3{width:50%;margin-bottom:10px}
+.skel-line.w4{width:30%;height:10px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+/* ── Error ── */
+.error-bar{
+  padding:10px 14px;border-radius:var(--radius-sm);
+  background:var(--danger-light);border:1px solid rgba(231,76,60,0.2);
+  color:#991b1b;font-size:12px;font-weight:500;margin-bottom:14px;
+  display:flex;align-items:center;gap:8px;
+}
+.error-bar button{background:none;border:none;color:#991b1b;font-size:16px;margin-left:auto;cursor:pointer}
+
+/* ── Empty ── */
+.empty-state{text-align:center;padding:48px 24px}
+.empty-icon{font-size:40px;margin-bottom:12px;opacity:0.4}
+.empty-title{font-size:15px;font-weight:700;color:var(--text-secondary);margin-bottom:4px}
+.empty-desc{font-size:12px;color:var(--text-muted)}
+
+/* ── Overlay ── */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.3);z-index:40;
+  opacity:0;pointer-events:none;transition:opacity 0.25s;
+}
+.overlay.show{opacity:1;pointer-events:auto}
+
+/* ── SubChannel Drawer ── */
+.drawer{
+  position:fixed;top:0;right:0;width:420px;max-width:100vw;height:100vh;
+  background:#FFF;z-index:50;box-shadow:var(--shadow-lg);
+  transform:translateX(100%);transition:transform 0.3s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;
+}
+.drawer.show{transform:translateX(0)}
+.drawer-header{
+  padding:16px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.drawer-title{font-size:15px;font-weight:800;color:var(--text)}
+.drawer-close{
+  width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+  background:#FFF;font-size:18px;cursor:pointer;display:flex;align-items:center;
+  justify-content:center;color:var(--text-secondary);transition:all var(--transition);
+}
+.drawer-close:hover{background:#F4F5F7;color:var(--text)}
+.drawer-body{flex:1;overflow-y:auto;padding:16px 20px}
+.drawer-footer{padding:12px 20px;border-top:1px solid var(--border)}
+/* SubChannel list items */
+.sc-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border:1px solid var(--border-light);border-radius:var(--radius-sm);margin-bottom:6px;
+  transition:all var(--transition);
+}
+.sc-item:hover{border-color:#CBD5E1}
+.sc-handle{color:var(--text-muted);font-weight:700;letter-spacing:2px;font-size:12px;cursor:grab;user-select:none}
+.sc-name{flex:1;font-size:13px;font-weight:600;color:var(--text)}
+.sc-count{font-size:10px;color:var(--text-muted);background:#F4F5F7;padding:2px 8px;border-radius:var(--radius-pill)}
+.sc-actions{display:flex;gap:4px}
+.sc-new{
+  display:flex;gap:8px;align-items:center;padding:10px 0;
+  border-top:1px dashed var(--border);margin-top:12px;padding-top:14px;
+}
+.sc-new input{
+  flex:1;padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:12px;outline:none;
+}
+.sc-new input:focus{border-color:var(--accent)}
+
+/* ── Inline Edit Mode ── */
+.source-card.editing{
+  border-color:var(--accent);box-shadow:0 0 0 3px rgba(52,152,219,0.08);
+}
+.edit-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}
+
+/* ── View Toggle ── */
+.view-toggle{
+  display:flex;gap:0;margin-bottom:16px;
+  background:var(--card);border:1px solid var(--border-light);
+  border-radius:var(--radius);padding:4px;box-shadow:var(--shadow);
+}
+.view-btn{
+  flex:1;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:700;
+  border:none;background:transparent;color:var(--text-secondary);cursor:pointer;
+  transition:all var(--transition);display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.view-btn:hover{color:var(--text)}
+.view-btn.active{background:var(--accent);color:#FFF}
+.view-btn .badge{padding:1px 7px;border-radius:var(--radius-pill);font-size:10px;font-weight:800}
+.view-btn .badge.err{background:var(--danger);color:#FFF}
+.view-btn .badge.warn{background:var(--warning);color:#FFF}
+.view-btn:not(.active) .badge.err{background:var(--danger-light);color:var(--danger)}
+.view-btn:not(.active) .badge.warn{background:var(--warning-light);color:#b45309}
+
+/* ── Log Module ── */
+.log-toolbar{
+  display:flex;gap:8px;padding:4px 0 14px;flex-wrap:wrap;align-items:center;
+}
+.log-toolbar .form-select{font-size:11px;padding:5px 24px 5px 8px;min-width:auto}
+.log-toolbar .form-input{font-size:11px;padding:5px 8px}
+.log-table{width:100%;border-collapse:collapse;font-size:12px;background:var(--card);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border-light)}
+.log-table th{
+  text-align:left;padding:8px 10px;font-size:10px;font-weight:700;color:var(--text-muted);
+  text-transform:uppercase;border-bottom:2px solid var(--border);white-space:nowrap;background:#F8FAFB;
+}
+.log-table td{padding:8px 10px;border-bottom:1px solid var(--border-light);vertical-align:middle}
+.log-table tbody tr:hover{background:#F8FAFB}
+.log-table tbody tr.error-row{background:var(--danger-light)}
+.log-table tbody tr.warn-row{background:var(--warning-light)}
+.log-level{
+  padding:1px 8px;border-radius:var(--radius-pill);font-size:10px;font-weight:700;white-space:nowrap;
+}
+.log-level.error{background:var(--danger);color:#FFF}
+.log-level.warn{background:var(--warning);color:#FFF}
+.log-level.info{background:#E2E8F0;color:var(--text-secondary)}
+.log-msg{max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.log-time{font-size:10px;color:var(--text-muted);white-space:nowrap}
+.log-source{font-size:10px;color:var(--text-secondary);white-space:nowrap}
+.log-copy{
+  padding:2px 8px;font-size:10px;border-radius:4px;border:1px solid var(--border);
+  background:var(--card);color:var(--text-muted);cursor:pointer;white-space:nowrap;
+  transition:all var(--transition);
+}
+.log-copy:hover{background:var(--accent-light);color:var(--accent);border-color:var(--accent)}
+.log-empty{text-align:center;padding:24px;font-size:12px;color:var(--text-muted)}
+
+/* ── Custom Toast ── */
+.toast-container{
+  position:fixed;top:16px;right:16px;z-index:100;display:flex;flex-direction:column;gap:8px;
+  pointer-events:none;
+}
+.toast{
+  padding:10px 16px;border-radius:var(--radius-sm);font-size:12px;font-weight:600;
+  box-shadow:var(--shadow-md);pointer-events:auto;
+  animation:toastIn 0.3s ease-out;
+  display:flex;align-items:center;gap:8px;max-width:360px;
+}
+.toast.success{background:var(--success);color:#FFF}
+.toast.error{background:var(--danger);color:#FFF}
+.toast.info{background:var(--text);color:#FFF}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── Custom Modal (centered dialog) ── */
+.custom-modal-overlay{
+  position:fixed;inset:0;z-index:60;background:rgba(0,0,0,0.35);
+  display:flex;align-items:center;justify-content:center;
+  animation:fadeIn 0.15s ease-out;
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.custom-modal{
+  background:#FFF;border-radius:var(--radius);box-shadow:var(--shadow-lg);
+  padding:24px;min-width:360px;max-width:440px;
+  animation:modalIn 0.2s cubic-bezier(0.4,0,0.2,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(0.95) translateY(-8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.custom-modal-title{font-size:15px;font-weight:800;color:var(--text);margin-bottom:8px}
+.custom-modal-body{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:20px}
+.custom-modal-actions{display:flex;gap:8px;justify-content:flex-end}
+.custom-modal-actions .btn{padding:8px 20px;font-size:13px}
+
+/* ── Verify Section ── */
+.verify-section{margin-top:4px;padding-top:12px;border-top:1px solid var(--border-light)}
+.verify-section .btn{width:100%;justify-content:center}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  .space-row{flex-wrap:wrap}
+  .form-row{flex-direction:column}
+  .drawer{width:100vw}
+  .edit-grid{grid-template-columns:1fr}
+  .custom-modal{min-width:auto;margin:0 20px}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <a href="#" class="brand"><span>🐂</span>牛马程小报</a>
+    <nav class="nav">
+      <a href="#" class="nav-link">浏览</a>
+      <a href="#" class="nav-link active">管理</a>
+      <a href="#" class="nav-link">系统日志</a>
+    </nav>
+  </div>
+</header>
+
+<main class="main" id="app">
+  <!-- Error -->
+  <div class="error-bar" id="errorBar" style="display:none">
+    <span>⚠️</span><span id="errorMsg"></span>
+    <button onclick="dismissError()">&times;</button>
+  </div>
+
+  <!-- Content Area -->
+  <div id="contentArea"></div>
+</main>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Custom Modal Container -->
+<div id="modalContainer"></div>
+
+<!-- SubChannel Drawer -->
+<div class="drawer" id="subDrawer">
+  <div class="drawer-header">
+    <span class="drawer-title">📂 子频道管理</span>
+    <button class="drawer-close" onclick="closeAll()">&times;</button>
+  </div>
+  <div class="drawer-body" id="subDrawerBody"></div>
+  <div class="drawer-footer">
+    <div class="sc-new">
+      <input type="text" id="newSubName" placeholder="新子频道名称" onkeydown="if(event.key==='Enter')addSubChannel()">
+      <button class="btn primary btn-sm" onclick="addSubChannel()">添加</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Sample Data ──
+let currentSpace='ai';
+const spaces=[
+  {id:'ai',name:'🤖 AI 资讯',subChannels:[
+    {id:'llm',name:'大模型',count:4},
+    {id:'agents',name:'AI Agents',count:2},
+    {id:'apps',name:'AI 应用',count:3},
+  ]},
+  {id:'finance',name:'📈 财经',subChannels:[
+    {id:'alpha',name:'Alpha 策略',count:2},
+    {id:'quant',name:'量化',count:1},
+  ]},
+  {id:'tech',name:'💻 科技',subChannels:[
+    {id:'oss',name:'开源',count:2},
+  ]},
+];
+
+const allSources={
+  ai:[
+    {id:1,name:'OpenAI Blog',type:'rss',typeLabel:'RSS',status:'running',subChannelId:'llm',subChannelName:'大模型',
+     everySeconds:600,maxItems:20,lastFetch:'3 分钟前',lastCount:5,failures:0,alerts:[]},
+    {id:2,name:'@AnthropicAI',type:'x_twitter',typeLabel:'X/Twitter',status:'running',subChannelId:'agents',subChannelName:'AI Agents',
+     everySeconds:300,maxItems:30,lastFetch:'5 分钟前',lastCount:12,failures:0,alerts:[]},
+    {id:3,name:'机器之心 RSS',type:'rss',typeLabel:'RSS',status:'paused',subChannelId:null,subChannelName:null,
+     everySeconds:1200,maxItems:15,lastFetch:'2 小时前',lastCount:0,failures:2,alerts:[{msg:'连续 2 次抓取失败：connect ETIMEDOUT'}]},
+    {id:4,name:'@kaboroevsky',type:'x_twitter',typeLabel:'X/Twitter',status:'running',subChannelId:'apps',subChannelName:'AI 应用',
+     everySeconds:600,maxItems:20,lastFetch:'1 分钟前',lastCount:8,failures:0,alerts:[]},
+    {id:5,name:'MIT Tech Review',type:'rss',typeLabel:'RSS',status:'running',subChannelId:null,subChannelName:null,
+     everySeconds:3600,maxItems:10,lastFetch:'15 分钟前',lastCount:3,failures:0,alerts:[]},
+  ],
+  finance:[
+    {id:6,name:'Bloomberg AI',type:'rss',typeLabel:'RSS',status:'running',subChannelId:'alpha',subChannelName:'Alpha 策略',
+     everySeconds:600,maxItems:20,lastFetch:'2 分钟前',lastCount:7,failures:0,alerts:[]},
+    {id:7,name:'@FinancialTimes',type:'x_twitter',typeLabel:'X/Twitter',status:'running',subChannelId:'quant',subChannelName:'量化',
+     everySeconds:300,maxItems:25,lastFetch:'1 分钟前',lastCount:15,failures:0,alerts:[]},
+  ],
+  tech:[],
+};
+
+function getSpaceData(){return spaces.find(s=>s.id===currentSpace)}
+function getSources(){return allSources[currentSpace]||[]}
+
+// ── Sample Log Data ──
+const sampleLogs=[
+  {ts:'19:32:15',level:'error',source:'worker',msg:'Fetch failed for source "机器之心 RSS": connect ETIMEDOUT 104.21.32.1:443',raw:'[worker] FetchError: connect ETIMEDOUT\n    at fetchAndIngest (dispatcher.ts:81)\n    at workerLoop (dispatcher.ts:148)'},
+  {ts:'19:30:02',level:'warn',source:'worker',msg:'Zero-new alert threshold reached: source "机器之心 RSS" has no new items in 24h',raw:'[worker] ZeroNewMonitor: channel_source_id=cs_789 last_success=2026-05-27T12:30:00Z'},
+  {ts:'19:28:44',level:'error',source:'api',msg:'POST /v1/sources/cs_456/verify failed: X API error 429 Too Many Requests',raw:'[api] HttpError: 429 Too Many Requests\n    at verifyFetch (sources.ts:214)\n    X-RateLimit-Reset: 1716901200'},
+  {ts:'19:25:11',level:'info',source:'worker',msg:'NEWS CREATED id=pn_201 title="GPT-5 发布：多模态推理能力大幅提升" sub_channel=llm',raw:''},
+  {ts:'19:25:08',level:'info',source:'worker',msg:'LLM CALL source_type=x_twitter duration=2.34s',raw:''},
+  {ts:'19:25:01',level:'info',source:'worker',msg:'SCHEDULER enqueued fetch channel_source_id=cs_123',raw:''},
+  {ts:'19:22:30',level:'warn',source:'api',msg:'Slow query detected: GET /v1/channel-spaces/ai/news took 3.2s (threshold: 2s)',raw:'[api] SlowQuery: SELECT pn.* FROM processed_news pn WHERE pn.channel_space_id = $1 ORDER BY pn.published_at DESC LIMIT 30 OFFSET 0\n  Duration: 3.2s'},
+  {ts:'19:20:05',level:'error',source:'worker',msg:'LLM call failed after 3 retries: OpenAI API error 500 Internal Server Error',raw:'[worker] LLMError: OpenAI API error 500\n    at processLLM (llm.ts:45)\n    at processOne (processor.ts:50)\n  Retries: 3, Backoff: 2s/4s/8s'},
+  {ts:'19:18:22',level:'info',source:'api',msg:'Source verified: "OpenAI Blog" (rss) — 5 items fetched',raw:''},
+  {ts:'19:15:00',level:'info',source:'scheduler',msg:'Scheduler tick: scanned 5 channel_sources, enqueued 3 fetch tasks',raw:''},
+  {ts:'19:10:33',level:'warn',source:'worker',msg:'Reclaim: re-queued 2 stale tasks (locked > 60s)',raw:'[worker] Reclaim: tasks tk_45, tk_46 status=running→queued'},
+  {ts:'18:55:10',level:'error',source:'api',msg:'Database connection pool exhausted: 20/20 connections in use',raw:'[api] PoolError: timeout exceeded when acquiring connection\n    at pool.connect (pool.ts:22)\n  Active: 20, Idle: 0, Waiting: 3'},
+];
+
+let logFilter={level:'',source:'',keyword:''};
+function renderLogView(){
+  let logs=sampleLogs;
+  if(logFilter.level) logs=logs.filter(l=>l.level===logFilter.level);
+  if(logFilter.source) logs=logs.filter(l=>l.source===logFilter.source);
+  if(logFilter.keyword) logs=logs.filter(l=>l.msg.includes(logFilter.keyword)||l.source.includes(logFilter.keyword));
+
+  const errCount=sampleLogs.filter(l=>l.level==='error').length;
+  const warnCount=sampleLogs.filter(l=>l.level==='warn').length;
+
+  let h='<div class="log-toolbar">';
+  h+=`<select class="form-select" onchange="setLogFilter('level',this.value)">
+    <option value="">全部级别</option>
+    <option value="error" ${logFilter.level==='error'?'selected':''}>🔴 错误 (${errCount})</option>
+    <option value="warn" ${logFilter.level==='warn'?'selected':''}>🟡 警告 (${warnCount})</option>
+    <option value="info" ${logFilter.level==='info'?'selected':''}>🔵 信息</option>
+  </select>`;
+  h+=`<select class="form-select" onchange="setLogFilter('source',this.value)">
+    <option value="">全部来源</option>
+    <option value="worker" ${logFilter.source==='worker'?'selected':''}>Worker</option>
+    <option value="api" ${logFilter.source==='api'?'selected':''}>API</option>
+    <option value="scheduler" ${logFilter.source==='scheduler'?'selected':''}>Scheduler</option>
+  </select>`;
+  h+=`<input class="form-input" type="text" placeholder="搜索关键词…" style="width:180px" oninput="setLogFilter('keyword',this.value)" value="${logFilter.keyword||''}">`;
+  h+=`</div>`;
+
+  if(logs.length===0){
+    h+=`<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">无匹配日志</div><div class="empty-desc">试试调整筛选条件</div></div>`;
+  }else{
+    h+=`<table class="log-table"><thead><tr><th>时间</th><th>级别</th><th>来源</th><th>消息</th><th>操作</th></tr></thead><tbody>`;
+    logs.forEach(l=>{
+      const rowClass=l.level==='error'?'error-row':l.level==='warn'?'warn-row':'';
+      h+=`<tr class="${rowClass}">
+        <td class="log-time">${l.ts}</td>
+        <td><span class="log-level ${l.level}">${l.level==='error'?'错误':l.level==='warn'?'警告':'信息'}</span></td>
+        <td class="log-source">${l.source}</td>
+        <td class="log-msg" title="${l.msg.replace(/"/g,'&quot;')}">${l.msg}</td>
+        <td><button class="log-copy" onclick="copyLog(event, '${l.raw.replace(/'/g,"\\'").replace(/\n/g,'\\n').replace(/"/g,'&quot;')}')">📋 复制详情</button></td>
+      </tr>`;
+    });
+    h+=`</tbody></table>`;
+  }
+  return h;
+}
+
+function setLogFilter(key, val){
+  logFilter[key]=val;
+  render();
+}
+
+function copyLog(e, rawText){
+  const text=rawText||'';
+  navigator.clipboard?.writeText(text).then(()=>{
+    const btn=e.target;
+    btn.textContent='✅ 已复制';
+    setTimeout(()=>btn.textContent='📋 复制详情',1500);
+  }).catch(()=>{
+    showToast('复制失败，请手动选择文本', 'error');
+  });
+}
+
+// ── View State ──
+let currentView='sources'; // 'sources' | 'logs'
+
+// ── Nav Click ──
+document.querySelectorAll('.nav-link').forEach(link=>{
+  link.addEventListener('click',function(e){
+    e.preventDefault();
+    document.querySelectorAll('.nav-link').forEach(l=>l.classList.remove('active'));
+    this.classList.add('active');
+    const text=this.textContent.trim();
+    if(text==='浏览'){window.location.href='browse.html'}
+    else if(text==='系统日志'){currentView='logs';render()}
+    else{currentView='sources';render()}
+  });
+});
+
+// ── Render ──
+function render(){
+  const space=getSpaceData();
+  const sources=getSources();
+  let h='';
+
+  if(currentView==='logs'){
+    h += `<div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:14px;font-weight:800">📋 系统日志</div>
+      <span style="font-size:11px;color:var(--text-muted)">全局 · 不限频道</span>
+    </div>`;
+    h += renderLogView();
+  }else{
+    // Space row placeholder - use the existing row HTML approach
+    h += `<div id="spaceRowArea"></div>`;
+
+    // Section header
+    h+=`<div class="section-header">
+      <div class="section-title">📡 信息源 <span class="section-count">${sources.length}</span></div>
+      <button class="btn primary" onclick="toggleAddForm()" id="addBtn">+ 添加信息源</button>
+    </div>`;
+
+    // Add form placeholder
+    h+=`<div id="addFormArea"></div>`;
+
+    // Source list
+    if(sources.length===0){
+      h+=`<div class="empty-state"><div class="empty-icon">📡</div><div class="empty-title">当前频道暂无信息源</div><div class="empty-desc">点击上方「+ 添加信息源」开始添加</div></div>`;
+    }else{
+      h+=`<div class="source-list">`;
+      sources.forEach(s=>{
+        const alertClass=s.alerts.length>0?' has-alert':'';
+        h+=`<div class="source-card${alertClass}" id="source-${s.id}">
+          <div class="source-card-row1">
+            <span class="source-name">${s.name}</span>
+            <span class="source-type-tag" style="background:${typeBg(s.type)};color:${typeColor(s.type)}">${s.typeLabel}</span>
+            <span class="source-status-tag" style="background:${s.status==='running'?'var(--success-light)':'#F1F5F9'};color:${s.status==='running'?'var(--success)':'var(--text-muted)'}">${s.status==='running'?'● 运行中':'⏸ 已暂停'}</span>
+          </div>
+          <div class="source-card-row2">
+            <span class="source-meta">📂 ${s.subChannelName||'<span style="color:var(--text-muted)">未分类</span>'}</span>
+            <span class="source-meta"><span class="sep">|</span> ⏱ 每 ${s.everySeconds} 秒</span>
+            <span class="source-meta"><span class="sep">|</span> 📐 ≤ ${s.maxItems} 条</span>
+          </div>
+          <div class="source-card-row3">
+            <span class="source-stat">🕐 最后抓取 <span class="val">${s.lastFetch}</span></span>
+            <span class="source-stat">📥 抓取 <span class="val">${s.lastCount}</span> 条</span>
+            <span class="source-stat">${s.failures>0?`❌ 连续失败 <span class="val error">${s.failures}</span> 次`:`✅ 无失败`}</span>
+          </div>
+          <div class="source-card-actions">
+            <button class="btn btn-sm" onclick="editSource(${s.id})">编辑</button>
+            <button class="btn btn-sm ${s.status==='running'?'':'success'}" onclick="toggleSource(${s.id})">${s.status==='running'?'暂停':'启用'}</button>
+            <button class="btn btn-sm danger" onclick="deleteSource(${s.id})">删除</button>
+          </div>`;
+        if(s.alerts.length>0){
+          s.alerts.forEach(a=>{
+            h+=`<div class="card-alert">⚠️ ${a.msg}</div>`;
+          });
+        }
+        h+=`</div>`;
+      });
+      h+=`</div>`;
+    }
+  }
+
+  document.getElementById('contentArea').innerHTML=h;
+
+  // Re-render space row if in sources view
+  if(currentView!=='logs'){
+    renderSpaceRow();
+    if(showAddForm) renderAddForm();
+  }
+}
+
+function renderSpaceRow(){
+  const area=document.getElementById('spaceRowArea');
+  if(!area)return;
+  area.innerHTML=`
+    <div class="space-row">
+      <div class="space-pills" id="spacePills">
+        <button class="space-pill active" data-id="ai">🤖 AI 资讯</button>
+        <button class="space-pill" data-id="finance">📈 财经</button>
+        <button class="space-pill" data-id="tech">💻 科技</button>
+      </div>
+      <div class="space-actions">
+        <button class="btn" onclick="openNewSpace()">+ 新建空间</button>
+        <button class="btn" onclick="openSubChannelDrawer()">📂 管理子频道</button>
+      </div>
+    </div>`;
+  // Re-bind space pill clicks
+  document.getElementById('spacePills').addEventListener('click',e=>{
+    const pill=e.target.closest('.space-pill');
+    if(!pill)return;
+    document.querySelectorAll('.space-pill').forEach(p=>p.classList.remove('active'));
+    pill.classList.add('active');
+    currentSpace=pill.dataset.id;
+    showAddForm=false;
+    render();
+  });
+}
+
+function typeBg(t){return t==='x_twitter'?'#EBF5FB':t==='rss'?'#FEF9E7':'#F1F5F9'}
+function typeColor(t){return t==='x_twitter'?'#3498db':t==='rss'?'#f39c12':'#64748b'}
+
+// ── Toast & Modal Helpers ──
+function showToast(msg, type='info'){
+  const c=document.getElementById('toastContainer');
+  const el=document.createElement('div');
+  el.className='toast '+type;
+  const icons={success:'✅',error:'❌',info:'ℹ️'};
+  el.innerHTML=`<span>${icons[type]||'ℹ️'}</span> ${msg}`;
+  c.appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transition='opacity 0.3s';setTimeout(()=>el.remove(),300)},2500);
+}
+
+function showModal(title, body, onConfirm, confirmText='确认', confirmDanger=false){
+  const c=document.getElementById('modalContainer');
+  const btnClass=confirmDanger?'btn danger':'btn primary';
+  c.innerHTML=`
+    <div class="custom-modal-overlay" onclick="closeModal()">
+      <div class="custom-modal" onclick="event.stopPropagation()">
+        <div class="custom-modal-title">${title}</div>
+        <div class="custom-modal-body">${body}</div>
+        <div class="custom-modal-actions">
+          <button class="btn" onclick="closeModal()">取消</button>
+          <button class="${btnClass}" id="modalConfirmBtn">${confirmText}</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modalConfirmBtn').addEventListener('click',()=>{closeModal();onConfirm();});
+  document.body.style.overflow='hidden';
+}
+
+function closeModal(){
+  document.getElementById('modalContainer').innerHTML='';
+  document.body.style.overflow='';
+}
+let showAddForm=false;
+function toggleAddForm(){
+  showAddForm=!showAddForm;
+  renderAddForm();
+}
+
+function renderAddForm(){
+  const area=document.getElementById('addFormArea');
+  if(!area)return;
+  if(!showAddForm){area.innerHTML='';return}
+  const space=getSpaceData();
+  const subOpts=space.subChannels.map(sc=>`<option value="${sc.id}">${sc.name}</option>`).join('');
+  area.innerHTML=`
+    <div class="add-form">
+      <div class="form-row">
+        <div class="form-group grow">
+          <span class="form-label">信息源 URL</span>
+          <input class="form-input" type="text" id="addUrl" placeholder="https://…" onblur="onUrlBlur()" style="width:100%">
+        </div>
+        <div class="form-group" style="min-width:130px">
+          <span class="form-label">类型</span>
+          <select class="form-select" id="addType" onchange="onTypeChange()">
+            <option value="">自动识别</option>
+            <option value="x_twitter">X/Twitter</option>
+            <option value="rss">RSS</option>
+            <option value="github_trending">GitHub</option>
+            <option value="hf_daily_papers">HF Papers</option>
+          </select>
+        </div>
+        <div class="form-group" style="min-width:130px">
+          <span class="form-label">归属子频道</span>
+          <select class="form-select" id="addSub">
+            <option value="">无（直属频道）</option>
+            ${subOpts}
+          </select>
+        </div>
+      </div>
+      <div id="xtwitterConfig" style="display:none">
+        <div class="form-row">
+          <div class="form-group" style="min-width:120px">
+            <span class="form-label">抓取模式</span>
+            <select class="form-select" id="addXMode">
+              <option value="search">关键词搜索</option>
+              <option value="user_timeline">账号追踪</option>
+            </select>
+          </div>
+          <div class="form-group grow">
+            <span class="form-label" id="addXLabel">搜索关键词</span>
+            <input class="form-input" type="text" id="addXQuery" placeholder="例：AI news OR LLM" style="width:100%">
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="width:120px">
+          <span class="form-label">抓取间隔（秒）</span>
+          <input class="form-input" type="number" id="addInterval" value="600" min="60" style="width:100%">
+        </div>
+        <div class="form-group" style="width:120px">
+          <span class="form-label">每次最大条数</span>
+          <input class="form-input" type="number" id="addMax" value="20" min="1" max="100" style="width:100%">
+        </div>
+      </div>
+      <div class="verify-section">
+        <button class="btn" onclick="verifyPreview()" id="verifyBtn">🔍 验证预览</button>
+      </div>
+      <div id="previewArea"></div>
+      <div class="form-actions">
+        <button class="btn" onclick="toggleAddForm()">取消</button>
+        <button class="btn primary" onclick="doAddSource()">确认添加</button>
+      </div>
+    </div>`;
+}
+
+function onTypeChange(){
+  const type=document.getElementById('addType')?.value;
+  const cfg=document.getElementById('xtwitterConfig');
+  if(cfg)cfg.style.display=type==='x_twitter'?'block':'none';
+}
+
+function onUrlBlur(){
+  const url=document.getElementById('addUrl')?.value?.trim();
+  if(!url)return;
+  const mockDetect=url.includes('twitter.com')||url.includes('x.com')?'x_twitter':
+    url.endsWith('.xml')||url.includes('rss')?'rss':'';
+  if(mockDetect){
+    const sel=document.getElementById('addType');
+    if(sel)sel.value=mockDetect;
+    onTypeChange();
+  }
+}
+
+let previewData=null;
+function verifyPreview(){
+  const btn=document.getElementById('verifyBtn');
+  if(!btn)return;
+  btn.textContent='⏳ 验证中…';btn.disabled=true;
+  setTimeout(()=>{
+    previewData=[
+      {title:'GPT-5 发布：多模态推理能力大幅提升',time:'18 分钟前'},
+      {title:'Claude 推出新一代 Code Agent',time:'42 分钟前'},
+      {title:'Meta 开源 Llama 4：千亿参数模型',time:'2 小时前'},
+      {title:'AI 编程助手市场格局变化',time:'3 小时前'},
+      {title:'多智能体协作系统最新研究进展',time:'4 小时前'},
+    ];
+    btn.textContent='✅ 已验证';btn.disabled=false;
+    const area=document.getElementById('previewArea');
+    if(!area)return;
+    let h='<div class="verify-preview"><div class="verify-header"><span>📋 预览数据（5 条）</span><span style="font-size:10px;color:var(--success)">验证通过</span></div>';
+    previewData.forEach(i=>{
+      h+=`<div class="verify-item"><span class="vi-title">${i.title}</span><span class="vi-time">${i.time}</span></div>`;
+    });
+    h+='</div>';
+    area.innerHTML=h;
+  },800);
+}
+
+function doAddSource(){
+  showToast('信息源已添加成功', 'success');
+  showAddForm=false;
+  render();
+}
+
+// ── Source Actions ──
+function editSource(id){
+  const sources=getSources();
+  const s=sources.find(x=>x.id===id);
+  if(!s)return;
+  const el=document.getElementById('source-'+id);
+  if(!el)return;
+  el.classList.add('editing');
+  const space=getSpaceData();
+  const subOpts=space.subChannels.map(sc=>`<option value="${sc.id}" ${sc.subChannelId===sc.id?'selected':''}>${sc.name}</option>`).join('');
+  el.innerHTML=`
+    <div class="source-card-row1">
+      <input class="form-input" value="${s.name}" style="flex:1;font-weight:700" id="editName${id}">
+      <span class="source-type-tag" style="background:${typeBg(s.type)};color:${typeColor(s.type)}">${s.typeLabel}</span>
+    </div>
+    <div class="edit-grid">
+      <div class="form-group">
+        <span class="form-label">归属子频道</span>
+        <select class="form-select" id="editSub${id}">
+          <option value="">无</option>
+          ${subOpts}
+        </select>
+      </div>
+      <div class="form-group">
+        <span class="form-label">抓取间隔（秒）</span>
+        <input class="form-input" type="number" value="${s.everySeconds}" id="editInterval${id}">
+      </div>
+      <div class="form-group">
+        <span class="form-label">每次最大条数</span>
+        <input class="form-input" type="number" value="${s.maxItems}" id="editMax${id}">
+      </div>
+      <div class="form-group">
+        <span class="form-label">启用</span>
+        <label style="display:flex;align-items:center;gap:6px;padding-top:6px;font-size:13px">
+          <input type="checkbox" ${s.status==='running'?'checked':''} id="editEnabled${id}"> 运行中
+        </label>
+      </div>
+    </div>
+    <div class="source-card-actions">
+      <button class="btn primary btn-sm" onclick="saveEdit(${id})">保存</button>
+      <button class="btn btn-sm" onclick="cancelEdit(${id})">取消</button>
+    </div>`;
+}
+
+function cancelEdit(id){
+  render();
+}
+
+function saveEdit(id){
+  showToast('信息源配置已保存', 'success');
+  render();
+}
+
+function toggleSource(id){
+  const s=getSources().find(x=>x.id===id);
+  if(!s)return;
+  const newStatus=s.status==='running'?'paused':'running';
+  s.status=newStatus;
+  showToast(newStatus==='running'?'信息源已启用':'信息源已暂停', 'success');
+  render();
+}
+
+function deleteSource(id){
+  const s=getSources().find(x=>x.id===id);
+  if(!s)return;
+  showModal(
+    '删除信息源',
+    `确定删除 <strong>${s.name}</strong> 吗？关联的抓取数据也将被清除，此操作不可撤销。`,
+    ()=>{ showToast(`已删除「${s.name}」`, 'success'); },
+    '确认删除', true
+  );
+}
+
+// ── SubChannel Drawer ──
+function openSubChannelDrawer(){
+  renderSubDrawer();
+  document.getElementById('overlay').classList.add('show');
+  document.getElementById('subDrawer').classList.add('show');
+  document.body.style.overflow='hidden';
+}
+
+function renderSubDrawer(){
+  const space=getSpaceData();
+  let h='';
+  space.subChannels.forEach((sc,i)=>{
+    h+=`<div class="sc-item">
+      <span class="sc-handle">::</span>
+      <span class="sc-name">${sc.name}</span>
+      <span class="sc-count">${sc.count} 个信源</span>
+      <div class="sc-actions">
+        <button class="btn btn-xs" onclick="renameSub('${sc.id}')">重命名</button>
+        <button class="btn btn-xs danger" onclick="deleteSub('${sc.id}')">删除</button>
+      </div>
+    </div>`;
+  });
+  if(space.subChannels.length===0){
+    h+=`<div class="empty-state"><div class="empty-icon">📂</div><div class="empty-title">暂无子频道</div><div class="empty-desc">在下方输入框中新建</div></div>`;
+  }
+  document.getElementById('subDrawerBody').innerHTML=h;
+}
+
+function addSubChannel(){
+  const input=document.getElementById('newSubName');
+  const name=input?.value?.trim();
+  if(!name)return;
+  const space=getSpaceData();
+  space.subChannels.push({id:'sc'+Date.now(),name,count:0});
+  input.value='';
+  renderSubDrawer();
+  render();
+}
+
+function renameSub(id){showToast('重命名功能（演示模式）', 'info')}
+function deleteSub(id){
+  showModal('删除子频道', '确定删除此子频道吗？子频道下的信息源将变为"未分类"。',
+    ()=>{ showToast('子频道已删除', 'success'); },
+    '确认删除', true
+  );
+}
+
+// ── Close All ──
+function closeAll(){
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('subDrawer').classList.remove('show');
+  document.body.style.overflow='';
+}
+
+function openNewSpace(){showToast('新建频道空间（演示模式）', 'info')}
+function dismissError(){document.getElementById('errorBar').style.display='none'}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeAll()});
+
+// ── Init ──
+render();
+</script>
+</body>
+</html>

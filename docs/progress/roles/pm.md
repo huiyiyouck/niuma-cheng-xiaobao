@@ -262,3 +262,52 @@
 - 结论：✅通过。R2 5 项修复（Fetcher 注册表接入 + Worker 模块拆分 + 补索引 + SSRF + Zod 校验）均为架构层面改进，API 契约/参数/返回值/Worker 行为保持等价翻译。R1+R2 两轮 Review 全部通过（PM R1 ✅ + 架构师 R2 ✅ + PM R2 ✅），DevOps 部署验证通过。v0.3 迭代闭环。
 - 关联迭代：v0.3
 - 遗留问题/风险：无
+
+## 2026-05-28 — v0.4 UI 原型设计产出
+
+- 本次角色：产品架构师(PM)
+- 动作：产出
+- 涉及文档：
+  - `docs/progress/iterations/v0.4-mockups/index.html`（导航页）
+  - `docs/progress/iterations/v0.4-mockups/browse.html`（浏览页原型）
+  - `docs/progress/iterations/v0.4-mockups/admin.html`（管理页原型，含系统日志视图）
+- 结论：UI 原型通过 PM 验收。设计语言：极简白底 + 工具型面板。核心设计决策：
+  - 管理页不再使用四 Tab，改为统一频道空间视图 + 子频道抽屉
+  - 系统日志提升为顶级导航项（浏览 | 管理 | 系统日志）
+  - 自定义 Toast（右上角 2.5s）+ Modal（居中对话框）替换浏览器原生弹窗
+  - 原型已部署到 `https://news.huiyiyou.cloud/mockups/`
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-28 — v0.4 功能点检完成
+
+- 本次角色：产品架构师(PM)
+- 动作：检查（点检）
+- 涉及文档：`server/src/` 全部源文件、`frontend/src/` 全部源文件
+- 结论：前后端全量代码审查完成。
+
+**后端发现 16 项**：
+- 阻断 4：频道空间缺 UPDATE/DELETE、绑定缺 DELETE、admin-logs 无鉴权、日志路径与 winston 轮转不匹配
+- 中等 5：Source 删除无绑定检查、process 失败不告警、X/Twitter 用户解析失败静默、无 404 handler、只有 x_twitter 一个 Fetcher
+- 轻微 7：SQL 拼接排序、告警无状态、统计缺 source 维度、日志全量读文件、无 rate limiting、LLM 超时硬编码、http-logger 实现可疑
+
+**前端发现 12 项**：
+- 阻断 3：使用浏览器原生 confirm()、写操作不发 x-admin-token、AdminPage 为旧 4-Tab 设计
+- 中等 5：无防抖、WS 重连不完整、缺骨架屏、筛选用原生 select、缺 Toast 系统
+- 轻微 4：as any 类型绕过、绑定不支持选子频道、StatsOverview 未使用、缺分页组件
+
+- 关联迭代：v0.4
+- 遗留问题/风险：待 PM 出优化提案后纳入 PRD
+
+## 2026-05-28 — v0.4 功能扩展优化提案 + PRD 初版产出
+
+- 本次角色：产品架构师(PM)
+- 动作：产出
+- 涉及文档：`docs/progress/iterations/v0.4-prd.md`、`docs/progress/iterations/v0.4.md`、`docs/progress/INDEX.md`
+- 结论：基于点检结果，提出三档优化方案：
+  - **闭环 5 项**：RSS Fetcher、频道完整 CRUD、Source 解绑、告警状态、前端鉴权
+  - **增强 6 项**：管理页原型实现、新闻搜索、Toast/Modal 体系、骨架屏、防抖、日志独立页
+  - **远眺 4 项**：批量操作、数据导出、原始来源返链、Worker 仪表盘（标记 v0.5+）
+- PRD 初版已产出（R1），进入架构师和全栈开发 Review。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
