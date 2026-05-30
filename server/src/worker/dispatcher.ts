@@ -63,7 +63,7 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
 
   const { rows: [row] } = await conn.query(
     `SELECT cs.channel_space_id, cs.fetch_policy, s.id as source_id, s.type as source_type,
-            s.display_name as source_name, s.config as source_config, ss.cursor, ss.consecutive_failures
+            s.display_name as source_name, s.source_url, s.config as source_config, ss.cursor, ss.consecutive_failures
      FROM channel_sources cs
      JOIN sources s ON s.id = cs.source_id
      LEFT JOIN source_states ss ON ss.channel_source_id = cs.id
@@ -80,7 +80,12 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
 
   const fetcher = find(row.source_type);
   if (!fetcher) throw new NonRetryableError(`未注册的 Source 类型：${row.source_type}`);
-  const fetchResult = await fetcher.fetch(row.source_config, row.cursor || {}, maxItems);
+  // v0.4: 将 source_url 合并进 config，Fetcher（如 RSS）依赖此字段
+  const mergedConfig: Record<string, unknown> = {
+    ...(row.source_config as Record<string, unknown> || {}),
+    source_url: row.source_url,
+  };
+  const fetchResult = await fetcher.fetch(mergedConfig, row.cursor || {}, maxItems);
   items = fetchResult.items;
   cursorUpdates = fetchResult.cursorUpdates;
 

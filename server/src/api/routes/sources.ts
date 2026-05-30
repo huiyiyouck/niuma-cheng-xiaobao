@@ -201,9 +201,11 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
 
     const sourceType = row.type;
     const srcConfig = asDict(row.config);
+    // v0.4: 将 source_url 合并进 config，RSS Fetcher 依赖此字段
+    const verifyConfig: Record<string, unknown> = { ...srcConfig, source_url: row.source_url };
 
     try {
-      const items = await verifyFetch(sourceType, srcConfig);
+      const items = await verifyFetch(sourceType, verifyConfig);
       const verifyItems = items.slice(0, 5).map((it: any) => ({
         source_item_id: it.source_item_id,
         source_item_url: it.url || null,
