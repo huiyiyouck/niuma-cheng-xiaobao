@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { listSubChannels } from "@/lib/api";
 import type { SubChannel, UUID } from "@/lib/types";
 import { useToast } from "@/composables/useToast";
@@ -14,10 +14,24 @@ const displayName = ref("");
 const subChannelId = ref<UUID | null>(null);
 const fetchInterval = ref(600);
 const maxItems = ref(20);
+// X/Twitter 配置
+const xtMode = ref<"search" | "user_timeline">("user_timeline");
+const xtSearchQuery = ref("");
+const xtUsernames = ref("");
 const verifyLoading = ref(false);
 const verifyResult = ref<{ status: string; error?: string; items: any[] } | null>(null);
 const adding = ref(false);
 const subChannels = ref<SubChannel[]>([]);
+
+const isXTwitter = computed(() => sourceType.value === "x_twitter");
+
+function buildConfig(): Record<string, unknown> {
+  if (sourceType.value === "x_twitter") {
+    if (xtMode.value === "search") return { mode: "search", search_query: xtSearchQuery.value };
+    return { mode: "user_timeline", usernames: xtUsernames.value.split(",").map(s => s.trim()).filter(Boolean) };
+  }
+  return {};
+}
 
 async function loadSubs() {
   try {
@@ -69,17 +83,32 @@ async function verify() {
 async function addSource() {
   adding.value = true;
   try {
-    const res = await fetch(`/v1/channel-spaces/${props.spaceId}/sources`, {
+    // 1. 创建 Source
+    const sRes = await fetch("/v1/sources", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        source_id: undefined, // need to get from verify result or create
+        display_name: displayName.value || url.value,
+        source_url: url.value || null,
+        type: sourceType.value || undefined,
+        config: buildConfig(),
+      }),
+    });
+    if (!sRes.ok) throw new Error((await sRes.json()).detail || "创建 Source 失败");
+    const source = await sRes.json();
+
+    // 2. 绑定到频道空间
+    const bRes = await fetch(`/v1/channel-spaces/${props.spaceId}/sources`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        source_id: source.id,
         enabled: true,
         fetch_policy: { interval_seconds: fetchInterval.value, max_items: maxItems.value },
         sub_channel_id: subChannelId.value || null,
       }),
     });
-    if (!res.ok) throw new Error((await res.json()).detail || "添加失败");
+    if (!bRes.ok) throw new Error((await bRes.json()).detail || "绑定失败");
     toast.success("信息源已添加");
     emit("added");
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); } finally { adding.value = false; }
@@ -102,6 +131,24 @@ onMounted(loadSubs);
         <option v-for="sc in subChannels" :key="sc.id" :value="sc.id">{{ sc.name }}</option>
       </select>
     </div>
+    <!-- X/Twitter 配置 -->
+    <div v-if="isXTwitter" class="add-row">
+      <label>模式
+        <select v-model="xtMode" class="select" style="width:auto">
+          <option value="user_timeline">账号追踪</option>
+          <option value="search">关键词搜索</option>
+        </select>
+      </label>
+      <label v-if="xtMode === 'user_timeline'" style="flex:1">
+        账号（逗号分隔）
+        <input class="input" v-model="xtUsernames" placeholder="alpha123cc, elonmusk" style="width:100%" />
+      </label>
+      <label v-else style="flex:1">
+        搜索关键词
+        <input class="input" v-model="xtSearchQuery" placeholder="airdrop OR crypto" style="width:100%" />
+      </label>
+    </div>
+
     <div class="add-row">
       <label>抓取间隔(秒) <input class="input" type="number" v-model.number="fetchInterval" min="60" style="width:100px" /></label>
       <label>最大条数 <input class="input" type="number" v-model.number="maxItems" min="1" max="100" style="width:80px" /></label>
