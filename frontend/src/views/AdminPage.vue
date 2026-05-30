@@ -26,7 +26,17 @@ const showCreateSpace = ref(false);
 const showAddSource = ref(false);
 const showSubDrawer = ref(false);
 
+import { computed } from "vue";
+
+// ...
+
 const editingBindingId = ref<UUID | null>(null);
+
+// 未绑定到当前空间的 Source
+const unboundSources = computed(() => {
+  const boundIds = new Set(bindings.value.map(b => b.source.id));
+  return sources.value.filter(s => !boundIds.has(s.id));
+});
 
 async function refreshAll() {
   try {
@@ -72,6 +82,17 @@ async function onDeleteSpace() {
     toast.success("频道空间已删除");
     selectedSpaceId.value = null;
     await refreshAll();
+  } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
+}
+
+async function quickBind(sourceId: UUID) {
+  try {
+    await requestJson(`/v1/channel-spaces/${selectedSpaceId.value}/sources`, {
+      method: "POST",
+      body: { source_id: sourceId, enabled: true },
+    });
+    toast.success("已绑定");
+    await refreshSpaceData();
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
 
@@ -137,7 +158,7 @@ onMounted(refreshAll);
       <div v-if="bindings.length === 0" class="empty-state">
         📡 当前频道暂无信息源<br><small>点击下方「+ 添加信息源」开始</small>
       </div>
-      <div v-else class="source-list">
+      <div v-if="bindings.length > 0" class="source-list">
         <SourceCard
           v-for="b in bindings" :key="b.channel_source.id"
           :binding="b"
@@ -148,6 +169,16 @@ onMounted(refreshAll);
           @saved="editingBindingId = null; refreshSpaceData()"
           @refresh="refreshSpaceData()"
         />
+      </div>
+
+      <!-- 未绑定 Source -->
+      <div v-if="unboundSources.length > 0" class="unbound-section">
+        <div class="section-label">未绑定的信息源（{{ unboundSources.length }}）</div>
+        <div v-for="s in unboundSources" :key="s.id" class="unbound-item">
+          <span class="unbound-name">{{ s.display_name }}</span>
+          <span class="badge badge--muted">{{ s.type }}</span>
+          <button class="btn-sm" @click="quickBind(s.id)">绑定到此空间</button>
+        </div>
       </div>
 
       <!-- 内联添加表单 -->
@@ -213,6 +244,16 @@ onMounted(refreshAll);
 .add-btn { width: 100%; border-style: dashed; border-color: var(--accent); color: var(--accent); }
 .add-btn:hover { background: var(--accent-light); }
 .source-list { display: flex; flex-direction: column; gap: 10px; }
+
+.unbound-section { margin: 12px 0; }
+.section-label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 6px; }
+.unbound-item {
+  display: flex; align-items: center; gap: 10px; padding: 8px 12px;
+  border: 1px solid var(--border-light); border-radius: 8px;
+  background: var(--card); margin-bottom: 4px;
+}
+.unbound-name { font-size: 13px; font-weight: 600; color: var(--text); flex: 1; }
+.badge--muted { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700; background: #F1F5F9; color: var(--text-muted); }
 
 .drawer-overlay {
   position: fixed; inset: 0; z-index: 50;
