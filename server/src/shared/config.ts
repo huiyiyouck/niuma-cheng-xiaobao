@@ -56,6 +56,7 @@ export const config = {
   adminAllowedIps: get("ADMIN_ALLOWED_IPS", "127.0.0.1"),
   adminToken: get("ADMIN_TOKEN", ""),
   adminRequireBoth: getBool("ADMIN_REQUIRE_BOTH", false),
+  adminProtectReads: getBool("ADMIN_PROTECT_READS", false),
 
   // CORS
   corsAllowOrigins: get("CORS_ALLOW_ORIGINS", "*"),

@@ -18,10 +18,13 @@ export async function adminGuard(
 
   // 判断是否需要管理员权限
   const isAlertsPath = path.startsWith("/v1/alerts");
+  const isAdminPath = path.startsWith("/v1/admin");                   // v0.4: 管理端点保护
   const isNonGetWrite =
     path.startsWith("/v1") && !["GET", "HEAD", "OPTIONS"].includes(method);
+  const isAdminGetPath = config.adminProtectReads &&                  // v0.4: 可选 GET 鉴权
+    path.startsWith("/v1/admin") && ["GET", "HEAD"].includes(method);
 
-  if (!isAlertsPath && !isNonGetWrite) return;
+  if (!isAlertsPath && !isAdminPath && !isNonGetWrite && !isAdminGetPath) return;
 
   // Token 验证
   if (config.adminToken) {

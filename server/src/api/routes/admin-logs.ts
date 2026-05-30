@@ -1,14 +1,26 @@
-import { readFileSync, existsSync } from "node:fs";
-import { resolve, dirname } from "node:path";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { resolve, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOG_DIR = resolve(__dirname, "../../../../logs");
-const LOG_FILES: Record<string, string> = {
-  api: resolve(LOG_DIR, "api.log"),
-  worker: resolve(LOG_DIR, "worker.log"),
-};
+
+// v0.4: 动态解析日志文件（支持 winston-daily-rotate-file 轮转后的日期后缀文件）
+function getLogFiles(): { name: string; path: string }[] {
+  const files: { name: string; path: string }[] = [];
+  if (!existsSync(LOG_DIR)) return files;
+  const entries = readdirSync(LOG_DIR).filter((f) => f.endsWith(".log"));
+  for (const f of entries) {
+    const match = f.match(/^(api|worker)(?:-(\d{4}-\d{2}-\d{2}))?\.log$/);
+    if (match) {
+      const [, source, date] = match;
+      const label = date ? `${source} (${date})` : `${source} (今天)`;
+      files.push({ name: label, path: join(LOG_DIR, f) });
+    }
+  }
+  return files.sort((a, b) => b.path.localeCompare(a.path)); // 最新在前
+}
 
 function readLogLines(opts: {
   source?: string;
@@ -19,14 +31,17 @@ function readLogLines(opts: {
   limit: number;
   offset: number;
 }): { entries: any[]; total: number } {
+  const logFiles = getLogFiles();
   const filesToRead: string[] = [];
   if (opts.source) {
-    const sources = opts.source.split(",").map((s) => s.trim()).filter(Boolean);
-    for (const s of sources) {
-      if (LOG_FILES[s]) filesToRead.push(LOG_FILES[s]!);
+    const sources = new Set(opts.source.split(",").map((s) => s.trim()).filter(Boolean));
+    for (const lf of logFiles) {
+      // 提取 source 名（不含日期部分）
+      const sourceName = lf.name.startsWith("api") ? "api" : "worker";
+      if (sources.has(sourceName)) filesToRead.push(lf.path);
     }
   } else {
-    filesToRead.push(...Object.values(LOG_FILES));
+    filesToRead.push(...logFiles.map((f) => f.path));
   }
 
   let allLines: any[] = [];
@@ -85,7 +100,7 @@ export async function adminLogsRoutes(app: FastifyInstance): Promise<void> {
     return reply.send({
       levels: ["DEBUG", "INFO", "WARNING", "ERROR"],
       sources: ["api", "worker"],
-      log_files: Object.fromEntries(Object.entries(LOG_FILES).map(([k, v]) => [k, v])),
+      log_files: Object.fromEntries(getLogFiles().map((f) => [f.name, f.path])),
     });
   });
 }

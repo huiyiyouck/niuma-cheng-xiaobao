@@ -66,6 +66,7 @@ export const NewsQuery = z.object({
   offset: z.coerce.number().int().min(0).default(0),
   sub_channel_id: z.string().optional(),
   sort: z.enum(["published_desc", "score_desc", "score_asc"]).default("published_desc"),
+  q: z.string().optional(),
 });
 
 export const LogsQuery = z.object({
@@ -83,9 +84,39 @@ export const AlertsQuery = z.object({
   limit: z.coerce.number().int().min(1).max(200).default(50),
 });
 
+// ── v0.4 新增 Schema ────────────────────────────────────────
+
+// 频道空间重命名
+export const ChannelSpaceUpdate = z.object({
+  name: nonBlankStr(200).optional(),
+  description: z.string().nullable().optional(),
+});
+
+// 子频道批量排序
+export const SubChannelsReorder = z.object({
+  items: z.array(z.object({
+    id: z.string().uuid(),
+    sort_order: z.number().int().min(0),
+  })).min(1).max(200),
+});
+
+// 告警状态更新（API 层禁止直接设置 active、禁止 resolved 回退）
+export const AlertStatusUpdate = z.object({
+  status: z.enum(["acknowledged", "resolved"]),
+});
+
+// 批量标记已确认
+export const AlertsAcknowledgeAll = z.object({
+  channel_space_id: z.string().uuid().optional(),
+});
+
 // ── 类型导出 ──────────────────────────────────────────────
 
 export type ChannelSpaceCreate = z.infer<typeof ChannelSpaceCreate>;
+export type ChannelSpaceUpdate = z.infer<typeof ChannelSpaceUpdate>;
+export type SubChannelsReorder = z.infer<typeof SubChannelsReorder>;
+export type AlertStatusUpdate = z.infer<typeof AlertStatusUpdate>;
+export type AlertsAcknowledgeAll = z.infer<typeof AlertsAcknowledgeAll>;
 export type SourceCreate = z.infer<typeof SourceCreate>;
 export type SourceUpdate = z.infer<typeof SourceUpdate>;
 export type ChannelSourceBind = z.infer<typeof ChannelSourceBind>;

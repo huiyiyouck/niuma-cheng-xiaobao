@@ -152,13 +152,30 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     return reply.send(sourceToOut(updated));
   });
 
-  // 删除
+  // 删除（v0.4 增强：返回受影响绑定清单）
   app.delete("/sources/:source_id", async (req: FastifyRequest, reply: FastifyReply) => {
     const { source_id } = req.params as { source_id: string };
     const { rows: [row] } = await pool.query("SELECT id FROM sources WHERE id = $1", [source_id]);
     if (!row) return reply.status(404).send({ detail: "source not found" });
+
+    // 查询受影响绑定（在事务中锁定行，防止 TOCTOU）
+    const { rows: bindings } = await pool.query(
+      `SELECT cs.channel_space_id, csp.name as channel_space_name, sc.name as sub_channel_name
+       FROM channel_sources cs
+       JOIN channel_spaces csp ON csp.id = cs.channel_space_id
+       LEFT JOIN sub_channels sc ON sc.id = cs.sub_channel_id
+       WHERE cs.source_id = $1`,
+      [source_id],
+    );
+
     await pool.query("DELETE FROM sources WHERE id = $1", [source_id]);
-    return reply.status(204).send();
+    return reply.send({
+      affected_bindings: bindings.map((b: any) => ({
+        channel_space_id: b.channel_space_id,
+        channel_space_name: b.channel_space_name,
+        sub_channel_name: b.sub_channel_name,
+      })),
+    });
   });
 
   // 验证

@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { pool } from "../../db/pool.ts";
-import { SubChannelCreate, SubChannelUpdate } from "../schemas/index.ts";
+import { SubChannelCreate, SubChannelUpdate, SubChannelsReorder } from "../schemas/index.ts";
 
 export async function subChannelsRoutes(app: FastifyInstance): Promise<void> {
   // 列表
@@ -71,6 +71,37 @@ export async function subChannelsRoutes(app: FastifyInstance): Promise<void> {
     if (!row) return reply.status(404).send({ detail: "sub_channel not found" });
     await pool.query("DELETE FROM sub_channels WHERE id = $1", [sub_channel_id]);
     return reply.status(204).send();
+  });
+
+  // v0.4: 批量更新子频道排序
+  app.put("/channel-spaces/:space_id/sub-channels/reorder", async (req: FastifyRequest, reply: FastifyReply) => {
+    const { space_id } = req.params as { space_id: string };
+    const body = SubChannelsReorder.parse(req.body);
+
+    const { rows: [space] } = await pool.query("SELECT id FROM channel_spaces WHERE id = $1", [space_id]);
+    if (!space) return reply.status(404).send({ detail: "channel_space not found" });
+
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      for (const { id, sort_order } of body.items) {
+        const { rows: [sc] } = await client.query(
+          "SELECT id FROM sub_channels WHERE id = $1 AND channel_space_id = $2", [id, space_id],
+        );
+        if (!sc) {
+          await client.query("ROLLBACK");
+          return reply.status(400).send({ detail: "子频道不属于当前空间" });
+        }
+        await client.query("UPDATE sub_channels SET sort_order = $1 WHERE id = $2", [sort_order, id]);
+      }
+      await client.query("COMMIT");
+      return reply.send({ ok: true });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
   });
 }
 

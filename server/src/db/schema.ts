@@ -201,6 +201,7 @@ export const alerts = pgTable(
       .references(() => channelSpaces.id, { onDelete: "cascade" }),
     type: text("type").notNull(),
     severity: text("severity").notNull().default("warning"),
+    status: varchar("status", { length: 20 }).notNull().default("active"),
     message: text("message").notNull(),
     meta: jsonb("meta").notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

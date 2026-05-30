@@ -126,6 +126,18 @@ export async function bindingsRoutes(app: FastifyInstance): Promise<void> {
     );
     return reply.send(channelSourceToOut(updated));
   });
+
+  // v0.4: 解绑 Source（仅删除绑定关系，不删除 Source 和已入库数据）
+  app.delete("/channel-sources/:id", async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const { rows: [existing] } = await pool.query(
+      "SELECT id FROM channel_sources WHERE id = $1", [id],
+    );
+    if (!existing) return reply.status(404).send({ detail: "绑定关系不存在" });
+    // 外键 ON DELETE CASCADE 自动清理 source_states 和 tasks
+    await pool.query("DELETE FROM channel_sources WHERE id = $1", [id]);
+    return reply.status(204).send();
+  });
 }
 
 function channelSourceToOut(r: any) {

@@ -20,15 +20,21 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
 
     const params: any[] = [space_id, q.limit, q.offset];
     let subFilter = "";
+    let idx = 3;
     if (q.sub_channel_id) {
       const ids = q.sub_channel_id.split(",").map((s) => s.trim()).filter(Boolean);
       if (ids.length === 1) {
-        subFilter = "AND pn.sub_channel_id = $4";
+        subFilter = `AND pn.sub_channel_id = $${++idx}`;
         params.push(ids[0]);
       } else if (ids.length > 1) {
-        subFilter = "AND pn.sub_channel_id = ANY($4)";
+        subFilter = `AND pn.sub_channel_id = ANY($${++idx})`;
         params.push(ids);
       }
+    }
+    // v0.4: 搜索参数
+    if (q.q) {
+      subFilter += ` AND (pn.title ILIKE '%' || $${++idx} || '%' OR pn.summary ILIKE '%' || $${++idx} || '%')`;
+      params.push(q.q);
     }
 
     const { rows } = await pool.query(
