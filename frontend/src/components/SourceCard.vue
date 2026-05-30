@@ -25,6 +25,12 @@ const editSubChannelId = ref(props.binding.channel_source.sub_channel_id);
 const editFetchInterval = ref((props.binding.channel_source.fetch_policy as any)?.interval_seconds || 600);
 const editMaxItems = ref((props.binding.channel_source.fetch_policy as any)?.max_items || 20);
 const editEnabled = ref(props.binding.channel_source.enabled);
+// X/Twitter config
+const srcConfig = (props.binding.source.config as Record<string, unknown>) || {};
+const editXtMode = ref((srcConfig.mode as string) || "user_timeline");
+const editXtSearchQuery = ref((srcConfig.search_query as string) || "");
+const editXtUsernames = ref(((srcConfig.usernames as string[]) || []).join(", "));
+const isXT = source.type === "x_twitter";
 
 const source = props.binding.source;
 const cs = props.binding.channel_source;
@@ -51,6 +57,19 @@ function statusLabel(s: string) {
 
 async function onSave() {
   try {
+    // 同时更新 Source config（X/Twitter 等）
+    const xtConfig: Record<string, unknown> = {};
+    if (isXT) {
+      if (editXtMode.value === "search") {
+        xtConfig.mode = "search";
+        xtConfig.search_query = editXtSearchQuery.value;
+      } else {
+        xtConfig.mode = "user_timeline";
+        xtConfig.usernames = editXtUsernames.value.split(",").map((s: string) => s.trim()).filter(Boolean);
+      }
+    }
+    await requestJson(`/v1/sources/${source.id}`, { method: "PUT", body: { config: xtConfig } });
+
     await requestJson(`/v1/channel-sources/${cs.id}`, {
       method: "PUT",
       body: {
@@ -115,6 +134,24 @@ const cardAlerts = props.alerts.slice(0, 3);
     <!-- 第 2 行：子频道 + 抓取参数 -->
     <div class="scard-row2">
       <template v-if="editing">
+        <!-- X/Twitter 配置编辑 -->
+        <div v-if="isXT" class="xt-config-edit">
+          <label>模式
+            <select v-model="editXtMode" class="input" style="width:auto">
+              <option value="user_timeline">账号追踪</option>
+              <option value="search">关键词搜索</option>
+            </select>
+          </label>
+          <label v-if="editXtMode === 'user_timeline'" style="flex:1">
+            账号（逗号分隔）
+            <input class="input" v-model="editXtUsernames" placeholder="alpha123cc, elonmusk" />
+          </label>
+          <label v-else style="flex:1">
+            搜索关键词
+            <input class="input" v-model="editXtSearchQuery" placeholder="airdrop OR crypto" />
+          </label>
+        </div>
+
         <div class="edit-grid">
           <label>抓取间隔(秒) <input class="input" type="number" v-model.number="editFetchInterval" min="60" /></label>
           <label>最大条数 <input class="input" type="number" v-model.number="editMaxItems" min="1" max="100" /></label>
@@ -189,6 +226,9 @@ const cardAlerts = props.alerts.slice(0, 3);
 .badge--error { background: var(--danger-light); color: var(--danger); }
 .badge--muted { background: #F1F5F9; color: var(--text-muted); }
 
+.xt-config-edit { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 4px; }
+.xt-config-edit label { font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
+.xt-config-edit .input { padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border); }
 .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .edit-grid label { font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
 .edit-grid .input { padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border); }
