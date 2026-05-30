@@ -8,6 +8,7 @@ const LOG_DIR = resolve(__dirname, "../../../logs");
 
 const jsonFormat = winston.format.combine(
   winston.format.timestamp({ format: () => new Date().toISOString() }),
+  winston.format.splat(),
   winston.format.json(),
 );
 
