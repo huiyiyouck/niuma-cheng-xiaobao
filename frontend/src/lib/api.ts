@@ -103,7 +103,7 @@ export async function updateChannelSource(
 
 export async function listNews(
   spaceId: UUID,
-  opts?: { limit?: number; offset?: number; subChannelId?: string; sort?: NewsSort },
+  opts?: { limit?: number; offset?: number; subChannelId?: string; sort?: NewsSort; q?: string },
 ): Promise<ProcessedNews[]> {
   const limit = opts?.limit ?? 20;
   const offset = opts?.offset ?? 0;
@@ -112,6 +112,7 @@ export async function listNews(
   qs.set("offset", String(offset));
   if (opts?.subChannelId) qs.set("sub_channel_id", opts.subChannelId);
   if (opts?.sort) qs.set("sort", opts.sort);
+  if (opts?.q) qs.set("q", opts.q);
   return requestJson(buildUrl(`/v1/channel-spaces/${spaceId}/news?${qs.toString()}`));
 }
 

@@ -1,23 +1,20 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
 import {
-  listSpaces, createSpace, listSources, listChannelSources,
-  bindSource, updateChannelSource, listAlerts
+  listSpaces, createSpace, listSources, listChannelSources, listAlerts,
+  bindSource, updateChannelSource,
 } from "@/lib/api";
-import type { ChannelSpace, ChannelSourceWithSource, Source, Alert, UUID } from "@/lib/types";
-import SpaceSelector from "@/components/SpaceSelector.vue";
-import ChannelCard from "@/components/ChannelCard.vue";
-import AlertList from "@/components/AlertList.vue";
+import type { ChannelSpace, Source, ChannelSourceWithSource, Alert, UUID } from "@/lib/types";
 import CreateSpaceModal from "@/components/CreateSpaceModal.vue";
-import BindSourceModal from "@/components/BindSourceModal.vue";
-import EditChannelModal from "@/components/EditChannelModal.vue";
-import SourceManager from "@/components/SourceManager.vue";
 import SubChannelManager from "@/components/SubChannelManager.vue";
-import LogViewer from "@/components/LogViewer.vue";
+import AlertList from "@/components/AlertList.vue";
+import SourceCard from "@/components/SourceCard.vue";
+import InlineAddSource from "@/components/InlineAddSource.vue";
+import { useToast } from "@/composables/useToast";
+import { useModal } from "@/composables/useModal";
 
-type AdminTab = "channels" | "sources" | "subchannels" | "logs";
-
-const activeTab = ref<AdminTab>("channels");
+const toast = useToast();
+const modal = useModal();
 
 const spaces = ref<ChannelSpace[]>([]);
 const sources = ref<Source[]>([]);
@@ -27,14 +24,10 @@ const selectedSpaceId = ref<UUID | null>(null);
 const errorText = ref<string | null>(null);
 
 const showCreateSpace = ref(false);
-const showBindSource = ref(false);
-const bindSourceId = ref<UUID | undefined>(undefined);
+const showAddSource = ref(false);
+const showSubDrawer = ref(false);
 
-function onBindRequest(s: { id: UUID }) {
-  bindSourceId.value = s.id;
-  showBindSource.value = true;
-}
-const editingChannel = ref<ChannelSourceWithSource | null>(null);
+const editingBindingId = ref<UUID | null>(null);
 
 async function refreshAll() {
   try {
@@ -49,151 +42,202 @@ async function refreshSpaceData() {
   if (!selectedSpaceId.value) return;
   try {
     bindings.value = await listChannelSources(selectedSpaceId.value);
-    alerts.value = await listAlerts(selectedSpaceId.value, 50);
+    alerts.value = await listAlerts(selectedSpaceId.value, 200);
   } catch (e) { errorText.value = e instanceof Error ? e.message : String(e); }
 }
 
 async function onCreateSpace(name: string, desc: string) {
   try {
     await createSpace({ name, description: desc || undefined });
-  } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
-    return;
-  }
-  showCreateSpace.value = false;
-  await refreshAll();
+    showCreateSpace.value = false;
+    toast.success("频道空间已创建");
+    await refreshAll();
+  } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
 
-async function onBindSource(sourceId: UUID, enabled: boolean, everySeconds: number, maxItems: number) {
+async function onDeleteSpace() {
+  if (!selectedSpaceId.value) return;
+  const name = spaces.value.find(s => s.id === selectedSpaceId.value)?.name || "";
+  // Fetch delete preview
   try {
-    await bindSource(selectedSpaceId.value!, {
-      source_id: sourceId, enabled,
-      fetch_policy: { schedule: { every_seconds: everySeconds }, budget: { max_items_per_run: maxItems } },
+    const res = await fetch(`/v1/channel-spaces/${selectedSpaceId.value}/delete-preview`);
+    const stats = await res.json();
+    const ok = await modal.confirm(
+      "删除频道空间",
+      `确定删除 <strong>${name}</strong> 吗？将级联删除：<br>
+      信息源绑定 ${stats.channel_sources} 个 · 子频道 ${stats.sub_channels} 个 · 新闻 ${stats.processed_news} 条 · 原始数据 ${stats.raw_items} 条 · 告警 ${stats.alerts} 条`,
+      { confirmText: "确认删除", danger: true },
+    );
+    if (!ok) return;
+    await fetch(`/v1/channel-spaces/${selectedSpaceId.value}`, { method: "DELETE" });
+    toast.success("频道空间已删除");
+    selectedSpaceId.value = null;
+    await refreshAll();
+  } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
+}
+
+async function onAcknowledgeAll() {
+  if (!selectedSpaceId.value) return;
+  const activeCount = alerts.value.filter(a => a.status === "active").length;
+  if (activeCount === 0) return;
+  const ok = await modal.confirm(
+    "全部标记已确认",
+    `确定将当前频道空间所有未处理告警（${activeCount} 条）标记为已确认？`,
+    { confirmText: "确认" },
+  );
+  if (!ok) return;
+  try {
+    const res = await fetch("/v1/alerts/acknowledge-all", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ channel_space_id: selectedSpaceId.value }),
     });
-  } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
-    return;
-  }
-  showBindSource.value = false;
-  await refreshSpaceData();
+    const data = await res.json();
+    toast.success(`已标记 ${data.updated} 条告警`);
+    await refreshSpaceData();
+  } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
 
-async function onToggleChannel(cs: ChannelSourceWithSource) {
-  try {
-    await updateChannelSource(cs.channel_source.id, { enabled: !cs.channel_source.enabled });
-  } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
-    return;
-  }
-  await refreshSpaceData();
-}
+watch(selectedSpaceId, () => {
+  showAddSource.value = false;
+  editingBindingId.value = null;
+  refreshSpaceData();
+});
 
-async function onEditChannel(enabled: boolean, everySeconds: number, maxItems: number) {
-  if (!editingChannel.value) return;
-  try {
-    await updateChannelSource(editingChannel.value.channel_source.id, {
-      enabled,
-      fetch_policy: { schedule: { every_seconds: everySeconds }, budget: { max_items_per_run: maxItems } },
-    });
-  } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
-    return;
-  }
-  editingChannel.value = null;
-  await refreshSpaceData();
-}
-
-const tabs: { key: AdminTab; label: string }[] = [
-  { key: "channels", label: "📡 频道管理" },
-  { key: "sources", label: "🔗 Source 管理" },
-  { key: "subchannels", label: "📂 子频道" },
-  { key: "logs", label: "📋 日志" },
-];
-
-watch(selectedSpaceId, () => refreshSpaceData());
 onMounted(refreshAll);
 </script>
 
 <template>
-  <div class="page">
-    <div v-if="errorText" class="error">{{ errorText }}</div>
+  <div class="admin-page">
+    <div v-if="errorText" class="error-bar"><span>⚠️</span><span>{{ errorText }}</span></div>
 
-    <SpaceSelector :spaces="spaces" :selectedId="selectedSpaceId" @select="(id) => selectedSpaceId = id" @create="showCreateSpace = true" />
-
-    <!-- Tab 导航 -->
-    <div class="tab-bar">
-      <button
-        v-for="t in tabs" :key="t.key"
-        class="tab-btn"
-        :class="{ active: activeTab === t.key }"
-        @click="activeTab = t.key"
-      >{{ t.label }}</button>
+    <!-- 频道空间 Pill 行 -->
+    <div class="space-pill-row">
+      <div class="space-pills">
+        <button
+          v-for="s in spaces" :key="s.id"
+          class="space-pill" :class="{ active: selectedSpaceId === s.id }"
+          @click="selectedSpaceId = s.id"
+        >{{ s.name }}</button>
+      </div>
+      <div class="space-actions">
+        <button class="btn-sm" @click="showCreateSpace = true">+ 新建空间</button>
+        <button class="btn-sm" @click="showSubDrawer = !showSubDrawer">📂 子频道</button>
+        <button
+          class="btn-sm" style="color: var(--warning)"
+          :disabled="alerts.filter(a => a.status === 'active').length === 0"
+          @click="onAcknowledgeAll"
+        >全部标记已确认 ({{ alerts.filter(a => a.status === 'active').length }})</button>
+      </div>
     </div>
 
-    <!-- 频道管理 Tab -->
-    <div v-if="activeTab === 'channels'">
-      <div class="section-card">
-        <div class="section-top">
-          <div class="section-title">📡 已绑定的渠道</div>
-          <button class="btn primary" style="padding:6px 14px;font-size:12px;border-radius:10px" @click="showBindSource = true">+ 绑定新渠道</button>
-        </div>
-        <div v-if="bindings.length === 0" class="muted" style="padding:10px 0">暂无绑定</div>
-        <ChannelCard
-          v-for="cs in bindings" :key="cs.channel_source.id" :cs="cs"
-          @toggle="onToggleChannel(cs)"
-          @edit="editingChannel = cs"
+    <!-- 空状态 -->
+    <div v-if="!selectedSpaceId" class="empty-state">📂 暂无频道空间<br><small>点击「+ 新建空间」创建</small></div>
+
+    <template v-else>
+      <!-- 信息源卡片列表 -->
+      <div v-if="bindings.length === 0" class="empty-state">
+        📡 当前频道暂无信息源<br><small>点击下方「+ 添加信息源」开始</small>
+      </div>
+      <div v-else class="source-list">
+        <SourceCard
+          v-for="b in bindings" :key="b.channel_source.id"
+          :binding="b"
+          :alerts="alerts.filter(a => a.type === 'source_fetch' || true)"
+          :editing="editingBindingId === b.channel_source.id"
+          @edit="editingBindingId = b.channel_source.id"
+          @cancel="editingBindingId = null"
+          @saved="editingBindingId = null; refreshSpaceData()"
+          @refresh="refreshSpaceData()"
         />
       </div>
-      <AlertList :alerts="alerts" />
-    </div>
 
-    <!-- Source 管理 Tab -->
-    <div v-if="activeTab === 'sources'">
-      <SourceManager @bind="onBindRequest" />
-    </div>
-
-    <!-- 子频道 Tab -->
-    <div v-if="activeTab === 'subchannels'">
-      <div class="section-card">
-        <div class="section-title" style="margin-bottom:12px">📂 子频道管理</div>
-        <div v-if="!selectedSpaceId" class="muted" style="padding:10px 0">请先选择一个频道空间</div>
-        <SubChannelManager v-else :channelSpaceId="selectedSpaceId" />
+      <!-- 内联添加表单 -->
+      <div style="margin-top:14px">
+        <button v-if="!showAddSource" class="btn add-btn" @click="showAddSource = true">+ 添加信息源</button>
+        <InlineAddSource
+          v-else
+          :spaceId="selectedSpaceId"
+          @added="showAddSource = false; refreshSpaceData()"
+          @cancel="showAddSource = false"
+        />
       </div>
-    </div>
+    </template>
 
-    <!-- 日志 Tab -->
-    <div v-if="activeTab === 'logs'">
-      <LogViewer />
-    </div>
+    <!-- 子频道抽屉 -->
+    <Teleport to="body">
+      <transition name="drawer">
+        <div v-if="showSubDrawer" class="drawer-overlay" @click.self="showSubDrawer = false">
+          <div class="drawer-panel">
+            <SubChannelManager
+              :channelSpaceId="selectedSpaceId!"
+              @close="showSubDrawer = false"
+            />
+          </div>
+        </div>
+      </transition>
+    </Teleport>
 
-    <CreateSpaceModal v-if="showCreateSpace" @close="showCreateSpace = false" @submit="onCreateSpace" />
-    <BindSourceModal v-if="showBindSource" :sources="sources" :preSelectedSourceId="bindSourceId" @close="showBindSource = false; bindSourceId = undefined" @submit="onBindSource" />
-    <EditChannelModal v-if="editingChannel" :cs="editingChannel" @close="editingChannel = null" @submit="onEditChannel" />
+    <!-- 新建频道空间弹窗 -->
+    <CreateSpaceModal
+      v-if="showCreateSpace"
+      @create="onCreateSpace"
+      @close="showCreateSpace = false"
+    />
   </div>
 </template>
 
 <style scoped>
-.page { display: flex; flex-direction: column; gap: 16px; }
-.tab-bar { display: flex; gap: 4px; border-bottom: 2px solid var(--border); padding-bottom: 0; }
-.tab-btn {
-  padding: 8px 16px;
-  border: none;
-  background: none;
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--muted);
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  transition: color 0.15s, border-color 0.15s;
+.admin-page { display: flex; flex-direction: column; gap: 14px; }
+.space-pill-row {
+  display: flex; gap: 12px; align-items: center; padding: 10px 16px;
+  background: var(--card); border: 1px solid var(--border-light); border-radius: 12px;
+  box-shadow: var(--shadow-soft);
 }
-.tab-btn:hover { color: var(--text); }
-.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
-.section-card {
-  background: var(--card); border: 1px solid var(--border);
-  border-radius: var(--radius-lg); padding: 20px; box-shadow: var(--shadow-soft);
+.space-pills { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.space-pill {
+  padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700;
+  border: 1px solid var(--border); background: var(--card); color: var(--text-secondary);
+  cursor: pointer; transition: all 0.15s;
 }
-.section-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.section-title { font-weight: 900; font-size: 15px; }
-.error { padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(239,68,68,.25); background: rgba(239,68,68,.06); color: #991b1b; font-size: 13px; }
+.space-pill:hover { border-color: var(--accent); color: var(--accent); }
+.space-pill.active { background: var(--accent); color: #FFF; border-color: var(--accent); }
+.space-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.btn-sm {
+  padding: 6px 14px; font-size: 12px; font-weight: 600; border-radius: 8px;
+  border: 1px solid var(--border); background: var(--card); color: var(--text-secondary);
+  cursor: pointer; white-space: nowrap;
+}
+.btn-sm:hover { background: #F4F5F7; }
+.btn-sm:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn { padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600;
+       border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+.add-btn { width: 100%; border-style: dashed; border-color: var(--accent); color: var(--accent); }
+.add-btn:hover { background: var(--accent-light); }
+.source-list { display: flex; flex-direction: column; gap: 10px; }
+
+.drawer-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,0.3);
+  display: flex; justify-content: flex-end;
+}
+.drawer-panel {
+  width: 420px; max-width: 100vw; height: 100vh;
+  background: var(--card); overflow-y: auto;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+}
+.drawer-enter-active { animation: drawerIn 0.3s cubic-bezier(0.4,0,0.2,1); }
+@keyframes drawerIn {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 14px; font-weight: 600; }
+.empty-state small { font-size: 12px; font-weight: 400; display: block; margin-top: 4px; }
+.error-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 8px;
+  background: var(--danger-light); border: 1px solid rgba(231,76,60,0.2);
+  color: #991b1b; font-size: 12px;
+}
 </style>

@@ -100,6 +100,7 @@ export type Alert = {
   channel_space_id: UUID;
   type: string;
   severity: string;
+  status: string;
   message: string;
   meta: Record<string, unknown>;
   created_at: string;

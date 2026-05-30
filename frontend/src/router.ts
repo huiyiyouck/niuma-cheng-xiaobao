@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 const NewsPage = () => import("@/views/NewsPage.vue");
 const AdminPage = () => import("@/views/AdminPage.vue");
+const LogsPage = () => import("@/views/LogsPage.vue");
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -9,6 +10,7 @@ export const router = createRouter({
     { path: "/", redirect: "/news" },
     { path: "/news", component: NewsPage },
     { path: "/admin", component: AdminPage },
+    { path: "/logs", component: LogsPage },
   ],
 });
 

@@ -1,25 +1,32 @@
 :root {
-  --bg: #ffffff;
-  --text: #0f172a;
-  --muted: #64748b;
-  --card: #ffffff;
-  --border: #e2e8f0;
-  --shadow: 0 10px 30px rgba(2, 6, 23, 0.08);
-  --shadow-soft: 0 6px 18px rgba(2, 6, 23, 0.06);
-  --radius: 16px;
+  /* ── v0.4 新变量体系 ──────────────────────────────── */
+  --bg: #FAFAFA;
+  --card: #FFF;
+  --accent: #3498db;
+  --accent-light: #EBF5FB;
+  --success: #27ae60;
+  --success-light: #E8F8F0;
+  --warning: #f39c12;
+  --warning-light: #FEF9E7;
+  --danger: #e74c3c;
+  --danger-light: #FDEDEC;
+  --text: #1a1a2e;
+  --text-secondary: #5F6B7A;
+  --text-muted: #94A3B8;
+  --border: #E6E7EB;
+  --border-light: #F0F1F3;
+
+  /* ── 旧变量别名（兼容现有组件，渐进式淘汰）────── */
+  --primary: var(--accent);
+  --primary-2: var(--accent-light);
+  --bg-page: var(--bg);
+  --muted: var(--text-muted);
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --shadow-soft: 0 1px 3px rgba(0,0,0,0.06);
+  --radius: 12px;
   --radius-sm: 12px;
-  --ring: rgba(59, 130, 246, 0.18);
-  --primary: #2563eb;
-  --primary-2: #1d4ed8;
-  --danger: #ef4444;
-  --bg-page: #f8fafc;
-  --success: #16a34a;
-  --warning: #d97706;
-  --score-9: #4f46e5;
-  --score-7: #f59e0b;
-  --score-5: #0891b2;
-  --score-0: #64748b;
   --radius-lg: 14px;
+  --ring: rgba(52, 152, 219, 0.18);
 
   color-scheme: light;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;

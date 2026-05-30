@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { useDebounceFn } from "@vueuse/core";
 import { useWS } from "@/lib/ws";
 import { listNews, listSpaces, listSubChannels, getChannelStats, getGlobalStats } from "@/lib/api";
 import type { ChannelSpace, ProcessedNews, SubChannel, ChannelStats, UUID, NewsSort } from "@/lib/types";
@@ -14,6 +15,7 @@ const spaces = ref<ChannelSpace[]>([]);
 const filterSpaceId = ref<UUID | null>(null);
 const minScore = ref(0);
 const sortBy = ref<NewsSort>("published_desc");
+const searchQuery = ref("");
 const subChannels = ref<SubChannel[]>([]);
 const filterSubChannelIds = ref<Set<UUID>>(new Set());
 
@@ -71,15 +73,23 @@ async function refreshSubChannels() {
   } catch { subChannels.value = []; }
 }
 
+function buildNewsParams(offsetVal: number) {
+  return {
+    limit,
+    offset: offsetVal,
+    sort: sortBy.value,
+    sub_channel_id: filterSubChannelIds.value.size > 0
+      ? [...filterSubChannelIds.value].join(",") as any
+      : undefined,
+    q: searchQuery.value || undefined as any,
+  } as any;
+}
+
 async function refreshNews() {
   if (!filterSpaceId.value) return;
   loading.value = true; errorText.value = null; offset.value = 0;
   try {
-    const page = await listNews(filterSpaceId.value, {
-      limit, offset: 0,
-      sort: sortBy.value,
-      subChannelId: filterSubChannelIds.value.size > 0 ? [...filterSubChannelIds.value].join(",") as any : undefined,
-    });
+    const page = await listNews(filterSpaceId.value, buildNewsParams(0));
     items.value = page;
     canLoadMore.value = page.length >= limit;
   } catch (e) {
@@ -92,11 +102,7 @@ async function loadMore() {
   loading.value = true;
   const nextOffset = offset.value + limit;
   try {
-    const page = await listNews(filterSpaceId.value, {
-      limit, offset: nextOffset,
-      sort: sortBy.value,
-      subChannelId: filterSubChannelIds.value.size > 0 ? [...filterSubChannelIds.value].join(",") as any : undefined,
-    });
+    const page = await listNews(filterSpaceId.value, buildNewsParams(nextOffset));
     items.value = items.value.concat(page);
     offset.value = nextOffset;
     canLoadMore.value = page.length >= limit;
@@ -109,13 +115,17 @@ function openDetail(item: ProcessedNews) {
   detailItem.value = item;
 }
 
+// v0.4: 防抖处理子频道切换和排序变更
+const debouncedRefreshNews = useDebounceFn(refreshNews, 300);
+
 watch(filterSpaceId, () => {
   refreshNews();
   refreshStats();
   refreshSubChannels();
 });
-watch(sortBy, () => refreshNews());
-watch(filterSubChannelIds, () => refreshNews(), { deep: true });
+watch(sortBy, () => debouncedRefreshNews());
+watch(filterSubChannelIds, () => debouncedRefreshNews(), { deep: true });
+watch(searchQuery, () => refreshNews());
 
 onMounted(async () => {
   await refreshSpaces();
@@ -133,41 +143,44 @@ onBeforeUnmount(() => wsDisconnect());
   <div class="page">
     <StatsCards :stats="stats" />
     <ChannelFilter
-      :spaces="spaces" :selectedId="filterSpaceId" :minScore="minScore"
+      :spaces="spaces" :selectedId="filterSpaceId" :minScore="minScore" :sortBy="sortBy"
       @select="(id) => filterSpaceId = id"
       @changeScore="(v) => minScore = v"
       @changeSort="(v) => sortBy = v"
+      @search="(q) => searchQuery = q"
     />
     <!-- 子频道筛选（多选） -->
     <div class="sub-filter" v-if="subChannels.length > 0">
+      <button class="sub-pill" :class="{ active: filterSubChannelIds.size === 0 }" @click="filterSubChannelIds = new Set()">全部</button>
       <button
-        class="sub-pill"
-        :class="{ active: filterSubChannelIds.size === 0 }"
-        @click="filterSubChannelIds = new Set()"
-      >全部</button>
-      <button
-        v-for="sc in subChannels" :key="sc.id"
-        class="sub-pill"
+        v-for="sc in subChannels" :key="sc.id" class="sub-pill"
         :class="{ active: filterSubChannelIds.has(sc.id) }"
         @click="toggleSubChannel(sc.id)"
       >{{ sc.name }}</button>
     </div>
     <div class="ws-bar">
       <span class="status-dot" :class="wsStatus === 'connected' ? 'status-dot--ok' : wsStatus === 'connecting' ? 'status-dot--warn' : 'status-dot--err'"></span>
-      <span class="muted" style="font-size:11px">WS: {{ wsStatus }}</span>
+      <span class="ws-text">WS: {{ wsStatus }}</span>
     </div>
-    <div v-if="errorText" class="error">{{ errorText }}</div>
-    <div v-if="loading" class="muted loading">加载中…</div>
-    <div v-if="items.length === 0 && !loading" class="card empty muted">暂无新闻，请先在管理页添加信息来源</div>
+    <div v-if="errorText" class="error-bar"><span>⚠️</span><span>{{ errorText }}</span></div>
+
+    <!-- 骨架屏 -->
+    <div v-if="loading && items.length === 0" class="skeleton-list">
+      <div v-for="i in 3" :key="i" class="skeleton-card">
+        <div class="sk-line sk-title"></div>
+        <div class="sk-line sk-body"></div>
+        <div class="sk-line sk-body sk-short"></div>
+        <div class="sk-tags"><span class="sk-tag"></span><span class="sk-tag"></span></div>
+      </div>
+    </div>
+
+    <div v-if="items.length === 0 && !loading" class="empty-state">📭 暂无新闻<br><small>请先在管理页添加信息来源</small></div>
     <div class="list" v-if="filteredItems.length > 0">
-      <NewsListItem
-        v-for="item in filteredItems" :key="item.id" :item="item"
-        @click="openDetail(item)"
-      />
+      <NewsListItem v-for="item in filteredItems" :key="item.id" :item="item" @click="openDetail(item)" />
     </div>
-    <div v-if="items.length > 0 && filteredItems.length === 0" class="card empty muted">筛选条件下无匹配新闻</div>
+    <div v-if="items.length > 0 && filteredItems.length === 0" class="empty-state">🔍 筛选条件下无匹配新闻<br><small>试试调整最低评分或切换子频道</small></div>
     <div class="more" v-if="items.length > 0">
-      <button class="btn" :disabled="loading || !canLoadMore" @click="loadMore">
+      <button class="btn load-more" :disabled="loading || !canLoadMore" @click="loadMore">
         {{ canLoadMore ? '加载更多' : '没有更多了' }}
       </button>
     </div>
@@ -178,17 +191,46 @@ onBeforeUnmount(() => wsDisconnect());
 <style scoped>
 .page { display: flex; flex-direction: column; }
 .ws-bar { display: flex; align-items: center; gap: 6px; padding: 4px 0 10px; }
-.list { display: flex; flex-direction: column; gap: 6px; }
-.loading { padding: 12px 0; }
-.empty { padding: 28px 16px; text-align: center; }
+.ws-text { font-size: 11px; color: var(--text-muted); }
+.list { display: flex; flex-direction: column; gap: 8px; }
 .more { display: flex; justify-content: center; padding-top: 12px; }
-.error { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid rgba(239,68,68,.25); background: rgba(239,68,68,.06); color: #991b1b; font-size: 13px; }
+.load-more { padding: 10px 28px; font-size: 13px; font-weight: 700; }
+
 .sub-filter { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 0 8px; }
 .sub-pill {
-  padding: 4px 12px; border-radius: 20px; font-size: 11px;
-  font-weight: 600; border: 1px solid var(--border);
-  background: var(--card); color: var(--muted); cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--border); background: var(--card); color: var(--text-secondary);
+  cursor: pointer; transition: all 0.15s;
 }
-.sub-pill.active { background: #e8f4fd; color: #3498db; border-color: #3498db; }
+.sub-pill:hover { border-color: var(--accent); color: var(--accent); }
+.sub-pill.active { background: var(--accent); color: #FFF; border-color: var(--accent); }
+
+/* Skeleton */
+.skeleton-list { display: flex; flex-direction: column; gap: 8px; }
+.skeleton-card {
+  background: var(--card); border: 1px solid var(--border-light);
+  border-radius: 12px; padding: 18px 20px;
+}
+.sk-line { height: 14px; border-radius: 6px; margin-bottom: 10px;
+  background: linear-gradient(90deg, #f0f1f3 25%, #e6e7eb 50%, #f0f1f3 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite;
+}
+.sk-title { width: 65%; height: 16px; }
+.sk-body { width: 90%; }
+.sk-short { width: 75%; }
+.sk-tags { display: flex; gap: 8px; }
+.sk-tag { width: 48px; height: 22px; border-radius: 20px;
+  background: linear-gradient(90deg, #f0f1f3 25%, #e6e7eb 50%, #f0f1f3 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+.empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 14px; font-weight: 600; }
+.empty-state small { font-size: 12px; font-weight: 400; display: block; margin-top: 4px; }
+
+.error-bar {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  border-radius: 8px; background: var(--danger-light);
+  border: 1px solid rgba(231,76,60,0.2); color: #991b1b; font-size: 12px;
+}
 </style>
