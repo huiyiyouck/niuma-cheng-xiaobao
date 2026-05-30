@@ -165,7 +165,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
          JOIN channel_spaces csp ON csp.id = cs.channel_space_id
          LEFT JOIN sub_channels sc ON sc.id = cs.sub_channel_id
          WHERE cs.source_id = $1
-         FOR UPDATE`,
+         FOR UPDATE OF cs`,
         [source_id],
       );
 
