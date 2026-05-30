@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { config } from "../../shared/config.ts";
+import { apiLogger } from "../../shared/logger.ts";
 
 function clientIp(request: FastifyRequest): string {
   if (config.trustProxyHeaders) {
@@ -30,8 +31,8 @@ export async function adminGuard(
   if (config.adminToken) {
     const token = (request.headers["x-admin-token"] as string) || "";
     if (token !== config.adminToken) {
-      reply.status(403).send({ detail: "forbidden" });
-      return;
+      apiLogger.warn("Auth 403: %s %s (token mismatch)", method, path);
+      return reply.status(403).send({ detail: "forbidden" });
     }
     if (!config.adminRequireBoth) return;
   }
@@ -43,7 +44,8 @@ export async function adminGuard(
   if (!allowed.has("*")) {
     const ip = clientIp(request);
     if (!allowed.has(ip)) {
-      reply.status(403).send({ detail: "forbidden" });
+      apiLogger.warn("Auth 403: %s %s (IP not allowed: %s)", method, path, ip);
+      return reply.status(403).send({ detail: "forbidden" });
     }
   }
 }
