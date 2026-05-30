@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref } from "vue";
 import { listSubChannels } from "@/lib/api";
 import type { SubChannel, UUID } from "@/lib/types";
 import { useToast } from "@/composables/useToast";
@@ -56,7 +56,7 @@ async function verify() {
     verifyResult.value = await vRes.json();
 
     // 删除临时 Source（如果验证失败）
-    if (verifyResult.value.status === "error") {
+    if (verifyResult.value?.status === "error") {
       await fetch(`/v1/sources/${source.id}`, { method: "DELETE" });
     }
   } catch (e) {
@@ -109,10 +109,10 @@ onMounted(loadSubs);
     <button class="btn verify-btn" :disabled="verifyLoading" @click="verify">
       {{ verifyLoading ? '验证中…' : '🔍 验证预览' }}
     </button>
-    <div v-if="verifyResult" class="verify-result" :class="verifyResult.status === 'ok' ? 'verify-ok' : 'verify-err'">
-      <div v-if="verifyResult.status === 'ok'" class="ok-msg">✅ 验证通过，共 {{ verifyResult.items.length }} 条</div>
-      <div v-else class="err-msg">❌ {{ verifyResult.error }}</div>
-      <div v-if="verifyResult.items?.length" class="preview-list">
+    <div v-if="verifyResult" class="verify-result" :class="verifyResult?.status === 'ok' ? 'verify-ok' : 'verify-err'">
+      <div v-if="verifyResult?.status === 'ok'" class="ok-msg">✅ 验证通过，共 {{ verifyResult?.items?.length || 0 }} 条</div>
+      <div v-else class="err-msg">❌ {{ verifyResult?.error }}</div>
+      <div v-if="verifyResult?.items?.length" class="preview-list">
         <div v-for="it in verifyResult.items" :key="it.source_item_id" class="preview-item">
           <span class="preview-title">{{ it.title || it.source_item_id }}</span>
           <span class="preview-time">{{ it.published_at ? new Date(it.published_at).toLocaleString() : '' }}</span>

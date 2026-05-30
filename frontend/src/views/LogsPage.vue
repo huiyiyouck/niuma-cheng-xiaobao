@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import { queryLogs } from "@/lib/api";
 import type { LogEntry } from "@/lib/types";
 import { useToast } from "@/composables/useToast";

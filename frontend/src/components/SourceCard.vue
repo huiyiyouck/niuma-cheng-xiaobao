@@ -132,7 +132,7 @@ const cardAlerts = props.alerts.slice(0, 3);
     <div class="scard-row3">
       <template v-if="!editing">
         <span>最后抓取: —</span>
-        <span>连续失败: <span :style="cs.consecutive_failures > 0 ? 'color:var(--danger)' : ''">{{ cs.consecutive_failures || 0 }}</span></span>
+        <span>状态: {{ source.status }}</span>
       </template>
       <div class="scard-actions">
         <template v-if="editing">

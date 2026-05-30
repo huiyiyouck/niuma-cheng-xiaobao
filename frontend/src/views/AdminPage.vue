@@ -2,13 +2,11 @@
 import { onMounted, ref, watch } from "vue";
 import {
   listSpaces, createSpace, listSources, listChannelSources, listAlerts,
-  bindSource, updateChannelSource,
 } from "@/lib/api";
 import type { ChannelSpace, Source, ChannelSourceWithSource, Alert, UUID } from "@/lib/types";
 import { requestJson } from "@/lib/http";
 import CreateSpaceModal from "@/components/CreateSpaceModal.vue";
 import SubChannelManager from "@/components/SubChannelManager.vue";
-import AlertList from "@/components/AlertList.vue";
 import SourceCard from "@/components/SourceCard.vue";
 import InlineAddSource from "@/components/InlineAddSource.vue";
 import { useToast } from "@/composables/useToast";
@@ -122,6 +120,7 @@ onMounted(refreshAll);
       <div class="space-actions">
         <button class="btn-sm" @click="showCreateSpace = true">+ 新建空间</button>
         <button class="btn-sm" @click="showSubDrawer = !showSubDrawer">📂 子频道</button>
+        <button v-if="selectedSpaceId" class="btn-sm" style="color:var(--danger)" @click="onDeleteSpace">🗑 删除</button>
         <button
           class="btn-sm" style="color: var(--warning)"
           :disabled="alerts.filter(a => a.status === 'active').length === 0"

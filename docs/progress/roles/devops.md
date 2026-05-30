@@ -1,5 +1,21 @@
 # DevOps 工作日志
 
+## 2026-05-30 — v0.4 预部署检查
+
+- 本次角色：DevOps（运维/部署工程师）
+- 动作：v0.4 预部署检查
+- 前置条件：实现阶段 ✅已定稿 / 测试阶段 ✅有条件通过（#B1-#B3 全部修复）
+- 检查范围：依赖审计、编译构建、数据库迁移、环境变量、服务运行状态、启动脚本
+- 结论：🔴**部署阻塞** — 2 个阻断项
+  - **#D1 🔴阻断**：前端生产构建 `vue-tsc -b && vite build` 失败（9 个 TS 错误）
+  - **#D2 🔴阻断**：`server/package.json` 含 3 个前端依赖（@vueuse/core、sortablejs、vuedraggable），服务器代码零引用
+  - **#D3 🟡警告**：ADMIN_TOKEN 为空
+  - **#D4 🟡警告**：迁移文件 `db/migrations/v0.4.sql` 路径不标准（项目根而非 server/db/migrations/）
+  - **#D5 🟡警告**：.env 含明文 API Key
+- 通过项：DB 迁移已执行、服务器 TS 编译通过、rss-parser 已安装、无新增环境变量、无新增系统依赖、start.sh 兼容、所有服务运行正常、健康检查通过
+- 详细报告：`docs/progress/iterations/v0.4.md` 部署阶段段
+- 下一步：Developer 修复 #D1 #D2 → DevOps 复审部署 → 用户浏览器视觉验证 → PM 复审测试报告 → 迭代关闭
+
 ## 2026-05-27 — v0.3 本地部署验证
 
 - 本次角色：DevOps（兼职，全栈开发兼任）
