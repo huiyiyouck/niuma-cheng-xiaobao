@@ -1,5 +1,7 @@
 # 代码与协作规范
 
+> **迁移说明（2026-05-30）：** 本文件中的工作流规则（状态管理、Review 流程、基线修正等）已升级为 claude-workflow v1.0 基线，详见 `docs/baseline/multi-agent-workflow.md`、`docs/baseline/mechanisms.md`。本文件保留项目特有的 Git 规范和 commit 约定，这些内容在新基线中没有覆盖。
+>
 > 最后更新：2026-05-23
 > 维护者：架构师
 

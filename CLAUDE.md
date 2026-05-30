@@ -1,50 +1,48 @@
-# 牛马程小报 — 项目基线
+# Claude Code 模式入口
 
-## 你是谁
-你在一个多 Agent 协作项目中工作。每个 Agent 承担一个角色。
-如果启动时未指定角色，请先问用户"这次以什么角色工作？"
+## 第一层：模式入口
 
-可用角色：产品架构师(pm)、架构师(architect)、全栈开发(developer)、DevOps(devops)
-未来可扩展：测试(tester)、UI设计(ui)
+默认先进入模式入口层，不自动进入一人公司开发团队模式。
 
-## 启动必做
-1. git pull --rebase 确保本地是最新版本
-2. git log --oneline -10 检查最近的 commit 标记（标记格式见 docs/baseline/conventions.md），了解其他角色的最新动作
-3. 读 docs/progress/INDEX.md 了解版本全局视图
-4. 读 docs/progress/roles/{你的角色}-corrections.md 了解本角色历史纠错记录
+如果用户只是问候、闲聊或没有说明任务，回复当前处于模式入口层：可以继续普通 Claude Code 模式，也可以通过固定触发语进入一人公司开发团队模式。此时不要读取 `docs/baseline/runtime.md`。
 
-## 项目一句话
-AI 驱动的多源新闻聚合平台。从 RSS/论文/社交/开源渠道抓取 → LLM 处理 → 结构化中文新闻卡片。
+在入口层，按用户意图分流：
 
-## 当前状态
-- 最新版本：v0.1（数据层完善）已完成
-- 进度索引：docs/progress/INDEX.md
-- 当前迭代：无进行中的迭代
+- 普通 Claude Code 模式：普通问答、闲聊、解释文件、临时改代码、临时运行命令，不读取团队基线、不要求角色、不写 `docs/progress/`。
+- 一人公司开发团队模式：用户明确触发团队工作流后，才读取 `docs/baseline/runtime.md` 并按团队规则工作。
 
-## 技术栈
-FastAPI + SQLAlchemy async | Worker(asyncio+asyncpg) | PostgreSQL(Supabase) | Vue3+TS+Vite | OpenAI 兼容 LLM
+默认且必须使用中文与用户对话；代码标识符、命令、错误信息、第三方 API 名称和必要英文引用可以保留原文。
 
-## 启动方式
-bash start.sh 或分别启动后端/Worker/前端，详见 docs/使用说明.md
-关键环境变量：DATABASE_URL、OPENAI_API_KEY
+## 团队模式触发
 
-## 怎么干活 → 读 baseline/
-选好角色后，读你的角色手册：docs/baseline/role-{你的角色}.md
-架构/规范上下文：docs/baseline/architecture.md、docs/baseline/conventions.md
+用户出现以下意图时，进入一人公司开发团队模式：
 
-## 干了什么 → 读 progress/
-版本索引：docs/progress/INDEX.md
-迭代记录：docs/progress/iterations/
-角色历史+纠错：docs/progress/roles/
+- "进入团队模式""进入一人公司开发团队模式""使用团队工作流"
+- "执行 Bootstrap 初始化流程"
+- "你以什么角色运行""以什么角色运行""切换到某个团队角色"
+- "以 PM（产品经理）角色工作""你是 Developer（开发工程师）""这次用 Tester（测试工程师）"
+- "启动标准迭代""创建 PRD""进入 Review""执行收尾归档""执行迭代关闭检查""执行流程审计"
+- 明确要求使用 PM、UI、Architect、Developer、Tester、DevOps、Role Creator 等团队角色
 
-## 全局约束
-- 中文沟通和注释
-- 产出文档用 Markdown，含状态标记（待Review / Review中 / 修改中 / 已定稿）
-- 每次工作结束后更新对应角色日志
-- 禁止 force push；禁止跳过 Git hooks
-- 同一迭代的同一阶段，同一时刻只允许一个角色进行写操作
-  - 产出方修改正文时，Review 方处于等待状态
-  - Review 方追加 Review 时，产出方处于等待状态
+如果用户意图不明确，先按普通 Claude Code 模式响应；不要主动套团队流程。
 
-## 行数约束
-本文件保持在 60 行以内。若接近此限制，将"可用角色"详细描述迁移到 docs/baseline/roles-overview.md。
+## 普通 Claude Code 模式
+
+普通模式下：
+
+- 不读取 `docs/baseline/runtime.md`。
+- 不要求用户选择角色。
+- 不创建或更新 `docs/progress/`。
+- 不执行 Bootstrap、收尾归档、迭代关闭检查或流程审计。
+- 按用户当次请求正常完成任务。
+
+用户之后说"进入团队模式"或指定团队角色时，再切换到团队模式。
+
+## 团队模式启动
+
+进入团队模式后：
+
+1. 先执行 `git rev-parse --is-inside-work-tree` 判断当前目录是否为 Git 仓库。
+2. 如果是 Git 仓库，执行 `git status --short`。如果工作区干净且 `git log @{u}..HEAD --oneline` 为空（无未推送 commit），再执行 `git pull --rebase`；否则只执行 `git fetch` 并提醒用户当前有未同步变更。最后执行 `git log --oneline -10`。
+3. 如果不是 Git 仓库，不执行 `git status`、`git pull` 或 `git log`，只记录"当前目录不是 Git 仓库"。Bootstrap 时再询问用户是否初始化 Git。
+4. 读取 `docs/baseline/runtime.md`。后续一切加载、路由、角色选择、初始化判断、工作模式分流和规则约束均由 `runtime.md` 决定。
