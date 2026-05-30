@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Alert } from "@/lib/types";
 import { useToast } from "@/composables/useToast";
+import { requestJson } from "@/lib/http";
 
 defineProps<{ alerts: Alert[] }>();
 const emit = defineEmits<{ refresh: [] }>();
@@ -25,12 +26,10 @@ function statusLabel(s: string) {
 
 async function updateStatus(a: Alert, status: string) {
   try {
-    const res = await fetch(`/v1/alerts/${a.id}`, {
+    await requestJson(`/v1/alerts/${a.id}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
+      body: { status },
     });
-    if (!res.ok) throw new Error((await res.json()).detail || "操作失败");
     toast.success(status === "resolved" ? "已标记为已解决" : "已标记为已确认");
     emit("refresh");
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }

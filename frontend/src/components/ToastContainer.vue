@@ -38,11 +38,14 @@ const { toasts, remove } = useToast();
 .toast--info    { background: var(--text); color: #FFF; }
 .toast-msg { flex: 1; }
 .toast-enter-active { animation: toastIn 0.3s ease-out; }
-.toast-leave-active { transition: opacity 0.3s; }
-.toast-leave-to { opacity: 0; }
+.toast-leave-active { animation: toastOut 0.3s ease-in; }
 
 @keyframes toastIn {
   from { opacity: 0; transform: translateX(20px); }
   to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0); }
+  to   { opacity: 0; transform: translateX(20px); }
 }
 </style>

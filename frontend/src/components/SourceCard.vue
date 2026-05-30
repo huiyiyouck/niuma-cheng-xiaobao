@@ -3,6 +3,7 @@ import { ref } from "vue";
 import type { ChannelSourceWithSource, Alert, UUID } from "@/lib/types";
 import { useToast } from "@/composables/useToast";
 import { useModal } from "@/composables/useModal";
+import { requestJson } from "@/lib/http";
 
 const props = defineProps<{
   binding: ChannelSourceWithSource;
@@ -50,16 +51,14 @@ function statusLabel(s: string) {
 
 async function onSave() {
   try {
-    const res = await fetch(`/v1/channel-sources/${cs.id}`, {
+    await requestJson(`/v1/channel-sources/${cs.id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+      body: {
         sub_channel_id: editSubChannelId.value || null,
         fetch_policy: { interval_seconds: editFetchInterval.value, max_items: editMaxItems.value },
         enabled: editEnabled.value,
-      }),
+      },
     });
-    if (!res.ok) throw new Error((await res.json()).detail || "保存失败");
     toast.success("已保存");
     emit("saved");
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
@@ -73,7 +72,7 @@ async function onDelete() {
   );
   if (!ok) return;
   try {
-    await fetch(`/v1/sources/${source.id}`, { method: "DELETE" });
+    await requestJson(`/v1/sources/${source.id}`, { method: "DELETE" });
     toast.success("已删除");
     emit("refresh");
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
@@ -83,8 +82,15 @@ async function onUnbind() {
   const ok = await modal.confirm("解除绑定", `确定解除 <strong>${source.display_name}</strong> 的绑定？Source 本身将保留。`, { danger: true });
   if (!ok) return;
   try {
-    await fetch(`/v1/channel-sources/${cs.id}`, { method: "DELETE" });
+    await requestJson(`/v1/channel-sources/${cs.id}`, { method: "DELETE" });
     toast.success("已解绑");
+    emit("refresh");
+  } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
+}
+
+async function updateAlertStatus(alertId: UUID, status: string) {
+  try {
+    await requestJson(`/v1/alerts/${alertId}`, { method: "PATCH", body: { status } });
     emit("refresh");
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
@@ -147,10 +153,10 @@ const cardAlerts = props.alerts.slice(0, 3);
         <span class="alert-status" :class="'alert-status--' + a.status">{{ a.status === 'active' ? '● 未处理' : a.status === 'acknowledged' ? '● 已确认' : '● 已解决' }}</span>
         <span class="alert-msg">{{ a.message }}</span>
         <template v-if="a.status === 'active'">
-          <button class="btn-xs" @click="fetch(`/v1/alerts/${a.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({status:'acknowledged'}) }).then(() => $emit('refresh'))">标记已确认</button>
+          <button class="btn-xs" @click="updateAlertStatus(a.id, 'acknowledged')">标记已确认</button>
         </template>
         <template v-if="a.status === 'active' || a.status === 'acknowledged'">
-          <button class="btn-xs" style="color:var(--text-muted)" @click="fetch(`/v1/alerts/${a.id}`, { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({status:'resolved'}) }).then(() => $emit('refresh'))">标记已解决</button>
+          <button class="btn-xs" style="color:var(--text-muted)" @click="updateAlertStatus(a.id, 'resolved')">标记已解决</button>
         </template>
       </div>
     </div>
