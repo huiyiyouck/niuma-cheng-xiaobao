@@ -1,5 +1,14 @@
 # 架构师工作日志
 
+## 2026-05-30 — v0.4 实现 R2 复审
+
+**本次角色**：架构师
+- 动作：Review（审全栈开发的 v0.4 实现 R2 修复）
+- 涉及文档：docs/progress/iterations/v0.4.md
+- 结论：✅通过。R1 3 条意见全部正确修复：#1 AlertList.vue → requestJson、#2 sources.ts → FOR UPDATE 事务、#3 ToastContainer → transition-group。16 项设计符合度全部通过。
+- 关联迭代：v0.4
+- 遗留问题/风险：无。实现阶段已定稿
+
 ## 2026-05-30 — v0.4 实现 R1 Review
 
 **本次角色**：架构师

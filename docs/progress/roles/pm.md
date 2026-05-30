@@ -405,3 +405,17 @@
   - #3 🔵建议：Toast 退出无 fade-out 动画（UI 规范 §5.1 要求 opacity transition）
 - 关联迭代：v0.4
 - 遗留问题/风险：#1 在生产环境会阻塞告警管理功能，需优先修复
+
+## 2026-05-30 — v0.4 实现阶段 R2 PM 复审
+
+- 本次角色：产品架构师(PM)
+- 动作：Review（复审）
+- 涉及文档：`frontend/src/components/SourceCard.vue`、`frontend/src/views/AdminPage.vue`、`server/src/api/routes/sources.ts`、`frontend/src/components/ToastContainer.vue`
+- 结论：✅通过（R2）。R1 3 条意见全部关闭：
+  - #1 ✅ SourceCard 改用 requestJson；AdminPage DELETE/POST 由 PM 直接补充 import + 替换
+  - #2 ✅ sources.ts 添加 BEGIN + FOR UPDATE + COMMIT 事务保护
+  - #3 ✅ ToastContainer 使用 transition-group + toastOut 动画
+- PM 直接修正 AdminPage.vue：补充 `import { requestJson }` + 替换 2 处 fetch 调用（DELETE channel-spaces + POST acknowledge-all）
+- 无新增问题。PRD 22 项验收标准全部通过。
+- 关联迭代：v0.4
+- 遗留问题/风险：无（等待架构师 R2 复审）

@@ -1,5 +1,14 @@
 # 全栈开发工作日志
 
+## 2026-05-30 — v0.4 实现阶段 R2（定稿）
+
+- 本次角色：全栈开发
+- 动作：修改（响应 PM + 架构师 R1 Review）
+- 涉及文件：AlertList.vue、SourceCard.vue、sources.ts、ToastContainer.vue
+- 结论：✅R2 通过。3 条意见全部修复：requestJson 替代原生 fetch、FOR UPDATE 事务保护、Toast 退出动画。PM + 架构师双通过，实现阶段定稿。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
 ## 2026-05-30 — v0.4 实现阶段 R1
 
 - 本次角色：全栈开发

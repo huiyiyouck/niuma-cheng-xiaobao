@@ -5,6 +5,7 @@ import {
   bindSource, updateChannelSource,
 } from "@/lib/api";
 import type { ChannelSpace, Source, ChannelSourceWithSource, Alert, UUID } from "@/lib/types";
+import { requestJson } from "@/lib/http";
 import CreateSpaceModal from "@/components/CreateSpaceModal.vue";
 import SubChannelManager from "@/components/SubChannelManager.vue";
 import AlertList from "@/components/AlertList.vue";
@@ -69,7 +70,7 @@ async function onDeleteSpace() {
       { confirmText: "确认删除", danger: true },
     );
     if (!ok) return;
-    await fetch(`/v1/channel-spaces/${selectedSpaceId.value}`, { method: "DELETE" });
+    await requestJson(`/v1/channel-spaces/${selectedSpaceId.value}`, { method: "DELETE" });
     toast.success("频道空间已删除");
     selectedSpaceId.value = null;
     await refreshAll();
@@ -87,12 +88,10 @@ async function onAcknowledgeAll() {
   );
   if (!ok) return;
   try {
-    const res = await fetch("/v1/alerts/acknowledge-all", {
+    const data = await requestJson<{ updated: number }>("/v1/alerts/acknowledge-all", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ channel_space_id: selectedSpaceId.value }),
+      body: { channel_space_id: selectedSpaceId.value },
     });
-    const data = await res.json();
     toast.success(`已标记 ${data.updated} 条告警`);
     await refreshSpaceData();
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
