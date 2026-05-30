@@ -28,6 +28,13 @@
 
 | 日期 | 模式 | 记录 | 状态 | 下一步 |
 |------|------|------|------|--------|
+| 2026-05-30 | Product Brief | [X/Twitter 指定账号实时监听](ad-hoc/2026-05-30-product-brief-x-filtered-stream.md) / [技术实施规划](ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md) | 已完成，登记为 v0.5 输入材料 | 用户启动 v0.5 后，交由 PM 和架构师正式 Review |
+
+## 候选迭代输入材料
+
+| 候选版本 | 材料 | 来源 | Review 状态 | 启动入口 |
+|----------|------|------|-------------|----------|
+| v0.5 | [X/Twitter 指定账号实时监听 Product Brief](ad-hoc/2026-05-30-product-brief-x-filtered-stream.md) / [Shared Filtered Stream 技术实施规划](ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md) | 编外成员整理 | 未进入正式 Review | 用户明确启动 v0.5 后，由 PM 和架构师接管 |
 
 ## 最近收尾摘要
 

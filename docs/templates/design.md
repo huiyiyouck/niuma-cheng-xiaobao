@@ -5,19 +5,7 @@
 - Review 轮次：R1
 - 关联 PRD：
 
-## Review 计划
-- Review 模式：动态 Review
-- 影响领域：
-- 本轮指定 Review 方：
-  - 
-- 未指定角色及原因：
-  - 
-- 少于 2 个 Review 方时的用户确认：（如不适用写“无”）
-- 定稿条件：本轮指定 Review 方全部通过，且无未处理高严重度阻塞问题
-
-## Review 状态
-| Review 方 | 指定原因 | 状态 | 轮次 |
-|-----------|----------|------|------|
+> 从此处插入 Review 计划、Review 状态和 Review 记录三个区块，内容见 `docs/templates/review-plan.md`
 
 ## 1. 概述
 
