@@ -1,5 +1,19 @@
 # 全栈开发工作日志
 
+## 2026-05-30 — v0.4 部署&测试修复 + 收尾
+
+- 本次角色：全栈开发
+- 动作：修复（DevOps #D1-#D5 + 测试 #B1-#B3 + 线上 403 + 日志 + X/Twitter 配置）
+- 涉及文件：admin-guard.ts, logger.ts, InlineAddSource.vue, SourceCard.vue, AdminPage.vue 等
+- 结论：全部修复完成，迭代可关闭。
+  - DevOps 5项全修（TS 0错误、server依赖清零、ADMIN_TOKEN配置、迁移路径标准化）
+  - 测试 3缺陷全修（DB迁移、FOR UPDATE+LEFT JOIN、source_url合并）
+  - 线上 403修复（admin-guard GET拦截 + VITE_ADMIN_TOKEN缺失）
+  - 日志修复（JSON splat + 403显式warn）
+  - X/Twitter 配置字段补充（新增/编辑均支持 mode+账号/关键词）
+- 关联迭代：v0.4
+- 遗留：Twitter 被动模式当前为定时轮询（API限制无webhook回调）
+
 ## 2026-05-30 — v0.4 实现阶段 R2（定稿）
 
 - 本次角色：全栈开发
