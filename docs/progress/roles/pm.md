@@ -393,3 +393,15 @@
 - 结论：✅通过（R2）。PM R1 4 条意见全部为非阻断项已在 R2 消化：#1 UUID 类型已由全栈开发确认正确；#2-#4 为文档建议不阻塞实现。R2 正文变更（全栈开发 4 条：路由懒加载+HTTP模式+多子频道SQL+delete-preview JOIN）已正确修正。PRD 覆盖完整，验收标准可追溯。
 - 关联迭代：v0.4
 - 遗留问题/风险：无（等待全栈开发 R2 复审）
+
+## 2026-05-30 — v0.4 实现阶段 R1 PM Review
+
+- 本次角色：产品架构师(PM)
+- 动作：Review
+- 涉及文档：37 个变更文件（server/ 新增 6 端点 + RSS Fetcher + Admin Guard + 日志修复；frontend/ 5 新组件 + 2 composable + 重写 AdminPage + 改造 NewsPage/AlertList/ChannelFilter）
+- 结论：❌需修改（R1）。PRD 22 项验收标准全部覆盖，功能闭环完整。发现 3 条意见：
+  - #1 🔴阻断：SourceCard.vue 和 AdminPage.vue 中告警操作使用原生 `fetch()`，未注入 `x-admin-token`，生产环境有 ADMIN_TOKEN 时会导致 403
+  - #2 🟠中等：DELETE /v1/sources/:id 未使用 `SELECT ... FOR UPDATE` 事务（设计 §3.4.2 要求）
+  - #3 🔵建议：Toast 退出无 fade-out 动画（UI 规范 §5.1 要求 opacity transition）
+- 关联迭代：v0.4
+- 遗留问题/风险：#1 在生产环境会阻塞告警管理功能，需优先修复

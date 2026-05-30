@@ -1,5 +1,18 @@
 # 架构师工作日志
 
+## 2026-05-30 — v0.4 实现 R1 Review
+
+**本次角色**：架构师
+- 动作：Review（审全栈开发的 v0.4 后端+前端实现）
+- 涉及文档：docs/progress/iterations/v0.4-design.md、docs/progress/iterations/v0.4.md
+- 结论：❌需修改。设计符合度 16 项逐条验证，15 项通过 + 1 项偏差（Source 删除缺 FOR UPDATE）。确认 PM 全部 3 条意见。
+  - #1 🔴阻断：AlertList.vue:28 原生 fetch() → 丢失 admin token
+  - #2 🟠中等：sources.ts:162 SELECT 缺 FOR UPDATE + 事务
+  - #3 🔵建议：Toast 退出动画未实现
+- 整体评价：实现质量高，设计符合度 94%（15/16），架构边界保持良好。修正 #1 #2 后可通过。
+- 关联迭代：v0.4
+- 遗留问题/风险：等待开发 R2 修复
+
 ## 2026-05-30 — v0.4 设计阶段完成
 
 **本次角色**：架构师

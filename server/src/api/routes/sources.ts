@@ -152,30 +152,45 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     return reply.send(sourceToOut(updated));
   });
 
-  // 删除（v0.4 增强：返回受影响绑定清单）
+  // 删除（v0.4 增强：FOR UPDATE + 事务 TOCTOU 保护）
   app.delete("/sources/:source_id", async (req: FastifyRequest, reply: FastifyReply) => {
     const { source_id } = req.params as { source_id: string };
-    const { rows: [row] } = await pool.query("SELECT id FROM sources WHERE id = $1", [source_id]);
-    if (!row) return reply.status(404).send({ detail: "source not found" });
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      // FOR UPDATE 锁定 channel_sources 行，防止 TOCTOU 并发窗口
+      const { rows: bindings } = await client.query(
+        `SELECT cs.channel_space_id, csp.name as channel_space_name, sc.name as sub_channel_name
+         FROM channel_sources cs
+         JOIN channel_spaces csp ON csp.id = cs.channel_space_id
+         LEFT JOIN sub_channels sc ON sc.id = cs.sub_channel_id
+         WHERE cs.source_id = $1
+         FOR UPDATE`,
+        [source_id],
+      );
 
-    // 查询受影响绑定（在事务中锁定行，防止 TOCTOU）
-    const { rows: bindings } = await pool.query(
-      `SELECT cs.channel_space_id, csp.name as channel_space_name, sc.name as sub_channel_name
-       FROM channel_sources cs
-       JOIN channel_spaces csp ON csp.id = cs.channel_space_id
-       LEFT JOIN sub_channels sc ON sc.id = cs.sub_channel_id
-       WHERE cs.source_id = $1`,
-      [source_id],
-    );
+      const { rows: [source] } = await client.query("SELECT id FROM sources WHERE id = $1 FOR UPDATE", [source_id]);
+      if (!source) {
+        await client.query("ROLLBACK");
+        return reply.status(404).send({ detail: "source not found" });
+      }
 
-    await pool.query("DELETE FROM sources WHERE id = $1", [source_id]);
-    return reply.send({
-      affected_bindings: bindings.map((b: any) => ({
-        channel_space_id: b.channel_space_id,
-        channel_space_name: b.channel_space_name,
-        sub_channel_name: b.sub_channel_name,
-      })),
-    });
+      await client.query("DELETE FROM sources WHERE id = $1", [source_id]);
+      await client.query("COMMIT");
+
+      return reply.send({
+        affected_bindings: bindings.map((b: any) => ({
+          channel_space_id: b.channel_space_id,
+          channel_space_name: b.channel_space_name,
+          sub_channel_name: b.sub_channel_name,
+        })),
+      });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
   });
 
   // 验证
