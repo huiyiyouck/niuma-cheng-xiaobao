@@ -6,10 +6,10 @@
 AI 驱动的多源新闻聚合平台。从 RSS/论文/社交/开源渠道抓取 → LLM 处理 → 结构化中文新闻卡片。
 
 ## 技术栈
-FastAPI + SQLAlchemy async | Worker(asyncio+asyncpg) | PostgreSQL(Supabase) | Vue3+TS+Vite | OpenAI 兼容 LLM
+Node.js Fastify + TypeScript | Worker(同进程内置调度) | PostgreSQL(Supabase) | Vue3+TS+Vite | OpenAI 兼容 LLM
 
 ## 启动方式
-bash start.sh 或分别启动后端/Worker/前端，详见 docs/使用说明.md
+cd server && npm run dev (API+Worker 同进程) + cd frontend && npm run dev (前端)
 
 ## 关键环境变量
 - DATABASE_URL
