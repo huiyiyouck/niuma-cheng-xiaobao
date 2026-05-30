@@ -17,12 +17,12 @@ export async function adminGuard(
   const method = request.method;
 
   // 判断是否需要管理员权限
-  const isAlertsPath = path.startsWith("/v1/alerts");
+  const isAlertsPath = path.startsWith("/v1/alerts") && !["GET", "HEAD"].includes(method);
   const isAdminPath = path.startsWith("/v1/admin") && !["GET", "HEAD"].includes(method); // v0.4: 非GET管理端点保护
   const isNonGetWrite =
     path.startsWith("/v1") && !["GET", "HEAD", "OPTIONS"].includes(method);
   const isAdminGetPath = config.adminProtectReads &&                  // v0.4: 可选 GET 鉴权
-    path.startsWith("/v1/admin") && ["GET", "HEAD"].includes(method);
+    (path.startsWith("/v1/admin") || path.startsWith("/v1/alerts")) && ["GET", "HEAD"].includes(method);
 
   if (!isAlertsPath && !isAdminPath && !isNonGetWrite && !isAdminGetPath) return;
 
