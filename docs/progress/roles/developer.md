@@ -1,5 +1,59 @@
 # 全栈开发工作日志
 
+## 2026-05-30 — v0.4 技术设计 R2 Review
+
+- 本次角色：全栈开发
+- 动作：Review（复审）
+- 涉及文档：docs/progress/iterations/v0.4-design.md、docs/progress/iterations/v0.4.md
+- 结论：✅通过。R1 全部 4 条意见已正确关闭（路由懒加载恢复、HTTP requestJson 模式对齐、多子频道 SQL 补全、delete-preview JOIN SQL 明确）。与 PM 结论一致。设计阶段全部定稿。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 技术设计 R1 Review
+
+- 本次角色：全栈开发
+- 动作：Review
+- 涉及文档：docs/progress/iterations/v0.4-design.md、docs/progress/iterations/v0.4.md
+- 结论：❌需修改。共 4 条意见（2 中等 + 2 轻微）。中等项：路由懒加载退化（静态 import→动态 import）、HTTP 客户端模式不匹配（假定的拦截器→现有 requestJson）。轻微项：搜索 SQL 未体现多子频道、delete-preview source_states JOIN 未写完整 SQL。确认 API 契约/Zod Schema/状态机/Admin Guard/TOCTOU/日志修复/Toast Modal/CSS 迁移全部正确。设计质量高，需修正与现有代码的对接细节。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 UI 规范 R2 Review
+
+- 本次角色：全栈开发
+- 动作：Review（复审）
+- 涉及文档：docs/progress/iterations/v0.4-ui-spec.md、docs/progress/iterations/v0.4.md
+- 结论：✅通过。R1 全部 5 条意见已正确关闭。R2 新增内容（§3.7 告警状态管理、§8.1 CSS 变量迁移策略、§11 21 组件迁移表）信息充分、可实现。附加 1 条极轻微建议（验收标准措辞遗留），不阻塞定稿。UI 规范已定稿。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 UI 规范 R1 Review
+
+- 本次角色：全栈开发
+- 动作：Review
+- 涉及文档：docs/progress/iterations/v0.4-ui-spec.md、docs/progress/iterations/v0.4.md
+- 结论：❌需修改。共 5 条意见（1 阻断 + 4 中等）。阻断项：子频道筛选从多选变单选与 PRD 和现有实现冲突。中等项：CSS 变量迁移影响范围未评估、现有组件去留清单缺失、空间选择器交互变更、评分步长精度降低。确认架构师 R1 全部 3 条意见。整体视觉规范质量高，需补全与现有实现的衔接说明。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 PRD R2 Review
+
+- 本次角色：全栈开发
+- 动作：Review（复审）
+- 涉及文档：docs/progress/iterations/v0.4-prd.md、docs/progress/iterations/v0.4.md
+- 结论：✅通过。R1 全部 11 条意见已正确关闭。R2 新增内容（3 端点 + 3 依赖 + 状态转换规则 + 管理页子任务拆解 + Toast/Modal 注入方式）可实现、无歧义。附加 2 条极轻微建议（id 类型标注、stats 路径），不阻塞定稿。PRD 已定稿。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 PRD R1 Review
+
+- 本次角色：全栈开发
+- 动作：Review
+- 涉及文档：docs/progress/iterations/v0.4-prd.md、docs/progress/iterations/v0.4.md
+- 结论：❌需修改。共 11 条意见（3 阻断 + 5 中等 + 3 建议）。阻断项：前端依赖缺口（VueUse+拖拽库未纳入 PRD）、频道空间 DELETE 统计端点缺失、子频道拖拽排序持久化端点缺失。确认架构师 R1 全部 8 条意见。整体技术可行，PRD 完整性补全后可进入设计阶段。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
 ## 2026-05-28 — v0.3 实现阶段定稿
 
 - 本次角色：全栈开发

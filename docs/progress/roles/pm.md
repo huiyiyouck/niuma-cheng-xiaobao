@@ -311,3 +311,85 @@
 - PRD 初版已产出（R1），进入架构师和全栈开发 Review。
 - 关联迭代：v0.4
 - 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 PRD R2 修订定稿
+
+- 本次角色：产品架构师(PM)
+- 动作：修改 → 定稿
+- 涉及文档：`docs/progress/iterations/v0.4-prd.md`、`docs/progress/iterations/v0.4.md`、`docs/progress/INDEX.md`
+- 结论：接受架构师 R1（8 条：2阻断+4中等+2建议）+ 全栈开发 R1（11 条：3阻断+5中等+3建议），共 19 条意见全部关闭。
+- R2 主要变更：
+  - 新增端点 2 个：`GET /v1/channel-spaces/:id/delete-preview`、`PUT .../sub-channels/reorder`
+  - 新增 PRD 节 1 个：3.3.6 Toast/Modal 注入方式
+  - 新增前端依赖 3 个：@vueuse/core、sortablejs+vuedraggable、rss-parser
+  - 修正：级联表6→7、RSS 接口契约、admin token 安全策略、ADMIN_PROTECT_READS 路由清单、告警状态转换规则、搜索交互细节/性能边界、affected_bindings 格式、骨架屏动态数量、管理页子任务拆解、日志措辞
+- PRD R2 已定稿，进入架构师和全栈开发 R2 复审。5 项阻断全部关闭，无新增阻断项。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 PRD 最终定稿 + 启动设计阶段
+
+- 本次角色：产品架构师(PM)
+- 动作：定稿
+- 涉及文档：`docs/progress/iterations/v0.4-prd.md`、`docs/progress/iterations/v0.4.md`、`docs/progress/INDEX.md`
+- 结论：架构师 R2 ✅通过 + 全栈开发 R2 ✅通过。R1→R2 共 19 条意见全部关闭（架构师 8 条 + 全栈开发 11 条），全栈开发附加 2 条极轻微建议（id 类型标注+stats 路径）不阻塞定稿，由设计/实现阶段消化。
+- PRD 已定稿，PRD 阶段闭环。下一步进入设计阶段，建议产出方为架构师。
+- 关联迭代：v0.4
+- 遗留问题/风险：无（全栈开发 2 条极轻微建议由设计/实现阶段消化）
+
+## 2026-05-30 — v0.4 UI 规范文档产出
+
+- 本次角色：产品架构师(PM)
+- 动作：产出
+- 涉及文档：`docs/progress/iterations/v0.4-ui-spec.md`、`docs/progress/iterations/v0.4.md`、`docs/progress/INDEX.md`
+- 结论：基于 v0.4 PRD（已定稿）和 HTML 原型（browse.html / admin.html），产出独立 UI 规范文档（R1）。
+- 覆盖范围：10 节 — 全局布局（白色半透明顶栏+三顶级导航）、NewsPage（统计卡片/搜索+筛选栏/子频道Pill/WS状态/新闻卡片/详情面板）、AdminPage（频道空间Pill行/信息源卡片/内联添加表单/子频道抽屉/行内编辑）、LogsPage（日志表格/筛选/复制）、Toast/Modal 组件规范、共享组件（骨架屏/空状态/错误条/加载更多）、响应式适配（768px/480px）、色彩体系汇总（16 色值+CSS变量）、验收标准（7 大类 30+ 检查项）、视觉参考文件索引
+- Review 计划：架构师（PRD覆盖+组件接口一致性）+ 全栈开发（可实现性+前端架构兼容性）。UI 规范进入 R1 Review。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 UI 规范 R2 修订定稿
+
+- 本次角色：产品架构师(PM)
+- 动作：修改 → 定稿
+- 涉及文档：`docs/progress/iterations/v0.4-ui-spec.md`、`docs/progress/iterations/v0.4.md`、`docs/progress/INDEX.md`
+- 结论：接受架构师 R1（3 条：1阻断+2建议）+ 全栈开发 R1（5 条：1阻断+4中等），共 8 条意见全部关闭。
+- R2 主要变更：
+  - 新增 §3.7 告警状态管理（状态标签三色+单条操作+批量入口+AlertList 改造布局）
+  - 新增 §11 现有组件迁移表（21 个组件逐一标注保留/改造/重写/新建/废弃/迁移）
+  - 新增 §8.1 CSS 变量渐进式迁移策略（旧变量别名兼容）
+  - 修正 2 处笔误：§2.2 空间选择器 `<select>`→Pill、§2.3 子频道单选→多选
+  - 修正 §2.2 评分滑块步长 1→0.5、补充防抖说明、§2.4 WS 视觉翻新标注、CSS 变量使用约定
+- UI 规范 R2 已定稿，进入架构师和全栈开发 R2 复审。2 项阻断全部关闭，无新增阻断项。
+- 关联迭代：v0.4
+- 遗留问题/风险：无
+
+## 2026-05-30 — v0.4 UI 规范最终定稿 + 启动技术设计
+
+- 本次角色：产品架构师(PM)
+- 动作：定稿
+- 涉及文档：`docs/progress/iterations/v0.4-ui-spec.md`、`docs/progress/iterations/v0.4.md`
+- 结论：架构师 R2 ✅通过 + 全栈开发 R2 ✅通过。R1→R2 共 8 条意见全部关闭（架构师 3 条 + 全栈开发 5 条），全栈开发附加 1 条极轻微建议（验收标准措辞遗留）不阻塞定稿，由实现阶段消化。
+- UI 规范已定稿，设计阶段 UI 规范部分闭环。下一步进入技术设计，产出方为架构师（产出 `v0.4-design.md`）。
+- 关联迭代：v0.4
+- 遗留问题/风险：无（全栈开发 1 条极轻微建议由实现阶段消化）
+
+## 2026-05-30 — v0.4 设计文档 R1 PM Review
+
+- 本次角色：产品架构师(PM)
+- 动作：Review
+- 涉及文档：`docs/progress/iterations/v0.4-design.md`
+- 结论：❌需修改（R1）。设计整体覆盖 PRD 三大板块完整，7 个新增端点 + 3 个增强全部有详细设计。发现 4 条意见：
+  - #1 🟠中等：SubChannelsReorder 的 `id` 类型用 `z.string().uuid()`，PRD 写 `number`，需确认实际类型并注明差异
+  - #2-#4 🔵建议：验收标准追溯表、骨架屏实现策略、delete-preview 鉴权产品决策记录
+- 关联迭代：v0.4
+- 遗留问题/风险：无阻断项
+
+## 2026-05-30 — v0.4 设计文档 R2 PM Review
+
+- 本次角色：产品架构师(PM)
+- 动作：Review（复审）
+- 涉及文档：`docs/progress/iterations/v0.4-design.md`
+- 结论：✅通过（R2）。PM R1 4 条意见全部为非阻断项已在 R2 消化：#1 UUID 类型已由全栈开发确认正确；#2-#4 为文档建议不阻塞实现。R2 正文变更（全栈开发 4 条：路由懒加载+HTTP模式+多子频道SQL+delete-preview JOIN）已正确修正。PRD 覆盖完整，验收标准可追溯。
+- 关联迭代：v0.4
+- 遗留问题/风险：无（等待全栈开发 R2 复审）

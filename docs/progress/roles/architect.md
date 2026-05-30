@@ -1,5 +1,99 @@
 # 架构师工作日志
 
+## 2026-05-30 — v0.4 设计阶段完成
+
+**本次角色**：架构师
+- 动作：收尾（设计阶段全部定稿）
+- 涉及文档：docs/progress/iterations/v0.4-design.md、docs/progress/iterations/v0.4.md、docs/progress/INDEX.md
+- 结论：✅ v0.4 设计阶段已全部完成。三个阶段全部定稿：
+  - PRD：R1→R2，架构师 8 条 + 全栈开发 11 条，全部关闭
+  - UI 规范：R1→R2，架构师 3 条 + 全栈开发 5 条，全部关闭
+  - 技术设计：R1→R2，全栈开发 4 条 + PM 通过，全部关闭
+- 关联迭代：v0.4
+- 遗留问题/风险：无。架构师工作已全部完成，等待 Developer 启动实现阶段
+
+## 2026-05-30 — v0.4 设计文档 R2 修订
+
+**本次角色**：架构师
+- 动作：修改（响应全栈开发 R1 Review 4 条意见）
+- 涉及文档：docs/progress/iterations/v0.4-design.md、docs/progress/iterations/v0.4.md
+- 结论：✅R2 已修订。接受全栈开发全部 4 条意见（2中等+2轻微），全部在正文中修正：
+  - #D1 路由：静态 import → 动态 `() => import()`（§5.1）
+  - #D2 HTTP：`createApiClient`+interceptor → `requestJson()` 函数内追加 token（§5.4）
+  - #D3 搜索 SQL：`$3::uuid[]` + `ANY()` 多子频道支持（§4.5）
+  - #D4 delete-preview：补充 source_states JOIN 完整 SQL（§3.3.2）
+- 关联迭代：v0.4
+- 遗留问题/风险：等待 PM 和全栈开发 R2 Review
+
+## 2026-05-30 — v0.4 设计文档产出
+
+**本次角色**：架构师
+- 动作：产出（基于定稿 PRD + UI 规范 + 现有代码基线，编写 v0.4 技术设计文档）
+- 涉及文档：docs/progress/iterations/v0.4-design.md、docs/progress/iterations/v0.4.md
+- 产出覆盖：
+  - 数据库变更：alerts.status 列
+  - API 设计：7 个新端点（PUT channel-spaces/:id、GET delete-preview、DELETE channel-spaces/:id、DELETE channel-sources/:id、PUT sub-channels/reorder、PATCH alerts/:id、POST alerts/acknowledge-all）+ 3 个增强（搜索参数、Source 删除绑定检查、Admin Guard 扩展）
+  - 核心流程：RSS Fetcher（rss-parser + 游标复用 source_states.cursor）、告警状态机、频道删除/解绑/搜索/日志路径修复
+  - 前端架构：路由变更（/news/admin/logs）、组件树（1保7改2重5新5废1迁）、Toast/Modal 模块级单例设计、HTTP 客户端 token 注入、CSS 变量渐进迁移、3 个新依赖
+  - 设计决策：RSS 解析库 rss-parser、Toast/Modal 方案 B、搜索 ILIKE、ADMIN_PROTECT_READS 默认 false
+- 关联迭代：v0.4
+- 遗留问题/风险：等待 PM 和全栈开发 Review
+
+## 2026-05-30 — v0.4 UI 规范 R2 Review
+
+**本次角色**：架构师
+- 动作：Review（审 PM 的 v0.4 UI 规范 R2 修订版）
+- 涉及文档：docs/progress/iterations/v0.4-ui-spec.md、docs/progress/iterations/v0.4.md
+- 结论：✅通过。R1 全部 3 条意见在 R2 正文中正确关闭。R2 新增内容（§3.7 告警状态管理、§8.1 CSS 迁移策略、§11 组件迁移表）架构合理，无新增风险。UI 规范已达到设计阶段准入标准。
+- 关联迭代：v0.4
+- 遗留问题/风险：无。等待全栈开发 R2 Review 完成后 UI 规范定稿，进入技术设计阶段
+
+## 2026-05-30 — v0.4 UI 规范 R1 Review
+
+**本次角色**：架构师
+- 动作：Review（审 PM 的 v0.4 UI 规范文档）
+- 涉及文档：docs/progress/iterations/v0.4-ui-spec.md、docs/progress/iterations/v0.4.md
+- 结论：❌需修改。共 3 条意见：
+  - 1 项阻断：#1 告警状态管理 UI 缺失——PRD 3.2.5 定义了 active/acknowledged/resolved 三状态 + PATCH/POST 端点，但 UI 规范仅覆盖了静态告警内联条，缺少状态标签样式、单条操作按钮、批量标记按钮、AlertList.vue 改造方案
+  - 2 项建议：#2 CSS 变量已在 §8 定义但正文未引用，#3 WebSocket 状态指示器可标注来源
+- 整体评价：PRD 覆盖良好，所有组件均有状态覆盖，组件接口清晰。仅告警管理 UI 缺失为 PRD 覆盖缺口，其余不阻塞。
+- 关联迭代：v0.4
+- 遗留问题/风险：等待 PM 在 R2 补充告警管理 UI 规范
+
+## 2026-05-30 — v0.4 设计阶段启动检查
+
+**本次角色**：架构师
+- 动作：设计阶段启动检查
+- 涉及文档：docs/progress/INDEX.md、docs/progress/iterations/v0.4-prd.md、docs/progress/iterations/v0.4.md
+- 结论：⏸️ 暂缓。PRD 已定稿 ✅，但 UI 阶段状态为"待产出"（既无定稿也无跳过标记），不能直接进入技术设计。
+  - v0.4 PRD 已包含原型 HTML + 设计语言规范，但缺少独立的 UI 规范文档
+  - 参考 v0.2 流程：PM → UI 规范文档 → 架构师+开发 Review → 设计阶段
+  - 用户确认需要独立 UI 规范文档，不跳过
+- 关联迭代：v0.4
+- 遗留问题/风险：等待 PM 产出 `docs/progress/iterations/v0.4-ui-spec.md`，UI 规范定稿后架构师继续技术设计
+
+## 2026-05-30 — v0.4 PRD R2 Review
+
+**本次角色**：架构师
+- 动作：Review（审 PM 的 v0.4 PRD R2 修订版）
+- 涉及文档：docs/progress/iterations/v0.4-prd.md、docs/progress/iterations/v0.4.md
+- 结论：✅通过。R1 全部 8 条意见在 R2 正文中正确关闭。R2 新增内容（3 个依赖、2 个端点、告警状态机、Toast/Modal 注入方式）无架构风险。PRD 已达到设计阶段准入标准。
+- 关联迭代：v0.4
+- 遗留问题/风险：无。等待全栈开发 R2 Review 完成后 PRD 定稿
+
+## 2026-05-30 — v0.4 PRD R1 Review
+
+**本次角色**：架构师
+- 动作：Review（审 PM 的 v0.4 PRD 初版）
+- 涉及文档：docs/progress/iterations/v0.4-prd.md、docs/progress/iterations/v0.4.md
+- 结论：❌需修改。共 8 条意见：
+  - 2 项阻断：#1 RSS Fetcher 接口契约不完整（type 标识值未定、validate 验证策略未明确）、#2 频道空间 DELETE 级联遗漏 alerts 表
+  - 4 项中等：#3 ILIKE 搜索性能边界需明确、#4 前端 token 存储安全性（localStorage XSS 风险）、#5 ADMIN_PROTECT_READS 作用域未定义、#6 Source 删除前绑定检查 TOCTOU 窗口
+  - 2 项建议：#7 日志路径修复措辞修正、#8 子频道排序字段已验证存在（sort_order）
+- 整体评价：PRD 架构一致性较好，RSS 注册方式/API 命名/DB 变更最小化/游标设计均与现有架构一致。技术可行性无阻塞，阻断项属文档完整性范畴。
+- 关联迭代：v0.4
+- 遗留问题/风险：等待 PM 在 R2 中回应阻断项后进入设计阶段
+
 ## 2026-05-27 — v0.3 实现 R2 Review
 
 **本次角色**：架构师

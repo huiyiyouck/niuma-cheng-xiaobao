@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.4 — UI 重构 + 功能点检与异常处理完善
 - 当前模式：标准迭代
-- 当前阶段：PRD 阶段 — R1 Review中
+- 当前阶段：设计阶段已全部定稿（PRD ✅ / UI 规范 ✅ / 技术设计 ✅），进入实现阶段
 - 阻塞项：无
-- 下一步入口：PM（产品经理）等待 Review 方反馈，或进入 R2 修改
+- 下一步入口：Developer 启动实现阶段
 
 ## 版本列表
 
@@ -17,7 +17,7 @@
 | v0.1 | [iterations/v0.1.md](iterations/v0.1.md) | [iterations/v0.1-prd.md](iterations/v0.1-prd.md) | 无（早期版本） | [iterations/v0.1-design.md](iterations/v0.1-design.md) | — | 已完成 |
 | v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | [iterations/v0.2-ui-spec.md](iterations/v0.2-ui-spec.md) | [iterations/v0.2-design.md](iterations/v0.2-design.md) | — | 已完成 |
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
-| v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | 待产出 | 待产出 | — | PRD R1 Review中 |
+| v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | — | 设计阶段已定稿 → 实现阶段 |
 
 ## 当前 Change Notes
 
