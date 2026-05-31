@@ -1,5 +1,17 @@
 # DevOps 工作日志
 
+## 2026-05-31 — Ops Task：清理 v0.3 Python 遗留 systemd unit ✅完成
+
+- 本次角色：DevOps（运维/部署工程师）
+- 工作模式：Ops Task（非迭代）
+- 触发：用户要求"清理失效的 systemd unit news-worker.service"
+- 范围扩展：勘察发现 `news-api.service` 是同源遗留（同样 disabled、同样指向已不存在的 `/opt/news-aggregator/.venv/`），与用户确认后一并清理
+- 动作：`systemctl stop` → `disable` → `reset-failed` → 删除 `/etc/systemd/system/news-{worker,api}.service` → `daemon-reload`
+- 验证：unit 文件无残留、`systemctl list-unit-files` 无 news-worker / news-api、Node 后端 `/health` 仍正常返回 `{"status":"ok"}`
+- 线上影响：无。v0.4 生产服务用 nohup 启动，与 systemd 无关
+- 后续建议（未在本次执行，用户已确认延后）：Node 后端 systemd 化以获得开机自启 + 崩溃重启，待用户决定后单独执行
+- 记录：`docs/progress/ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md`
+
 ## 2026-05-30 — 会话收尾
 
 - 本次会话：DevOps（运维/部署工程师），v0.4 部署阶段全程

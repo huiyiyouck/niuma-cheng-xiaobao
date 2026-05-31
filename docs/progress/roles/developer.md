@@ -1,5 +1,20 @@
 # 全栈开发工作日志
 
+## 2026-05-31 — v0.4 测试报告 R1 Review
+
+- 本次角色：全栈开发（Developer）
+- 动作：Review
+- 涉及文档：docs/progress/iterations/v0.4-test-report.md、docs/progress/iterations/v0.4.md、docs/progress/INDEX.md
+- 结论：**✅有条件通过 R1**
+  - 缺陷修复 #B1/#B2/#B3 逐条 diff 验证 + 生产 DB 验证均一致，无回退
+  - 测试覆盖 30 项通过 0 失败 0 阻塞，PRD 22 项覆盖 21 ✅ / 1 ⏸ 与 PM 复审一致
+  - 三项需 PM/Tester 收口的事项已写入测试报告 R1 Review 段：
+    1. 本日 commit e736980（7 个 UI bug）不在 R1 报告覆盖范围 → 我建议不升 R2（已修复+用户验证+风险可控），由 PM 决定
+    2. 测试报告「正式修复建议」未明确归属 → 建议 INDEX 跨任务待办登记
+    3. 报告结论里「✅有条件通过」的"条件"未列清 → 建议 Tester 定稿前补一行
+- 关联迭代：v0.4
+- 遗留问题/风险：无（3 项收口事项已转交 PM/Tester 决定）
+
 ## 2026-05-31 — v0.4 视觉验证 Bugfix 批次（6 bug + WS 架构对齐）
 
 - 本次角色：全栈开发（Developer）

@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.4 — UI 重构 + 功能点检与异常处理完善
 - 当前模式：标准迭代
-- 当前阶段：测试阶段已收尾（用户视觉验证 ✅ 2026-05-31，RSS 实机延后至后续迭代），待 PM + Developer Review 测试报告 → 迭代关闭
+- 当前阶段：测试阶段 — 测试报告 R1 双 Review 通过（PM ✅ + Developer ✅有条件通过），待 PM + Tester 决定 3 项收口事项 → 定稿 → 迭代关闭
 - 阻塞项：无
-- 下一步入口：PM 复审测试报告 → 迭代关闭
+- 下一步入口：PM + Tester 收口 3 项事项（详见 [v0.4 迭代记录](iterations/v0.4.md) §Developer Review 测试报告 R1）→ 测试报告 R1 定稿 → 迭代关闭检查
 
 ## 版本列表
 
@@ -28,6 +28,7 @@
 
 | 日期 | 模式 | 记录 | 状态 | 下一步 |
 |------|------|------|------|--------|
+| 2026-05-31 | Ops Task | [清理 v0.3 Python 遗留 systemd unit](ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md) | ✅已完成（news-worker + news-api 旧 Python unit 全清，Node 服务未受影响） | 启用 deploy/systemd/news-api.service 仍在 P1 待办，未决 |
 | 2026-05-31 | Incident | [Node.js 后端源码被基线同步 commit 误删](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) | 已完成：恢复→推送 GitHub→重启→健康检查通过 | （留观，无后续动作） |
 | 2026-05-30 | Product Brief | [X/Twitter 指定账号实时监听](ad-hoc/2026-05-30-product-brief-x-filtered-stream.md) / [技术实施规划](ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md) | 已完成，登记为 v0.5 输入材料 | 用户启动 v0.5 后，交由 PM 和架构师正式 Review |
 
@@ -51,8 +52,7 @@
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
-| P1 | 清理失效的旧 systemd unit `news-worker.service`（仍指向已删除的 Python 路径，5 天前 timeout failed） | DevOps | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §5 | 待处理 |
-| P1 | 决定 Node 后端是否启用 `deploy/systemd/news-api.service`（当前 nohup 启动 PID 3870357，无自动重启保护） | DevOps | 同上 | 待处理 |
+| P1 | 决定 Node 后端是否启用 `deploy/systemd/news-api.service`（当前 nohup 启动 PID 3870357，无自动重启保护） | DevOps | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §5 | 待处理（旧 Python unit 已于 2026-05-31 清理完毕，名字 `news-api.service` 已释放） |
 | P1 | 基线同步保护机制（防止再次误删生产源码：路径白名单 / 大变更阻断 / 协作 commit 二次核对） | WM | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §6 | 待处理 |
 | P1 | 前后端契约变更同步检查清单（v0.3 砍后端 WS 后前端残留 5 个月才被发现） | WM | [Developer 日志 2026-05-31 Bugfix 批次](roles/developer.md) 遗留段 | 待处理 |
 
