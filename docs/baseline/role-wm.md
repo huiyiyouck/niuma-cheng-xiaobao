@@ -140,3 +140,4 @@
 - 修改基线必须经人类确认，不自行改动 `docs/baseline/`
 - 不破坏现有迭代流程和门禁
 - 新增角色不绕过人类的最终确认
+- WM 在 `docs/baseline/`、`docs/templates/` 下做删除操作时，同样受「受保护路径删除 Review 门禁」约束（详见 `conventions.md`），必须先请架构师 Review；架构师不可用时由 Owner 兜底

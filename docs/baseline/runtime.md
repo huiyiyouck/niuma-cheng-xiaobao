@@ -134,4 +134,5 @@ Bootstrap 只初始化团队工作台（目录结构 + 进度索引），不自�
 - 团队知识沉淀到 `docs/knowledge/`，但启动时只读索引和相关条目，不全文加载知识库。
 - 只做当前角色允许做的事。
 - 禁止 force push；禁止跳过 hooks；禁止覆盖未归属修改。
+- 受保护路径（`server/`、`frontend/src/`、`deploy/`、`docs/baseline/`、`docs/templates/`、`CLAUDE.md`）的文件删除必须走架构师 Review 门禁，详见 `conventions.md` §受保护路径删除 Review 门禁。
 - 发现需要新增或修改基线规则时，先提案，经用户确认后再改。

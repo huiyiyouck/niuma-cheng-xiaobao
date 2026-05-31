@@ -49,14 +49,20 @@
 
 ## 跨任务待办
 
-> 不归任何单一迭代/ad-hoc 文档的零散事项，按归属角色集中登记。完成后从本表移除。
+> 列入此表通常说明事项跨多个任务、归属角色明确但尚未启动；
+> 若已有可独立的 ad-hoc 或基线修正提案，优先走对应流程。完成后从本表移除。
+>
+> **字段与写权限**：
+> - **优先级**（P0/P1/P2）：登记时由提出方设定，归属角色可调整。
+> - **待办**：一句话描述。
+> - **归属角色**：登记时由提出方判定；写入后只能由归属角色本人变更（如转交）。
+> - **来源**：任何角色的日志、ad-hoc、Incident、Review 结论、Owner 口述等；登记后不再改。
+> - **状态**：**只能由归属角色更新**；其他角色发现状态过期可在会话里提醒，不可代改。
+> - Owner 始终可以更新任何字段，作为兜底。
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
-| P1 | 基线同步保护机制（防止再次误删生产源码：路径白名单 / 大变更阻断 / 协作 commit 二次核对） | WM | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §6 | 待处理 |
-| P1 | 前后端契约变更同步检查清单（v0.3 砍后端 WS 后前端残留 5 个月才被发现） | WM | [Developer 日志 2026-05-31 Bugfix 批次](roles/developer.md) 遗留段 | 待处理 |
-| P1 | 评估「跨任务待办」是否应在 baseline 模板化（Developer 已自加 INDEX 表，需 WM 决定选项 A/B/C） | WM | [Developer 日志 基线修正提案 2026-05-31](roles/developer.md) | 待 WM 评估 |
-| P2 | 数据库迁移机制规范化：建立 drizzle 迁移文件管理 + 部署自动迁移步骤（v0.4 #B1 教训）+ 评估 #B2 替代方案（两步查询拆 FOR UPDATE） | DevOps（主）+ Architect（评估） | [v0.4 测试报告](iterations/v0.4-test-report.md) §「正式修复建议」 / PM 2026-05-31 决定 | 待处理 |
+| P2 | 数据库迁移机制规范化：建立 drizzle 迁移文件管理 + 部署自动迁移步骤（v0.4 #B1 教训）+ 评估 #B2 替代方案（两步查询拆 FOR UPDATE） | DevOps（主）+ Architect（评估） | [v0.4 测试报告](iterations/v0.4-test-report.md) §「正式修复建议」 / PM 2026-05-31 决定 | DevOps 已评估（[devops.md 2026-05-31 P2 评估](roles/devops.md)）：拆 Step 1/2/3；Step 1 需 Architect 拍板工具流（drizzle generate vs push）+ 统一迁移路径，是后续动作起点；Step 3 我可独立做（ExecStartPre=drizzle-kit migrate 挂 systemd）；#B2 不归我 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）

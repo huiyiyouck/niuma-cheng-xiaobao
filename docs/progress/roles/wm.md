@@ -1,5 +1,31 @@
 # WM（工作流管理者）角色日志
 
+## 2026-05-31 — 三项基线修正提案落地
+
+- 本次角色：WM
+- 动作：基线修正（3 项提案合并落地）
+- 触发源：2026-05-30 基线同步事故 + v0.3 砍后端 WS 后前端残留 5 个月 + Developer 提的 INDEX 跨任务待办元流程提案
+- 涉及文档：9 个 baseline/templates 文件 + INDEX + 本日志
+  - `docs/baseline/conventions.md`（#1 新增「受保护路径删除 Review 门禁」主章节 + 禁止事项加 1 行）
+  - `docs/baseline/runtime.md`（#1 §质量底线加引用）
+  - `docs/baseline/role-developer.md`（#1 §安全边界加引用 + #2 新增「跨轮契约变更同步」章节 + 自检清单加 3 项）
+  - `docs/baseline/role-architect.md`（#1 新增「受保护路径删除 Review 职责」章节）
+  - `docs/baseline/role-wm.md`（#1 §安全边界加 1 行）
+  - `docs/baseline/mechanisms.md`（#2 迭代关闭检查加第 8 项）
+  - `docs/baseline/subagents/sub-frontend.md`（#2 完成标准加跨轮契约残留扫描）
+  - `docs/baseline/subagents/sub-backend.md`（#2 完成标准加跨轮契约残留扫描）
+  - `docs/templates/progress-index.md`（#3 新增「跨任务待办」骨架）
+  - `docs/progress/INDEX.md`（移除 3 项 WM 跨任务待办，结构同步模板新规范）
+- 提案#1 主张：受保护路径（`server/`、`frontend/src/`、`deploy/`、`docs/baseline/`、`docs/templates/`、`CLAUDE.md`）的文件删除必须先停下、列清单、请架构师 Review、✅通过后才执行；commit message 留痕；架构师自身删除时 Owner 兜底；已登记记录的删除可豁免架构师 Review
+- 提案#2 主张：后端砍能力时必须 grep 前端引用；引用非零必须同步处理或登记；Tester 在迭代关闭检查时核对；前后端子 Agent 完成标准纳入跨轮契约残留扫描
+- 提案#3 主张：INDEX「跨任务待办」骨架进入模板；字段写权限——状态独占归属角色，Owner 兜底可更新任何字段；不写 baseline 强约束（避免过早僵化）
+- Owner 决策路径：分 5 轮交互逐项澄清并确认（删除方案改为事前 Review 门禁 / Review 方限定架构师 / 模板字段写权限规则 / #2 按推荐落地 / 全部最终通过）
+- 关联迭代：无（基线修正，元流程）
+- 关联非迭代工作：[Incident 2026-05-31 server-source-deleted](../ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md)
+- 遗留问题/风险：无
+- 下一步入口：v0.4 测试阶段继续（等全栈开发 Review 测试报告 R1 → 迭代关闭）
+- 收尾状态：待 commit + push
+
 ## 2026-05-30 — 会话摘要
 - 本次角色：WM
 - 动作：工作流审查 + 修改
