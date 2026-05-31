@@ -1,5 +1,27 @@
 # 全栈开发工作日志
 
+## 2026-05-31 — v0.4 视觉验证 Bugfix 批次（6 bug + WS 架构对齐）
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix（非迭代，v0.4 部署后视觉验证发现的批次小 bug）
+- 动作：修改
+- 涉及文件：10 frontend + 1 server（净减 41 行，主要因删除 ws.ts）
+- 关联 commit：e736980
+- 结论：
+  1. DELETE 400 "Body cannot be empty"：`requestJson` 只在有 body 时设 Content-Type
+  2. DELETE 204 后 "Unexpected end of JSON input"：204/Content-Length=0 跳过 res.json()
+  3. SubChannelManager 删除弹窗与项目其他地方不统一：原生 confirm → useModal + useToast
+  4. 编辑信息源"启用"复选框未对齐：新增 .edit-checkbox 类 row 排列 + align-self: end
+  5a. 信息源"启用"切换保存后徽章不刷新：source/cs/isXT/srcConfig 由 const 改 computed，进入编辑态 watch 同步表单 ref
+  5b. 徽章无法区分"已禁用"：statusBadge 引入 enabled 维度，enabled=false 显示 "⏸ 已禁用"
+  6. 创建空间按钮无反应：AdminPage `@create` 改为 `@submit`，与 CreateSpaceModal emit 名对齐
+  7. 控制台 WebSocket failed 持续刷错：v0.3 已砍后端 WS，前端同步删除 ws.ts + WS_BASE_URL + WSStatus + useWS 调用 + NewsPage 状态指示条
+  附：server/src/api/app.ts PG 22P02 错误增强日志，记录请求 URL 便于排查无效 UUID
+- 关联迭代：v0.4 部署后
+- 遗留：
+  - long-term：前端 ws.ts 删除前已游离 1 个版本（v0.3 后端砍 WS 后未同步前端），属流程死角；建议 WM 评估是否在 baseline 加"前后端契约变更需同步检查"清单
+  - 旧 systemd unit news-worker.service 仍指向已删除 Python 路径（与本次 bug 无关，待 DevOps 清理）
+
 ## 2026-05-31 — Incident：基线同步 commit 误删 server/ 后端源码 → 恢复并重启
 
 - 本次角色：全栈开发（Developer）
