@@ -12,6 +12,9 @@
 
 ## Engineering（工程）
 
+- [Node.js 进程 unlink-while-open 应急恢复套路](engineering/nodejs-unlink-while-open-recovery.md) — 源码丢失但进程还活的应急判断 + 恢复步骤 + 陷阱（v0.4 Incident 实战沉淀）
+- [Vue 3 setup 中 const 解构 props 非响应式陷阱](engineering/vue3-setup-props-non-reactive-pitfall.md) — 子组件"不刷新"症状的常见根因 + computed/watch 修法 + Review checklist 建议
+
 ## Testing（测试）
 
 ## DevOps（运维/部署）

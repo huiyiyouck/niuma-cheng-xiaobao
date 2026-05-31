@@ -17,10 +17,10 @@
 - 当日净代码变更：server/ 恢复 +6291 行；前端 Bugfix +84 -125 = -41 行；其余为文档
 - 关联迭代：v0.4
 - 状态：Developer 当日工作全部已 commit 并推送，本地工作区仅剩**其他角色**未提交的修改（PM/DevOps/Tester/PM-corrections），不在 Developer 提交边界
-- 知识库沉淀建议（不当场执行，交给后续会话或 Owner 决定）：
-  - 「Node.js 进程 unlink-while-open 的应急恢复套路」— 今天 Incident 中靠这个特性救回了服务，是可复用工程经验
-  - 「v-for + computed 解决 props 响应式问题」— 今天 SourceCard 的 const 解构 props 不响应式坑，是 Vue 3 setup 常见陷阱
-  - 这两条都属 `docs/knowledge/engineering/`，但我作为收尾不主动新建知识条目（避免越权超出本次会话主线），登记在此供未来 Architect/Owner 决定
+- 知识库沉淀（已执行，纠正之前"避免越权"的错误判断——按 Developer 手册 §15 + §146，engineering 沉淀本就是 Developer 硬职责）：
+  - [Node.js 进程 unlink-while-open 应急恢复套路](../../knowledge/engineering/nodejs-unlink-while-open-recovery.md)
+  - [Vue 3 setup 中 const 解构 props 非响应式陷阱](../../knowledge/engineering/vue3-setup-props-non-reactive-pitfall.md)
+  - knowledge/INDEX.md 已同步更新
 - 遗留（下次启动 Developer 角色时关注）：无
 - 下班；今天 Developer 棒交完，**v0.4 迭代关闭检查**待 PM 或 WM 执行
 
