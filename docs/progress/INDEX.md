@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.4 — UI 重构 + 功能点检与异常处理完善
 - 当前模式：标准迭代
-- 当前阶段：测试阶段 — 测试报告 R1 双 Review 通过（PM ✅ + Developer ✅有条件通过），待 PM + Tester 决定 3 项收口事项 → 定稿 → 迭代关闭
-- 阻塞项：无
-- 下一步入口：PM + Tester 收口 3 项事项（详见 [v0.4 迭代记录](iterations/v0.4.md) §Developer Review 测试报告 R1）→ 测试报告 R1 定稿 → 迭代关闭检查
+- 当前阶段：测试报告 R1 ✅ 已定稿（Tester 2026-05-31 翻牌），所有阶段门禁通过，待迭代关闭检查
+- 阻塞项:无
+- 下一步入口：PM 或 WM 执行 v0.4 迭代关闭检查
 
 ## 版本列表
 
@@ -28,7 +28,7 @@
 
 | 日期 | 模式 | 记录 | 状态 | 下一步 |
 |------|------|------|------|--------|
-| 2026-05-31 | Ops Task | [清理 v0.3 Python 遗留 systemd unit](ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md) | ✅已完成（news-worker + news-api 旧 Python unit 全清，Node 服务未受影响） | 启用 deploy/systemd/news-api.service 仍在 P1 待办，未决 |
+| 2026-05-31 | Ops Task | [清理 v0.3 Python 遗留 systemd unit + Node 后端 systemd 化](ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md) | ✅已完成（旧 unit 全清 + Node 后端已切换为 systemd 管理，崩溃重启已验证） | — |
 | 2026-05-31 | Incident | [Node.js 后端源码被基线同步 commit 误删](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) | 已完成：恢复→推送 GitHub→重启→健康检查通过 | （留观，无后续动作） |
 | 2026-05-30 | Product Brief | [X/Twitter 指定账号实时监听](ad-hoc/2026-05-30-product-brief-x-filtered-stream.md) / [技术实施规划](ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md) | 已完成，登记为 v0.5 输入材料 | 用户启动 v0.5 后，交由 PM 和架构师正式 Review |
 
@@ -42,6 +42,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-05-31 | Tester | v0.4 测试报告 R1 翻牌定稿 | ✅ 已定稿 — PM/Developer 双 Review 通过 + PM 3 项收口决定全部闭环（事项 1 不升 R2 / 事项 2 进 INDEX P2 / 事项 3 条件已列清） | PM 或 WM 执行 v0.4 迭代关闭检查 |
 | 2026-05-31 | Tester | v0.4 测试工作收尾：用户视觉验证 ✅ + RSS 实机延后决策落档 | ✅ 有条件通过；PRD 22 项最终覆盖 21 ✅ / 1 ⏸（RSS 实机抓取经用户决策延后至后续迭代） | PM 复审测试报告 → 迭代关闭 |
 | 2026-05-31 | Developer | v0.4 视觉验证 Bugfix 批次：6 bug + WS 架构对齐 | commit e736980 推送 GitHub；DELETE 400/空 body 解析/Modal 不统一/复选框对齐/启用响应性/创建空间事件名/前端 WS 残留 全部修复；线上验证通过 | 待用户继续 v0.4 视觉验证或决定迭代关闭 |
 | 2026-05-31 | Developer | Incident：基线同步 commit 误删 server/ 源码 → 从 git 历史恢复并重启服务 | server/ 38 文件 + deploy/systemd/news-api.service 已恢复并推送 GitHub（commit ec8073e）；新 PID 3870357 启动健康检查通过；v0.4 线上服务连续可用、未中断 | 下班；旧 systemd unit 清理与 server 是否进 systemd 待 DevOps 决定 |
@@ -52,10 +53,10 @@
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
-| P1 | 决定 Node 后端是否启用 `deploy/systemd/news-api.service`（当前 nohup 启动 PID 3870357，无自动重启保护） | DevOps | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §5 | 待处理（旧 Python unit 已于 2026-05-31 清理完毕，名字 `news-api.service` 已释放） |
 | P1 | 基线同步保护机制（防止再次误删生产源码：路径白名单 / 大变更阻断 / 协作 commit 二次核对） | WM | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §6 | 待处理 |
 | P1 | 前后端契约变更同步检查清单（v0.3 砍后端 WS 后前端残留 5 个月才被发现） | WM | [Developer 日志 2026-05-31 Bugfix 批次](roles/developer.md) 遗留段 | 待处理 |
 | P1 | 评估「跨任务待办」是否应在 baseline 模板化（Developer 已自加 INDEX 表，需 WM 决定选项 A/B/C） | WM | [Developer 日志 基线修正提案 2026-05-31](roles/developer.md) | 待 WM 评估 |
+| P2 | 数据库迁移机制规范化：建立 drizzle 迁移文件管理 + 部署自动迁移步骤（v0.4 #B1 教训）+ 评估 #B2 替代方案（两步查询拆 FOR UPDATE） | DevOps（主）+ Architect（评估） | [v0.4 测试报告](iterations/v0.4-test-report.md) §「正式修复建议」 / PM 2026-05-31 决定 | 待处理 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）

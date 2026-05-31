@@ -1,5 +1,20 @@
 # DevOps 工作日志
 
+## 2026-05-31 — Ops Task：Node 后端 systemd 化 + 旧 unit 清理 ✅完成
+
+- 本次角色：DevOps（运维/部署工程师）
+- 工作模式：Ops Task（非迭代）
+- 触发：INDEX 跨任务待办 P1 × 2（清理旧 systemd unit + 决定 Node 后端是否启用 systemd）
+- 执行内容：
+  1. **清理旧 Python unit**：删除 `/etc/systemd/system/news-worker.service`（failed 5d）+ `news-api.service`（disabled，指向已不存在的 `.venv`），daemon-reload
+  2. **重写 `deploy/systemd/news-api.service`**：对齐实际部署路径 `/root/Project/niuma-cheng-xiaobao/server`，ExecStart 改为 `npx tsx src/index.ts` 直调（不用 start.sh，因为 start.sh 内部 nohup 后台化与 systemd Type=simple 冲突），日志重定向到 `/var/log/niuma-news-api.log`
+  3. **部署并启用**：`cp` → `/etc/systemd/system/` → `daemon-reload` → `enable` → 停旧 nohup PID 3875385 → `systemctl start`
+  4. **验证**：`/health` ✅、频道空间 API ✅、前端 HTTPS ✅、Worker 调度 ✅、日志写入 ✅
+  5. **崩溃重启验证**：`kill -9` 主进程后 5 秒自动重启，新 PID 正常，`/health` 恢复 ✅
+- 最终状态：`systemctl is-active news-api.service` → `active (running)`，`is-enabled` → `enabled`
+- 线上中断：约 10 秒（停 nohup → 启 systemd 间隔）
+- 关联记录：`docs/progress/ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md`
+
 ## 2026-05-31 — Ops Task：清理 v0.3 Python 遗留 systemd unit ✅完成
 
 - 本次角色：DevOps（运维/部署工程师）

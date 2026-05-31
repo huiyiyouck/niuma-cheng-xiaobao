@@ -1,14 +1,17 @@
 [Unit]
-Description=Niuma News API + Worker
-After=network.target
+Description=Niuma News API + Worker (Node.js)
+After=network.target postgresql.service
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/news-aggregator/server
-EnvironmentFile=/opt/news-aggregator/.env
-ExecStart=/usr/bin/node --import tsx src/index.ts
+User=root
+WorkingDirectory=/root/Project/niuma-cheng-xiaobao/server
+EnvironmentFile=/root/Project/niuma-cheng-xiaobao/server/.env
+ExecStart=/usr/bin/npx tsx src/index.ts
 Restart=always
-RestartSec=3
+RestartSec=5
+StandardOutput=append:/var/log/niuma-news-api.log
+StandardError=append:/var/log/niuma-news-api.log
 
 [Install]
 WantedBy=multi-user.target
