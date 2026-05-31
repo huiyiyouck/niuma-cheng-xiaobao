@@ -1,5 +1,27 @@
 # 架构师工作日志
 
+## 2026-05-31 — 会话收尾（架构师整日 3 次出场汇总）
+
+**本次角色**：架构师
+- 动作：收尾（会话结束，今日架构师工作汇总）
+- 涉及文档：docs/progress/roles/architect.md、architect-corrections.md
+- 今日产出汇总（3 次出场 + 3 个 commit）：
+
+| 时序 | 出场 | commit | 产出 |
+|------|------|--------|------|
+| 1 | DevOps 数据库迁移机制提案 Review R1 + ADR-001 落档 | `f512dee` | 5 项决策（工具流/路径/baseline/down.sql/migrate 位置）+ 4 项配套（A1-A4） + ADR-001 新建（项目首条） |
+| 2 | #B2 评估（两步查询拆 FOR UPDATE） | `6a8c3e5` | 五维对比 → 保留 `FOR UPDATE OF cs` 不改 |
+| 3 | Step 2 Architect Review R2 | `ec10001` | 4 项 Developer 微调全部接受 + ADR-001 追加实操修订附注 |
+
+- 整条 P2「数据库迁移机制规范化」的架构师动作全部关闭；最终由 DevOps Step 3 全线落地（commit `f5d3c9a`），整条待办从 INDEX 移除
+- 关联事件：v0.4 #B1 教训完整消化 — 从事故 → 选型 → 落地 → 验证 → 操作手册，闭环
+- 新增基线产出：`docs/baseline/architecture.md`（项目 ADR 文档，首条 ADR-001 已采纳）
+- 纠错记录：追加「会话进行中未主动重读 INDEX」一条，与 PM 同期纠错同类
+- 遗留问题/风险：
+  - **架构师名下无未完成事项**
+  - 可选小清理 `db/schema.sql` 归档归 Developer 下次顺手做（已挂建议，非阻塞）
+  - 候选 v0.5 X/Twitter Filtered Stream 材料未走正式 Review，**等待用户启动 v0.5 时由 PM 和架构师接管**
+
 ## 2026-05-31 — Step 2 Architect Review R2 ✅ 通过 + ADR-001 实操修订附注
 
 **本次角色**：架构师
