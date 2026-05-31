@@ -1,5 +1,64 @@
 # Tester（测试工程师）角色日志
 
+## 2026-05-31 — v0.4 测试报告 R1 翻牌定稿
+
+- 本次角色：Tester（测试工程师）
+- 动作：核对 PM 对 Developer Review 3 项收口事项的答复 → 翻牌定稿测试报告 R1 → 同步 v0.4 迭代记录门禁表 + INDEX
+- 涉及文档：v0.4-test-report.md、v0.4.md、INDEX.md、tester.md
+- 结论：**✅ 测试报告 R1 已定稿，v0.4 测试阶段全部门禁通过**
+- 关联迭代：v0.4
+- 关联非迭代工作：无
+
+### 翻牌前置条件核对
+
+| 事项 | PM 决定 | 闭环验证 | 通过 |
+|---|---|---|---|
+| 1（7 项 Bugfix 是否升 R2） | 不升 R2 | 测试报告 §「结论」含条件 B，Tester 视角同意 | ✅ |
+| 2（正式修复建议归属） | 登记 INDEX 跨任务待办（DevOps 主 + Architect 评估） | INDEX 第 58 行 P2 项已登记 | ✅ |
+| 3（条件未列清） | Tester 补条件 A/B 已闭环 | 测试报告 §「结论」行 29-32 已含两条 | ✅ |
+
+### 翻牌动作
+
+- `v0.4-test-report.md`：文档状态改为「✅ 已定稿」+ Review 状态表 Developer 行补充收口说明 + 追加 §「Tester 翻牌定稿 (2026-05-31)」
+- `v0.4.md`：阶段门禁表补「测试阶段 R1 已定稿」+「部署阶段 R1-R3 已通过」+ 测试阶段 Review 记录追加「Tester 翻牌定稿测试报告 R1」条目
+- `INDEX.md`：当前阶段改为「测试报告 R1 ✅ 已定稿」+ 下一步入口改为「PM 或 WM 执行 v0.4 迭代关闭检查」+ 最近收尾摘要追加本次翻牌
+
+### Tester 边界守住记录
+
+- 本次过程中曾差点跨界：用户最初让我「处理一下没 review 完的」，我本能想去代 PM/Developer 做 Review。停下来反问后确认是「Review 已完成，让你看一下结论」，避免了越权。
+- 事项 1（7 bug 升不升 R2）属 PM 决策，不是 Tester 决策；事项 2（待办归属）也属 PM 决策。Tester 只做事项 3（报告内文表达）。
+- 翻牌定稿本身是 Tester 职责（产出方落定文档状态），不是越权。
+
+### 当前项目状态（收尾时）
+
+- 当前迭代：v0.4
+- 当前阶段：测试报告 R1 ✅ 已定稿，所有阶段门禁通过
+- 阻塞项：无
+- 下一步入口：PM 或 WM 执行 v0.4 迭代关闭检查
+
+### 遗留（Tester 视角）
+
+- 无未尽事项。v0.4 后续动作（迭代关闭检查、Summary 归档）属 PM/WM 范围。
+- 后续迭代关注：RSS Fetcher 实机抓取（用户决策延后）+ 数据库迁移机制规范化（INDEX P2 项，归 DevOps + Architect）。
+
+### 知识沉淀判断
+
+- 本轮**不沉淀**到 `docs/knowledge/testing/`。理由：
+  - 「Tester 避免代 PM/Developer Review」属角色边界，已在 `docs/baseline/role-tester.md` 安全边界中；
+  - 「翻牌时机和前置条件核对」是 Tester 本职动作，已在本次日志里记录具体步骤，无需提炼成长期知识。
+  - 「用户口语化指令（"处理一下"/"看一下"）需先反问确认范围」是通用沟通原则，不专属 Tester。
+- 如未来出现"翻牌相关多次反复" 或"Tester 越界 Review 反复出现"，再考虑沉淀。
+
+### 收尾归档动作
+
+- 本次 Tester 仅提交自己修改的 3 个文件（v0.4-test-report.md、v0.4.md、tester.md）。
+- 工作区还存在其他 5 个文件改动（INDEX.md DevOps 部分、devops.md、pm.md、pm-corrections.md、新增 ad-hoc DevOps Proposal），属 DevOps/PM 后续动作，不归 Tester 提交，留给对应角色收尾。
+- 按 git-push-workflow：commit 后先 `git pull --rebase` 再 `git push`。
+
+- 收尾状态：已收尾
+
+---
+
 ## 2026-05-31 — v0.4 测试工作收尾
 
 - 本次角色：Tester（测试工程师）
