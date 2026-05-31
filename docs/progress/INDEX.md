@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.4 — UI 重构 + 功能点检与异常处理完善
 - 当前模式：标准迭代
-- 当前阶段：部署阶段 — DevOps 部署完成，待用户浏览器视觉验证
+- 当前阶段：测试阶段已收尾（用户视觉验证 ✅ 2026-05-31，RSS 实机延后至后续迭代），待 PM + Developer Review 测试报告 → 迭代关闭
 - 阻塞项：无
-- 下一步入口：用户浏览器视觉验证 → 迭代关闭
+- 下一步入口：PM 复审测试报告 → 迭代关闭
 
 ## 版本列表
 
@@ -41,8 +41,20 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-05-31 | Tester | v0.4 测试工作收尾：用户视觉验证 ✅ + RSS 实机延后决策落档 | ✅ 有条件通过；PRD 22 项最终覆盖 21 ✅ / 1 ⏸（RSS 实机抓取经用户决策延后至后续迭代） | PM 复审测试报告 → 迭代关闭 |
 | 2026-05-31 | Developer | v0.4 视觉验证 Bugfix 批次：6 bug + WS 架构对齐 | commit e736980 推送 GitHub；DELETE 400/空 body 解析/Modal 不统一/复选框对齐/启用响应性/创建空间事件名/前端 WS 残留 全部修复；线上验证通过 | 待用户继续 v0.4 视觉验证或决定迭代关闭 |
 | 2026-05-31 | Developer | Incident：基线同步 commit 误删 server/ 源码 → 从 git 历史恢复并重启服务 | server/ 38 文件 + deploy/systemd/news-api.service 已恢复并推送 GitHub（commit ec8073e）；新 PID 3870357 启动健康检查通过；v0.4 线上服务连续可用、未中断 | 下班；旧 systemd unit 清理与 server 是否进 systemd 待 DevOps 决定 |
+
+## 跨任务待办
+
+> 不归任何单一迭代/ad-hoc 文档的零散事项，按归属角色集中登记。完成后从本表移除。
+
+| 优先级 | 待办 | 归属角色 | 来源 | 状态 |
+|--------|------|----------|------|------|
+| P1 | 清理失效的旧 systemd unit `news-worker.service`（仍指向已删除的 Python 路径，5 天前 timeout failed） | DevOps | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §5 | 待处理 |
+| P1 | 决定 Node 后端是否启用 `deploy/systemd/news-api.service`（当前 nohup 启动 PID 3870357，无自动重启保护） | DevOps | 同上 | 待处理 |
+| P1 | 基线同步保护机制（防止再次误删生产源码：路径白名单 / 大变更阻断 / 协作 commit 二次核对） | WM | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §6 | 待处理 |
+| P1 | 前后端契约变更同步检查清单（v0.3 砍后端 WS 后前端残留 5 个月才被发现） | WM | [Developer 日志 2026-05-31 Bugfix 批次](roles/developer.md) 遗留段 | 待处理 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）
