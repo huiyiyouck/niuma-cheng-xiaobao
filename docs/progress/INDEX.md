@@ -28,7 +28,7 @@
 
 | 日期 | 模式 | 记录 | 状态 | 下一步 |
 |------|------|------|------|--------|
-| 2026-05-31 | Proposal | [DevOps 提案：数据库迁移机制规范化](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) | 📋 待 Architect Review | 用户切换到 Architect 角色 → Architect 读提案 → 拍板 Step 1（工具流 + 路径 + 5 项待决策） |
+| 2026-05-31 | Proposal | [DevOps 提案：数据库迁移机制规范化](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) | ✅ Architect Review R1 通过（2026-05-31）— 5 项决策已下 + 项目首条 ADR-001 已落 [`docs/baseline/architecture.md`](../baseline/architecture.md) | Step 2 → Developer 接手（baseline introspect + 归并 v0.4.sql 为 0001 + 老路径清理）；Step 3 → DevOps 在 Step 2 完成后实施（含 A2 移依赖 + systemd `ExecStartPre` + 验证 + 操作手册） |
 | 2026-05-31 | Ops Task | [清理 v0.3 Python 遗留 systemd unit + Node 后端 systemd 化](ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md) | ✅已完成（旧 unit 全清 + Node 后端已切换为 systemd 管理，崩溃重启已验证） | — |
 | 2026-05-31 | Incident | [Node.js 后端源码被基线同步 commit 误删](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) | 已完成：恢复→推送 GitHub→重启→健康检查通过 | （留观，无后续动作） |
 | 2026-05-30 | Product Brief | [X/Twitter 指定账号实时监听](ad-hoc/2026-05-30-product-brief-x-filtered-stream.md) / [技术实施规划](ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md) | 已完成，登记为 v0.5 输入材料 | 用户启动 v0.5 后，交由 PM 和架构师正式 Review |
@@ -64,7 +64,7 @@
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
-| P2 | 数据库迁移机制规范化：建立 drizzle 迁移文件管理 + 部署自动迁移步骤（v0.4 #B1 教训）+ 评估 #B2 替代方案（两步查询拆 FOR UPDATE） | DevOps（主）+ Architect（评估） | [v0.4 测试报告](iterations/v0.4-test-report.md) §「正式修复建议」 / PM 2026-05-31 决定 | 📋 **待 Architect Review 提案** → [2026-05-31-devops-proposal-db-migration-mechanism.md](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md)（拍板 Step 1：工具流 + 迁移路径 + 5 项待决策）<br/>背景：DevOps 已勘察并拆 Step 1/2/3。Step 3（systemd 自动迁移）DevOps 可独立完成；#B2 不归 DevOps |
+| P2 | 数据库迁移机制规范化：建立 drizzle 迁移文件管理 + 部署自动迁移步骤（v0.4 #B1 教训）+ 评估 #B2 替代方案（两步查询拆 FOR UPDATE） | DevOps（主）+ Architect（评估） | [v0.4 测试报告](iterations/v0.4-test-report.md) §「正式修复建议」 / PM 2026-05-31 决定 | ✅ **Step 1 已拍板**（Architect Review 2026-05-31 通过，详见 [DevOps 提案](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) §「Architect Review 记录区」+ 首条 [ADR-001](../baseline/architecture.md)）。<br/>剩余动作：Step 2（Developer：baseline introspect + 归并 v0.4.sql 为 0001 + 老路径清理）→ Step 3（DevOps：A2 移依赖 + systemd `ExecStartPre` + 操作手册）；#B2 由 Architect 另开会话独立评估 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）

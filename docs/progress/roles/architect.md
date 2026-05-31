@@ -1,5 +1,31 @@
 # 架构师工作日志
 
+## 2026-05-31 — Review DevOps 数据库迁移机制提案 + ADR-001 落档
+
+**本次角色**：架构师
+- 动作：Review（指定 Review 方：审 DevOps 数据库迁移机制规范化提案）+ 首条 ADR 产出
+- 涉及文档：
+  - `docs/progress/ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md`（追加 Architect Review 记录区）
+  - `docs/baseline/architecture.md`（**新建**，项目首条 ADR）
+  - `docs/progress/INDEX.md`（非迭代工作行 + 跨任务待办行状态更新）
+- 结论：✅通过。DevOps 调研充分，5 项待决策事实层已收敛，逐条拍板：
+  - **决策 1（工具流）**：方案 A `drizzle-kit generate + journal`（拒 B push 无幂等不能上部署链；拒 C 手写 SQL 双真源是 #B1 根因）
+  - **决策 2（迁移路径）**：`server/drizzle/`（与 drizzle.config.ts 默认 out 对齐）
+  - **决策 3（v0.3 baseline）**：introspect + 双向对账。**现场核验已确认生产 9 表逐列对齐 schema.ts**，baseline 风险归零
+  - **决策 4（down.sql）**：分类强制（破坏性改动 + 数据迁移必配，ADD COLUMN/INDEX 不强制）
+  - **决策 5（migrate 位置）**：仅部署机 systemd `ExecStartPre`
+- 配套补充意见（DevOps 未覆盖，本次追加）：
+  - A1：package.json 加 `db:generate` + `db:migrate`，`db:push` 仅本地开发
+  - A2（**Step 3 硬前置**）：drizzle-kit 从 devDependencies 移到 dependencies，否则生产 `npm install --production` 缺失会让 ExecStartPre 直接失败
+  - A3：Step 2 生成 0001 用 generate 自动产出后再与 v0.4.sql 比对，不能复制粘贴
+  - A4：操作手册位置定为 `docs/knowledge/devops/db-migration-handbook.md`
+  - systemd 防护：unit 加 `StartLimitInterval=60` + `StartLimitBurst=3`
+- 关联事件：v0.4 测试报告 #B1「alerts.status 列缺失」根因消化
+- 遗留问题/风险：
+  - **#B2**（两步查询拆 FOR UPDATE）归我评估但是独立查询层议题，本次不处理，后续另开会话看 `sources.ts:162` 现状
+  - Step 2 Developer 接手时仍需对账 introspect 与 schema.ts，以 schema.ts 为准
+  - 团队遗忘 `db:generate` 一步的风险靠开发文化 + code review 兜底，未来上 CI 可加 `drizzle-kit check`
+
 ## 2026-05-30 — v0.4 收尾
 
 **本次角色**：架构师

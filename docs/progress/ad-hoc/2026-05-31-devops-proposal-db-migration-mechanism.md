@@ -214,7 +214,36 @@ RestartSec=5
 
 ### Architect Review 记录区
 
-> 待 Architect 在新会话中以 Architect 角色身份读本文件后，在此处追加结论。
+#### 2026-05-31 — Architect Review R1 ✅ 通过 + 5 项决策已下
+
+**Review 方**：Architect（架构师）
+**结论**：✅通过。DevOps 调研充分，5 项待决策事实层已收敛，逐条拍板：
+
+| # | 议题 | 决策 | 关键理由 |
+|---|------|------|----------|
+| 1 | 工具流 | **方案 A（drizzle-kit generate + journal）** | 唯一能在部署链硬拦 #B1 复现（`ExecStartPre` 失败即不启动主进程）；方案 B 无产物无幂等不能上部署链；方案 C 双真源是 #B1 根因 |
+| 2 | 迁移路径 | **`server/drizzle/`（路径 P1）** | 与 `drizzle.config.ts` 默认 `out` 对齐，零额外配置；`server/db/migrations/` Step 2 归并后删除；根目录 `db/migrations/` 移至 `server/drizzle/_legacy/` 留底 |
+| 3 | v0.3 baseline | **从生产 introspect + 与 schema.ts 双向对账** | **现场核验已确认生产 9 表逐列对齐 schema.ts**，baseline 风险归零；产出 `0000_baseline.sql` + journal 标已应用 |
+| 4 | down.sql 要求 | **分类强制**：破坏性改动（DROP/RENAME/类型变更）+ 数据迁移必须配 down；ADD COLUMN/CREATE INDEX 默认不强制 | 全配 down 在小团队是负担；破坏性 + 数据相关改动必须给撤回闸门 |
+| 5 | migrate 执行位置 | **仅部署机（systemd `ExecStartPre`）** | 当前无 CI；生产 DATABASE_URL 不应外泄给 CI；将来 CI 上线仅用于测试库验证 |
+
+**配套补充意见**（DevOps 提案未覆盖，本 Review 追加）：
+
+- **A1**（package.json）：增加 `db:generate` + `db:migrate` 两个 script；保留 `db:push` 但 README 标注"仅本地开发"。
+- **A2**（**Step 3 硬前置**）：`drizzle-kit` 必须从 `devDependencies` 移至 `dependencies`，否则生产 `npm install --production` 会缺失 → `ExecStartPre` 直接失败。这是提案 §7 风险表里的隐性 bug 修正，**Step 3 实施前必须完成**。
+- **A3**（Step 2 流程）：v0.4.sql 不能简单复制粘贴到 0001。正确做法：以 v0.3 baseline 为起点用 `drizzle-kit generate` 自动产 0001 → 与现有 v0.4.sql 比对一致 → 保留 generate 产物。保证后续每次 generate 都是干净增量。
+- **A4**（操作手册位置）：`docs/knowledge/devops/db-migration-handbook.md`（Step 3 §8 验证标准要求的手册）。
+- **systemd 防护**：Step 3 实施时 unit 同步加 `StartLimitInterval=60` + `StartLimitBurst=3`（提案 §7 风险表已列，确认采纳）。
+
+**关于 #B2**：归 Architect 评估，但是查询层独立议题，不阻塞本 Step 1 推进。架构师另开会话独立评估 `sources.ts:162` 现状后给结论。
+
+**关联产出**：本决策同步写入 [`docs/baseline/architecture.md` ADR-001：Drizzle 迁移机制选型](../../baseline/architecture.md#adr-001drizzle-迁移机制选型)（项目首条 ADR）。
+
+**下一步入口**：
+
+1. DevOps 同步本 Review 进 `docs/progress/roles/devops.md`，更新 INDEX 跨任务待办状态。
+2. Developer 接手 Step 2（baseline introspect + 归并 v0.4.sql 为 0001 + 老路径清理）。
+3. DevOps 在 Step 2 完成后做 Step 3（A2 移依赖 + systemd unit 改造 + 验证 #B1 复现拦截 + 操作手册落档）。
 
 ---
 
