@@ -2,11 +2,15 @@
 import { onMounted, ref } from "vue";
 import { listSubChannels, createSubChannel, updateSubChannel, deleteSubChannel } from "@/lib/api";
 import type { SubChannel, UUID } from "@/lib/types";
+import { useToast } from "@/composables/useToast";
+import { useModal } from "@/composables/useModal";
 
 const props = defineProps<{ channelSpaceId: UUID }>();
 
+const toast = useToast();
+const modal = useModal();
+
 const channels = ref<SubChannel[]>([]);
-const errorText = ref<string | null>(null);
 const newName = ref("");
 const newSort = ref(0);
 const adding = ref(false);
@@ -18,7 +22,7 @@ async function refresh() {
     channels.value = await listSubChannels(props.channelSpaceId);
     newSort.value = channels.value.length;
   } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
+    toast.error(e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -29,9 +33,10 @@ async function doAdd() {
   try {
     await createSubChannel(props.channelSpaceId, { name, sort_order: newSort.value });
     newName.value = "";
+    toast.success("已添加");
     await refresh();
   } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
+    toast.error(e instanceof Error ? e.message : String(e));
   } finally {
     adding.value = false;
   }
@@ -43,19 +48,26 @@ async function doUpdate(id: UUID) {
   try {
     await updateSubChannel(id, { name });
     editingId.value = null;
+    toast.success("已重命名");
     await refresh();
   } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
+    toast.error(e instanceof Error ? e.message : String(e));
   }
 }
 
-async function doDelete(id: UUID) {
-  if (!confirm("确定删除此子频道？")) return;
+async function doDelete(ch: SubChannel) {
+  const ok = await modal.confirm(
+    "删除子频道",
+    `确定删除子频道 <strong>${ch.name}</strong>？已绑定到该子频道的信息源将被解除关联，此操作不可撤销。`,
+    { confirmText: "确认删除", danger: true },
+  );
+  if (!ok) return;
   try {
-    await deleteSubChannel(id);
+    await deleteSubChannel(ch.id);
+    toast.success("已删除");
     await refresh();
   } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
+    toast.error(e instanceof Error ? e.message : String(e));
   }
 }
 
@@ -69,8 +81,6 @@ onMounted(refresh);
 
 <template>
   <div class="scm">
-    <div v-if="errorText" class="error">{{ errorText }}</div>
-
     <div v-if="channels.length === 0" class="card empty muted">
       暂无子频道，点击下方输入框新建
     </div>
@@ -94,7 +104,7 @@ onMounted(refresh);
         <span class="scm-name">{{ ch.name }}</span>
         <div class="scm-actions">
           <button class="btn btn-sm" @click="startEdit(ch)">重命名</button>
-          <button class="btn btn-sm danger" @click="doDelete(ch.id)">删除</button>
+          <button class="btn btn-sm danger" @click="doDelete(ch)">删除</button>
         </div>
       </template>
     </div>
@@ -132,12 +142,4 @@ onMounted(refresh);
 .scm-actions { display: flex; gap: 4px; }
 .btn-sm { padding: 6px 10px; font-size: 11px; border-radius: 8px; }
 .empty { padding: 28px 16px; text-align: center; }
-.error {
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid rgba(239,68,68,.25);
-  background: rgba(239,68,68,.06);
-  color: #991b1b;
-  font-size: 13px;
-}
 </style>

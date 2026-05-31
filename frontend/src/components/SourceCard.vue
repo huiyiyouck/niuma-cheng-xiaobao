@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref, watch } from "vue";
 import type { ChannelSourceWithSource, Alert, UUID } from "@/lib/types";
 import { useToast } from "@/composables/useToast";
 import { useModal } from "@/composables/useModal";
@@ -25,15 +25,27 @@ const editSubChannelId = ref(props.binding.channel_source.sub_channel_id);
 const editFetchInterval = ref((props.binding.channel_source.fetch_policy as any)?.interval_seconds || 600);
 const editMaxItems = ref((props.binding.channel_source.fetch_policy as any)?.max_items || 20);
 const editEnabled = ref(props.binding.channel_source.enabled);
-// X/Twitter config
-const srcConfig = (props.binding.source.config as Record<string, unknown>) || {};
-const editXtMode = ref((srcConfig.mode as string) || "user_timeline");
-const editXtSearchQuery = ref((srcConfig.search_query as string) || "");
-const editXtUsernames = ref(((srcConfig.usernames as string[]) || []).join(", "));
-const isXT = source.type === "x_twitter";
+const source = computed(() => props.binding.source);
+const cs = computed(() => props.binding.channel_source);
 
-const source = props.binding.source;
-const cs = props.binding.channel_source;
+// X/Twitter config
+const srcConfig = computed(() => (props.binding.source.config as Record<string, unknown>) || {});
+const editXtMode = ref((srcConfig.value.mode as string) || "user_timeline");
+const editXtSearchQuery = ref((srcConfig.value.search_query as string) || "");
+const editXtUsernames = ref(((srcConfig.value.usernames as string[]) || []).join(", "));
+const isXT = computed(() => source.value.type === "x_twitter");
+
+// 进入编辑态时，同步编辑表单的当前值（防止保存后下次编辑显示旧数据）
+watch(() => props.editing, (now) => {
+  if (!now) return;
+  editSubChannelId.value = cs.value.sub_channel_id;
+  editFetchInterval.value = (cs.value.fetch_policy as any)?.interval_seconds || 600;
+  editMaxItems.value = (cs.value.fetch_policy as any)?.max_items || 20;
+  editEnabled.value = cs.value.enabled;
+  editXtMode.value = (srcConfig.value.mode as string) || "user_timeline";
+  editXtSearchQuery.value = (srcConfig.value.search_query as string) || "";
+  editXtUsernames.value = ((srcConfig.value.usernames as string[]) || []).join(", ");
+});
 
 function typeBadgeClass(t: string) {
   if (t === "x_twitter") return "badge badge--twitter";
@@ -44,13 +56,15 @@ function typeLabel(t: string) {
   const map: Record<string, string> = { x_twitter: "X/Twitter", rss: "RSS" };
   return map[t] || t || "Other";
 }
-function statusBadgeClass(s: string) {
+function statusBadgeClass(s: string, enabled: boolean) {
+  if (!enabled && (s === "active" || s === "running")) return "badge badge--paused";
   if (s === "active" || s === "running") return "badge badge--active";
   if (s === "paused") return "badge badge--paused";
   if (s === "error") return "badge badge--error";
   return "badge badge--muted";
 }
-function statusLabel(s: string) {
+function statusLabel(s: string, enabled: boolean) {
+  if (!enabled && (s === "active" || s === "running")) return "⏸ 已禁用";
   const map: Record<string, string> = { active: "● 运行中", running: "● 运行中", paused: "⏸ 已暂停", error: "⚠ 错误" };
   return map[s] || "未验证";
 }
@@ -59,7 +73,7 @@ async function onSave() {
   try {
     // 同时更新 Source config（X/Twitter 等）
     const xtConfig: Record<string, unknown> = {};
-    if (isXT) {
+    if (isXT.value) {
       if (editXtMode.value === "search") {
         xtConfig.mode = "search";
         xtConfig.search_query = editXtSearchQuery.value;
@@ -68,9 +82,9 @@ async function onSave() {
         xtConfig.usernames = editXtUsernames.value.split(",").map((s: string) => s.trim()).filter(Boolean);
       }
     }
-    await requestJson(`/v1/sources/${source.id}`, { method: "PUT", body: { config: xtConfig } });
+    await requestJson(`/v1/sources/${source.value.id}`, { method: "PUT", body: { config: xtConfig } });
 
-    await requestJson(`/v1/channel-sources/${cs.id}`, {
+    await requestJson(`/v1/channel-sources/${cs.value.id}`, {
       method: "PUT",
       body: {
         sub_channel_id: editSubChannelId.value || null,
@@ -86,22 +100,22 @@ async function onSave() {
 async function onDelete() {
   const ok = await modal.confirm(
     "删除信息源",
-    `确定删除 <strong>${source.display_name}</strong> 吗？关联的抓取数据也将被清除，此操作不可撤销。`,
+    `确定删除 <strong>${source.value.display_name}</strong> 吗？关联的抓取数据也将被清除，此操作不可撤销。`,
     { confirmText: "确认删除", danger: true },
   );
   if (!ok) return;
   try {
-    await requestJson(`/v1/sources/${source.id}`, { method: "DELETE" });
+    await requestJson(`/v1/sources/${source.value.id}`, { method: "DELETE" });
     toast.success("已删除");
     emit("refresh");
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
 
 async function onUnbind() {
-  const ok = await modal.confirm("解除绑定", `确定解除 <strong>${source.display_name}</strong> 的绑定？Source 本身将保留。`, { danger: true });
+  const ok = await modal.confirm("解除绑定", `确定解除 <strong>${source.value.display_name}</strong> 的绑定？Source 本身将保留。`, { danger: true });
   if (!ok) return;
   try {
-    await requestJson(`/v1/channel-sources/${cs.id}`, { method: "DELETE" });
+    await requestJson(`/v1/channel-sources/${cs.value.id}`, { method: "DELETE" });
     toast.success("已解绑");
     emit("refresh");
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
@@ -128,7 +142,7 @@ const cardAlerts = props.alerts.slice(0, 3);
         <span class="scard-name">{{ source.display_name }}</span>
       </template>
       <span :class="typeBadgeClass(source.type)">{{ typeLabel(source.type) }}</span>
-      <span :class="statusBadgeClass(source.status)">{{ statusLabel(source.status) }}</span>
+      <span :class="statusBadgeClass(source.status, cs.enabled)">{{ statusLabel(source.status, cs.enabled) }}</span>
     </div>
 
     <!-- 第 2 行：子频道 + 抓取参数 -->
@@ -155,7 +169,7 @@ const cardAlerts = props.alerts.slice(0, 3);
         <div class="edit-grid">
           <label>抓取间隔(秒) <input class="input" type="number" v-model.number="editFetchInterval" min="60" /></label>
           <label>最大条数 <input class="input" type="number" v-model.number="editMaxItems" min="1" max="100" /></label>
-          <label>启用 <input type="checkbox" v-model="editEnabled" /></label>
+          <label class="edit-checkbox"><input type="checkbox" v-model="editEnabled" /> 启用</label>
         </div>
       </template>
       <template v-else>
@@ -231,6 +245,16 @@ const cardAlerts = props.alerts.slice(0, 3);
 .xt-config-edit .input { padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border); }
 .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .edit-grid label { font-size: 11px; color: var(--text-muted); display: flex; flex-direction: column; gap: 4px; }
+.edit-grid label.edit-checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text);
+  align-self: end;
+  padding-bottom: 8px;
+}
+.edit-grid label.edit-checkbox input[type="checkbox"] { margin: 0; width: 16px; height: 16px; }
 .edit-grid .input { padding: 6px 10px; font-size: 12px; border-radius: 8px; border: 1px solid var(--border); }
 
 .scard-alerts { display: flex; flex-direction: column; gap: 4px; margin-top: 4px; }

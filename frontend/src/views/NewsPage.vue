@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
-import { useWS } from "@/lib/ws";
 import { listNews, listSpaces, listSubChannels, getChannelStats, getGlobalStats } from "@/lib/api";
 import type { ChannelSpace, ProcessedNews, SubChannel, ChannelStats, UUID, NewsSort } from "@/lib/types";
 import StatsCards from "@/components/StatsCards.vue";
@@ -33,8 +32,6 @@ const canLoadMore = ref(true);
 const stats = ref<ChannelStats>({ total_news: -1, today_new: -1, active_sources: -1, sub_channel_count: -1 });
 
 const detailItem = ref<ProcessedNews | null>(null);
-
-const { status: wsStatus, connect: wsConnect, disconnect: wsDisconnect } = useWS();
 
 const filteredItems = computed(() => {
   let result = items.value;
@@ -129,14 +126,10 @@ watch(searchQuery, () => refreshNews());
 
 onMounted(async () => {
   await refreshSpaces();
-  if (filterSpaceId.value) {
-    wsConnect(filterSpaceId.value, () => refreshNews());
-  }
   await refreshNews();
   await refreshStats();
   await refreshSubChannels();
 });
-onBeforeUnmount(() => wsDisconnect());
 </script>
 
 <template>
@@ -157,10 +150,6 @@ onBeforeUnmount(() => wsDisconnect());
         :class="{ active: filterSubChannelIds.has(sc.id) }"
         @click="toggleSubChannel(sc.id)"
       >{{ sc.name }}</button>
-    </div>
-    <div class="ws-bar">
-      <span class="status-dot" :class="wsStatus === 'connected' ? 'status-dot--ok' : wsStatus === 'connecting' ? 'status-dot--warn' : 'status-dot--err'"></span>
-      <span class="ws-text">WS: {{ wsStatus }}</span>
     </div>
     <div v-if="errorText" class="error-bar"><span>⚠️</span><span>{{ errorText }}</span></div>
 
@@ -190,8 +179,6 @@ onBeforeUnmount(() => wsDisconnect());
 
 <style scoped>
 .page { display: flex; flex-direction: column; }
-.ws-bar { display: flex; align-items: center; gap: 6px; padding: 4px 0 10px; }
-.ws-text { font-size: 11px; color: var(--text-muted); }
 .list { display: flex; flex-direction: column; gap: 8px; }
 .more { display: flex; justify-content: center; padding-top: 12px; }
 .load-more { padding: 10px 28px; font-size: 13px; font-weight: 700; }

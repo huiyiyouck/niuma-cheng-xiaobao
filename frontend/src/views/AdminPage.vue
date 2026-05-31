@@ -210,7 +210,7 @@ onMounted(refreshAll);
     <!-- 新建频道空间弹窗 -->
     <CreateSpaceModal
       v-if="showCreateSpace"
-      @create="onCreateSpace"
+      @submit="onCreateSpace"
       @close="showCreateSpace = false"
     />
   </div>

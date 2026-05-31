@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import { ZodError } from "zod";
 import { config } from "../shared/config.ts";
+import { apiLogger } from "../shared/logger.ts";
 import { adminGuard } from "./middleware/admin-guard.ts";
 import { httpLogger } from "./middleware/http-logger.ts";
 import { channelSpacesRoutes } from "./routes/channel-spaces.ts";
@@ -28,7 +29,7 @@ export async function buildApp() {
   });
 
   // 全局错误处理
-  app.setErrorHandler((error, _request, reply) => {
+  app.setErrorHandler((error, request, reply) => {
     if (error instanceof ZodError) {
       return reply.status(400).send({
         detail: "validation error",
@@ -37,6 +38,10 @@ export async function buildApp() {
     }
     // pg 驱动类型转换错误（如无效 UUID）→ 400
     if ((error as any).code === "22P02") {
+      apiLogger.warn(
+        "PG 22P02 on %s %s — url=%j params=%j err=%s",
+        request.method, request.url, request.url, request.params, (error as Error).message,
+      );
       return reply.status(400).send({ detail: "invalid input format" });
     }
     const err = error as any;

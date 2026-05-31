@@ -106,8 +106,6 @@ export type Alert = {
   created_at: string;
 };
 
-export type WSStatus = "disconnected" | "connecting" | "connected";
-
 export type StatsOverview = {
   today_new: number;
   today_new_change: number;
