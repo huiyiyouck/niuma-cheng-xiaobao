@@ -1,5 +1,28 @@
 # 架构师工作日志
 
+## 2026-05-31 — #B2 评估（两步查询拆 FOR UPDATE 替代方案）
+
+**本次角色**：架构师
+- 动作：评估（v0.4 测试报告 #B2「FOR UPDATE + LEFT JOIN 冲突」修复方案的替代选项评估）
+- 涉及文档：
+  - `docs/progress/INDEX.md`（跨任务待办行追加 #B2 评估结论）
+- 评估范围：`server/src/api/routes/sources.ts:155-194`（DELETE 路由），项目内 `FOR UPDATE` 仅此一处 + worker dispatcher（无 LEFT JOIN 不相关）
+- 结论：✅ **保留当前实现**（方案 X：`FOR UPDATE OF cs`），不采纳测试报告建议的方案 Y（两步查询）
+- 五维对比：
+  - 正确性：X/Y 等价
+  - TOCTOU 防护：X/Y 等价（Y Step 1 锁定 + Step 2 同事务读）
+  - SQL 清晰度：Y 略胜（自明），X 需注释（PG 方言）
+  - 网络往返：X 1 次 / Y 2 次
+  - 可移植性：Y 略胜，但 **ADR-001 已锁定 PG + Drizzle 栈，此论点失效**
+- 决策理由：
+  - 当前实现已通过 Developer R1 + Architect 实现 R2 + Tester T6.3 三道审核，**无 bug**
+  - 方案 Y 仅是改写法，无实质优势
+  - "SQL 方言不熟"是注释能解决的问题，不值得重写整段
+- 附带建议（非必须，归 Developer 决定是否做）：把 `sources.ts:161` 注释从「FOR UPDATE 锁定 channel_sources 行」加强成说明 `OF cs` 的含义（避开 LEFT JOIN 可空侧、即 #B2 根因），方便后来者一眼看懂
+- 安全边界：不直接改 Developer 名下的代码，建议写进评估结论由 Developer 决定
+- 关联事件：v0.4 测试报告 #B2 + INDEX P2 跨任务待办的 #B2 子项
+- 遗留问题/风险：无。INDEX P2 待办的 #B2 子项至此关闭；剩余动作（Step 2 Developer + Step 3 DevOps）不归我
+
 ## 2026-05-31 — Review DevOps 数据库迁移机制提案 + ADR-001 落档
 
 **本次角色**：架构师
