@@ -24,7 +24,7 @@
 - 关联非迭代工作：[Incident 2026-05-31 server-source-deleted](../ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md)
 - 遗留问题/风险：无
 - 下一步入口：v0.4 测试阶段继续（等全栈开发 Review 测试报告 R1 → 迭代关闭）
-- 收尾状态：待 commit + push
+- 收尾状态：已收尾（commit dfede2b 已推送 origin/main）
 
 ## 2026-05-30 — 会话摘要
 - 本次角色：WM
