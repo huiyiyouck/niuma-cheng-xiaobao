@@ -1,5 +1,20 @@
 # DevOps 工作日志
 
+## 2026-05-31 — 会话收尾
+
+- 本次会话：DevOps（运维/部署工程师），完成 5 件事，全部归档推送
+  1. 清理 v0.3 Python 遗留 systemd unit（news-worker + news-api）
+  2. Node 后端 systemd 化（`deploy/systemd/news-api.service` 启用，含崩溃自动重启验证）
+  3. P2「数据库迁移机制规范化」评估 → 升格独立提案 → Architect Review R1 通过（ADR-001）
+  4. Architect Review R2 同步归档（Developer Step 2 微调审议）
+  5. Step 3：drizzle 迁移机制部署侧落地（baseline 注入 + A2 移依赖 + systemd ExecStartPre + StartLimitBurst + #B1 拦截验证 + 操作手册落档）
+- 整条 P2 全线关闭，从 INDEX 跨任务待办移除
+- 生产运行态：`news-api.service active (running)`，MainPID 3900723，ExecStartPre+ExecStart 双段都正常
+- 工作区干净：本次 DevOps 产出全部 commit 推送 origin/main（commits: `a64bdff` / `a38ef3e` / `8674245` / `0038382` / `f5d3c9a` / `5879440`）
+- 沉淀：操作手册 [`docs/knowledge/devops/db-migration-handbook.md`](../../knowledge/devops/db-migration-handbook.md)；2 条 memory（systemd-startlimit-in-unit-section / drizzle-kit-in-dependencies）
+- DevOps 侧无遗留事项；INDEX 跨任务待办无归属 DevOps 的剩余项
+- 下次启动入口：用户决定（v0.5 启动 / 其他角色 / 其他任务）
+
 ## 2026-05-31 — Step 3: drizzle 迁移机制部署侧落地 ✅完成
 
 - 本次角色：DevOps（运维/部署工程师）
