@@ -1,5 +1,57 @@
 # DevOps 工作日志
 
+## 2026-05-31 — INDEX P2 评估：数据库迁移机制规范化
+
+- 本次角色：DevOps（运维/部署工程师）
+- 触发：用户问"P2 待办也归你做吧？先评估这条需要你参与的"
+- 评估范围：INDEX 跨任务待办 P2「数据库迁移机制规范化」
+- 结论：**应该做，但需拆三步推进；本次仅评估存档，Step 1 留给后续 Architect 会话**
+
+### 现状勘察
+
+| 维度 | 现状 |
+|---|---|
+| ORM | drizzle-orm 0.38 + drizzle-kit 0.30 已装 |
+| schema 真源 | `server/src/db/schema.ts` |
+| drizzle.config.ts | 配置就绪，`out: "./drizzle"`，但**该目录不存在**（drizzle-kit 从未生成过迁移文件） |
+| package.json scripts | 仅 `db:push`（drizzle-kit push，**直推不留痕**） |
+| 已有手写 SQL 迁移 | 散落两处：`db/migrations/v0.{1,2}.sql`（根目录）+ `server/db/migrations/v0.4.sql`（v0.3 跳号） |
+| 部署时谁执行迁移 | **没人**。start.sh 不跑，systemd unit 不跑 — 这就是 #B1 的真根因 |
+| 回滚 | v0.1/v0.2 有 rollback.sql，v0.4 没写 |
+
+### 拆分方案
+
+| 顺序 | 子任务 | 主责 | 依赖 |
+|---|---|---|---|
+| Step 1 | 选定工具流（drizzle generate vs push）+ 统一迁移路径 | Architect 决策 + DevOps 评审 | — |
+| Step 2 | 已有 v0.1/v0.2/v0.4 SQL 归并到选定路径 + 补 v0.3 baseline + 补 v0.4 rollback | Developer 执行 + DevOps 评审 | Step 1 |
+| Step 3 | 部署时自动跑迁移（`ExecStartPre=/usr/bin/npx drizzle-kit migrate` 加到 news-api.service） | **DevOps 独担** | Step 1, Step 2 |
+
+### 我的评审意见（仅供 Architect 参考）
+
+倾向 **drizzle-kit generate + journal**，理由：
+- 产出版本化 SQL，可代码评审
+- CI/CD 友好、幂等可重放
+- 与已有手写 SQL 路径几乎一致，迁移成本低
+- 失败时 systemd `ExecStartPre` 直接挡住主进程启动，避免 #B1 那种"服务起来了但 schema 没对齐"
+
+push 仅保留给开发期快速试 schema，不进部署链。
+
+### #B2 我不参与
+
+「两步查询拆 FOR UPDATE」是查询代码层调整，归 Architect 评估 + Developer 改。当前 `FOR UPDATE OF cs` 临时修复在生产稳跑，无运维侧紧迫性。
+
+### 下一步入口
+
+- **后续 Architect 会话**：从 Step 1 上手，拍板工具流 + 迁移路径
+- Step 1 完成后**回到 DevOps**：做 Step 3（systemd unit 加 ExecStartPre）
+
+### 用户决定
+
+用户已确认（2026-05-31）：本次评估存档即可，不启动 Step 1。
+
+**2026-05-31 续办**：用户进一步要求让 Architect Review，本评估已**升格为正式提案文档** `docs/progress/ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md`（含 A/B/C 方案对比、5 项待决策、风险表、验证标准、Review 计划与状态区）。下一步：用户切换到 Architect 角色 → 读提案 → 拍板 Step 1。
+
 ## 2026-05-31 — Ops Task：Node 后端 systemd 化 + 旧 unit 清理 ✅完成
 
 - 本次角色：DevOps（运维/部署工程师）
