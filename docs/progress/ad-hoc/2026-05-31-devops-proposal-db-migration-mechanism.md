@@ -247,6 +247,80 @@ RestartSec=5
 
 ---
 
+### Step 2 — Developer 实施完成 (2026-05-31)
+
+**执行者**：Developer（开发工程师）
+**结论**：✅ Step 2 完成，交付物齐备，待 DevOps 接手 Step 3
+
+**实际动作**：
+
+1. **npm scripts**（A1）：`server/package.json` 增加 `db:generate` + `db:migrate`，保留 `db:push`。
+2. **drizzle-kit 升级**：原 `0.30.6` 与现装 `drizzle-orm@0.38.4` 内部 `gel-core` 路径不兼容（introspect 直接报 `ERR_PACKAGE_PATH_NOT_EXPORTED`），升至 `^0.31.10` 后 generate 命令通过。
+   - **注意**：drizzle-kit 仍在 devDependencies，**不动**（Step 3 DevOps 的 A2 硬前置）
+3. **baseline 生成路径调整**（与 Architect 决策 3 微调）：
+   - **原计划**：introspect 生产库 → 反推 baseline
+   - **实际执行**：因 introspect 工具链问题（同上），且 Architect 现场核验已确认"生产 9 表 = `schema.ts`"，改用 `drizzle-kit generate --name baseline` 从 `schema.ts` 直接产 baseline
+   - **等价性验证**：production `information_schema.columns` 与 `schema.ts` 9 表逐表列数完全对齐（alerts:8 / channel_sources:7 / channel_spaces:4 / processed_news:14 / raw_items:9 / source_states:8 / sources:9 / sub_channels:5 / tasks:15）
+   - **效果**：baseline 已经包含 v0.4 alerts.status 列，**没有独立的 0001 v0.4 文件**（A3 的"比对一致"在事实上是"baseline 直接吸收 v0.4"）。Developer 判断这等价于 A3 目标达成（避免简单复制 v0.4.sql 到 0001）。**若 Architect 认为这偏离了"v0.3 baseline + v0.4 增量"的本意，可要求回滚 schema 临时产 v0.3 baseline 再 generate 0001 增量**
+4. **COMMENT 保留**：原 `v0.4.sql` 末尾的 `COMMENT ON COLUMN alerts.status` 不在 drizzle generate 产物里，手工追加到 `0000_baseline.sql` 末尾（保留文档价值）
+5. **老路径清理**（与 ADR-001 决策 2 一致）：
+   - 删除 `server/db/migrations/v0.4.sql`（git rm）
+   - 移动根目录 `db/migrations/*.sql` (5 个文件) 到 `server/drizzle/_legacy/`（git mv）
+   - `db/migrations/` 空目录清理
+   - **保留**：根目录 `db/schema.sql`（141 行，v0.2 之前的最早 DDL，已被 `schema.ts` 取代但未在 ADR-001 决策范围内）。Developer 按 surgical 原则不动，留 Architect 后续决定是否一并清除
+
+**交付物清单**：
+
+| 文件 | 状态 | 说明 |
+|---|---|---|
+| `server/package.json` | 修改 | +db:generate / +db:migrate / 保留 db:push |
+| `server/package-lock.json` | 修改 | drizzle-kit 升级伴生 |
+| `server/drizzle/0000_baseline.sql` | 新建 | 135 行 + 末尾追加 1 行 COMMENT |
+| `server/drizzle/meta/0000_snapshot.json` | 新建 | drizzle 元数据 |
+| `server/drizzle/meta/_journal.json` | 新建 | 单条 entry「0000_baseline」 |
+| `server/drizzle/_legacy/v0.1.sql` 等 5 个 | 移动 | git mv 保留历史 |
+| `server/db/migrations/v0.4.sql` | 删除 | 已被 baseline 吸收 |
+
+**ADR-001 / 提案 §8 验证清单核对**：
+
+| 验证项 | 状态 | 备注 |
+|---|---|---|
+| 改 schema.ts 后跑约定流程产出版本化 SQL | ✅ | `npm run db:generate` 可用 |
+| systemctl restart 自动应用未执行的迁移 | ⏸ Step 3 | DevOps 实施 |
+| 故意写失败迁移 systemd 拦截 | ⏸ Step 3 | DevOps 实施 |
+| 修改 schema.ts 不跑 generate 时 systemd 重启报错 | ⏸ Step 3 | DevOps 实施（migrate 本身不检测漂移，靠 Code Review） |
+| `docs/knowledge/devops/db-migration-handbook.md` | ⏸ Step 3 | DevOps 实施 |
+
+**Step 2 完成后 Step 3 的硬前置（再次提醒 DevOps）**：
+
+1. **A2**：drizzle-kit 当前仍在 devDependencies；**Step 3 实施前**必须 `npm install drizzle-kit@^0.31 --save && npm uninstall drizzle-kit --save-dev` 移到 dependencies，否则 systemd `ExecStartPre=npx drizzle-kit migrate` 在 `npm install --production` 环境下会缺失依赖
+2. **systemd unit**：增加 `ExecStartPre=/usr/bin/npx drizzle-kit migrate` + `StartLimitInterval=60` + `StartLimitBurst=3`
+3. **baseline 的特殊处理**：生产已有 9 表，**首次 systemd restart 时**直接跑 `drizzle-kit migrate` 会尝试 CREATE TABLE 失败。**必须先**手动在生产 `__drizzle_migrations` 表插入 baseline 已应用记录：
+   ```sql
+   -- 仅首次部署时执行（手册中体现）
+   CREATE TABLE IF NOT EXISTS __drizzle_migrations (
+     id SERIAL PRIMARY KEY,
+     hash text NOT NULL,
+     created_at bigint
+   );
+   INSERT INTO __drizzle_migrations(hash, created_at) VALUES(
+     '<baseline 的 hash>', <created_at 毫秒>
+   );
+   ```
+   具体 hash 值可通过 `cat server/drizzle/meta/_journal.json` 取 `tag=0000_baseline` 的 entry，对照 drizzle 源码确定。**操作手册 §「首次部署 baseline 注入」必须明确这步**
+4. 验证清单 §8 剩余项跑一遍
+
+**与 Architect / DevOps 的对话事项**：
+
+- **致 Architect**：第 3 点（baseline 直接吸收 v0.4 而非"v0.3 baseline + 0001 增量"）是 Developer 对 A3 决策的实操微调，请确认是否接受；若不接受可要求回滚重做
+- **致 DevOps**：Step 2 完成，Step 3 可以开始；硬前置 A2 + baseline 首次部署注入是关键风险点
+
+**关联 commit**：（待提交）
+
+**Developer 日志**：[2026-05-31 Step 2 实施](../roles/developer.md)
+
+---
+
 ## 关联文档
 
 - INDEX 跨任务待办 P2 项

@@ -1,5 +1,32 @@
 # 全栈开发工作日志
 
+## 2026-05-31 — P2 数据库迁移规范化 Step 2 实施
+
+- 本次角色：全栈开发（Developer）
+- 模式：跨任务待办（Architect Review 后接手实施）
+- 触发：INDEX 跨任务待办 P2「数据库迁移机制规范化」Architect Review R1 通过后派给 Developer 的 Step 2
+- 涉及文档：
+  - 上游决策：[ADR-001 Drizzle 迁移机制选型](../../baseline/architecture.md)
+  - 实施 + 交付报告：[DevOps 提案 §Step 2 — Developer 实施完成](../ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md)
+- 结论：✅ Step 2 完成，5 项任务齐备
+  1. `server/package.json` 加 `db:generate` / `db:migrate` script（A1）
+  2. drizzle-kit 升级 0.30.6 → 0.31.10（旧版与现装 drizzle-orm 0.38.4 内部路径不兼容）
+  3. `server/drizzle/0000_baseline.sql` 产出（135 行 + 末尾保留 v0.4 COMMENT）
+  4. 5 个老 SQL 文件 git mv 到 `server/drizzle/_legacy/`，`server/db/migrations/v0.4.sql` git rm
+  5. drizzle-kit 仍在 devDependencies——**保留**，留 Step 3 DevOps 移
+- 与 Architect 决策的微调（已在交付报告 §3 中明确告知）：
+  - 因 introspect 工具链报错且生产 schema 已与 schema.ts 现场核验对齐，改为 `drizzle-kit generate` 从 schema.ts 直接产 baseline
+  - 结果：baseline 已吸收 v0.4 alerts.status 列，**没有独立 0001 v0.4 文件**
+  - Developer 判断这等价于 A3 目标（避免简单复制 v0.4.sql 到 0001），但请 Architect 确认
+- Step 3 硬前置风险已在交付报告中向 DevOps 显式提醒：
+  - A2 移依赖（drizzle-kit → dependencies）
+  - 首次部署需手动在 `__drizzle_migrations` 注入 baseline 已应用记录（否则 CREATE TABLE 失败）
+  - systemd unit 加 `ExecStartPre` + `StartLimitInterval/Burst`
+- 关联迭代：v0.4 部署后跨任务待办
+- 遗留：
+  - 根目录 `db/schema.sql`（v0.2 之前 DDL，已被 schema.ts 取代）按 surgical 原则不动，留 Architect 后续决定
+  - INDEX 跨任务待办 P2 状态需更新为「Step 2 ✅ 完成，⏳ Step 3 → DevOps」（在归属角色 DevOps 不在场时由 Owner 或本次 Developer 兜底更新）
+
 ## 2026-05-31 — 会话收尾（Developer 当日工作汇总）
 
 - 本次角色：全栈开发（Developer）
