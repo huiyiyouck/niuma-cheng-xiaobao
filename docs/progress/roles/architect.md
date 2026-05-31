@@ -1,5 +1,26 @@
 # 架构师工作日志
 
+## 2026-05-31 — Step 2 Architect Review R2 ✅ 通过 + ADR-001 实操修订附注
+
+**本次角色**：架构师
+- 动作：Review（Developer Step 2 实施复审）+ ADR-001 附注更新
+- 涉及文档：
+  - `docs/baseline/architecture.md`（ADR-001 追加「实操修订附注（2026-05-31）」+ 索引表状态更新）
+  - `docs/progress/ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md`（追加 Architect Review R2 记录）
+  - `docs/progress/INDEX.md`（跨任务待办 P2 状态更新）
+- 触发：Developer 在 §Step 2 末尾留 2 项待 Architect 确认 + 1 项小清理待我决定
+- 4 项微调评估结论：
+  - **#1 drizzle-kit 0.30.6 → 0.31.10**：✅ 接受。工具链兼容性强制要求，新增约束「drizzle-kit 与 drizzle-orm 必须保持版本约束」进 Step 3 操作手册
+  - **#2 baseline 改用 generate 替代 introspect（决策 3 微调）**：✅ 接受。决策 3 本意是"baseline 与生产对齐"，introspect 是手段不是目标；现场核验已确认 schema.ts ≡ 生产 schema 故两条路径等价
+  - **#3 baseline 吸收 v0.4 无独立 0001（A3 微调）**：✅ 接受。A3 的真实担忧是「复制粘贴造成双真源残留」，Developer 当前做法根本不存在该动作。"v0.3 baseline"在历史上从未存在过，强拆是形式没价值。**约定：v0.5 起按 db:generate 产 0001/0002……增量；baseline 永不再 regenerate**
+  - **#4 根目录 db/schema.sql 保留**：🟡 建议 Developer 下次经过时 `git mv` 到 `_legacy/`，**优先级低，不阻塞 Step 3**
+- ADR-001 处理：正文不动（冻结历史规则），追加「实操修订附注」 + 索引表状态改为「已采纳（含 2026-05-31 实操修订附注）」
+- baseline 核验：9 表 + 14 外键 + 10 索引 + 1 COMMENT 齐备，质量高
+- 关联事件：v0.4 #B1 教训消化 + DevOps 提案 P2 Step 2 闭环
+- 遗留问题/风险：
+  - **Step 3 → DevOps**（不归我）：A2 移依赖 + systemd unit 改造 + baseline 首次部署 `__drizzle_migrations` 注入 + 操作手册（含 drizzle-kit/orm 版本约束章节）
+  - 可选小清理 `db/schema.sql` 归档，等 Developer 下次经过
+
 ## 2026-05-31 — #B2 评估（两步查询拆 FOR UPDATE 替代方案）
 
 **本次角色**：架构师

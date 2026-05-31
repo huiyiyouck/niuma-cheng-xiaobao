@@ -8,7 +8,7 @@
 
 | 编号 | 标题 | 日期 | 状态 |
 |------|------|------|------|
-| ADR-001 | Drizzle 迁移机制选型 | 2026-05-31 | 已采纳 |
+| ADR-001 | Drizzle 迁移机制选型 | 2026-05-31 | 已采纳（含 2026-05-31 实操修订附注） |
 
 ---
 
@@ -94,3 +94,25 @@ v0.4 测试阶段爆出 #B1🔴阻塞缺陷：`alerts.status` 列在 Drizzle TS 
 
 - #B2「两步查询拆 FOR UPDATE」由 Architect 另开会话独立评估，不阻塞本 ADR 推进。
 - 未来如需更换 ORM 或迁移工具（如改用 `node-pg-migrate`、`flyway`），新增 ADR 替代本条。
+
+### 实操修订附注（2026-05-31）
+
+> 附注不修改上方决策正文（ADR 冻结历史规则），仅记录 Step 2 实施过程中的实操路径调整与 Architect 复审决定。
+
+**触发**：Developer 2026-05-31 执行 Step 2 时遇到 drizzle-kit 0.30.6 与 drizzle-orm 0.38.4 工具链不兼容（`introspect` / `generate` 报 `ERR_PACKAGE_PATH_NOT_EXPORTED`），对决策 3（v0.3 baseline 怎么补）和 A3（Step 2 流程）做了两处实操调整，本附注审议这两处调整。
+
+| # | 原决策 | 实操调整 | Architect 复审结论 |
+|---|--------|----------|---------------------|
+| 决策 3 | 从生产 `introspect` 反推 baseline | 改用 `drizzle-kit generate --name baseline` 从 `schema.ts` 直接产 baseline | ✅ 接受。决策 3 本意是"baseline 与生产对齐"，introspect 只是手段之一。Architect 现场核验已确认 `schema.ts ≡ 生产 schema`（9 表逐列），故"从 schema.ts 反推"与"从生产 introspect"输出等价。baseline 核验通过：9 表 + 14 外键 + 10 索引 + 1 COMMENT 齐备 |
+| A3 | 以 v0.3 baseline 为起点 generate 0001 → 与 v0.4.sql 比对一致 | baseline 一次性产出 9 表最终状态（已吸收 v0.4 `alerts.status`），无独立 0001 增量 | ✅ 接受。A3 的真实担忧是「Developer 简单复制粘贴 v0.4.sql 到 0001 造成双真源残留」，Developer 当前做法根本不存在复制粘贴动作（generate 产物就是 schema.ts 的唯一派生）。强行回滚 schema.ts 拆出 v0.3 baseline + 0001 增量纯粹是形式上的"先 0000 后 0001"，无工程价值——v0.3 在历史上从未存在过迁移文件，"v0.3 baseline"概念是虚构的 |
+
+**新增配套约束**：
+
+- drizzle-kit 与 drizzle-orm 必须保持版本约束，避免再次踩 `ERR_PACKAGE_PATH_NOT_EXPORTED`。写入 Step 3 操作手册 `docs/knowledge/devops/db-migration-handbook.md`。
+- v0.5 起，所有 schema 变更走标准 `npm run db:generate` 产出 0001、0002……增量文件。**baseline 仅此一份，永不再 regenerate**。
+
+**清理事项（优先级低，不阻塞）**：
+
+- 根目录 `db/schema.sql`（141 行，Python 时期遗留 DDL）已被 `schema.ts` 取代，建议 Developer 下次经过时 `git mv` 到 `server/drizzle/_legacy/` 与 v0.1/v0.2 SQL 一起归档。
+
+**本附注产生的 Review 记录**：详见 [DevOps 提案 §Architect Review 记录区 R2](../progress/ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md)。

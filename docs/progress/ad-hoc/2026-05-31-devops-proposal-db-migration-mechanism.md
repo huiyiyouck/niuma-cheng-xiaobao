@@ -321,6 +321,35 @@ RestartSec=5
 
 ---
 
+#### 2026-05-31 — Architect Review R2 ✅ Step 2 微调审议通过
+
+**Review 方**：Architect（架构师）
+**触发**：Developer 完成 Step 2 后在 §Step 2 末尾留 2 项给 Architect 决定（baseline 生成方式从 introspect 改为 generate；baseline 直接吸收 v0.4 而非独立 0001 增量）+ 1 项给后续清理（根目录 `db/schema.sql`）
+**结论**：✅ Step 2 整体通过 Architect Review，质量高。4 项实操微调逐条评估如下：
+
+| # | 微调 | 评估 | 理由 |
+|---|------|------|------|
+| 1 | drizzle-kit 0.30.6 → 0.31.10 升级（修复与 drizzle-orm 0.38.4 工具链兼容性） | ✅ 接受 | 工具链强制要求，非可选；Developer 处理理性（只升 drizzle-kit，不动 drizzle-orm 以免影响运行时）。**新增约束**：drizzle-kit 与 drizzle-orm 必须保持版本约束，进 Step 3 操作手册 |
+| 2 | baseline 生成方式 introspect → generate（决策 3 微调） | ✅ 接受 | 决策 3 本意是"baseline 与生产对齐"，introspect 是手段不是目标。Architect 现场核验已确认 schema.ts ≡ 生产 schema（9 表逐列），两条路径输出等价。baseline 核验通过：9 表 + 14 外键 + 10 索引 + 1 COMMENT 齐备 |
+| 3 | baseline 直接吸收 v0.4，无独立 0001 增量（A3 微调） | ✅ 接受 | A3 的真实担忧是「简单复制粘贴造成双真源残留」，Developer 当前做法根本不存在复制粘贴。强行拆出"v0.3 baseline + 0001 增量"纯粹是形式 — v0.3 在历史上从未存在过迁移文件，"v0.3 baseline"概念是虚构的。**v0.5 起按标准 db:generate 产 0001/0002……增量；baseline 永不再 regenerate** |
+| 4 | 根目录 `db/schema.sql` 保留待 Architect 决定 | 🟡 建议归档（优先级低，不阻塞） | 141 行 Python 时期遗留 DDL，已被 schema.ts 取代。建议 Developer 下次经过时 `git mv` 到 `server/drizzle/_legacy/` 与 v0.1/v0.2 SQL 一起归档。**不阻塞 Step 3** |
+
+**ADR-001 同步更新**：实操修订附注已追加，详见 [`docs/baseline/architecture.md` ADR-001 §实操修订附注](../../baseline/architecture.md#实操修订附注2026-05-31)。ADR 正文不动（冻结历史规则），索引表状态更新为"已采纳（含 2026-05-31 实操修订附注）"。
+
+**对 DevOps Step 3 的传球**：本 R2 不新增 Step 3 硬前置，Developer 已经写得很清楚——
+- A2：drizzle-kit 移至 dependencies（仍未做）
+- systemd unit 加 `ExecStartPre` + `StartLimitInterval/Burst`
+- **首次部署 baseline 注入 `__drizzle_migrations` 表**（Developer 已给 SQL 模板，详见 §Step 2 末尾「Step 3 硬前置 §3」）
+- 操作手册 `docs/knowledge/devops/db-migration-handbook.md`（新增手册章节：drizzle-kit / drizzle-orm 版本约束 — 见微调 #1）
+
+**Step 2 闭环动作**：
+
+- DevOps 提案 §Step 2 — Developer 实施完成 已审议（本 R2）
+- INDEX 跨任务待办 P2 状态更新为「Step 2 已完成 + Architect 复审通过 → Step 3 待 DevOps」
+- Architect 日志追加本次 R2 复审条目
+
+---
+
 ## 关联文档
 
 - INDEX 跨任务待办 P2 项
