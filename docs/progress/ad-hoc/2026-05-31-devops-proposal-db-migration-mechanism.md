@@ -7,7 +7,7 @@
 - 工作模式：Ops Task 衍生提案（非迭代）
 - 关联待办：INDEX 跨任务待办 P2「数据库迁移机制规范化」
 - 关联事件：v0.4 测试报告 #B1「alerts.status 列缺失」根因
-- 状态：📋 待 Architect Review（指定 Review 方）
+- 状态：✅ Architect Review R1 通过（2026-05-31），Step 1 已拍板，见 §「Architect Review 记录区」
 - 是否升级为标准迭代：暂否；若架构师评估认为影响范围足以走 PRD，再升
 
 ## 1. 背景
@@ -210,7 +210,7 @@ RestartSec=5
 
 | Review 方 | 指定原因 | 状态 | 轮次 |
 |-----------|----------|------|------|
-| Architect | Step 1 工具流与路径决策 | ⏳ 待 Architect 接手 | — |
+| Architect | Step 1 工具流与路径决策 | ✅ R1 通过 | R1 |
 
 ### Architect Review 记录区
 

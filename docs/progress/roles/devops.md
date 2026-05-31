@@ -52,6 +52,40 @@ push 仅保留给开发期快速试 schema，不进部署链。
 
 **2026-05-31 续办**：用户进一步要求让 Architect Review，本评估已**升格为正式提案文档** `docs/progress/ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md`（含 A/B/C 方案对比、5 项待决策、风险表、验证标准、Review 计划与状态区）。下一步：用户切换到 Architect 角色 → 读提案 → 拍板 Step 1。
 
+**2026-05-31 再续办**：Architect Review R1 ✅通过（commit `f512dee`），5 项决策逐条拍板，与我倾向完全一致（方案 A / 路径 P1 / introspect + 对账 / 分类强制 down / 仅部署机）。配套新增 A1-A4 四项补充，其中 **A2（drizzle-kit 移到 dependencies）是我提案风险表的盲点修正，标为 Step 3 硬前置**。决策已落项目首条 ADR-001（`docs/baseline/architecture.md`）。下一步：Developer 做 Step 2 → 我做 Step 3。
+
+### Step 3 实施计划初稿
+
+> 前置：Developer 完成 Step 2（`server/drizzle/` 目录已建、`0000_baseline.sql` + `0001_v0.4.sql` 已 generate 并验证、老路径已清理、`package.json` 已加 `db:generate` / `db:migrate` 脚本）
+
+#### 任务清单
+
+| # | 子任务 | 预估 | 说明 |
+|---|---|---|---|
+| 3.1 | A2：drizzle-kit 从 devDependencies 移到 dependencies | 5min | `npm install drizzle-kit --save`（不用 --save-dev），验证 `npm ls drizzle-kit` 在 `--production` 模式下仍可用 |
+| 3.2 | systemd unit 加 ExecStartPre + 启动限制 | 10min | 改 `deploy/systemd/news-api.service`：加 `ExecStartPre=/usr/bin/npx drizzle-kit migrate`，加 `StartLimitIntervalSec=60` + `StartLimitBurst=3` |
+| 3.3 | 部署到生产 + 验证 | 15min | `cp` unit 文件 → `daemon-reload` → `systemctl restart news-api.service` → 验证 /health + journal 无错误 |
+| 3.4 | 验证 #B1 复现拦截 | 5min | 在 schema.ts 里加一个假列 → `systemctl restart` → 确认 migrate 报错（缺迁移文件） → 主进程不启动 → revert |
+| 3.5 | 验证 migrate 失败不循环 | 5min | 故意写一条会失败的迁移 SQL → 确认 systemd 只重试 3 次后停住（StartLimitBurst） → 清理 |
+| 3.6 | 写操作手册 `docs/knowledge/devops/db-migration-handbook.md` | 15min | 覆盖：generate 流程 / commit 约定 / down.sql 写法 / 部署时自动迁移行为 / 失败排查 / 回滚步骤 |
+| 3.7 | 归档更新 | 5min | 更新 devops.md + INDEX P2 状态 + ad-hoc 提案文档 |
+
+**总预估**：约 1 小时会话
+
+#### 关键风险与缓解
+
+| 风险 | 缓解 |
+|---|---|
+| A2 执行后 `npm install --production` 仍然拉不到 drizzle-kit | 先在 staging 验证：`npm install --production && npx drizzle-kit --version` |
+| ExecStartPre 首次跑 migrate 时 `server/drizzle/` 为空（Developer Step 2 还没 generate） | 严格等 Step 2 完成后再做 Step 3。如提前部署，migrate 会因找不到 meta/_journal.json 报错，不会损坏数据 |
+| migrate 失败后 journal 表记录残留，修完后重跑报"已应用" | 人工删 `__drizzle_migrations` 表对应行后重试，操作手册里写清 |
+
+#### 不做的事
+
+- ❌ 不跳序（Step 2 未完成不动代码）
+- ❌ 不动 `server/start.sh`（架构师 Review 明确只用 systemd ExecStartPre）
+- ❌ 不处理 #B2（Architect 另开会话）
+
 ## 2026-05-31 — Ops Task：Node 后端 systemd 化 + 旧 unit 清理 ✅完成
 
 - 本次角色：DevOps（运维/部署工程师）
