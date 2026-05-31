@@ -7,7 +7,7 @@
 - 工作模式：Ops Task 衍生提案（非迭代）
 - 关联待办：INDEX 跨任务待办 P2「数据库迁移机制规范化」
 - 关联事件：v0.4 测试报告 #B1「alerts.status 列缺失」根因
-- 状态：✅ Architect Review R1 通过（2026-05-31），Step 1 已拍板，见 §「Architect Review 记录区」
+- 状态：✅ 全线完成（Step 1 Architect R1 通过 + Step 2 Developer + Architect R2 通过 + Step 3 DevOps 部署侧落地），整条 P2 已从 INDEX 跨任务待办移除
 - 是否升级为标准迭代：暂否；若架构师评估认为影响范围足以走 PRD，再升
 
 ## 1. 背景
@@ -347,6 +347,58 @@ RestartSec=5
 - DevOps 提案 §Step 2 — Developer 实施完成 已审议（本 R2）
 - INDEX 跨任务待办 P2 状态更新为「Step 2 已完成 + Architect 复审通过 → Step 3 待 DevOps」
 - Architect 日志追加本次 R2 复审条目
+
+---
+
+## Step 3 完成附注（DevOps 2026-05-31）
+
+DevOps 按 Architect Review R1 + R2 全部要求完成 Step 3 部署侧落地，提案全线关闭。
+
+### 执行清单
+
+| 子任务 | 结果 |
+|---|---|
+| 3.0 baseline 注入 `drizzle.__drizzle_migrations`（hash `34b7133d...` + when `1780214254537`） | ✅ 9 业务表未变 |
+| 3.1 A2: drizzle-kit 移到 dependencies | ✅ `^0.31.10` |
+| 3.2 临时目录 `npm install --omit=dev` 验证 | ✅ drizzle-kit/drizzle-orm 可用 |
+| 3.3-3.4 systemd unit 加 `ExecStartPre` + `StartLimitIntervalSec=60` + `StartLimitBurst=3`（systemd 255 放 `[Unit]`） | ✅ 部署生效 |
+| 3.5 #B1 复现拦截验证 | ✅ 假迁移 → ExecStartPre 退出 1 → 主进程不启动 → `/health` 不通 |
+| 3.6 StartLimitBurst 验证 | ✅ 3 次重试后 systemd 报 `Start request repeated too quickly` 停在 failed |
+| 3.7 操作手册 `docs/knowledge/devops/db-migration-handbook.md` | ✅ 含版本约束章节（A4 + R2 配套要求） |
+| 3.8 归档 + 升维 | ✅ commit `f5d3c9a` push origin/main |
+
+### Architect R2 配套要求落地确认
+
+| R2 要求 | 落地 |
+|---|---|
+| A2 移依赖 | Step 3.1 |
+| baseline 注入 `__drizzle_migrations` | Step 3.0 |
+| `ExecStartPre` + `StartLimitInterval/Burst` | Step 3.3-3.4 |
+| 操作手册含 drizzle-kit↔drizzle-orm 版本约束章节 | Step 3.7 |
+
+### 验证证据汇总
+
+```
+systemctl status news-api.service →
+  Active: active (running)
+  Process: ExecStartPre=/usr/bin/npx drizzle-kit migrate (code=exited, status=0/SUCCESS)
+  Main PID: 3900723 (npm exec tsx src/index.ts)
+
+drizzle.__drizzle_migrations →
+  1 行 baseline，待 v0.5 起累加
+
+#B1 拦截验证 → ExecStartPre 失败 → 主进程不启动（生产无法在 schema 未对齐时上线）
+```
+
+### 整条 P2 生命周期
+
+- Step 1（Architect R1 拍板） ✅ commit `f512dee`
+- Step 2（Developer 实施） ✅ commit `9b96a58`
+- R2（Architect 复审 Step 2 微调） ✅ commit `ec10001`
+- Step 3（DevOps 部署侧） ✅ commit `f5d3c9a`
+- #B2（Architect 独立评估，保留现状） ✅ commit `6a8c3e5`
+
+INDEX 跨任务待办 P2 项已移除，本提案归档闭环。
 
 ---
 
