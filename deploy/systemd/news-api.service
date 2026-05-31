@@ -1,12 +1,15 @@
 [Unit]
 Description=Niuma News API + Worker (Node.js)
 After=network.target postgresql.service
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
 [Service]
 Type=simple
 User=root
 WorkingDirectory=/root/Project/niuma-cheng-xiaobao/server
 EnvironmentFile=/root/Project/niuma-cheng-xiaobao/server/.env
+ExecStartPre=/usr/bin/npx drizzle-kit migrate
 ExecStart=/usr/bin/npx tsx src/index.ts
 Restart=always
 RestartSec=5

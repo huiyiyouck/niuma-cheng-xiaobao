@@ -1,5 +1,69 @@
 # DevOps 工作日志
 
+## 2026-05-31 — Step 3: drizzle 迁移机制部署侧落地 ✅完成
+
+- 本次角色：DevOps（运维/部署工程师）
+- 工作模式：执行 [ADR-001](../../baseline/architecture.md#adr-001drizzle-迁移机制选型) Step 3 + Architect Review R2 的配套要求
+- 前置：Developer Step 2 完成（commit `9b96a58`）+ Architect Review R2 通过（commit `ec10001`）
+
+### 执行 8 步全部完成
+
+| 步骤 | 动作 | 结果 |
+|---|---|---|
+| 3.0 | 生产 `drizzle.__drizzle_migrations` 注入 baseline 已应用记录 | ✅ hash `34b7133d...` + when `1780214254537` 注入；9 业务表未变；`drizzle-kit migrate` 静默通过 |
+| 3.1 | A2：`drizzle-kit` 从 devDependencies 移到 dependencies | ✅ `npm install --save drizzle-kit@^0.31.10` |
+| 3.2 | 临时目录验证 `npm install --omit=dev` 仍可用 drizzle-kit | ✅ `drizzle-kit v0.31.10 / drizzle-orm v0.38.4` 正常输出 |
+| 3.3-3.4 | systemd unit 加 `ExecStartPre=drizzle-kit migrate` + `StartLimitIntervalSec=60` / `StartLimitBurst=3`（systemd 255 放 `[Unit]`）；部署生效 | ✅ `Process: ExecStartPre=... (code=exited, status=0/SUCCESS)`；新 PID 3899906；中断窗口约 6 秒 |
+| 3.5 | 验证 #B1 复现拦截 | ✅ 临时加假迁移 → ExecStartPre 退出 1 → 主进程不启动 → `/health` 不通 |
+| 3.6 | 验证 StartLimitBurst 触发 | ✅ 3 次重试后 systemd 报 `Start request repeated too quickly` 停在 failed |
+| 3.7 | 操作手册 `docs/knowledge/devops/db-migration-handbook.md` | ✅ 含开发期工作流 / 部署期自动行为 / 首次部署 baseline 注入 / 故障排查 / 回滚 / 工具版本约束章节（drizzle-kit↔drizzle-orm 兼容矩阵）/ 禁止事项 |
+| 3.8 | 归档 + 升维 | ✅ 本条目 + INDEX P2 关闭 + commit + push |
+
+### 关键决策
+
+- **systemd 255 `StartLimitIntervalSec` 放 `[Unit]` 而非 `[Service]`**：旧 systemd 文档里放 `[Service]`，从 systemd 230+ 起放 `[Unit]`。当前 systemd 255 必须 `[Unit]`，否则只是被解析但不生效
+- **ExecStartPre 用 `/usr/bin/npx drizzle-kit migrate` 而非直调 node**：npx 解析 node_modules 路径，免去硬编码绝对路径
+- **测试失败迁移用 `DROP TABLE not_exist`**：纯 SQL 错误，无副作用，与 `DROP IF EXISTS` 拼写故意避开，确保必然失败
+- **包事务保护**：drizzle-orm pg dialect `session.transaction` 包所有迁移 → 失败回滚 → `__drizzle_migrations` 不留半应用记录 → 修完即可 restart
+
+### 当前生产运行态
+
+```
+news-api.service  loaded enabled active (running)
+  MainPID 3900723 npm exec tsx src/index.ts
+  ExecStartPre=/usr/bin/npx drizzle-kit migrate (code=exited, status=0/SUCCESS)
+  ExecStart=/usr/bin/npx tsx src/index.ts
+  StartLimitIntervalSec=60, StartLimitBurst=3
+drizzle.__drizzle_migrations  1 行 baseline，待 v0.5 起累加
+```
+
+### 实际中断窗口
+
+- Step 3.3-3.4 unit 切换重启：约 **6 秒**（含 ExecStartPre 跑 baseline migrate 时间）
+- Step 3.5-3.6 验证失败拦截：约 **1 分 50 秒**（刻意等 60 秒看 StartLimitBurst 生效）
+- 合计：约 2 分钟。前端 HTTPS 不中断（nginx + dist 静态文件），仅 API 调用层有响应延迟
+
+### Architect Review R2 配套要求落地确认
+
+| Architect R2 要求 | 落地证据 |
+|---|---|
+| A2 移依赖 | Step 3.1 完成 |
+| baseline 注入 `__drizzle_migrations` | Step 3.0 完成 |
+| `ExecStartPre` + `StartLimitInterval/Burst` | Step 3.3-3.4 完成 |
+| 操作手册含版本约束章节 | Step 3.7 完成（手册「工具版本约束」一节） |
+
+### 整条 P2 关闭
+
+- Step 1（Architect 决策） ✅
+- Step 2（Developer baseline + 老路径清理） ✅
+- Step 3（DevOps 部署侧自动迁移） ✅
+- #B2 评估（Architect 独立） ✅
+- **INDEX P2 待办本次会话结束后从跨任务待办表移除**
+
+### 不在范围
+
+- 根目录 `db/schema.sql` 归档到 `_legacy/`（架构师 R2 建议 Developer 顺手做，本次会话不动）
+
 ## 2026-05-31 — INDEX P2 评估：数据库迁移机制规范化
 
 - 本次角色：DevOps（运维/部署工程师）

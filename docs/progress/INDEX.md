@@ -43,6 +43,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-05-31 | DevOps | Step 3：drizzle 迁移机制部署侧落地 | ✅ 全 8 步完成 — baseline 注入 / A2 移依赖 / systemd ExecStartPre + StartLimitBurst / #B1 复现拦截已验证 / 操作手册落档；整条 P2 关闭从待办移除 | — |
 | 2026-05-31 | PM | v0.4 迭代关闭检查 + 归档摘要 | ✅ 可关闭（有条件关闭）— 8 项检查全部通过；`v0.4-summary.md` 已创建；INDEX 状态更新为「v0.4 已关闭」 | 用户决定下一步（启动 v0.5 / 其他） |
 | 2026-05-31 | WM | 三项基线修正提案合并落地（#1 受保护路径删除 Review 门禁 / #2 前后端契约变更同步检查 / #3 INDEX 跨任务待办模板化） | commit dfede2b 推送 origin/main；11 文件净增 136 行；触发源 2026-05-30 基线同步事故 + v0.3 砍 WS 后前端残留 5 个月 + Developer 元流程提案 | 新约束即刻生效 |
 | 2026-05-31 | Tester | v0.4 测试报告 R1 翻牌定稿 | ✅ 已定稿 — PM/Developer 双 Review 通过 + PM 3 项收口决定全部闭环（事项 1 不升 R2 / 事项 2 进 INDEX P2 / 事项 3 条件已列清） | PM 或 WM 执行 v0.4 迭代关闭检查 |
@@ -65,7 +66,6 @@
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
-| P2 | 数据库迁移机制规范化：建立 drizzle 迁移文件管理 + 部署自动迁移步骤（v0.4 #B1 教训）+ 评估 #B2 替代方案（两步查询拆 FOR UPDATE） | DevOps（主）+ Architect（评估） | [v0.4 测试报告](iterations/v0.4-test-report.md) §「正式修复建议」 / PM 2026-05-31 决定 | ✅ **Step 1 已拍板**（Architect Review R1 2026-05-31 通过，详见 [DevOps 提案](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) §「Architect Review 记录区」+ 首条 [ADR-001](../baseline/architecture.md)）。<br/>✅ **#B2 评估完成**（Architect 2026-05-31）：保留当前实现 `FOR UPDATE OF cs`，不采纳两步查询替代方案。<br/>✅ **Step 2 已完成 + Architect R2 复审通过**（2026-05-31）：Developer 4 项实操微调全部接受（drizzle-kit 升级 / baseline 用 generate 替代 introspect / baseline 直接吸收 v0.4 / `db/schema.sql` 归档建议）；ADR-001 已追加实操修订附注。<br/>剩余动作：⏳ **Step 3 → DevOps**（A2 移依赖 + systemd `ExecStartPre` + `StartLimitInterval/Burst` + 首次部署 baseline 注入 `__drizzle_migrations` + 操作手册含 drizzle-kit/orm 版本约束章节）。<br/>📋 Step 3 实施计划详见 [`devops.md` 2026-05-31 P2 评估段末尾](roles/devops.md) + Developer 已在 [DevOps 提案 §Step 2 末尾](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) 显式提醒硬前置风险。<br/>🟡 可选清理（不阻塞 Step 3）：根目录 `db/schema.sql` 归档到 `server/drizzle/_legacy/`，归 Developer 下次经过时顺手做 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）
@@ -82,3 +82,4 @@
 | Developer（开发工程师） | [roles/developer.md](roles/developer.md) | [roles/developer-corrections.md](roles/developer-corrections.md) |
 | DevOps（运维/部署工程师） | [roles/devops.md](roles/devops.md) | [roles/devops-corrections.md](roles/devops-corrections.md) |
 | Tester（测试工程师） | [roles/tester.md](roles/tester.md) | — |
+| WM（工作流管理者） | [roles/wm.md](roles/wm.md) | [roles/wm-corrections.md](roles/wm-corrections.md) |

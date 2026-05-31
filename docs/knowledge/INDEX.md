@@ -19,6 +19,8 @@
 
 ## DevOps（运维/部署）
 
+- [数据库 Schema 迁移操作手册](devops/db-migration-handbook.md) — drizzle 迁移机制（generate → commit → systemd ExecStartPre 自动 migrate）的执行说明、版本约束、首次部署 baseline 注入、故障排查、回滚步骤（v0.4 #B1 教训后规范化）
+
 ## Decisions（决策）
 
 ## Opportunities（机会池）
