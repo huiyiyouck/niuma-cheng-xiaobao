@@ -64,7 +64,7 @@
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
-| P2 | 数据库迁移机制规范化：建立 drizzle 迁移文件管理 + 部署自动迁移步骤（v0.4 #B1 教训）+ 评估 #B2 替代方案（两步查询拆 FOR UPDATE） | DevOps（主）+ Architect（评估） | [v0.4 测试报告](iterations/v0.4-test-report.md) §「正式修复建议」 / PM 2026-05-31 决定 | DevOps 已升格为正式提案 [2026-05-31-devops-proposal-db-migration-mechanism](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md)，待 **Architect Review** 拍板 Step 1（工具流 + 迁移路径 + 5 项待决策）。Step 3（systemd 自动迁移）DevOps 可独立完成；#B2 不归 DevOps |
+| P2 | 数据库迁移机制规范化：建立 drizzle 迁移文件管理 + 部署自动迁移步骤（v0.4 #B1 教训）+ 评估 #B2 替代方案（两步查询拆 FOR UPDATE） | DevOps（主）+ Architect（评估） | [v0.4 测试报告](iterations/v0.4-test-report.md) §「正式修复建议」 / PM 2026-05-31 决定 | 📋 **待 Architect Review 提案** → [2026-05-31-devops-proposal-db-migration-mechanism.md](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md)（拍板 Step 1：工具流 + 迁移路径 + 5 项待决策）<br/>背景：DevOps 已勘察并拆 Step 1/2/3。Step 3（systemd 自动迁移）DevOps 可独立完成；#B2 不归 DevOps |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）
