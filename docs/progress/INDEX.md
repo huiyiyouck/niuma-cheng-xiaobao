@@ -55,6 +55,7 @@
 | P1 | 决定 Node 后端是否启用 `deploy/systemd/news-api.service`（当前 nohup 启动 PID 3870357，无自动重启保护） | DevOps | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §5 | 待处理（旧 Python unit 已于 2026-05-31 清理完毕，名字 `news-api.service` 已释放） |
 | P1 | 基线同步保护机制（防止再次误删生产源码：路径白名单 / 大变更阻断 / 协作 commit 二次核对） | WM | [Incident 2026-05-31 server-source-deleted](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) §6 | 待处理 |
 | P1 | 前后端契约变更同步检查清单（v0.3 砍后端 WS 后前端残留 5 个月才被发现） | WM | [Developer 日志 2026-05-31 Bugfix 批次](roles/developer.md) 遗留段 | 待处理 |
+| P1 | 评估「跨任务待办」是否应在 baseline 模板化（Developer 已自加 INDEX 表，需 WM 决定选项 A/B/C） | WM | [Developer 日志 基线修正提案 2026-05-31](roles/developer.md) | 待 WM 评估 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）

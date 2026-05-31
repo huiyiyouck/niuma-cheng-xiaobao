@@ -1,5 +1,43 @@
 # 全栈开发工作日志
 
+## [基线修正提案] 2026-05-31 — INDEX 引入「跨任务待办」表，需 WM 评估是否模板化
+
+- 提案角色：全栈开发（Developer）
+- 触发场景：用户问"待办项你是记录在哪里的"，发现 P1 级散落事项（DevOps 清理旧 systemd / 启用新 systemd / WM 基线同步保护 / 前后端契约同步检查）只能在 ad-hoc 文件尾部 + 角色日志「遗留」段拼凑，**INDEX 启动必读但根本看不到**，下次会话启动会丢失视野
+- 已采取的事实修改（不是提案，是已 commit）：
+  - commit `9cce740` 在 `docs/progress/INDEX.md` 新增 `## 跨任务待办` 区块，登记当前 4 项 P1
+  - 位置：`最近收尾摘要` 之后、`Bootstrap 记录` 之前
+  - 表结构：优先级 / 待办 / 归属角色 / 来源 / 状态
+  - 规则：完成后从表中移除
+
+- 提交 WM 评估的问题：
+
+  1. **是否应该在 baseline 层正式承认这类「跨任务待办」存在并模板化**
+     - 现状缺口：现有 baseline（runtime.md / mechanisms.md / work-modes.md）只承认「迭代内事项」「ad-hoc 单任务事项」「角色日志个人遗留」三类，没有"跨多个非迭代任务的、归某角色但尚未启动的小事"这一类的归属
+     - 后果：本次会话出现 4 项 P1 散落各处，纯靠 Agent 临时汇总，无机制保证下次会话能看到
+     - 选项 A（最小动作）：仅在 `docs/templates/progress-index.md` 模板加上 `## 跨任务待办` 占位区块，Bootstrap 时就预留位置
+     - 选项 B（中等动作）：在 `docs/baseline/mechanisms.md` 里写一节《跨任务待办的归属与去化》，规定何时登记 / 谁可登记 / 何时移除 / 与 ad-hoc 的边界
+     - 选项 C（重动作）：单独建一类产出物 `docs/progress/backlog/{role}.md`，每个角色一个待办文件——但这与"INDEX 是启动必读"原则相悖，反而更分散
+
+  2. **「跨任务待办」与「ad-hoc 任务」的边界是什么**
+     - 当前我登记的 4 项里，有 2 项（DevOps 那两条）其实可以**直接立 ad-hoc**（Ops Task 模式），就不需要在 INDEX 里再列
+     - 反过来，"基线同步保护机制"这类是 WM 视角的长期改进，更适合走 baseline 修正流程而非 ad-hoc
+     - 这意味着「跨任务待办」可能只是临时收容点，最终该被吸收到 ad-hoc 或 baseline 修正提案；表里的事项天然有"过期日"——需要 WM 决定是否在表头加这条说明
+
+  3. **格式细节是否合规**
+     - 我自拟的字段（优先级/待办/归属角色/来源/状态）是不是合理？
+     - 用 ☆/P0/P1/P2 还是别的优先级标记？
+     - "来源"字段链接到 ad-hoc 或角色日志是不是好习惯？
+
+- 影响范围（如果 WM 接受任一选项）：
+  - 选项 A：仅 `docs/templates/progress-index.md` 一个模板文件
+  - 选项 B：mechanisms.md 加一节 + 模板更新 + INDEX 写法约束
+  - 选项 C：work-modes.md + INDEX 模板 + 新建 backlog 目录约定
+
+- Developer 自身意见：倾向 **选项 A**（最小动作）。理由：当前 INDEX 已经在用了，运行良好；模板补一个占位避免下次 Bootstrap 又要靠 Agent 临时想起来；baseline 大动作可以等到再出现 1-2 次类似 case 后再升级
+
+- 待 WM 决定后行动：本提案最终结论由 WM 写入 `docs/progress/roles/wm.md`；若决定修改 baseline，由 WM 执行修改
+
 ## 2026-05-31 — v0.4 测试报告 R1 Review
 
 - 本次角色：全栈开发（Developer）
