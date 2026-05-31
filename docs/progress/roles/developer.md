@@ -1,5 +1,29 @@
 # 全栈开发工作日志
 
+## 2026-05-31 — 会话收尾（Developer 当日工作汇总）
+
+- 本次角色：全栈开发（Developer）
+- 动作：会话级收尾归档
+- 当日 Developer 出场次数：4 段独立工作（按时间顺序）
+  1. **Incident — 误删 server/ 源码恢复**：commit `ec8073e` + 收尾 `7267000`
+     从 git 历史恢复 server/ 38 文件 + deploy/systemd/news-api.service；新 PID 3870357 启动健康检查通过；线上服务连续可用未中断
+  2. **Bugfix 批次 — 7 个 UI/交互 bug + WS 架构对齐**：commit `e736980` + 收尾 `fd50370`
+     DELETE 400/204 解析/Modal 不统一/复选框对齐/启用响应性/创建空间事件名/前端 WS 残留 全部修复；线上验证通过
+  3. **基线修正提案 — 跨任务待办是否模板化**：commit `9cce740` + `ec95bf3`
+     INDEX 临时新增「跨任务待办」表收集散落 P1；同时在 Developer 日志写 `[基线修正提案]` 交 WM 评估；当晚 WM 在 commit `dfede2b` 落地为正式 baseline 修改
+  4. **v0.4 测试报告 R1 Review + 定稿后复审**：commit `2622908` + `9f3fdbd`
+     初审：✅有条件通过，提 3 项收口事项；复审定稿版：维持原结论同意定稿
+- 当日 commit 总数：8 个（全部已推送 origin/main）
+- 当日净代码变更：server/ 恢复 +6291 行；前端 Bugfix +84 -125 = -41 行；其余为文档
+- 关联迭代：v0.4
+- 状态：Developer 当日工作全部已 commit 并推送，本地工作区仅剩**其他角色**未提交的修改（PM/DevOps/Tester/PM-corrections），不在 Developer 提交边界
+- 知识库沉淀建议（不当场执行，交给后续会话或 Owner 决定）：
+  - 「Node.js 进程 unlink-while-open 的应急恢复套路」— 今天 Incident 中靠这个特性救回了服务，是可复用工程经验
+  - 「v-for + computed 解决 props 响应式问题」— 今天 SourceCard 的 const 解构 props 不响应式坑，是 Vue 3 setup 常见陷阱
+  - 这两条都属 `docs/knowledge/engineering/`，但我作为收尾不主动新建知识条目（避免越权超出本次会话主线），登记在此供未来 Architect/Owner 决定
+- 遗留（下次启动 Developer 角色时关注）：无
+- 下班；今天 Developer 棒交完，**v0.4 迭代关闭检查**待 PM 或 WM 执行
+
 ## 2026-05-31 — v0.4 测试报告 R1 定稿后复审
 
 - 本次角色：全栈开发（Developer）
