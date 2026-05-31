@@ -1,5 +1,25 @@
 # 全栈开发工作日志
 
+## 2026-05-31 — Incident：基线同步 commit 误删 server/ 后端源码 → 恢复并重启
+
+- 本次角色：全栈开发（Developer）
+- 模式：Incident（故障处理，非迭代）
+- 动作：排查 → 从 git 历史恢复 → 提交 → 推送 GitHub → 重启服务 → 验证
+- 涉及文件：server/（38 文件全部恢复）、deploy/systemd/news-api.service、.gitignore、docs/progress/INDEX.md、docs/progress/ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md
+- 关联 commit：恢复 ec8073e；问题源头 5500ac2 + 70a1b19
+- 结论：
+  - 用户提问"前后端是否都是 Node.js / 本地与 GitHub 是否一致 / server 是否在用"时排查发现：v0.3 完成的 Node.js 后端 server/ 源码已被 commit 5500ac2（题为"同步 CLAUDE.md 三层分流机制"）整目录误删，GitHub 上同步丢失；但正在运行的进程 PID 3787459 靠 Linux unlink-while-open 特性继续提供 8000 端口服务，任何重启都会导致后端宕机
+  - 从 git 历史 5500ac2^ 恢复 server/ 38 文件 + deploy/systemd/news-api.service 1 文件；npx tsc --noEmit 零错误；与现存 server/node_modules/ 完全匹配
+  - 同 commit 误删的 7 个前端组件经核查现存代码无引用，确属 v0.4 UI 重构后真废弃，不予恢复
+  - 把 .gitignore 中被 70a1b19 误删的 server/node_modules/、server/dist/ 规则加回
+  - commit ec8073e (+6291 行 / 43 文件) 推送到 origin/main
+  - bash server/start.sh 自动 kill 老 PID 3787459 并启动新 PID 3870357；本机 /health 200、公网 /v1/stats /v1/channel-spaces 200、前端首页 200
+- 关联迭代：v0.4 部署后独立 Incident
+- 遗留：
+  - long-term：建议增加基线同步 commit 范围检查机制（防止再误删生产源码），详见 ad-hoc §6
+  - 旧 systemd unit news-worker.service 仍指向已删除的 Python 路径，5 天前 timeout failed，待 DevOps 决定清理或改写为 Node 版本
+  - 本次恢复后未注册 systemd，新进程仍是 nohup 启动；需 DevOps 评估是否启用 deploy/systemd/news-api.service
+
 ## 2026-05-30 — v0.4 部署&测试修复 + 收尾
 
 - 本次角色：全栈开发
