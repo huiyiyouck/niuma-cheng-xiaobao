@@ -31,13 +31,14 @@
 | 2026-05-31 | Proposal | [DevOps 提案：数据库迁移机制规范化](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) | ✅ 全线完成 — Step 1（Architect R1）+ Step 2（Developer）+ R2（Architect 复审）+ Step 3（DevOps 部署侧）+ #B2（Architect 独立评估）；ADR-001 落 [`docs/baseline/architecture.md`](../baseline/architecture.md)；操作手册落 [`docs/knowledge/devops/db-migration-handbook.md`](../knowledge/devops/db-migration-handbook.md) | — |
 | 2026-05-31 | Ops Task | [清理 v0.3 Python 遗留 systemd unit + Node 后端 systemd 化](ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md) | ✅已完成（旧 unit 全清 + Node 后端已切换为 systemd 管理，崩溃重启已验证） | — |
 | 2026-05-31 | Incident | [Node.js 后端源码被基线同步 commit 误删](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) | 已完成：恢复→推送 GitHub→重启→健康检查通过 | （留观，无后续动作） |
+| 2026-06-01 | Product Brief | [信息平台演进方向](ad-hoc/2026-06-01-product-brief-information-platform-evolution.md) | 草稿（方向已确认，细节待迭代） | 作为 v0.5+ 迭代方向性输入材料 |
 | 2026-05-30 | Product Brief | [X/Twitter 指定账号实时监听](ad-hoc/2026-05-30-product-brief-x-filtered-stream.md) / [技术实施规划](ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md) | 已完成，登记为 v0.5 输入材料 | 用户启动 v0.5 后，交由 PM 和架构师正式 Review |
 
 ## 候选迭代输入材料
 
 | 候选版本 | 材料 | 来源 | Review 状态 | 启动入口 |
 |----------|------|------|-------------|----------|
-| v0.5 | [X/Twitter 指定账号实时监听 Product Brief](ad-hoc/2026-05-30-product-brief-x-filtered-stream.md) / [Shared Filtered Stream 技术实施规划](ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md) | 编外成员整理 | 未进入正式 Review | 用户明确启动 v0.5 后，由 PM 和架构师接管 |
+| v0.5 | [X/Twitter 指定账号实时监听 Product Brief](ad-hoc/2026-05-30-product-brief-x-filtered-stream.md) / [Shared Filtered Stream 技术实施规划](ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md) / [信息平台演进方向](ad-hoc/2026-06-01-product-brief-information-platform-evolution.md) | 编外成员 + PM 讨论沉淀 | 规划讨论中，尚未创建 PRD | PM 下次继续确认 v0.5 范围：X 实时监听、信息源管理重构、评分体系方法论文档 |
 
 ## 最近收尾摘要
 
