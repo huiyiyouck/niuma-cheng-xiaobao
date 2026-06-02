@@ -25,4 +25,6 @@
 
 ## Opportunities（机会池）
 
+- [事件时间线与影响链分析](opportunities/event-timeline-impact-chain-analysis.md) — 将源头新闻、后续发酵和跨空间/频道变化串联为事件时间线与影响链，作为 v0.6+ 候选方向
+
 ## Retrospectives（复盘）
