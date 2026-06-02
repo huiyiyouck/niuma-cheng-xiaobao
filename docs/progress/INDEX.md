@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.5
 - 当前模式：标准迭代
-- 当前阶段：PRD 阶段 R1 Review中，等待 UI / Architect / Developer / Tester / DevOps Review
+- 当前阶段：PRD 阶段 R1 Review中；UI 已 Review 并要求修改，等待 Architect / Developer / Tester / DevOps Review
 - 阻塞项：无
-- 下一步入口：切换到 UI、Architect、Developer、Tester、DevOps 角色分别 Review `iterations/v0.5-prd.md`
+- 下一步入口：切换到 Architect、Developer、Tester、DevOps 角色分别 Review `iterations/v0.5-prd.md`；PM 汇总后提交 R2
 
 ## 版本列表
 
@@ -18,7 +18,7 @@
 | v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | [iterations/v0.2-ui-spec.md](iterations/v0.2-ui-spec.md) | [iterations/v0.2-design.md](iterations/v0.2-design.md) | — | 已完成 |
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
-| v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | 待产出 | 待产出 | — | PRD 阶段 R1 Review中 |
+| v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | 待产出 | 待产出 | — | PRD 阶段 R1 Review中（UI：需修改） |
 
 ## 当前 Change Notes
 
@@ -47,6 +47,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-02 | UI | v0.5 PRD R1 UI Review | 需修改：Source 状态模型存在 1 项高严重度问题；告警流转、频道删除迁移冲突、新建 Source 回流存在 3 项中严重度问题；空间级管理范围存在 1 项低严重度问题 | 等待 PM 汇总其余角色 R1 Review 并提交 R2；届时由 UI 复审 |
 | 2026-06-02 | PM | v0.5 三条主线规划 + 标准迭代启动 + PRD R1 + 会话收尾 | ✅ 已完成当日规划工作；v0.5 停留在 PRD R1 Review中；PM 日志已分层归档 | UI / Architect / Developer / Tester / DevOps 分别 Review `iterations/v0.5-prd.md` |
 | 2026-05-31 | DevOps | Step 3：drizzle 迁移机制部署侧落地 | ✅ 全 8 步完成 — baseline 注入 / A2 移依赖 / systemd ExecStartPre + StartLimitBurst / #B1 复现拦截已验证 / 操作手册落档；整条 P2 关闭从待办移除 | — |
 | 2026-05-31 | PM | v0.4 迭代关闭检查 + 归档摘要 | ✅ 可关闭（有条件关闭）— 8 项检查全部通过；`v0.4-summary.md` 已创建；INDEX 状态更新为「v0.4 已关闭」 | 用户决定下一步（启动 v0.5 / 其他） |
@@ -86,6 +87,7 @@
 | 角色 | 日志 | 纠错记录 |
 |------|------|----------|
 | PM（产品经理） | [roles/pm-current.md](roles/pm-current.md) / [roles/pm-summary.md](roles/pm-summary.md) | [roles/pm-corrections.md](roles/pm-corrections.md) |
+| UI（界面设计师） | [roles/ui.md](roles/ui.md) | — |
 | Architect（架构师） | [roles/architect.md](roles/architect.md) | [roles/architect-corrections.md](roles/architect-corrections.md) |
 | Developer（开发工程师） | [roles/developer.md](roles/developer.md) | [roles/developer-corrections.md](roles/developer-corrections.md) |
 | DevOps（运维/部署工程师） | [roles/devops.md](roles/devops.md) | [roles/devops-corrections.md](roles/devops-corrections.md) |
