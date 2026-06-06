@@ -1,5 +1,17 @@
 # 全栈开发工作日志
 
+## 2026-06-06 — v0.5 实现阶段 R2
+
+- 本次角色：全栈开发（Developer）
+- 动作：修改（响应 Tester R1 Review）
+- base_commit：9b83263 → head_commit：aca2922
+- 修复内容：
+  - Bug：sources.ts `lifecycleStatus` 变量名 → `row.lifecycle_status`，修复 auto_add_to_space 静默失效
+  - 测试：alerts 状态流转 5 个、channel-spaces migrate_to_root 2 个、sources identity 修改实现
+  - 46→53 测试，全部通过
+- 关联迭代：v0.5
+- 遗留：等待 PM、Architect、Tester 复审 R2
+
 ## 2026-06-06 — v0.5 实现阶段 R1
 
 - 本次角色：全栈开发（Developer）

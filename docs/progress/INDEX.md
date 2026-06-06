@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.5
 - 当前模式：标准迭代
-- 当前阶段：实现阶段 R1 Review中；PM 已通过；Tester 需修改；等待 Architect Review
+- 当前阶段：实现阶段 R2 Review中；Developer 已修复 Tester R1 反馈；等待 PM、Architect、Tester 复审
 - 阻塞项：无
-- 下一步入口：Architect Review 实现成果；Developer 修复 Tester 发现的 Bug 和测试缺口后提交 R2
+- 下一步入口：PM、Architect、Tester 复审 R2
 
 ## 版本列表
 
