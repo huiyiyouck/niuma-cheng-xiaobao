@@ -81,7 +81,7 @@ export type SourceWithPositions = Source & {
 
 // ── v0.5: 告警 Alert ──────────────────────────────────────
 export type AlertType = "source_error" | "x_stream_global" | "x_auth_failure" | "system_db" | "system_queue";
-export type AlertStatus = "unprocessed" | "acknowledged" | "recovered" | "ignored";
+export type AlertStatus = "active" | "acknowledged" | "resolved" | "ignored";
 
 export type Alert = {
   id: UUID;

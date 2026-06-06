@@ -18,28 +18,22 @@ const total = ref(0);
 const loading = ref(false);
 const errorText = ref<string | null>(null);
 
-const activeStatus = ref<AlertStatus | "">("unprocessed");
+const activeStatus = ref<AlertStatus | "">("active");
 const currentPage = ref(1);
 const pageSize = ref(20);
 
-// 各状态计数
-const statusCounts = ref<Record<string, number>>({
-  unprocessed: 0,
-  acknowledged: 0,
-  recovered: 0,
-  ignored: 0,
-});
+const statusCounts = ref<Record<string, number>>({ active: 0, acknowledged: 0, resolved: 0, ignored: 0 });
 
 const STATUS_TABS: { value: AlertStatus | ""; label: string }[] = [
   { value: "", label: "全部" },
-  { value: "unprocessed", label: "未处理" },
+  { value: "active", label: "未处理" },
   { value: "acknowledged", label: "已确认" },
-  { value: "recovered", label: "已恢复" },
+  { value: "resolved", label: "已恢复" },
   { value: "ignored", label: "已忽略" },
 ];
 
 function statusLabel(s: string): string {
-  const m: Record<string,string> = { unprocessed:'未处理', acknowledged:'已确认', resolved:'已恢复', ignored:'已忽略' };
+  const m: Record<string,string> = { active:'未处理', acknowledged:'已确认', resolved:'已恢复', ignored:'已忽略' };
   return m[s] || s;
 }
 
@@ -166,10 +160,10 @@ onMounted(async () => {
         </div>
         <span class="badge" :class="'badge-' + a.status">{{ statusLabel(a.status) }}</span>
         <div class="alert-actions">
-          <button v-if="a.status === 'unprocessed'" class="btn-xs warn" @click="onUpdateAlert(a, 'acknowledged')">确认</button>
-          <button v-if="a.status === 'unprocessed'" class="btn-xs muted" @click="onUpdateAlert(a, 'ignored')">忽略</button>
+          <button v-if="a.status === 'active'" class="btn-xs warn" @click="onUpdateAlert(a, 'acknowledged')">确认</button>
+          <button v-if="a.status === 'active'" class="btn-xs muted" @click="onUpdateAlert(a, 'ignored')">忽略</button>
           <button v-if="a.status === 'acknowledged'" class="btn-xs success" @click="onUpdateAlert(a, 'resolved')">标记恢复</button>
-          <button v-if="a.status === 'ignored'" class="btn-xs muted" @click="onUpdateAlert(a, 'unprocessed')">重新打开</button>
+          <button v-if="a.status === 'ignored'" class="btn-xs muted" @click="onUpdateAlert(a, 'active')">重新打开</button>
         </div>
       </div>
     </div>
@@ -201,7 +195,7 @@ onMounted(async () => {
 .alert-actions { display: flex; gap: 4px; flex-shrink: 0; }
 
 .badge { padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
-.badge-unprocessed { background: var(--danger-light); color: var(--danger); }
+.badge-active { background: var(--danger-light); color: var(--danger); }
 .badge-acknowledged { background: var(--warning-light); color: var(--warning); }
 .badge-resolved { background: var(--success-light); color: var(--success); }
 .badge-ignored { background: #F1F5F9; color: var(--text-muted); }
