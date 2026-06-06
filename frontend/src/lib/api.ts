@@ -84,8 +84,8 @@ export async function listSources(params?: SourceListParams): Promise<SourceList
   if (params?.source_role) qs.set("source_role", params.source_role);
   if (params?.attention_level) qs.set("attention_level", params.attention_level);
   if (params?.space_id) qs.set("space_id", params.space_id);
-  if (params?.limit) qs.set("limit", String(params.limit));
-  if (params?.offset) qs.set("offset", String(params.offset));
+  if (params?.limit) qs.set("page_size", String(params.limit));
+  if (params?.offset && params?.limit) qs.set("page", String(Math.floor(params.offset / params.limit) + 1));
   const query = qs.toString();
   return requestJson(buildUrl(`/v1/sources${query ? "?" + query : ""}`));
 }
@@ -165,9 +165,11 @@ export async function toggleDisplayPosition(positionId: UUID, enabled: boolean):
 
 export async function listSpaceSources(spaceId: UUID, channelId?: UUID | null): Promise<SourceWithPositions[]> {
   const qs = new URLSearchParams();
+  // channelId = null → 全部位置，不传 channel_id
+  // channelId = UUID → 指定频道
   if (channelId) qs.set("channel_id", channelId);
   const query = qs.toString();
-  return requestJson(buildUrl(`/v1/spaces/${spaceId}/sources${query ? "?" + query : ""}`));
+  return requestJson(buildUrl(`/v1/spaces/${spaceId}/positions${query ? "?" + query : ""}`));
 }
 
 // ── News 新闻 ─────────────────────────────────────────────
@@ -179,12 +181,13 @@ export async function listNews(
   const limit = opts?.limit ?? 20;
   const offset = opts?.offset ?? 0;
   const qs = new URLSearchParams();
-  qs.set("limit", String(limit));
-  qs.set("offset", String(offset));
+  qs.set("space_id", spaceId);
+  qs.set("page", String(Math.floor(offset / limit) + 1));
+  qs.set("page_size", String(limit));
   if (opts?.channelId) qs.set("channel_id", opts.channelId);
   if (opts?.sort) qs.set("sort", opts.sort);
-  if (opts?.q) qs.set("q", opts.q);
-  return requestJson(buildUrl(`/v1/spaces/${spaceId}/news?${qs.toString()}`));
+  if (opts?.q) qs.set("search", opts.q);
+  return requestJson(buildUrl(`/v1/news?${qs.toString()}`));
 }
 
 export async function getNews(newsId: UUID): Promise<ProcessedNews> {
@@ -194,7 +197,7 @@ export async function getNews(newsId: UUID): Promise<ProcessedNews> {
 // ── Stats 统计 ────────────────────────────────────────────
 
 export async function getSpaceStats(spaceId: UUID): Promise<SpaceStats> {
-  return requestJson(buildUrl(`/v1/spaces/${spaceId}/stats`));
+  return requestJson(buildUrl(`/v1/stats?space_id=${spaceId}`));
 }
 
 export async function getGlobalStats(): Promise<import("@/lib/types").StatsOverview> {
@@ -216,8 +219,8 @@ export async function listAlerts(params?: {
   const qs = new URLSearchParams();
   if (params?.status) qs.set("status", params.status);
   if (params?.type) qs.set("type", params.type);
-  if (params?.limit) qs.set("limit", String(params.limit));
-  if (params?.offset) qs.set("offset", String(params.offset));
+  if (params?.limit) { qs.set("page", String(1)); qs.set("page_size", String(params.limit)); }
+  if (params?.offset && params?.limit) qs.set("page", String(Math.floor(params.offset / params.limit) + 1));
   return requestJson(buildUrl(`/v1/alerts?${qs.toString()}`));
 }
 

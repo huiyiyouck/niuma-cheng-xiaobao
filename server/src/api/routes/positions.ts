@@ -17,19 +17,20 @@ export async function positionsRoutes(app: FastifyInstance): Promise<void> {
     );
     if (!space) return reply.status(404).send({ detail: "频道空间不存在" });
 
-    // 构建 channel_id 筛选条件
-    // 不传 channel_id = 空间根节点（channel_id IS NULL）
-    // 传 null/nil uuid = 根节点
-    // 传具体 uuid = 指定频道
+    // channel_id 筛选：
+    // - 不传 → 返回全部位置（管理页"全部"Tab）
+    // - channel_id=UUID → 指定频道
+    // - channel_id=（空值）→ 仅根节点（channel_id IS NULL）
     let channelFilter = "";
     const params: any[] = [space_id];
+    const rawQuery = req.query as Record<string, string>;
 
-    if (q.channel_id) {
-      // 指定频道
+    if (!("channel_id" in rawQuery)) {
+      // 不传 → 全部位置
+    } else if (q.channel_id) {
       channelFilter = "AND dp.channel_id = $2";
       params.push(q.channel_id);
-    } else if (q.channel_id === null || q.channel_id === undefined) {
-      // 空间根节点：channel_id IS NULL
+    } else {
       channelFilter = "AND dp.channel_id IS NULL";
     }
 
