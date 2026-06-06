@@ -1,12 +1,20 @@
 # UI（界面设计师）角色日志
 
-## 2026-06-06 — v0.5 UI 方案阶段收尾
+## 2026-06-06 — v0.5 UI 方案阶段收尾（全日工作闭合）
 - 本次角色：UI（界面设计师）
-- 动作：原型 Review 修改 + 阶段收尾
-- 原型 Review：PM/Architect/Developer 三方 Review 通过，反馈已全部修正
-- 涉及文档：`v0.5-ui-spec.md`、`v0.5.md`、`INDEX.md`、`ui.md`、全部 7 个原型文件
-- 结论：UI 方案阶段完成。Spec R2 定稿 + 原型三方通过。
-- 下一步入口：Architect 进入设计阶段
+- 全日工作：
+  1. v0.5 PRD R2 复审 → 通过（R1 1高+3中+1低 全部核验）
+  2. 产出 `v0.5-ui-spec.md`（~1200 行，11 节 + API 契约 + 组件契约）
+  3. R1→R2：接受 Architect 4 条 + Developer 4 条，8 条全部关闭，2/2 通过定稿
+  4. 产出 7 个 HTML 原型（浏览/管理/告警/Source详情/日志/导航/信息源库）
+  5. 原型 Review：PM 5 条 / Architect 6 条 / Developer 6 条 反馈全部修正
+  6. 原型迭代：空间卡片+分栏布局、搜索弹窗、创建/编辑弹窗补齐、状态 tooltip、位置 popover 等
+- 涉及文档：`v0.5-ui-spec.md`、`v0.5.md`、`INDEX.md`、`ui.md`、7 个原型文件
+- 未关闭事项：
+  - 历史新闻按 Source 过滤 → 保留 UI 入口，标注"暂未开发"
+  - 领域标签管理 → 已登记 INDEX 跨任务待办（P2，归属 PM）
+- 结论：UI 方案阶段完成。Spec 定稿 + 原型三方通过。
+- 下一步入口：DevOps 部署原型到本地 → Owner 手动验证页面 → Architect 进入设计阶段
 - 收尾状态：已收尾
 
 ## 2026-06-06 — v0.5 UI 方案 R2 通过 + 原型交付
