@@ -30,7 +30,7 @@ onMounted(() => {
     <header class="topbar">
       <div class="topbar-inner">
         <div class="brand">
-          <RouterLink to="/news" class="brand-link">牛马程小报</RouterLink>
+          <RouterLink to="/news" class="brand-link">🐂 牛马程小报</RouterLink>
         </div>
         <nav class="nav">
           <RouterLink to="/news" class="nav-link" activeClass="nav-link--active">浏览</RouterLink>

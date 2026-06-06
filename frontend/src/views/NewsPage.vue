@@ -138,49 +138,45 @@ onMounted(async () => {
 
 <template>
   <div class="page">
-    <!-- v0.4 StatsCards 保留，适配新类型 -->
     <StatsCards :stats="stats" />
 
-    <!-- 空间/频道两层 mini Pill -->
-    <SpacePills
-      :spaces="spaces"
-      :selectedId="filterSpaceId"
-      mode="mini"
-      @select="onSpaceSelect"
-      @changed="refreshSpaces()"
-    />
-
-    <ChannelPills
-      v-if="channels.length > 0"
-      :channels="channels"
-      :selectedId="filterChannelId"
-      mode="mini"
-      @select="onChannelSelect"
-      @changed="refreshChannels()"
-    />
-
-    <!-- 评分 + 排序 -->
-    <div class="filter-right">
-      <label class="score-filter">
-        评分 &ge; <strong>{{ minScore.toFixed(1) }}</strong>
-        <input type="range" min="0" max="10" step="0.5" :value="minScore"
-          @input="minScore = parseFloat(($event.target as HTMLInputElement).value)" />
-      </label>
-      <select
-        class="sort-select"
-        :value="sortBy"
-        @change="sortBy = ($event.target as HTMLSelectElement).value as NewsSort"
-      >
-        <option value="published_desc">最新优先</option>
-        <option value="score_desc">最高评分</option>
-        <option value="score_asc">最低评分</option>
-      </select>
-      <input
-        class="search-input"
-        v-model="searchQuery"
-        placeholder="搜索新闻…"
-        @keydown.enter="refreshNews()"
-      />
+    <!-- 原型对齐：统一 context-card 包裹空间/频道 Pill + 筛选 -->
+    <div class="context-card">
+      <div class="cc-row">
+        <span class="cc-label">空间</span>
+        <div class="cc-pills">
+          <button v-for="s in spaces" :key="s.id"
+            class="cc-pill" :class="{ on: filterSpaceId === s.id }"
+            @click="onSpaceSelect(s.id)">{{ s.name }}</button>
+        </div>
+      </div>
+      <hr class="cc-divider" v-if="channels.length > 0" />
+      <div class="cc-row" v-if="channels.length > 0">
+        <span class="cc-label">频道</span>
+        <div class="cc-pills">
+          <button class="cc-pill all" :class="{ on: filterChannelId === null }" @click="onChannelSelect(null)">全部</button>
+          <button v-for="ch in channels" :key="ch.id"
+            class="cc-pill" :class="{ on: filterChannelId === ch.id }"
+            @click="onChannelSelect(ch.id)">{{ ch.name }}</button>
+        </div>
+      </div>
+      <hr class="cc-divider" />
+      <div class="cc-filter-row">
+        <div class="cc-search">
+          <span class="cc-search-icon">🔍</span>
+          <input class="cc-search-input" v-model="searchQuery" placeholder="搜索新闻…" @keydown.enter="refreshNews()" />
+        </div>
+        <select class="cc-select" :value="sortBy" @change="sortBy = ($event.target as HTMLSelectElement).value as NewsSort">
+          <option value="published_desc">最新优先</option>
+          <option value="score_desc">最高评分</option>
+        </select>
+        <div class="cc-divider-v"></div>
+        <label class="cc-range">
+          最低评分 <strong>{{ minScore.toFixed(1) }}</strong>
+          <input type="range" min="0" max="10" step="0.5" :value="minScore"
+            @input="minScore = parseFloat(($event.target as HTMLInputElement).value)" style="width:72px" />
+        </label>
+      </div>
     </div>
 
     <div v-if="errorText" class="error-bar"><span>&#9888;</span><span>{{ errorText }}</span></div>
@@ -215,32 +211,24 @@ onMounted(async () => {
 .more { display: flex; justify-content: center; padding-top: 12px; }
 .load-more { padding: 10px 28px; font-size: 13px; font-weight: 700; }
 
-.filter-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 0;
-}
-.score-filter { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
-.score-filter input { width: 80px; accent-color: var(--accent); }
-.sort-select {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  font-size: 11px;
-  min-width: 110px;
-  background: var(--card);
-}
-.search-input {
-  padding: 6px 10px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  font-size: 11px;
-  min-width: 150px;
-  outline: none;
-  margin-left: auto;
-}
-.search-input:focus { border-color: var(--accent); }
+/* 原型对齐：context card */
+.context-card { background: var(--card); border: 1px solid var(--border-light); border-radius: 14px; padding: 16px 20px; margin-bottom: 4px; }
+.cc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.cc-label { font-size: 11px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; min-width: 32px; }
+.cc-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.cc-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: .12s; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); white-space: nowrap; }
+.cc-pill:hover { border-color: var(--accent); color: var(--accent); }
+.cc-pill.on { background: var(--accent); color: #FFF; border-color: var(--accent); }
+.cc-pill.all { border-style: dashed; }
+.cc-divider { border: none; border-top: 1px solid var(--border-light); margin: 8px 0; }
+.cc-filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.cc-search { display: flex; align-items: center; flex: 1; min-width: 160px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; transition: .15s; background: #FAFAFA; }
+.cc-search:focus-within { border-color: var(--accent); background: var(--card); }
+.cc-search-icon { font-size: 13px; opacity: 0.4; margin-right: 6px; }
+.cc-search-input { border: none; padding: 7px 0; font-size: 13px; outline: none; background: transparent; flex: 1; }
+.cc-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: var(--card); color: var(--text-secondary); cursor: pointer; }
+.cc-divider-v { width: 1px; height: 20px; background: var(--border); }
+.cc-range { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
 
 /* Skeleton */
 .skeleton-list { display: flex; flex-direction: column; gap: 8px; }

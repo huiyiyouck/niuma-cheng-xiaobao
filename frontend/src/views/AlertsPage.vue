@@ -38,6 +38,11 @@ const STATUS_TABS: { value: AlertStatus | ""; label: string }[] = [
   { value: "ignored", label: "已忽略" },
 ];
 
+function statusLabel(s: string): string {
+  const m: Record<string,string> = { unprocessed:'未处理', acknowledged:'已确认', resolved:'已恢复', ignored:'已忽略' };
+  return m[s] || s;
+}
+
 const alertTypeLabel: Record<string, string> = {
   source_error: "来源异常",
   x_stream_global: "X Stream 全局",
@@ -118,14 +123,11 @@ onMounted(async () => {
 
 <template>
   <div class="alerts-page">
-    <div class="page-header">
-      <span class="page-title">&#128680; 告警中心</span>
-      <span class="page-sub">全局 · 所有空间</span>
-    </div>
+    <h1 class="page-title">告警</h1>
 
     <div v-if="errorText" class="error-bar"><span>&#9888;</span><span>{{ errorText }}</span></div>
 
-    <!-- 状态 Tab -->
+    <!-- 状态 Tab（原型对齐：无边框按钮 + 计数） -->
     <div class="status-tabs">
       <button
         v-for="tab in STATUS_TABS"
@@ -135,8 +137,14 @@ onMounted(async () => {
         @click="onStatusChange(tab.value)"
       >
         {{ tab.label }}
-        <span v-if="statusCounts[tab.value] !== undefined" class="tab-count">{{ statusCounts[tab.value] }}</span>
+        <span v-if="statusCounts[tab.value] !== undefined" class="count">{{ statusCounts[tab.value] }}</span>
       </button>
+    </div>
+
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+      <select class="filter-select"><option>类型：全部</option></select>
+      <select class="filter-select"><option>严重度：全部</option></select>
     </div>
 
     <!-- 告警列表 -->
@@ -145,45 +153,23 @@ onMounted(async () => {
     <EmptyState
       v-else-if="alerts.length === 0"
       icon="&#9989;"
-      title="暂无告警"
-      description="系统运行正常"
+      title="一切正常，暂无告警"
     />
 
     <div v-else class="alert-list">
-      <div
-        v-for="a in alerts"
-        :key="a.id"
-        class="alert-row"
-        :class="{ 'row--error': a.type === 'x_auth_failure' || a.type === 'system_db' }"
-      >
-        <!-- 时间 -->
-        <span class="alert-time">{{ formatTime(a.created_at) }}</span>
-
-        <!-- 类型 -->
-        <span class="alert-type-tag">{{ alertTypeLabel[a.type] || a.type }}</span>
-
-        <!-- 状态 -->
-        <StatusBadge kind="alert" :status="a.status" size="sm" />
-
-        <!-- 消息 -->
-        <span class="alert-msg">{{ a.message }}</span>
-
-        <!-- 关联 Source -->
-        <button
-          v-if="a.source_id"
-          class="btn-xs"
-          @click="viewSource(a.source_id)"
-        >
-          {{ a.source_display_name || '查看来源' }}
-        </button>
-        <span v-else class="no-source">--</span>
-
-        <!-- 操作按钮 -->
+      <div v-for="a in alerts" :key="a.id" class="alert-row">
+        <span class="alert-severity">{{ a.type === 'x_auth_failure' || a.type === 'system_db' ? '🔴' : a.severity === 'warning' ? '🟡' : '🔵' }}</span>
+        <div class="alert-info">
+          <span class="alert-type">{{ alertTypeLabel[a.type] || a.type }}</span>
+          <span v-if="a.source_display_name" class="alert-source">· {{ a.source_display_name }}</span>
+          <div class="alert-msg">{{ a.message }}</div>
+        </div>
+        <span class="badge" :class="'badge-' + a.status">{{ statusLabel(a.status) }}</span>
         <div class="alert-actions">
-          <template v-if="a.status === 'unprocessed'">
-            <button class="btn-xs" @click="onUpdateAlert(a, 'acknowledged')">确认</button>
-            <button class="btn-xs" @click="onUpdateAlert(a, 'ignored')">忽略</button>
-          </template>
+          <button v-if="a.status === 'unprocessed'" class="btn-xs warn" @click="onUpdateAlert(a, 'acknowledged')">确认</button>
+          <button v-if="a.status === 'unprocessed'" class="btn-xs muted" @click="onUpdateAlert(a, 'ignored')">忽略</button>
+          <button v-if="a.status === 'acknowledged'" class="btn-xs success" @click="onUpdateAlert(a, 'resolved')">标记恢复</button>
+          <button v-if="a.status === 'ignored'" class="btn-xs muted" @click="onUpdateAlert(a, 'unprocessed')">重新打开</button>
         </div>
       </div>
     </div>
@@ -191,145 +177,41 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.alerts-page {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.page-header {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  margin-bottom: 2px;
-}
-.page-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-}
-.page-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-.status-tabs {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.status-tab {
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 700;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: all 0.15s;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.status-tab:hover {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.status-tab.active {
-  background: var(--accent);
-  color: #FFF;
-  border-color: var(--accent);
-}
-.tab-count {
-  font-size: 10px;
-  background: rgba(255,255,255,0.3);
-  padding: 1px 6px;
-  border-radius: 10px;
-}
-.status-tab:not(.active) .tab-count {
-  background: #F1F5F9;
-  color: var(--text-muted);
-}
-.loading-state {
-  text-align: center;
-  padding: 24px;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-.alert-list {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  background: var(--card);
-  overflow: hidden;
-}
-.alert-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
-  font-size: 12px;
-  border-bottom: 1px solid var(--border-light);
-  flex-wrap: wrap;
-}
-.alert-row:last-child { border-bottom: none; }
-.alert-row:hover { background: #F8FAFB; }
-.row--error { background: var(--danger-light); }
-.row--error:hover { background: rgba(231,76,60,0.06); }
-.alert-time {
-  font-size: 10px;
-  color: var(--text-muted);
-  font-family: monospace;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.alert-type-tag {
-  padding: 1px 8px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 700;
-  background: #F1F5F9;
-  color: var(--text-secondary);
-  flex-shrink: 0;
-}
-.alert-msg {
-  flex: 1;
-  color: var(--text-secondary);
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.no-source {
-  color: var(--text-muted);
-  font-size: 10px;
-}
-.alert-actions {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
-.btn-xs {
-  padding: 2px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text-secondary);
-  cursor: pointer;
-  white-space: nowrap;
-}
-.btn-xs:hover { background: #F4F5F7; }
-.error-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--danger-light);
-  border: 1px solid rgba(231,76,60,0.2);
-  color: #991b1b;
-  font-size: 12px;
-}
+.alerts-page { display: flex; flex-direction: column; gap: 16px; }
+.page-title { font-size: 20px; font-weight: 800; margin: 0; }
+
+.status-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.status-tab { padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); transition: .15s; display: flex; gap: 6px; align-items: center; }
+.status-tab:hover { background: #F4F5F7; }
+.status-tab.active { background: var(--accent); color: #FFF; }
+.count { padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #E2E8F0; color: var(--text-secondary); }
+.status-tab.active .count { background: rgba(255,255,255,0.25); color: #FFF; }
+
+.filter-bar { display: flex; gap: 8px; }
+.filter-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: var(--card); color: var(--text-secondary); cursor: pointer; }
+
+.alert-list { display: flex; flex-direction: column; gap: 8px; }
+.alert-row { background: var(--card); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; transition: .15s; }
+.alert-row:hover { border-color: #CBD5E1; }
+.alert-severity { font-size: 16px; flex-shrink: 0; }
+.alert-info { flex: 1; min-width: 0; }
+.alert-type { font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+.alert-source { font-size: 11px; color: var(--text-muted); }
+.alert-msg { font-size: 12px; color: var(--text); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.alert-actions { display: flex; gap: 4px; flex-shrink: 0; }
+
+.badge { padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.badge-unprocessed { background: var(--danger-light); color: var(--danger); }
+.badge-acknowledged { background: var(--warning-light); color: var(--warning); }
+.badge-resolved { background: var(--success-light); color: var(--success); }
+.badge-ignored { background: #F1F5F9; color: var(--text-muted); }
+
+.btn-xs { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); transition: .15s; white-space: nowrap; }
+.btn-xs:hover { border-color: var(--accent); color: var(--accent); }
+.btn-xs.warn { color: var(--warning); }
+.btn-xs.success { color: var(--success); }
+.btn-xs.muted { color: var(--text-muted); }
+
+.loading-state { text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; }
+.error-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; background: var(--danger-light); border: 1px solid rgba(231,76,60,0.2); color: #991b1b; font-size: 12px; }
 </style>
