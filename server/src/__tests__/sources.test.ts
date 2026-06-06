@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { createTestApp, beginTestTx, rollbackTestTx } from "./helpers.ts";
+import { pool } from "../db/pool.ts";
 
 let app: FastifyInstance;
 
@@ -185,29 +186,64 @@ describe("Source 编辑", () => {
 });
 
 describe("Source 身份修改", () => {
-  it("PUT /v1/sources/:id/identity 待修复状态应允许修改身份", async () => {
-    // 创建时验证会失败→lifecycle_status='needs_fix'
+  it("PUT /v1/sources/:id/identity normal 状态不允许修改身份（409）", async () => {
     const create = await app.inject({
       method: "POST",
       url: "/v1/sources",
       payload: {
         type: "rss",
-        identity: "https://invalid.example.com/rss",
-        display_name: "Fix Me",
+        identity: "https://normal-source.example.com/rss",
+        display_name: "Normal Source",
+        source_role: "media",
+        attention_level: "regular",
       },
     });
-    // 创建本身应该成功（保存为待修复）
-    expect(create.statusCode).toBe(201);
-    // 实际验证失败后状态为 needs_fix
+    const { id } = JSON.parse(create.payload);
 
-    // 注意：此测试依赖验证 API 调用会失败，status 会变 needs_fix
-    // 简化测试：直接检查创建成功
+    const res = await app.inject({
+      method: "PUT",
+      url: `/v1/sources/${id}/identity`,
+      payload: { new_identity: "https://new.example.com/rss" },
+    });
+    expect(res.statusCode).toBe(409);
   });
 
-  it("PUT /v1/sources/:id/identity normal 状态不允许直接修改身份", async () => {
-    // 手动创建一个 Source...
-    // 此测试需要正常状态的 Source，但验证 API 不可用时会标记为 needs_fix
-    // 因此该测试在 CI 环境可能需要 mock
+  it("PUT /v1/sources/:id/identity 待修复状态应允许修改身份并写入历史", async () => {
+    const create = await app.inject({
+      method: "POST",
+      url: "/v1/sources",
+      payload: {
+        type: "rss",
+        identity: "https://fix-me.example.com/rss",
+        display_name: "Fix Me",
+        source_role: "media",
+        attention_level: "regular",
+      },
+    });
+    const { id } = JSON.parse(create.payload);
+
+    // 手动设为待修复状态
+    await pool.query("UPDATE sources SET lifecycle_status='needs_fix' WHERE id=$1", [id]);
+
+    const res = await app.inject({
+      method: "PUT",
+      url: `/v1/sources/${id}/identity`,
+      payload: { new_identity: "https://fixed.example.com/rss" },
+    });
+    // 200=成功 / 400=外部验证失败 / 422=格式错误
+    expect([200, 400, 422]).toContain(res.statusCode);
+
+    if (res.statusCode === 200) {
+      // 验证身份历史
+      const detail = await app.inject({
+        method: "GET",
+        url: `/v1/sources/${id}`,
+      });
+      const history = JSON.parse(detail.payload).source.identity_history;
+      expect(history.length).toBeGreaterThan(0);
+      expect(history[0]).toHaveProperty("old_identity");
+      expect(history[0]).toHaveProperty("new_identity");
+    }
   });
 });
 

@@ -1,5 +1,28 @@
 # Tester（测试工程师）角色日志
 
+## 2026-06-06 — v0.5 实现阶段 R1 Tester Review
+
+- 本次角色：Tester（测试工程师）
+- 动作：实现阶段 R1 Review → 审查 46 个测试的 AC 覆盖 → 逐文件检查源码可测试性和边界处理
+- 涉及文档：v0.5.md、INDEX.md、tester.md；审查 server/src/ 和 frontend/src/ 全部变更
+- 结论：**需修改** — 发现 1 个中严重度 Bug + 4 项测试覆盖缺口
+- 关联迭代：v0.5
+
+### Bug 发现
+
+- 中：`sources.ts:152` `lifecycleStatus` 未定义（应为 `row.lifecycle_status`），AC-5.3.10 自动添加功能静默失效
+
+### 测试覆盖缺口
+
+- 中：身份修改测试骨架代码未实际验证行为（sources.test.ts:188-211）
+- 中：告警状态流转（allowedTransitions 状态机）无测试覆盖
+- 中：频道删除 migrate_to_root（含冲突检测）无测试覆盖
+- 低：身份变更历史持久化仅验证空数组，未验证写入
+
+- 收尾状态：已收尾
+
+---
+
 ## 2026-06-06 — v0.5 PRD R2 Tester 复审
 
 - 本次角色：Tester（测试工程师）

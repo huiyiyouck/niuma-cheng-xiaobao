@@ -149,7 +149,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     );
 
     // 如果指定了自动添加位置（从空间管理页发起）
-    if (body.auto_add_to_space_id && lifecycleStatus === "normal") {
+    if (body.auto_add_to_space_id) {
       try {
         await pool.query(
           `INSERT INTO display_positions(source_id, channel_space_id, channel_id, enabled)

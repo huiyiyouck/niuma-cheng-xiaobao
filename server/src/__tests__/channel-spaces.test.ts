@@ -218,6 +218,99 @@ describe("频道 CRUD", () => {
     expect(res.statusCode).toBe(204);
   });
 
+  it("DELETE /v1/spaces/:id/channels/:cid migrate_to_root 应迁移展示位置到根节点", async () => {
+    // 创建 Source 和频道位置
+    const src = await app.inject({
+      method: "POST",
+      url: "/v1/sources",
+      payload: {
+        type: "rss",
+        identity: "https://migrate-test.example.com/rss",
+        display_name: "Migration Test",
+        source_role: "media",
+        attention_level: "regular",
+      },
+    });
+    const sourceId = JSON.parse(src.payload).id;
+
+    const ch = await app.inject({
+      method: "POST",
+      url: `/v1/spaces/${spaceId}/channels`,
+      payload: { name: "迁移目标频道" },
+    });
+    const channelId = JSON.parse(ch.payload).id;
+
+    // 添加展示位置到频道
+    await app.inject({
+      method: "POST",
+      url: `/v1/spaces/${spaceId}/positions`,
+      payload: { source_id: sourceId, channel_id: channelId },
+    });
+
+    // 删除频道并迁移位置到根节点
+    const res = await app.inject({
+      method: "DELETE",
+      url: `/v1/spaces/${spaceId}/channels/${channelId}`,
+      payload: { action: "migrate_to_root" },
+    });
+    expect(res.statusCode).toBe(204);
+
+    // 验证位置已迁移到根节点（channel_id = NULL）
+    const positions = await app.inject({
+      method: "GET",
+      url: `/v1/spaces/${spaceId}/positions`,
+    });
+    const migrated = JSON.parse(positions.payload).find(
+      (p: any) => p.source_id === sourceId,
+    );
+    expect(migrated).toBeDefined();
+    expect(migrated.channel_id).toBeNull();
+  });
+
+  it("DELETE /v1/spaces/:id/channels/:cid migrate_to_root 冲突时返回 409", async () => {
+    // 创建 Source，同时在根节点和频道有位置
+    const src = await app.inject({
+      method: "POST",
+      url: "/v1/sources",
+      payload: {
+        type: "rss",
+        identity: "https://conflict-test.example.com/rss",
+        display_name: "Conflict Test",
+        source_role: "media",
+        attention_level: "regular",
+      },
+    });
+    const sourceId = JSON.parse(src.payload).id;
+
+    // 添加到根节点
+    await app.inject({
+      method: "POST",
+      url: `/v1/spaces/${spaceId}/positions`,
+      payload: { source_id: sourceId },
+    });
+
+    // 创建频道并添加同一 Source
+    const ch = await app.inject({
+      method: "POST",
+      url: `/v1/spaces/${spaceId}/channels`,
+      payload: { name: "冲突频道" },
+    });
+    const channelId = JSON.parse(ch.payload).id;
+    await app.inject({
+      method: "POST",
+      url: `/v1/spaces/${spaceId}/positions`,
+      payload: { source_id: sourceId, channel_id: channelId },
+    });
+
+    // 尝试迁移应返回 409
+    const res = await app.inject({
+      method: "DELETE",
+      url: `/v1/spaces/${spaceId}/channels/${channelId}`,
+      payload: { action: "migrate_to_root" },
+    });
+    expect(res.statusCode).toBe(409);
+  });
+
   it("GET /v1/spaces/:id/channels/:cid/delete-preview 应返回影响范围", async () => {
     const create = await app.inject({
       method: "POST",
