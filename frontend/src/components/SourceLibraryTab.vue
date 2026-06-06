@@ -2,7 +2,6 @@
 import { onMounted, ref } from "vue";
 import type { SourceWithPositions, SourceListParams, Space, UUID } from "@/lib/types";
 import { listSources, listSpaces, deleteSource, getSourceDeleteImpact } from "@/lib/api";
-import SearchFilterBar from "@/components/SearchFilterBar.vue";
 import SourceTable from "@/components/SourceTable.vue";
 import SourceCreateForm from "@/components/SourceCreateForm.vue";
 import Pagination from "@/components/Pagination.vue";
@@ -161,12 +160,24 @@ async function onSourceCreated(sourceId: string) {
       @cancel="showCreateForm = false"
     />
 
-    <!-- 搜索筛选 -->
-    <SearchFilterBar
-      :spaces="spaces.map(s => ({ id: s.id, name: s.name }))"
-      @search="onSearch"
-      @filter="onFilter"
-    />
+    <!-- 搜索+筛选（原型对齐） -->
+    <div class="lib-search-row">
+      <div class="lib-search-box">
+        <span class="lib-search-icon">🔍</span>
+        <input class="lib-search-input" v-model="searchQuery" placeholder="搜索信息源名称、身份、主题、备注…" @keydown.enter="loadSources()" />
+      </div>
+      <button class="btn-primary" @click="showCreateForm = true">新建信息源</button>
+    </div>
+    <div class="filter-row">
+      <select class="filter-select" @change="onFilter({...filters, type: ($event.target as HTMLSelectElement).value})"><option value="">类型：全部</option><option value="x_twitter">X/Twitter</option><option value="rss">RSS</option></select>
+      <select class="filter-select" @change="onFilter({...filters, availability_status: ($event.target as HTMLSelectElement).value})"><option value="">可用性：全部</option><option value="normal">正常</option><option value="needs_fix">待修复</option><option value="source_error">来源异常</option><option value="removed">已移除</option></select>
+      <select class="filter-select" @change="onFilter({...filters, operational_status: ($event.target as HTMLSelectElement).value})"><option value="">运行状态：全部</option><option value="fetching">抓取中</option><option value="stopped">已停止</option></select>
+      <select class="filter-select" @change="onFilter({...filters, domain_tag: ($event.target as HTMLSelectElement).value})"><option value="">领域：全部</option><option value="AI">AI</option><option value="财经">财经</option><option value="开源">开源</option><option value="科技">科技</option><option value="其他">其他</option></select>
+      <select class="filter-select" @change="onFilter({...filters, source_role: ($event.target as HTMLSelectElement).value})"><option value="">角色：全部</option><option value="official">官方</option><option value="media">媒体</option><option value="kol">KOL</option><option value="community">社区</option><option value="research">论文机构</option><option value="other">其他</option></select>
+      <select class="filter-select" @change="onFilter({...filters, attention_level: ($event.target as HTMLSelectElement).value})"><option value="">关注：全部</option><option value="core">核心</option><option value="regular">常规</option><option value="observe">观察</option></select>
+      <select class="filter-select" @change="onFilter({...filters, space_id: ($event.target as HTMLSelectElement).value})"><option value="">空间：全部</option><option v-for="s in spaces" :key="s.id" :value="s.id">{{ s.name }}</option></select>
+      <span class="filter-hint">多个筛选为「且」关系，同类多选为「或」</span>
+    </div>
 
     <!-- 加载/表格 -->
     <div v-if="loading" class="loading-state">加载中…</div>
@@ -201,49 +212,18 @@ async function onSourceCreated(sourceId: string) {
 </template>
 
 <style scoped>
-.source-library {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.toolbar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.btn {
-  padding: 8px 20px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  background: var(--card);
-  cursor: pointer;
-}
-.btn.primary {
-  background: var(--accent);
-  color: #FFF;
-  border-color: var(--accent);
-}
-.total-info {
-  font-size: 12px;
-  margin-left: auto;
-}
-.loading-state {
-  text-align: center;
-  padding: 24px;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-.error-bar {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: var(--danger-light);
-  border: 1px solid rgba(231,76,60,0.2);
-  color: #991b1b;
-  font-size: 12px;
-}
+.source-library { display: flex; flex-direction: column; gap: 12px; }
+.lib-search-row { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+.lib-search-box { flex: 1; display: flex; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0 14px; transition: .15s; }
+.lib-search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(52,152,219,0.08); }
+.lib-search-icon { font-size: 14px; opacity: 0.4; margin-right: 8px; }
+.lib-search-input { flex: 1; border: none; padding: 9px 0; font-size: 13px; outline: none; background: transparent; }
+.btn-primary { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: var(--accent); color: #FFF; transition: .15s; }
+.btn-primary:hover { opacity: 0.9; }
+.filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
+.filter-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: var(--card); color: var(--text-secondary); cursor: pointer; }
+.filter-hint { font-size: 10px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+.loading-state { text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; }
+.error-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; background: var(--danger-light); border: 1px solid rgba(231,76,60,0.2); color: #991b1b; font-size: 12px; }
 </style>

@@ -31,31 +31,27 @@ const emit = defineEmits<{
 
 <style scoped>
 .admin-tabs {
-  display: flex;
-  gap: 0;
-  background: var(--card);
-  border: 1px solid var(--border-light);
-  border-radius: 12px;
-  padding: 4px;
-  box-shadow: var(--shadow-soft);
+  display: inline-flex;
+  background: #F1F5F9;
+  border-radius: 8px;
+  padding: 3px;
+  margin-bottom: 20px;
 }
 .admin-tab {
-  flex: 1;
   padding: 8px 20px;
+  border-radius: 6px;
   font-size: 13px;
-  font-weight: 700;
-  border: none;
-  background: transparent;
+  font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
-  border-radius: 10px;
   transition: all 0.15s;
+  border: none;
+  background: transparent;
 }
-.admin-tab:hover {
-  color: var(--accent);
-}
+.admin-tab:hover { color: var(--accent); }
 .admin-tab.active {
-  background: var(--accent);
-  color: #FFF;
+  background: var(--card);
+  color: var(--accent);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
 }
 </style>
