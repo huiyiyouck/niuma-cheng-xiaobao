@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.5
 - 当前模式：标准迭代
-- 当前阶段：设计阶段已完成（R2 全部通过）
+- 当前阶段：实现阶段 R1 Review中；等待 PM、Architect、Tester Review
 - 阻塞项：无
-- 下一步入口：切换到 Developer（开发工程师）进入实现阶段
+- 下一步入口：PM、Architect、Tester 分别 Review 实现成果；Developer 汇总后提交 R2
 
 ## 版本列表
 
@@ -18,7 +18,7 @@
 | v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | [iterations/v0.2-ui-spec.md](iterations/v0.2-ui-spec.md) | [iterations/v0.2-design.md](iterations/v0.2-design.md) | — | 已完成 |
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
-| v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | 待产出 | — | UI 方案+原型已完成，设计阶段待启动 |
+| v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | — | 实现阶段 R1 Review中 |
 
 ## 当前 Change Notes
 

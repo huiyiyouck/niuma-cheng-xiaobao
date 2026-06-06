@@ -1,5 +1,19 @@
 # 全栈开发工作日志
 
+## 2026-06-06 — v0.5 实现阶段 R1
+
+- 本次角色：全栈开发（Developer）
+- 动作：产出（全栈代码实现）
+- base_commit：c70a5c8
+- head_commit：9b83263
+- 涉及范围：
+  - **后端**：schema.ts 重写（11表+3新表）、6组API路由重写、Worker per-source 调度重构、X Stream Manager 新建、数据清理脚本、drizzle 迁移、46/46 测试通过
+  - **前端**：17 新组件、2 新建页面（AlertsPage/SourceDetailPage）、管理页重写、App.vue TopNav 改造、NewsPage 微调、废弃 5 旧组件、TypeScript 零错误 + Vite 构建成功
+  - **调试修复**：source-detector.ts enum→const 对象、news.ts DISTINCT ON 排序修复、sources.ts CTE 重写为简单子查询、channel-spaces.ts 重名 409 处理、sources 创建不自动验证、vitest 文件并行改顺序执行
+  - **数据库**：SSH 隧道连接副数据库、v0.5 迁移已执行
+- 关联迭代：v0.5
+- 遗留：等待 PM、Architect、Tester Review
+
 ## 2026-06-06 — v0.5 设计文档 R2 Review
 
 - 本次角色：全栈开发（Developer）
