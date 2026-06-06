@@ -1,5 +1,25 @@
 # 架构师工作日志
 
+## 2026-06-06 — v0.5 实现 R2 复审 通过
+
+**本次角色**：架构师
+- 动作：Review（审 Developer 的 v0.5 实现 R2）
+- 涉及文档：`server/src/api/routes/sources.ts`、`server/src/__tests__/`
+- 结论：通过。R1 全部 2 条意见核验通过：#I1 lifecycleStatus bug 已修复、#I2 路径 B 测试已补充（alert 流转 5 条 + channel migrate 2 条 + identity 修改 2 条）
+- 53/53 测试通过。实现与设计文档一致，架构边界保持良好。
+- 关联迭代：v0.5
+
+## 2026-06-06 — v0.5 实现 R1 Review
+
+**本次角色**：架构师
+- 动作：Review（审 v0.5 全栈实现 R1，base=c70a5c8 head=9b83263）
+- 涉及文档：`server/src/db/schema.ts`、`server/src/api/routes/`、`server/src/worker/`、`server/src/__tests__/`
+- 结论：需修改。共 2 条意见（1 中 + 1 低）。
+  - #I1：sources.ts:152 `lifecycleStatus` 未定义，路径 B auto-add 阻塞
+  - #I2：路径 B auto-add 无测试覆盖
+- 设计符合度：Schema/API/Worker 与设计文档完全一致。X Stream Manager 完整、channel 迁移事务正确、processor fan-out 到位。
+- 关联迭代：v0.5
+
 ## 2026-06-06 — v0.5 设计文档 已定稿
 
 **本次角色**：架构师
