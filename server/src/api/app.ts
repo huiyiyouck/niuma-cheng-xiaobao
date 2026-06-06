@@ -6,9 +6,8 @@ import { apiLogger } from "../shared/logger.ts";
 import { adminGuard } from "./middleware/admin-guard.ts";
 import { httpLogger } from "./middleware/http-logger.ts";
 import { channelSpacesRoutes } from "./routes/channel-spaces.ts";
+import { positionsRoutes } from "./routes/positions.ts";
 import { sourcesRoutes } from "./routes/sources.ts";
-import { bindingsRoutes } from "./routes/bindings.ts";
-import { subChannelsRoutes } from "./routes/sub-channels.ts";
 import { newsRoutes } from "./routes/news.ts";
 import { statsRoutes } from "./routes/stats.ts";
 import { adminLogsRoutes } from "./routes/admin-logs.ts";
@@ -24,7 +23,7 @@ export async function buildApp() {
   await app.register(cors, {
     origin: origins,
     credentials: false,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"],
     allowedHeaders: ["Content-Type", "Authorization", "x-admin-token"],
   });
 
@@ -58,9 +57,8 @@ export async function buildApp() {
   // 注册路由（前缀 /v1）
   await app.register(async (scope) => {
     await channelSpacesRoutes(scope);
+    await positionsRoutes(scope);
     await sourcesRoutes(scope);
-    await bindingsRoutes(scope);
-    await subChannelsRoutes(scope);
     await newsRoutes(scope);
     await statsRoutes(scope);
     await adminLogsRoutes(scope);
@@ -105,7 +103,7 @@ const INDEX_HTML = `<!doctype html>
         <div style="font-weight:900; font-size:18px;">News Aggregator Backend (Node.js)</div>
         <div class="muted">REST API (/v1) — 前端独立部署，通过反向代理或 CORS 对接。</div>
         <div class="row">
-          <span class="pill"><a href="/v1/channel-spaces" target="_blank">API /v1/channel-spaces</a></span>
+          <span class="pill"><a href="/v1/spaces" target="_blank">API /v1/spaces</a></span>
           <span class="pill"><span class="muted">Health:</span> <a href="/health">/health</a></span>
         </div>
       </div>

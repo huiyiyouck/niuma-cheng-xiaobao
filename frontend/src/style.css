@@ -55,9 +55,9 @@ a:hover {
 }
 
 .container {
-  max-width: 1180px;
+  max-width: 1120px;
   margin: 0 auto;
-  padding: 20px 16px 80px;
+  padding: 20px 24px 80px;
 }
 
 .card {
@@ -163,3 +163,32 @@ a:hover {
 .status-dot--ok { background: var(--success); }
 .status-dot--warn { background: var(--warning); }
 .status-dot--err { background: var(--danger); }
+
+/* ── v0.5: Pill 行横向滚动（响应式） ────────────────────── */
+.pill-scroll {
+  display: flex; gap: 6px; overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+.pill-scroll::-webkit-scrollbar { display: none; }
+
+/* ── v0.5: 表格横向滚动 ─────────────────────────────────── */
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── v0.5: 响应式断点 ───────────────────────────────────── */
+@media (max-width: 1120px) {
+  .main-content { padding: 16px 16px 80px; }
+}
+@media (max-width: 768px) {
+  .stat-card { padding: 12px; }
+  .stat-value { font-size: 22px; }
+}
+@media (max-width: 480px) {
+  .topbar-inner { padding: 0 12px; }
+  .main-content { padding: 12px 12px 80px; }
+  .nav-link { padding: 5px 8px; font-size: 11px; }
+}

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { ChannelStats } from "@/lib/types";
+import type { SpaceStats } from "@/lib/types";
 
-defineProps<{ stats: ChannelStats }>();
+defineProps<{ stats: SpaceStats }>();
 
 const cards = [
   { key: "total_news" as const, label: "总新闻数", color: "#1a1a2e" },
   { key: "today_new" as const, label: "今日新增", color: "#2ecc71" },
   { key: "active_sources" as const, label: "活跃 Source", color: "#3498db" },
-  { key: "sub_channel_count" as const, label: "子频道数", color: "#9b59b6" },
+  { key: "channel_count" as const, label: "频道数", color: "#9b59b6" },
 ];
 </script>
 
@@ -15,7 +15,7 @@ const cards = [
   <div class="stats-grid">
     <div v-for="c in cards" :key="c.key" class="stat-card">
       <div class="stat-label">{{ c.label }}</div>
-      <div class="stat-value" v-if="stats[c.key] >= 0" :style="{ color: c.color }">{{ stats[c.key] }}</div>
+      <div class="stat-value" v-if="(stats as any)[c.key] >= 0" :style="{ color: c.color }">{{ (stats as any)[c.key] }}</div>
       <div class="stat-value muted" v-else>--</div>
     </div>
   </div>

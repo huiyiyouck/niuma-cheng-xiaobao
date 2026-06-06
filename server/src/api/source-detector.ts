@@ -1,14 +1,15 @@
 // Source 类型识别（等价 Python source_detector.py）
 
-export enum SourceType {
-  x_twitter = "x_twitter",
-  rss = "rss",
-  github_trending = "github_trending",
-  hf_daily_papers = "hf_daily_papers",
-  hacker_news = "hacker_news",
-  semantic_scholar = "semantic_scholar",
-  unknown = "unknown",
-}
+export const SourceType = {
+  x_twitter: "x_twitter",
+  rss: "rss",
+  github_trending: "github_trending",
+  hf_daily_papers: "hf_daily_papers",
+  hacker_news: "hacker_news",
+  semantic_scholar: "semantic_scholar",
+  unknown: "unknown",
+} as const;
+export type SourceType = (typeof SourceType)[keyof typeof SourceType];
 
 // 域名/路径匹配表：(hostSuffix, pathPrefix, type)
 const DOMAIN_RULES: Array<[string, string, SourceType]> = [

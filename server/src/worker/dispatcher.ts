@@ -9,6 +9,27 @@ import { createAlert, onFetchFailed } from "./monitor.ts";
 
 const log = workerLogger;
 
+/** 构建 fetcher 需要的配置：根据 Source 类型适配 */
+function buildFetchConfig(
+  sourceType: string,
+  identity: string,
+  config: Record<string, unknown>,
+): Record<string, unknown> {
+  if (sourceType === "x_twitter") {
+    return {
+      ...config,
+      mode: "user_timeline",
+      usernames: [identity],
+      max_results_per_user: 20,
+      source_url: identity,
+    };
+  }
+  return {
+    ...config,
+    source_url: identity,
+  };
+}
+
 // ── Task 操作 ──────────────────────────────────────────────
 
 async function claimTask(conn: PoolClient, workerId: string, taskType: string): Promise<any | null> {
@@ -55,24 +76,25 @@ async function requeueTask(conn: PoolClient, task: any, lastError: string): Prom
   );
 }
 
-// ── 抓取+入库 ──────────────────────────────────────────────
+// ── 抓取+入库（v0.5: per-source 调度）────────────────────
 
 async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
-  const channelSourceId = task.channel_source_id;
-  if (!channelSourceId) throw new Error("missing channel_source_id");
+  const sourceId = task.source_id;
+  if (!sourceId) throw new Error("missing source_id");
 
   const { rows: [row] } = await conn.query(
-    `SELECT cs.channel_space_id, cs.fetch_policy, s.id as source_id, s.type as source_type,
-            s.display_name as source_name, s.source_url, s.config as source_config, ss.cursor, ss.consecutive_failures
-     FROM channel_sources cs
-     JOIN sources s ON s.id = cs.source_id
-     LEFT JOIN source_states ss ON ss.channel_source_id = cs.id
-     WHERE cs.id = $1`,
-    [channelSourceId],
+    `SELECT s.id AS source_id, s.type AS source_type, s.display_name AS source_name,
+            s.identity AS source_identity, s.fetch_interval_sec, s.max_items_per_fetch,
+            s.compensation_interval_sec, s.config AS source_config,
+            ss.cursor, ss.consecutive_failures
+     FROM sources s
+     LEFT JOIN source_states ss ON ss.source_id = s.id
+     WHERE s.id = $1`,
+    [sourceId],
   );
-  if (!row) throw new Error("channel_source not found");
+  if (!row) throw new Error("source not found");
 
-  const maxItems = policyMaxItems(row.fetch_policy);
+  const maxItems = policyMaxItems(row);
   log.info("FETCH START source=%s type=%s max_items=%d", row.source_name, row.source_type, maxItems);
 
   let items: any[] = [];
@@ -80,11 +102,9 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
 
   const fetcher = find(row.source_type);
   if (!fetcher) throw new NonRetryableError(`未注册的 Source 类型：${row.source_type}`);
-  // v0.4: 将 source_url 合并进 config，Fetcher（如 RSS）依赖此字段
-  const mergedConfig: Record<string, unknown> = {
-    ...(row.source_config as Record<string, unknown> || {}),
-    source_url: row.source_url,
-  };
+
+  // 构建抓取配置：根据 Source 类型适配 fetcher 需要的 config 格式
+  const mergedConfig = buildFetchConfig(row.source_type, row.source_identity, row.source_config as Record<string, unknown> || {});
   const fetchResult = await fetcher.fetch(mergedConfig, row.cursor || {}, maxItems);
   items = fetchResult.items;
   cursorUpdates = fetchResult.cursorUpdates;
@@ -92,12 +112,11 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
   let newRawIds: string[] = [];
   for (const item of items) {
     const { rows: [inserted] } = await conn.query(
-      `INSERT INTO raw_items(channel_space_id, source_id, source_item_id, source_item_url, published_at, content, created_at)
-       VALUES($1, $2, $3, $4, $5, $6::jsonb, now())
+      `INSERT INTO raw_items(source_id, source_item_id, source_item_url, published_at, content, fetched_at)
+       VALUES($1, $2, $3, $4, $5::jsonb, now())
        ON CONFLICT (source_id, source_item_id) DO NOTHING
        RETURNING id`,
       [
-        row.channel_space_id,
         row.source_id,
         item.source_item_id,
         item.url || null,
@@ -107,22 +126,31 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
     );
     if (inserted) {
       newRawIds.push(inserted.id);
+      // 创建 process task
       await conn.query(
-        `INSERT INTO tasks(type, channel_space_id, raw_item_id, status, priority, run_after, created_at, updated_at)
+        `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, created_at, updated_at)
          VALUES('process', $1, $2, 'queued', 0, now(), now(), now())`,
-        [row.channel_space_id, inserted.id],
+        [row.source_id, inserted.id],
       );
     }
   }
 
+  // 更新 source_states（成功）
   const cursor = { ...(row.cursor || {}), ...(cursorUpdates || {}) };
   await conn.query(
-    `INSERT INTO source_states(channel_source_id, cursor, consecutive_failures, last_success_at, last_error, updated_at)
-     VALUES($1, $2::jsonb, 0, now(), NULL, now())
-     ON CONFLICT (channel_source_id)
+    `INSERT INTO source_states(source_id, cursor, consecutive_failures, last_success_at, last_error, last_fetch_count, updated_at)
+     VALUES($1, $2::jsonb, 0, now(), NULL, $3, now())
+     ON CONFLICT (source_id)
      DO UPDATE SET cursor = EXCLUDED.cursor, consecutive_failures = 0, last_success_at = now(),
-         last_error = NULL, updated_at = now()`,
-    [channelSourceId, JSON.stringify(cursor)],
+         last_error = NULL, last_fetch_count = $3, updated_at = now()`,
+    [sourceId, JSON.stringify(cursor), items.length],
+  );
+
+  // 抓取成功后恢复 lifecycle_status（如果之前是 source_error）
+  await conn.query(
+    `UPDATE sources SET lifecycle_status = 'normal'
+     WHERE id = $1 AND lifecycle_status = 'source_error'`,
+    [sourceId],
   );
 
   log.info("FETCH DONE  source=%s fetched=%d new=%d deduped=%d",
@@ -180,12 +208,12 @@ export async function workerLoop(
       if (err instanceof NonRetryableError || err.name === "NonRetryableError") {
         log.error("TASK FAIL   id=%s type=%s reason=NonRetryableError\n%s", task.id, taskType, err.stack || err.message);
         if (taskType === "fetch") {
-          await createAlert(client, task.channel_space_id, "fetch_auth_failed", err.message, { task_id: task.id });
+          await createAlert(client, task.source_id, null, "fetch_auth_failed", err.message, { task_id: task.id });
         }
         await finishTask(client, task.id, "failed", err.message);
       } else {
         log.error("TASK FAIL   id=%s type=%s reason=retryable\n%s", task.id, taskType, err.stack || err.message);
-        if (taskType === "fetch" && task.channel_source_id) {
+        if (taskType === "fetch" && task.source_id) {
           await onFetchFailed(client, task, err.message);
         }
         await requeueTask(client, task, err.message);

@@ -6,6 +6,7 @@ import { schedulerTick } from "./scheduler.ts";
 import { workerLoop } from "./dispatcher.ts";
 import { zeroNewMonitorTick } from "./monitor.ts";
 import { reclaimStaleTick } from "./reclaim.ts";
+import { xStreamManager } from "./x-stream-manager.ts";
 import "./fetchers/index.ts";
 
 const log = workerLogger;
@@ -105,6 +106,17 @@ export function startWorker(stopSignal: AbortSignal): void {
   const workerId = `${hostname}-${process.pid}`;
   log.info("WORKER START worker_id=%s pid=%d", workerId, process.pid);
 
+  // 启动 X Stream Manager（X_BEARER_TOKEN 缺失时自动跳过）
+  xStreamManager.start().catch((err) => {
+    log.error("X Stream Manager failed to start: %s", err.stack || err.message);
+  });
+
+  // 注册关闭回调
+  stopSignal.addEventListener("abort", () => {
+    xStreamManager.stop();
+  }, { once: true });
+
+  // 启动各循环
   Promise.all([
     schedulerLoop(stopSignal),
     workerLoopRunner(stopSignal),

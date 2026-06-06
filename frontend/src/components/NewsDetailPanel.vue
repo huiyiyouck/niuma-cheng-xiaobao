@@ -11,18 +11,13 @@ function fmtTime(iso: string | null): string {
   if (!iso) return "";
   return new Date(iso).toLocaleString();
 }
-
-function sourceUrl(item: ProcessedNews): string | null {
-  const v = item.source_refs?.url;
-  return typeof v === "string" && v.length > 0 ? v : null;
-}
 </script>
 
 <template>
   <Transition name="panel">
     <div v-if="item" class="panel-backdrop" @click.self="emit('close')">
       <div class="panel">
-        <button class="panel-close" @click="emit('close')">✕</button>
+        <button class="panel-close" @click="emit('close')">&#10005;</button>
         <div class="panel-body">
           <div class="panel-score">
             <ScoreBadge :score="item.importance_score ?? null" />
@@ -31,6 +26,10 @@ function sourceUrl(item: ProcessedNews): string | null {
           <div class="panel-meta">
             <span v-if="item.published_at">{{ fmtTime(item.published_at) }}</span>
             <span>语言: {{ item.language }}</span>
+            <!-- v0.5: 来源信息 -->
+            <span v-if="item.source_availability_status === 'source_removed'" class="source-removed">来源已移除</span>
+            <span v-else class="source-name">{{ item.source_display_name }}</span>
+            <span v-if="item.channel_name" class="channel-info"># {{ item.channel_name }}</span>
           </div>
           <p class="panel-summary" v-if="item.summary">{{ item.summary }}</p>
           <p class="panel-summary muted" v-else>暂无摘要</p>
@@ -52,10 +51,6 @@ function sourceUrl(item: ProcessedNews): string | null {
           <div class="panel-section" v-if="item.entities && item.entities.length">
             <div class="panel-section-title">实体</div>
             <EntityBadge :entities="item.entities" />
-          </div>
-
-          <div class="panel-links" v-if="sourceUrl(item)">
-            <a :href="sourceUrl(item)!" target="_blank" rel="noreferrer">📎 查看原文</a>
           </div>
         </div>
       </div>
@@ -84,14 +79,25 @@ function sourceUrl(item: ProcessedNews): string | null {
 .panel-body { display: flex; flex-direction: column; gap: 14px; }
 .panel-score { margin-bottom: 4px; }
 .panel-title { font-size: 18px; font-weight: 900; line-height: 1.4; margin: 0; }
-.panel-meta { display: flex; gap: 12px; font-size: 11px; color: var(--muted); }
+.panel-meta { display: flex; gap: 12px; font-size: 11px; color: var(--muted); flex-wrap: wrap; align-items: center; }
 .panel-summary { font-size: 14px; color: #334155; line-height: 1.8; margin: 0; }
 .panel-section { margin-top: 4px; }
 .panel-section-title { font-size: 11px; font-weight: 700; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
 .panel-bullets { margin: 0; padding-left: 18px; font-size: 13px; color: #475569; display: flex; flex-direction: column; gap: 6px; }
 .panel-tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.panel-links { margin-top: 8px; }
-.panel-links a { font-size: 13px; font-weight: 600; }
+
+/* v0.5: 来源信息 */
+.source-removed {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.source-name {
+  color: var(--accent);
+  font-weight: 600;
+}
+.channel-info {
+  color: var(--text-secondary);
+}
 
 .panel-enter-active, .panel-leave-active {
   transition: transform 0.25s ease, opacity 0.25s ease;

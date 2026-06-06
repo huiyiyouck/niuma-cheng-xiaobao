@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理页 — 牛马程小报 v0.5</title>
+<style>
+  :root {
+    --bg: #FAFAFA; --card: #FFF; --accent: #3498db; --accent-light: #EBF5FB;
+    --text: #1a1a2e; --text-secondary: #5F6B7A; --text-muted: #94A3B8;
+    --border: #E6E7EB; --border-light: #F0F1F3;
+    --success: #27ae60; --success-light: #E8F8F0;
+    --warning: #f39c12; --warning-light: #FEF9E7;
+    --danger: #e74c3c; --danger-light: #FDEDEC;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); }
+  /* TopNav */
+  .topnav { position: sticky; top: 0; z-index: 50; height: 52px; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; }
+  .topnav-brand { font-weight: 800; font-size: 16px; margin-right: 32px; }
+  .topnav-links { display: flex; gap: 4px; }
+  .topnav-link { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); text-decoration: none; transition: .15s; }
+  .topnav-link:hover { color: var(--accent); background: var(--accent-light); }
+  .topnav-link.active { color: var(--accent); background: var(--accent-light); }
+  .topnav-alert { position: relative; }
+  .topnav-badge { position: absolute; top: 2px; right: 2px; background: var(--danger); color: #FFF; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; min-width: 18px; text-align: center; }
+  /* Content */
+  .content { max-width: 1120px; margin: 0 auto; padding: 20px 24px 80px; }
+  /* Admin Tabs */
+  .admin-tabs { display: inline-flex; background: #F1F5F9; border-radius: 8px; padding: 3px; margin-bottom: 20px; }
+  .admin-tab { padding: 8px 20px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--text-secondary); cursor: pointer; transition: .15s; border: none; background: transparent; }
+  .admin-tab.active { background: var(--card); color: var(--accent); box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+  /* Tab content */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  /* Pills */
+  .pill-section { margin-bottom: 16px; }
+  .pill-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; }
+  .pill-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .pill { padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; transition: .15s; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); white-space: nowrap; position: relative; }
+  .pill:hover { border-color: var(--accent); color: var(--accent); }
+  .pill.selected { background: var(--accent); color: #FFF; border-color: var(--accent); }
+  .pill.all { border-style: dashed; }
+  .pill .arrow { display: none; position: absolute; left: -20px; top: 50%; transform: translateY(-50%); font-size: 10px; color: var(--text-muted); cursor: pointer; }
+  .pill:hover .arrow { display: inline; }
+  .pill .pill-del { margin-left: 6px; font-size: 14px; color: var(--text-muted); cursor: pointer; font-weight: 400; }
+  .pill .pill-del:hover { color: var(--danger); }
+  .pill-add { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px dashed var(--border); background: transparent; color: var(--text-muted); transition: .15s; }
+  .pill-add:hover { border-color: var(--accent); color: var(--accent); }
+  /* Edit state */
+  .pill-edit { padding: 6px 12px; border-radius: 20px; font-size: 12px; border: 2px solid var(--accent); background: var(--card); outline: none; font-family: inherit; width: 100px; }
+  /* Source cards */
+  .source-list { display: flex; flex-direction: column; gap: 10px; }
+  .source-card { background: var(--card); border: 1px solid var(--border-light); border-radius: 12px; padding: 16px 20px; transition: .15s; }
+  .source-card:hover { border-color: #CBD5E1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .source-card.has-alert { border-left: 3px solid var(--warning); }
+  .sc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .sc-name { font-size: 14px; font-weight: 700; }
+  .badge { padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px; }
+  .badge-type-x { background: var(--accent-light); color: var(--accent); }
+  .badge-type-rss { background: var(--warning-light); color: var(--warning); }
+  .badge-avail-normal { background: var(--success-light); color: var(--success); }
+  .badge-avail-fix { background: var(--warning-light); color: var(--warning); }
+  .badge-avail-error { background: var(--danger-light); color: var(--danger); }
+  .badge-avail-removed { background: #F1F5F9; color: var(--text-muted); }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .dot-active { background: var(--success); }
+  .dot-stopped { background: var(--text-muted); }
+  .sc-meta { font-size: 11px; color: var(--text-muted); }
+  .sc-meta span { margin-right: 12px; }
+  .sc-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .tag-chip { padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 600; background: var(--accent-light); color: var(--accent); }
+  .sc-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .btn-xs { padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); transition: .15s; }
+  .btn-xs:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-xs.danger { color: var(--danger); }
+  .btn-xs.danger:hover { border-color: var(--danger); background: var(--danger-light); }
+  .btn-xs.success { color: var(--success); }
+  /* Alert inline */
+  .alert-inline { margin-top: 10px; padding: 8px 12px; background: var(--warning-light); border-radius: 8px; font-size: 11px; color: #92400e; display: flex; align-items: center; gap: 8px; }
+  .alert-inline-actions { margin-left: auto; display: flex; gap: 4px; }
+  /* Add source button */
+  .btn-add { padding: 10px 20px; border-radius: 12px; border: 2px dashed var(--accent); background: var(--card); color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; margin-top: 10px; width: 100%; transition: .15s; }
+  .btn-add:hover { background: var(--accent-light); }
+  /* Source Library - Search Row */
+  .lib-search-row { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+  .lib-search-box { flex: 1; display: flex; align-items: center; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 0 14px; transition: .15s; }
+  .lib-search-box:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(52,152,219,0.08); }
+  .lib-search-icon { font-size: 14px; opacity: 0.4; margin-right: 8px; }
+  .lib-search-input { flex: 1; border: none; padding: 9px 0; font-size: 13px; outline: none; background: transparent; }
+  .btn-primary { padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: var(--accent); color: #FFF; transition: .15s; }
+  .btn-primary:hover { opacity: 0.9; }
+  .filter-hint { font-size: 10px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+  .filter-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .filter-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: var(--card); color: var(--text-secondary); cursor: pointer; }
+  .filter-clear { font-size: 11px; color: var(--accent); cursor: pointer; margin-left: auto; }
+  /* Source Table */
+  .src-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border-light); border-radius: 12px; overflow: hidden; }
+  .src-table th { background: #F8FAFB; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+  .src-table td { padding: 10px 14px; font-size: 12px; border-bottom: 1px solid var(--border-light); }
+  .src-table tr:hover td { background: #F8FAFB; }
+  .src-table tr { cursor: pointer; }
+  .src-table .src-name { font-size: 13px; font-weight: 700; }
+  .src-table .src-identity { font-size: 10px; color: var(--text-muted); }
+  .src-table .pos-hover { cursor: pointer; text-decoration: underline dotted var(--accent); }
+  /* Tooltip for status badges */
+  .has-tip { position: relative; cursor: help; }
+  .has-tip .tip-pop { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #FFF; padding: 6px 10px; border-radius: 6px; font-size: 11px; white-space: nowrap; z-index: 20; pointer-events: none; font-weight: 400; }
+  .has-tip .tip-pop::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: #1a1a2e; }
+  .has-tip:hover .tip-pop { display: block; }
+  /* Position popover */
+  .pos-cell { position: relative; }
+  .pos-cell .pos-pop { display: none; position: absolute; bottom: calc(100% + 4px); left: 0; background: var(--card); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); padding: 10px 14px; z-index: 20; min-width: 210px; pointer-events: none; }
+  .pos-cell:hover .pos-pop { display: block; }
+  .pos-pop-r { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 12px; gap: 12px; }
+  .pos-pop-r + .pos-pop-r { border-top: 1px solid var(--border-light); }
+  .pos-pop-loc { font-weight: 600; }
+  .pos-pop-on { color: var(--success); font-size: 11px; }
+  .pos-pop-off { color: var(--text-muted); font-size: 11px; }
+  /* Pagination */
+  .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; padding: 20px 0; }
+  .page-btn { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); transition: .15s; }
+  .page-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .page-btn.active { background: var(--accent); color: #FFF; border-color: var(--accent); }
+  .page-btn.disabled { opacity: 0.4; cursor: default; }
+  .page-size { font-size: 12px; color: var(--text-muted); margin-left: 12px; }
+  .page-size select { border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px; font-size: 12px; }
+  .page-total { font-size: 11px; color: var(--text-muted); }
+  /* Modal overlay */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: var(--card); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.12); padding: 24px; min-width: 380px; max-width: 440px; }
+  .modal h3 { font-size: 15px; font-weight: 800; margin-bottom: 8px; }
+  .modal p { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+  .modal .impact { background: #F4F5F7; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px; font-size: 12px; color: var(--text-secondary); }
+  .modal .confirm-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; margin-bottom: 16px; }
+  .modal .confirm-input:focus { border-color: var(--accent); outline: none; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  .btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s; }
+  .btn-cancel { border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); }
+  .btn-cancel:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { border: 1px solid var(--danger); background: var(--danger); color: #FFF; }
+  .btn-danger:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn-link { border: none; background: none; color: var(--accent); cursor: pointer; font-size: 13px; }
+  /* Empty state */
+  .empty-state { text-align: center; padding: 48px 24px; }
+  .empty-icon { font-size: 40px; opacity: 0.4; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px; }
+  .empty-desc { font-size: 12px; color: var(--text-muted); }
+  /* Inline edit */
+  .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+  .edit-field { display: flex; flex-direction: column; gap: 4px; }
+  .edit-field label { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
+  .edit-field input, .edit-field select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
+  /* Space Cards */
+  .space-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .space-card { background: var(--card); border: 2px solid var(--border-light); border-radius: 14px; padding: 18px 20px; cursor: pointer; transition: .15s; display: flex; align-items: center; gap: 14px; position: relative; }
+  .space-card:hover { border-color: #CBD5E1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .space-card.selected { border-color: var(--accent); background: var(--accent-light); }
+  .space-card .space-icon { width: 44px; height: 44px; border-radius: 12px; background: #F4F5F7; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .space-card.selected .space-icon { background: var(--accent-light); }
+  .space-card .space-body { flex: 1; min-width: 0; }
+  .space-card .space-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
+  .space-card .space-meta { font-size: 11px; color: var(--text-muted); }
+  .space-card .space-actions { display: flex; gap: 4px; opacity: 0; transition: .15s; }
+  .space-card:hover .space-actions { opacity: 1; }
+  .space-card.add { border-style: dashed; color: var(--accent); justify-content: center; }
+  .space-card.add:hover { border-color: var(--accent); background: var(--accent-light); }
+  .space-card.add .space-icon { background: var(--accent-light); color: var(--accent); font-size: 20px; }
+  /* Action icon */
+  .act-icon { width: 28px; height: 28px; border-radius: 8px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: .15s; }
+  .act-icon:hover { background: #F4F5F7; border-color: var(--border); color: var(--text); }
+  .act-icon.danger:hover { background: var(--danger-light); border-color: var(--danger); color: var(--danger); }
+  /* Split layout */
+  .split-layout { display: grid; grid-template-columns: 260px 1fr; gap: 20px; }
+  @media (max-width: 768px) { .split-layout { grid-template-columns: 1fr; } }
+  /* Left panel */
+  .split-left { background: var(--card); border: 1px solid var(--border-light); border-radius: 14px; overflow: hidden; align-self: start; }
+  .split-left-header { display: flex; align-items: center; padding: 14px 18px 10px; }
+  /* Right panel */
+  .split-right { min-width: 0; }
+  .split-right-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+  .ctx-label { font-size: 12px; color: var(--text-muted); }
+  #ctx-space, #ctx-channel { font-size: 14px; font-weight: 700; color: var(--accent); }
+  .ctx-sep { color: var(--border); margin: 0 6px; }
+  .ctx-count { font-size: 11px; color: var(--text-muted); margin-left: 10px; }
+  /* Channel List (compact left panel) */
+  .channel-list { }
+  .channel-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; cursor: pointer; transition: .12s; border-bottom: 1px solid var(--border-light); }
+  .channel-item:last-child { border-bottom: none; }
+  .channel-item:hover { background: #F8FAFB; }
+  .channel-item.selected { background: var(--accent-light); border-left: 3px solid var(--accent); padding-left: 15px; }
+  .channel-item.all { font-weight: 600; }
+  .channel-item.all .ch-badge { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: #F1F5F9; color: var(--text-muted); font-weight: 400; }
+  .channel-item .ch-name { font-size: 13px; font-weight: 600; flex: 1; }
+  .channel-item .ch-count { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+  .channel-item .ch-actions { display: flex; gap: 2px; opacity: 0; transition: .15s; }
+  .channel-item:hover .ch-actions { opacity: 1; }
+  .channel-add-btn { width: 100%; padding: 10px; border: none; border-top: 1px dashed var(--border); background: transparent; color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; transition: .15s; }
+  .channel-add-btn:hover { background: var(--accent-light); }
+  /* Create modal form */
+  .form-group { margin-bottom: 12px; }
+  .form-label { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
+  .form-input { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+  .form-input:focus { border-color: var(--accent); outline: none; }
+  .form-select { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: var(--card); }
+  .radio-group { display: flex; flex-direction: column; gap: 8px; padding: 8px 0; }
+  .radio-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+  .radio-item input[type=radio] { accent-color: var(--accent); }
+  .conflict-warn { background: var(--warning-light); border: 1px solid var(--warning); border-radius: 6px; padding: 8px 12px; font-size: 11px; color: #92400e; }
+  /* Tag pills (multi-select) */
+  .tag-pills { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag-pill { padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); transition: .15s; user-select: none; }
+  .tag-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .tag-pill.on { background: var(--accent); color: #FFF; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- TopNav -->
+<nav class="topnav">
+  <div class="topnav-brand">🐂 牛马程小报</div>
+  <div class="topnav-links">
+    <a href="browse.html" class="topnav-link">浏览</a>
+    <a href="admin.html" class="topnav-link active">管理</a>
+    <a href="logs.html" class="topnav-link">系统日志</a>
+    <a href="alerts.html" class="topnav-link topnav-alert">告警<span class="topnav-badge">3</span></a>
+  </div>
+</nav>
+
+<div class="content">
+
+  <!-- Admin Tabs -->
+  <div class="admin-tabs">
+    <button class="admin-tab active" onclick="switchTab('space')">空间管理</button>
+    <button class="admin-tab" onclick="switchTab('library')">信息源库</button>
+  </div>
+
+  <!-- Tab: 空间管理 -->
+  <div id="tab-space" class="tab-content active">
+
+    <!-- Space Cards (selection + management combined) -->
+    <div class="pill-section">
+      <div class="pill-label" style="display:flex;align-items:center;gap:8px">空间 <button class="act-icon" title="排序" style="font-size:11px">☰</button></div>
+      <div class="space-cards">
+        <div class="space-card selected" onclick="selectSpaceCard(this)">
+          <div class="space-icon">🤖</div>
+          <div class="space-body">
+            <div class="space-name">AI</div>
+            <div class="space-meta">5 个频道 · 8 个信息源</div>
+          </div>
+          <div class="space-actions">
+            <button class="act-icon" title="编辑" onclick="event.stopPropagation();openModal('edit-space-modal')">✎</button>
+            <button class="act-icon danger" title="删除" onclick="event.stopPropagation();openModal('space-modal')">✕</button>
+          </div>
+        </div>
+        <div class="space-card" onclick="selectSpaceCard(this)">
+          <div class="space-icon">📈</div>
+          <div class="space-body">
+            <div class="space-name">财经</div>
+            <div class="space-meta">3 个频道 · 4 个信息源</div>
+          </div>
+          <div class="space-actions">
+            <button class="act-icon" title="编辑" onclick="event.stopPropagation();openModal('edit-space-modal')">✎</button>
+            <button class="act-icon danger" title="删除" onclick="event.stopPropagation();openModal('space-modal')">✕</button>
+          </div>
+        </div>
+        <div class="space-card" onclick="selectSpaceCard(this)">
+          <div class="space-icon">💻</div>
+          <div class="space-body">
+            <div class="space-name">开源</div>
+            <div class="space-meta">2 个频道 · 3 个信息源</div>
+          </div>
+          <div class="space-actions">
+            <button class="act-icon" title="编辑">✎</button>
+            <button class="act-icon danger" title="删除" onclick="event.stopPropagation();openModal('space-modal')">✕</button>
+          </div>
+        </div>
+        <div class="space-card add" onclick="openModal('create-space-modal')">
+          <div class="space-icon">＋</div>
+          <div class="space-body">
+            <div class="space-name">新建空间</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Left-Right Split -->
+    <div class="split-layout">
+
+      <!-- Left: Channel List -->
+      <div class="split-left">
+        <div class="split-left-header">
+          <span class="pill-label" style="margin-bottom:0">频道</span>
+          <button class="act-icon" title="管理频道排序" style="margin-left:auto">☰</button>
+        </div>
+        <div class="channel-list">
+          <div class="channel-item all selected" onclick="selectChannelItem(this)">
+            <span class="ch-name">全部</span>
+            <span class="ch-badge">聚合</span>
+          </div>
+          <div class="channel-item" data-space="AI" onclick="selectChannelItem(this)">
+            <span class="ch-name">模型动态</span>
+            <span class="ch-count">3</span>
+            <div class="ch-actions">
+              <button class="act-icon" title="编辑" onclick="event.stopPropagation();openModal('edit-channel-modal')">✎</button>
+              <button class="act-icon danger" title="删除" onclick="event.stopPropagation();openModal('channel-modal')">✕</button>
+            </div>
+          </div>
+          <div class="channel-item" data-space="AI" onclick="selectChannelItem(this)">
+            <span class="ch-name">行业资讯</span>
+            <span class="ch-count">2</span>
+            <div class="ch-actions">
+              <button class="act-icon" title="编辑" onclick="event.stopPropagation();openModal('edit-channel-modal')">✎</button>
+              <button class="act-icon danger" title="删除" onclick="event.stopPropagation();openModal('channel-modal')">✕</button>
+            </div>
+          </div>
+          <div class="channel-item" data-space="AI" onclick="selectChannelItem(this)">
+            <span class="ch-name">开源项目</span>
+            <span class="ch-count">2</span>
+            <div class="ch-actions">
+              <button class="act-icon" title="编辑" onclick="event.stopPropagation();openModal('edit-channel-modal')">✎</button>
+              <button class="act-icon danger" title="删除" onclick="event.stopPropagation();openModal('channel-modal')">✕</button>
+            </div>
+          </div>
+          <div class="channel-item" data-space="AI" onclick="selectChannelItem(this)">
+            <span class="ch-name">学术前沿</span>
+            <span class="ch-count">1</span>
+            <div class="ch-actions">
+              <button class="act-icon" title="编辑" onclick="event.stopPropagation();openModal('edit-channel-modal')">✎</button>
+              <button class="act-icon danger" title="删除" onclick="event.stopPropagation();openModal('channel-modal')">✕</button>
+            </div>
+          </div>
+        </div>
+        <button class="channel-add-btn" onclick="openModal('create-channel-modal')">＋ 新建频道</button>
+      </div>
+
+      <!-- Right: Source Cards -->
+      <div class="split-right">
+        <div class="split-right-header">
+          <div>
+            <span class="ctx-label">当前：</span>
+            <span id="ctx-space">AI</span>
+            <span class="ctx-sep">·</span>
+            <span id="ctx-channel">全部</span>
+            <span class="ctx-count">4 个信息源</span>
+          </div>
+          <button class="btn-xs" onclick="openModal('search-source-modal')">＋ 添加信息源</button>
+        </div>
+        <div class="source-list">
+      <!-- Source 1: normal + fetching -->
+      <div class="source-card">
+        <div class="sc-row">
+          <span class="sc-name">OpenAI 官方 X</span>
+          <span class="badge badge-type-x">X/Twitter</span>
+          <span class="badge badge-avail-normal has-tip">正常<span class="tip-pop">验证通过，可正常投放</span></span>
+          <span class="sc-meta"><span class="status-dot dot-active"></span>抓取中</span>
+        </div>
+        <div class="sc-tags">
+          <span class="tag-chip">AI</span>
+          <span class="tag-chip">科技</span>
+          <span class="tag-chip">官方</span>
+          <span class="tag-chip">核心</span>
+        </div>
+        <div class="sc-meta" style="margin-top:6px">最近抓取 3 分钟前 · 本次 8 条 · 历史 127 条</div>
+        <div class="sc-actions">
+          <button class="btn-xs">编辑</button>
+          <button class="btn-xs">暂停</button>
+          <button class="btn-xs danger">从当前位置移除</button>
+        </div>
+      </div>
+
+      <!-- Source 2: normal + stopped (= 未使用) -->
+      <div class="source-card">
+        <div class="sc-row">
+          <span class="sc-name">DeepSeek 论文 RSS</span>
+          <span class="badge badge-type-rss">RSS</span>
+          <span class="badge badge-avail-normal has-tip">正常<span class="tip-pop">验证通过，可正常投放</span></span>
+          <span class="sc-meta"><span class="status-dot dot-stopped"></span>已停止</span>
+        </div>
+        <div class="sc-tags">
+          <span class="tag-chip">AI</span>
+          <span class="tag-chip">论文机构</span>
+          <span class="tag-chip">核心</span>
+        </div>
+        <div class="sc-meta" style="margin-top:6px">最近抓取 1 天前 · 历史 89 条 · <span style="color:var(--text-muted)">未使用</span></div>
+        <div class="sc-actions">
+          <button class="btn-xs">编辑</button>
+          <button class="btn-xs">恢复</button>
+          <button class="btn-xs danger">从当前位置移除</button>
+        </div>
+      </div>
+
+      <!-- Source 3: 来源异常 + alert -->
+      <div class="source-card has-alert">
+        <div class="sc-row">
+          <span class="sc-name">已失效 RSS 源</span>
+          <span class="badge badge-type-rss">RSS</span>
+          <span class="badge badge-avail-error has-tip">来源异常<span class="tip-pop">连续抓取失败达到3次</span></span>
+          <span class="sc-meta"><span class="status-dot dot-stopped"></span>已停止</span>
+        </div>
+        <div class="sc-tags">
+          <span class="tag-chip">财经</span>
+          <span class="tag-chip">媒体</span>
+          <span class="tag-chip">常规</span>
+        </div>
+        <div class="sc-meta" style="margin-top:6px">最近抓取 2 小时前 · 连续失败 3 次 · 历史 56 条</div>
+        <div class="alert-inline">
+          <span>⚠️</span> RSS URL 返回 404，连续 3 次抓取失败
+          <span class="badge badge-avail-error" style="font-size:9px">未处理</span>
+          <div class="alert-inline-actions">
+            <button class="btn-xs">确认</button>
+            <button class="btn-xs">忽略</button>
+          </div>
+        </div>
+        <div class="sc-actions">
+          <button class="btn-xs">编辑身份</button>
+          <button class="btn-xs danger">从当前位置移除</button>
+        </div>
+      </div>
+
+      <!-- Source 4: 待修复 -->
+      <div class="source-card">
+        <div class="sc-row">
+          <span class="sc-name">未验证的 X 账号</span>
+          <span class="badge badge-type-x">X/Twitter</span>
+          <span class="badge badge-avail-fix has-tip">待修复<span class="tip-pop">创建时验证失败，需重新验证</span></span>
+          <span class="sc-meta"><span class="status-dot dot-stopped"></span>已停止</span>
+        </div>
+        <div class="sc-tags">
+          <span class="tag-chip">科技</span>
+          <span class="tag-chip">KOL</span>
+          <span class="tag-chip">观察</span>
+        </div>
+        <div class="sc-meta" style="margin-top:6px">创建时验证失败 · 待修复 · 暂未添加到任何位置</div>
+        <div class="sc-actions">
+          <button class="btn-xs">验证并修复</button>
+        </div>
+      </div>
+        </div>
+      </div><!-- /split-right -->
+    </div><!-- /split-layout -->
+
+  </div>
+
+  <!-- Tab: 信息源库 -->
+  <div id="tab-library" class="tab-content">
+
+    <!-- Search + Create -->
+    <div class="lib-search-row">
+      <div class="lib-search-box">
+        <span class="lib-search-icon">🔍</span>
+        <input class="lib-search-input" placeholder="搜索名称、身份、主题、备注…">
+      </div>
+      <button class="btn-primary" onclick="document.getElementById('create-modal').classList.add('show')">新建信息源</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-row">
+      <select class="filter-select"><option>类型：全部</option><option>X/Twitter</option><option>RSS</option></select>
+      <select class="filter-select"><option>可用性：全部</option><option>正常</option><option>待修复</option><option>来源异常</option><option>已移除</option></select>
+      <select class="filter-select"><option>运行状态：全部</option><option>抓取中</option><option>已停止</option></select>
+      <select class="filter-select"><option>领域：全部</option></select>
+      <select class="filter-select"><option>角色：全部</option></select>
+      <select class="filter-select"><option>关注：全部</option></select>
+      <select class="filter-select"><option>空间：全部</option></select>
+      <span class="filter-hint">多个筛选为「且」关系，同类多选为「或」</span>
+    </div>
+
+    <!-- Source Table -->
+    <table class="src-table">
+      <thead>
+        <tr>
+          <th>信息源</th><th>类型</th><th>标签</th><th>可用性</th><th>运行</th><th>使用位置</th><th>最近抓取</th><th>历史新闻</th><th>操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr onclick="location.href='source-detail.html'">
+          <td><span class="src-name">OpenAI 官方 X</span><br><span class="src-identity">@OpenAI</span></td>
+          <td><span class="badge badge-type-x">X</span></td>
+          <td><span class="tag-chip">AI</span> <span class="tag-chip">科技</span></td>
+          <td><span class="badge badge-avail-normal has-tip">正常<span class="tip-pop">验证通过，可正常投放</span></span></td>
+          <td><span class="status-dot dot-active"></span>抓取中</td>
+          <td class="pos-cell"><span class="pos-hover">3 个位置（2 启用）</span>
+  <div class="pos-pop">
+    <div class="pos-pop-r"><span class="pos-pop-loc">AI · 根节点</span><span class="pos-pop-on">● 启用</span></div>
+    <div class="pos-pop-r"><span class="pos-pop-loc">AI · 开源项目</span><span class="pos-pop-on">● 启用</span></div>
+    <div class="pos-pop-r"><span class="pos-pop-loc">财经 · 行业资讯</span><span class="pos-pop-off">⏸ 暂停</span></div>
+  </div>
+</td>
+<td style="font-size:11px;color:var(--text-muted)">3 分钟前</td>
+<td><a href="source-detail.html" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">127</a></td>
+<td><button class="btn-xs" onclick="location.href='source-detail.html'">详情</button> <button class="btn-xs danger" onclick="event.stopPropagation();document.getElementById('delete-modal').classList.add('show')">删除</button></td>
+        </tr>
+        <tr onclick="location.href='source-detail.html'">
+          <td><span class="src-name">DeepSeek 论文 RSS</span><br><span class="src-identity">https://arxiv.org/rss/cs.AI</span></td>
+          <td><span class="badge badge-type-rss">RSS</span></td>
+          <td><span class="tag-chip">AI</span></td>
+          <td><span class="badge badge-avail-normal has-tip">正常<span class="tip-pop">验证通过，可正常投放</span></span></td>
+          <td><span class="status-dot dot-stopped"></span>已停止</td>
+          <td class="pos-cell"><span class="pos-hover">1 个位置（0 启用）</span>
+  <div class="pos-pop"><div class="pos-pop-r"><span class="pos-pop-loc">AI · 学术前沿</span><span class="pos-pop-off">⏸ 暂停</span></div></div>
+</td>
+<td style="font-size:11px;color:var(--text-muted)">1 天前</td>
+<td><a href="source-detail.html" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">89</a></td>
+          <td><button class="btn-xs" onclick="location.href='source-detail.html'">详情</button> <button class="btn-xs danger" onclick="event.stopPropagation();document.getElementById('delete-modal').classList.add('show')">删除</button></td>
+        </tr>
+        <tr>
+          <td><span class="src-name">已失效 RSS 源</span><br><span class="src-identity">https://broken.example.com/feed</span></td>
+          <td><span class="badge badge-type-rss">RSS</span></td>
+          <td><span class="tag-chip">财经</span></td>
+          <td><span class="badge badge-avail-error has-tip">来源异常<span class="tip-pop">连续抓取失败达到3次</span></span></td>
+          <td><span class="status-dot dot-stopped"></span>已停止</td>
+          <td class="pos-cell"><span class="pos-hover">1 个位置（1 启用）</span>
+  <div class="pos-pop"><div class="pos-pop-r"><span class="pos-pop-loc">财经 · 行业资讯</span><span class="pos-pop-on">● 启用</span></div></div>
+</td>
+<td style="font-size:11px;color:var(--text-muted)">2 小时前</td>
+<td><a href="source-detail.html" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">56</a></td>
+          <td><button class="btn-xs" onclick="location.href='source-detail.html'">详情</button> <button class="btn-xs danger" onclick="event.stopPropagation();document.getElementById('delete-modal').classList.add('show')">删除</button></td>
+        </tr>
+        <tr>
+          <td><span class="src-name">未验证的 X 账号</span><br><span class="src-identity">@UnknownUser</span></td>
+          <td><span class="badge badge-type-x">X</span></td>
+          <td><span class="tag-chip">科技</span></td>
+          <td><span class="badge badge-avail-fix has-tip">待修复<span class="tip-pop">创建时验证失败，需重新验证</span></span></td>
+          <td><span class="status-dot dot-stopped"></span>已停止</td>
+          <td>0 个位置</td>
+          <td style="font-size:11px;color:var(--text-muted)">—</td>
+          <td><a href="source-detail.html" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">0</a></td>
+<td><button class="btn-xs" onclick="location.href='source-detail.html'">详情</button> <button class="btn-xs danger" onclick="event.stopPropagation();document.getElementById('delete-modal').classList.add('show')">删除</button></td>
+        </tr>
+        <tr>
+          <td><span class="src-name">已删除的旧 Source</span><br><span class="src-identity">@OldAccount</span></td>
+          <td><span class="badge badge-type-x" style="opacity:0.5">X</span></td>
+          <td>—</td>
+          <td><span class="badge badge-avail-removed has-tip">已移除<span class="tip-pop">信息源已删除，历史新闻保留</span></span></td>
+          <td>—</td>
+          <td>0 个位置</td>
+          <td style="font-size:11px;color:var(--text-muted)">7 天前</td>
+          <td><a href="source-detail.html" onclick="event.stopPropagation()" style="color:var(--accent);font-weight:600;text-decoration:none">34</a></td>
+<td><button class="btn-xs" onclick="location.href='source-detail.html'">详情</button></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+      <span class="page-total" style="margin-right:auto">共 12 条</span>
+      <button class="page-btn disabled">← 上一页</button>
+      <button class="page-btn active">1</button>
+      <button class="page-btn">2</button>
+      <button class="page-btn">3</button>
+      <button class="page-btn">→ 下一页</button>
+      <span class="page-size">每页 <select><option>20</option><option>50</option><option>100</option></select> 条</span>
+    </div>
+  </div>
+</div>
+
+<!-- Space Delete Modal -->
+<div id="space-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>删除空间</h3>
+    <p>删除空间将同时移除该空间下的所有频道和展示位置。Source 和历史新闻将保留，不影响其他空间。</p>
+    <div class="impact">
+      🌐 将删除 <strong>1 个</strong> 空间<br>
+      📂 将删除 <strong>5 个</strong> 频道<br>
+      📌 将移除 <strong>8 个</strong> 展示位置<br>
+      📰 历史新闻和 Source <strong>保留</strong>
+    </div>
+    <p style="font-size:12px;color:var(--danger)">请输入空间名称 <strong>AI</strong> 以确认删除：</p>
+    <input class="confirm-input" placeholder="输入名称确认" oninput="document.getElementById('space-del-btn').disabled=this.value!=='AI'">
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('space-modal')">取消</button>
+      <button id="space-del-btn" class="btn btn-danger" disabled>确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Channel Delete Modal -->
+<div id="channel-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>删除频道</h3>
+    <p>频道「<strong>模型动态</strong>」当前包含 <strong>3 个</strong>展示位置。请选择处理方式：</p>
+    <div class="radio-group">
+      <label class="radio-item"><input type="radio" name="migrate" checked onchange="document.getElementById('migrate-conflict').style.display='none'"> 迁移到 <strong>AI</strong> 根节点</label>
+      <label class="radio-item"><input type="radio" name="migrate" onchange="document.getElementById('migrate-conflict').style.display='none'"> 直接移除全部展示位置</label>
+    </div>
+    <div id="migrate-conflict" class="conflict-warn" style="display:none">⚠ 以下信息源已存在于空间根节点：OpenAI 官方 X。请先处理冲突或选择"直接移除"。</div>
+    <div class="impact">📰 历史新闻和 Source <strong>保留</strong>，展示位置快照将留存。</div>
+    <p style="font-size:12px;color:var(--danger)">请输入频道名称 <strong>模型动态</strong> 以确认删除：</p>
+    <input class="confirm-input" placeholder="输入名称确认" oninput="document.getElementById('channel-del-btn').disabled=this.value!=='模型动态'">
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('channel-modal')">取消</button>
+      <button id="channel-del-btn" class="btn btn-danger" disabled>确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Space Modal -->
+<div id="create-space-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>新建空间</h3>
+    <div class="form-group"><label class="form-label">空间名称</label><input class="form-input" placeholder="如：AI、财经"></div>
+    <div class="form-group"><label class="form-label">描述（可选）</label><input class="form-input" placeholder="空间用途说明"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('create-space-modal')">取消</button>
+      <button class="btn btn-primary">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Space Modal -->
+<div id="edit-space-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>编辑空间</h3>
+    <div class="form-group"><label class="form-label">空间名称</label><input class="form-input" value="AI"></div>
+    <div class="form-group"><label class="form-label">图标</label><input class="form-input" value="🤖"></div>
+    <div class="form-group"><label class="form-label">描述（可选）</label><input class="form-input" value="AI 领域新闻追踪"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('edit-space-modal')">取消</button>
+      <button class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Channel Modal -->
+<div id="create-channel-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>新建频道</h3>
+    <div class="form-group"><label class="form-label">绑定到空间</label><select class="form-select"><option>AI</option><option>财经</option><option>开源</option></select></div>
+    <div class="form-group"><label class="form-label">频道名称</label><input class="form-input" placeholder="如：模型动态、行业资讯"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('create-channel-modal')">取消</button>
+      <button class="btn btn-primary">确认创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Channel Modal -->
+<div id="edit-channel-modal" class="modal-overlay">
+  <div class="modal">
+    <h3>编辑频道</h3>
+    <div class="form-group"><label class="form-label">所属空间</label><select class="form-select"><option>AI</option><option>财经</option><option>开源</option></select></div>
+    <div class="form-group"><label class="form-label">频道名称</label><input class="form-input" value="模型动态"></div>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeModal('edit-channel-modal')">取消</button>
+      <button class="btn btn-primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Search Source Modal (Step 1: search existing, then create new if needed) -->
+<div id="search-source-modal" class="modal-overlay">
+  <div class="modal" style="max-width:480px">
+    <h3>添加信息源到 AI · 全部</h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:12px">先从信息源库中搜索已有 Source，未找到再新建</p>
+    <input class="form-input" placeholder="搜索已有信息源…" style="margin-bottom:10px">
+    <div style="border:1px solid var(--border-light);border-radius:8px;overflow:hidden;margin-bottom:10px">
+      <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-light)">
+        <div><span style="font-weight:600;font-size:13px">OpenAI 官方 X</span><span style="font-size:11px;color:var(--text-muted);margin-left:8px">X/Twitter · AI · 正常</span></div>
+        <button class="btn-xs">添加</button>
+      </div>
+      <div style="padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border-light)">
+        <div><span style="font-weight:600;font-size:13px">DeepSeek 论文 RSS</span><span style="font-size:11px;color:var(--text-muted);margin-left:8px">RSS · AI · 正常</span></div>
+        <button class="btn-xs">添加</button>
+      </div>
+      <div style="padding:10px 14px;text-align:center;font-size:11px;color:var(--text-muted)">搜索无结果？</div>
+    </div>
+    <button class="btn btn-cancel" style="width:100%" onclick="closeModal('search-source-modal');openModal('create-modal')">＋ 新建信息源</button>
+    <div style="text-align:center;margin-top:8px">
+      <button class="btn-link" onclick="closeModal('search-source-modal')">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Source Modal -->
+<div id="create-modal" class="modal-overlay">
+  <div class="modal" style="max-width:520px">
+    <h3>新建信息源</h3>
+    <div class="form-group"><label class="form-label">类型</label><select class="form-select"><option>X/Twitter</option><option>RSS</option></select></div>
+    <div class="form-group"><label class="form-label">来源身份</label><input class="form-input" placeholder="X 用户名（如 @OpenAI）或 RSS URL"></div>
+    <div class="form-group"><label class="form-label">展示名称</label><input class="form-input" placeholder="如 OpenAI 官方 X"></div>
+    <div class="form-group">
+      <label class="form-label">领域标签（多选）</label>
+      <div class="tag-pills">
+        <span class="tag-pill" onclick="this.classList.toggle('on')">AI</span>
+        <span class="tag-pill" onclick="this.classList.toggle('on')">财经</span>
+        <span class="tag-pill" onclick="this.classList.toggle('on')">开源</span>
+        <span class="tag-pill" onclick="this.classList.toggle('on')">科技</span>
+        <span class="tag-pill" onclick="this.classList.toggle('on')">其他</span>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">来源角色</label><select class="form-select"><option>官方</option><option>媒体</option><option>KOL</option><option>社区</option><option>论文机构</option><option>其他</option></select></div>
+    <div class="form-group"><label class="form-label">关注级别</label><select class="form-select"><option>核心</option><option>常规</option><option>观察</option></select></div>
+    <div class="form-group"><label class="form-label">内容主题（自由标签）</label><input class="form-input" placeholder="输入标签后回车添加，如：模型发布、研究动态"></div>
+    <div class="form-group"><label class="form-label">备注</label><input class="form-input" placeholder="可选备注"></div>
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn btn-cancel">验证</button>
+      <div>
+        <button class="btn btn-cancel" onclick="closeModal('create-modal')">取消</button>
+        <button class="btn btn-primary">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll('.admin-tab').forEach((t,i) => {
+      t.classList.toggle('active', (tab === 'space' && i === 0) || (tab === 'library' && i === 1))
+    })
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'))
+    document.getElementById('tab-' + tab).classList.add('active')
+  }
+  function openModal(id) { document.getElementById(id).classList.add('show') }
+  function closeModal(id) { document.getElementById(id).classList.remove('show') }
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', function(e) { if (e.target === this) this.classList.remove('show') })
+  })
+  function selectSpaceCard(el) {
+    document.querySelectorAll('#tab-space .space-card').forEach(c=>c.classList.remove('selected'))
+    el.classList.add('selected')
+    if (el.classList.contains('add')) return
+    var name = el.querySelector('.space-name').textContent
+    document.getElementById('ctx-space').textContent = name
+    document.getElementById('create-ch-space').textContent = name
+    // Filter channels by space
+    document.querySelectorAll('#tab-space .channel-item:not(.all):not(.add)').forEach(function(ch){
+      if (ch.dataset.space === name) ch.style.display = ''
+      else ch.style.display = 'none'
+    })
+  }
+  function selectChannelItem(el) {
+    document.querySelectorAll('#tab-space .channel-item').forEach(c=>c.classList.remove('selected'))
+    el.classList.add('selected')
+    if (!el.classList.contains('add')) {
+      document.getElementById('ctx-channel').textContent = el.querySelector('.ch-name').textContent
+    }
+  }
+</script>
+</body>
+</html>

@@ -1,35 +1,31 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
-import { listNews, listSpaces, listSubChannels, getChannelStats, getGlobalStats } from "@/lib/api";
-import type { ChannelSpace, ProcessedNews, SubChannel, ChannelStats, UUID, NewsSort } from "@/lib/types";
+import { listNews, listSpaces, listChannels, getSpaceStats, getGlobalStats } from "@/lib/api";
+import type { Space, Channel, ProcessedNews, UUID, NewsSort, SpaceStats } from "@/lib/types";
 import StatsCards from "@/components/StatsCards.vue";
-import ChannelFilter from "@/components/ChannelFilter.vue";
+import SpacePills from "@/components/SpacePills.vue";
+import ChannelPills from "@/components/ChannelPills.vue";
 import NewsListItem from "@/components/NewsListItem.vue";
 import NewsDetailPanel from "@/components/NewsDetailPanel.vue";
 
 const loading = ref(false);
 const errorText = ref<string | null>(null);
-const spaces = ref<ChannelSpace[]>([]);
+const spaces = ref<Space[]>([]);
+const channels = ref<Channel[]>([]);
 const filterSpaceId = ref<UUID | null>(null);
+// v0.5: 频道使用两层 mini Pill，不再使用 sub_channel_ids
+const filterChannelId = ref<UUID | null>(null); // null = 全部
 const minScore = ref(0);
 const sortBy = ref<NewsSort>("published_desc");
 const searchQuery = ref("");
-const subChannels = ref<SubChannel[]>([]);
-const filterSubChannelIds = ref<Set<UUID>>(new Set());
-
-function toggleSubChannel(id: UUID) {
-  const next = new Set(filterSubChannelIds.value);
-  if (next.has(id)) next.delete(id); else next.add(id);
-  filterSubChannelIds.value = next;
-}
 
 const items = ref<ProcessedNews[]>([]);
 const limit = 30;
 const offset = ref(0);
 const canLoadMore = ref(true);
 
-const stats = ref<ChannelStats>({ total_news: -1, today_new: -1, active_sources: -1, sub_channel_count: -1 });
+const stats = ref<SpaceStats>({ total_news: -1, today_new: -1, active_sources: -1, channel_count: -1 });
 
 const detailItem = ref<ProcessedNews | null>(null);
 
@@ -56,18 +52,19 @@ async function refreshSpaces() {
 async function refreshStats() {
   try {
     if (filterSpaceId.value) {
-      stats.value = await getChannelStats(filterSpaceId.value);
+      stats.value = await getSpaceStats(filterSpaceId.value);
     } else {
-      stats.value = await getGlobalStats();
+      const g = await getGlobalStats();
+      stats.value = { total_news: 0, today_new: g.today_new, active_sources: g.active_sources, channel_count: g.active_spaces };
     }
   } catch { /* 统计加载失败不影响新闻列表 */ }
 }
 
-async function refreshSubChannels() {
-  if (!filterSpaceId.value) { subChannels.value = []; return; }
+async function refreshChannels() {
+  if (!filterSpaceId.value) { channels.value = []; return; }
   try {
-    subChannels.value = await listSubChannels(filterSpaceId.value);
-  } catch { subChannels.value = []; }
+    channels.value = await listChannels(filterSpaceId.value);
+  } catch { channels.value = []; }
 }
 
 function buildNewsParams(offsetVal: number) {
@@ -75,10 +72,8 @@ function buildNewsParams(offsetVal: number) {
     limit,
     offset: offsetVal,
     sort: sortBy.value,
-    sub_channel_id: filterSubChannelIds.value.size > 0
-      ? [...filterSubChannelIds.value].join(",") as any
-      : undefined,
-    q: searchQuery.value || undefined as any,
+    channelId: filterChannelId.value || undefined,
+    q: searchQuery.value || undefined,
   } as any;
 }
 
@@ -112,46 +107,83 @@ function openDetail(item: ProcessedNews) {
   detailItem.value = item;
 }
 
-// v0.4: 防抖处理子频道切换和排序变更
+// 防抖处理频道切换和排序变更
 const debouncedRefreshNews = useDebounceFn(refreshNews, 300);
 
 watch(filterSpaceId, () => {
+  filterChannelId.value = null;
   refreshNews();
   refreshStats();
-  refreshSubChannels();
+  refreshChannels();
 });
 watch(sortBy, () => debouncedRefreshNews());
-watch(filterSubChannelIds, () => debouncedRefreshNews(), { deep: true });
+watch(filterChannelId, () => debouncedRefreshNews());
 watch(searchQuery, () => refreshNews());
+
+async function onSpaceSelect(id: string) {
+  filterSpaceId.value = id;
+}
+
+async function onChannelSelect(id: string | null) {
+  filterChannelId.value = id;
+}
 
 onMounted(async () => {
   await refreshSpaces();
   await refreshNews();
   await refreshStats();
-  await refreshSubChannels();
+  await refreshChannels();
 });
 </script>
 
 <template>
   <div class="page">
+    <!-- v0.4 StatsCards 保留，适配新类型 -->
     <StatsCards :stats="stats" />
-    <ChannelFilter
-      :spaces="spaces" :selectedId="filterSpaceId" :minScore="minScore" :sortBy="sortBy"
-      @select="(id) => filterSpaceId = id"
-      @changeScore="(v) => minScore = v"
-      @changeSort="(v) => sortBy = v"
-      @search="(q) => searchQuery = q"
+
+    <!-- 空间/频道两层 mini Pill -->
+    <SpacePills
+      :spaces="spaces"
+      :selectedId="filterSpaceId"
+      mode="mini"
+      @select="onSpaceSelect"
+      @changed="refreshSpaces()"
     />
-    <!-- 子频道筛选（多选） -->
-    <div class="sub-filter" v-if="subChannels.length > 0">
-      <button class="sub-pill" :class="{ active: filterSubChannelIds.size === 0 }" @click="filterSubChannelIds = new Set()">全部</button>
-      <button
-        v-for="sc in subChannels" :key="sc.id" class="sub-pill"
-        :class="{ active: filterSubChannelIds.has(sc.id) }"
-        @click="toggleSubChannel(sc.id)"
-      >{{ sc.name }}</button>
+
+    <ChannelPills
+      v-if="channels.length > 0"
+      :channels="channels"
+      :selectedId="filterChannelId"
+      mode="mini"
+      @select="onChannelSelect"
+      @changed="refreshChannels()"
+    />
+
+    <!-- 评分 + 排序 -->
+    <div class="filter-right">
+      <label class="score-filter">
+        评分 &ge; <strong>{{ minScore.toFixed(1) }}</strong>
+        <input type="range" min="0" max="10" step="0.5" :value="minScore"
+          @input="minScore = parseFloat(($event.target as HTMLInputElement).value)" />
+      </label>
+      <select
+        class="sort-select"
+        :value="sortBy"
+        @change="sortBy = ($event.target as HTMLSelectElement).value as NewsSort"
+      >
+        <option value="published_desc">最新优先</option>
+        <option value="score_desc">最高评分</option>
+        <option value="score_asc">最低评分</option>
+      </select>
+      <input
+        class="search-input"
+        v-model="searchQuery"
+        placeholder="搜索新闻…"
+        @keydown.enter="refreshNews()"
+      />
     </div>
-    <div v-if="errorText" class="error-bar"><span>⚠️</span><span>{{ errorText }}</span></div>
+
+    <div v-if="errorText" class="error-bar"><span>&#9888;</span><span>{{ errorText }}</span></div>
 
     <!-- 骨架屏 -->
     <div v-if="loading && items.length === 0" class="skeleton-list">
@@ -163,11 +195,11 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="items.length === 0 && !loading" class="empty-state">📭 暂无新闻<br><small>请先在管理页添加信息来源</small></div>
+    <div v-if="items.length === 0 && !loading" class="empty-state">暂无新闻<br><small>请先在管理页添加信息来源</small></div>
     <div class="list" v-if="filteredItems.length > 0">
       <NewsListItem v-for="item in filteredItems" :key="item.id" :item="item" @click="openDetail(item)" />
     </div>
-    <div v-if="items.length > 0 && filteredItems.length === 0" class="empty-state">🔍 筛选条件下无匹配新闻<br><small>试试调整最低评分或切换子频道</small></div>
+    <div v-if="items.length > 0 && filteredItems.length === 0" class="empty-state">筛选条件下无匹配新闻<br><small>试试调整最低评分或切换频道</small></div>
     <div class="more" v-if="items.length > 0">
       <button class="btn load-more" :disabled="loading || !canLoadMore" @click="loadMore">
         {{ canLoadMore ? '加载更多' : '没有更多了' }}
@@ -178,19 +210,37 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.page { display: flex; flex-direction: column; }
+.page { display: flex; flex-direction: column; gap: 12px; }
 .list { display: flex; flex-direction: column; gap: 8px; }
 .more { display: flex; justify-content: center; padding-top: 12px; }
 .load-more { padding: 10px 28px; font-size: 13px; font-weight: 700; }
 
-.sub-filter { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 0 8px; }
-.sub-pill {
-  padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
-  border: 1px solid var(--border); background: var(--card); color: var(--text-secondary);
-  cursor: pointer; transition: all 0.15s;
+.filter-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
 }
-.sub-pill:hover { border-color: var(--accent); color: var(--accent); }
-.sub-pill.active { background: var(--accent); color: #FFF; border-color: var(--accent); }
+.score-filter { font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+.score-filter input { width: 80px; accent-color: var(--accent); }
+.sort-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  min-width: 110px;
+  background: var(--card);
+}
+.search-input {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+  min-width: 150px;
+  outline: none;
+  margin-left: auto;
+}
+.search-input:focus { border-color: var(--accent); }
 
 /* Skeleton */
 .skeleton-list { display: flex; flex-direction: column; gap: 8px; }

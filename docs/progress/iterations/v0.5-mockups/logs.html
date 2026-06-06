@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>系统日志 — 牛马程小报 v0.5</title>
+<style>
+  :root {
+    --bg: #FAFAFA; --card: #FFF; --accent: #3498db; --accent-light: #EBF5FB;
+    --text: #1a1a2e; --text-secondary: #5F6B7A; --text-muted: #94A3B8;
+    --border: #E6E7EB; --border-light: #F0F1F3;
+    --success: #27ae60; --warning: #f39c12; --warning-light: #FEF9E7;
+    --danger: #e74c3c; --danger-light: #FDEDEC;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); }
+  .topnav { position: sticky; top: 0; z-index: 50; height: 52px; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; }
+  .topnav-brand { font-weight: 800; font-size: 16px; margin-right: 32px; }
+  .topnav-links { display: flex; gap: 4px; }
+  .topnav-link { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); text-decoration: none; transition: .15s; }
+  .topnav-link:hover { color: var(--accent); background: var(--accent-light); }
+  .topnav-link.active { color: var(--accent); background: var(--accent-light); }
+  .topnav-alert { position: relative; }
+  .topnav-badge { position: absolute; top: 2px; right: 2px; background: var(--danger); color: #FFF; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; min-width: 18px; text-align: center; }
+  .content { max-width: 1120px; margin: 0 auto; padding: 20px 24px 80px; }
+  .page-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .page-title { font-size: 16px; font-weight: 800; }
+  .page-sub { font-size: 11px; color: var(--text-muted); }
+  .filter-bar { display: flex; gap: 8px; margin-bottom: 14px; align-items: center; }
+  .filter-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: var(--card); color: var(--text-secondary); cursor: pointer; }
+  .filter-input { border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; font-size: 13px; outline: none; width: 180px; }
+  .filter-input:focus { border-color: var(--accent); }
+  .log-table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--border-light); border-radius: 12px; overflow: hidden; }
+  .log-table th { background: #F8FAFB; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--border); }
+  .log-table td { padding: 8px 14px; font-size: 12px; border-bottom: 1px solid var(--border-light); font-family: 'SF Mono', 'Fira Code', monospace; }
+  .log-table tr:hover td { background: #F8FAFB; }
+  .log-table tr.error td { background: var(--danger-light); }
+  .log-table tr.warn td { background: var(--warning-light); }
+  .badge { padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; display: inline-block; }
+  .badge-error { background: var(--danger-light); color: var(--danger); }
+  .badge-warn { background: var(--warning-light); color: var(--warning); }
+  .badge-info { background: #E2E8F0; color: var(--text-secondary); }
+  .badge-debug { background: #F1F5F9; color: var(--text-muted); }
+  .log-time { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+  .log-source { font-size: 10px; color: var(--text-secondary); }
+  .log-msg { max-width: 500px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .btn-xs { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); }
+  .btn-xs:hover { border-color: var(--accent); color: var(--accent); }
+  .empty-state { text-align: center; padding: 48px 24px; }
+  .empty-icon { font-size: 40px; opacity: 0.4; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; font-weight: 700; color: var(--text-secondary); }
+  .empty-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="topnav-brand">🐂 牛马程小报</div>
+  <div class="topnav-links">
+    <a href="browse.html" class="topnav-link">浏览</a>
+    <a href="admin.html" class="topnav-link">管理</a>
+    <a href="logs.html" class="topnav-link active">系统日志</a>
+    <a href="alerts.html" class="topnav-link topnav-alert">告警<span class="topnav-badge">3</span></a>
+  </div>
+</nav>
+
+<div class="content">
+  <div class="page-head">
+    <div>
+      <div class="page-title">📋 系统日志</div>
+      <div class="page-sub">全局 · 不限频道</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-bar">
+    <select class="filter-select">
+      <option>全部级别（128）</option>
+      <option>🔴 错误（3）</option>
+      <option>🟡 警告（12）</option>
+      <option>🔵 信息（98）</option>
+      <option>⚪ 调试（15）</option>
+    </select>
+    <select class="filter-select">
+      <option>全部来源</option>
+      <option>API</option>
+      <option>Worker</option>
+      <option>Scheduler</option>
+    </select>
+    <input class="filter-input" placeholder="搜索关键字…">
+  </div>
+
+  <!-- Log Table -->
+  <table class="log-table">
+    <thead>
+      <tr><th>时间</th><th>级别</th><th>来源</th><th>消息</th><th>操作</th></tr>
+    </thead>
+    <tbody>
+      <tr class="error">
+        <td class="log-time">13:42:01</td>
+        <td><span class="badge badge-error">ERROR</span></td>
+        <td class="log-source">Worker</td>
+        <td class="log-msg">Failed to fetch RSS feed "https://broken.example.com/feed": HTTP 404 Not Found</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr class="error">
+        <td class="log-time">13:41:58</td>
+        <td><span class="badge badge-error">ERROR</span></td>
+        <td class="log-source">API</td>
+        <td class="log-msg">X API /2/tweets/search/stream returned 401 Unauthorized</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr class="warn">
+        <td class="log-time">13:41:30</td>
+        <td><span class="badge badge-warn">WARN</span></td>
+        <td class="log-source">Scheduler</td>
+        <td class="log-msg">Task queue depth exceeded threshold: 47 pending tasks (limit: 30)</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr class="error">
+        <td class="log-time">13:40:15</td>
+        <td><span class="badge badge-error">ERROR</span></td>
+        <td class="log-source">Worker</td>
+        <td class="log-msg">Connection timeout fetching "https://slow-rss.example.com/feed.xml" after 30s</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr class="warn">
+        <td class="log-time">13:40:02</td>
+        <td><span class="badge badge-warn">WARN</span></td>
+        <td class="log-source">API</td>
+        <td class="log-msg">Rate limit approached for X API: 280/300 requests in current 15-min window</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr>
+        <td class="log-time">13:39:45</td>
+        <td><span class="badge badge-info">INFO</span></td>
+        <td class="log-source">Worker</td>
+        <td class="log-msg">Successfully fetched and processed 8 items from @OpenAI (X/Twitter)</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr>
+        <td class="log-time">13:39:30</td>
+        <td><span class="badge badge-info">INFO</span></td>
+        <td class="log-source">Scheduler</td>
+        <td class="log-msg">Starting scheduled fetch cycle: 5 sources pending, 3 active streams</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr>
+        <td class="log-time">13:39:00</td>
+        <td><span class="badge badge-info">INFO</span></td>
+        <td class="log-source">API</td>
+        <td class="log-msg">GET /api/news?space_id=uuid&channel_id=uuid&page=1 — 200 OK (45ms)</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr>
+        <td class="log-time">13:38:55</td>
+        <td><span class="badge badge-debug">DEBUG</span></td>
+        <td class="log-source">Worker</td>
+        <td class="log-msg">Content parser: extracted 3 bullet points, 2 entities from item "DeepSeek 论文..."</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+      <tr>
+        <td class="log-time">13:38:50</td>
+        <td><span class="badge badge-info">INFO</span></td>
+        <td class="log-source">Scheduler</td>
+        <td class="log-msg">Stream connection healthy: 3 rules active, last rule sync 45s ago</td>
+        <td><button class="btn-xs">📋 复制</button></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

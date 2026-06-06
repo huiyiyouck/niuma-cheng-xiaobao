@@ -1,5 +1,81 @@
 # 全栈开发工作日志
 
+## 2026-06-06 — v0.5 设计文档 R2 Review
+
+- 本次角色：全栈开发（Developer）
+- 动作：Review（复审）
+- 涉及文档：docs/progress/iterations/v0.5-design.md、docs/progress/iterations/v0.5.md
+- 结论：✅通过。R1 全部 5 条意见（1 阻断/2 中/2 低）已正确关闭。
+  - #D1 部分唯一索引修复 NULL 语义
+  - #D2 DELETE→PATCH 软删除一致性
+  - #D3 新增 §4.6 频道迁移完整事务
+  - #D4 CTE 实现模式标注
+  - #D5 身份修改两步流程 + 补偿说明
+  - R2 新增内容（频道迁移逻辑/环境变量/Stream-systemd 交互）均可实现
+- 关联迭代：v0.5
+- 遗留：无。设计文档已达到实现阶段准入标准，等待 DevOps Review。
+
+## 2026-06-06 — v0.5 设计文档 R1 Review
+
+- 本次角色：全栈开发（Developer）
+- 动作：Review
+- 涉及文档：docs/progress/iterations/v0.5-design.md、docs/progress/iterations/v0.5.md
+- 结论：❌需修改。1 项阻断 + 2 项中 + 2 项低。
+  - 阻断：#D1 display_positions UNIQUE 约束在 channel_id IS NULL 时因 PostgreSQL NULL 语义允许重复。
+  - 中：#D2 DELETE /api/positions 端点命名与软删除不一致；#D3 频道删除迁移逻辑未展开。
+  - 低：#D4 operational_status 计算字段筛选的 SQL 复杂度；#D5 Source 身份修改的事务边界。
+- 关联迭代：v0.5
+- 遗留：等待 PM、DevOps Review + Architect 修改后复审。
+
+## 2026-06-06 — v0.5 UI 方案 R2 Review
+
+- 本次角色：全栈开发（Developer）
+- 动作：Review（复审）
+- 涉及文档：docs/progress/iterations/v0.5-ui-spec.md、docs/progress/iterations/v0.5.md
+- 结论：✅通过。R1 全部 4 条意见（1 中/3 低）已正确关闭。
+  - #UI-D1 Pill 拆分为 PillItem + PillInput 子组件，编辑/排序互斥
+  - #UI-D2 排序降级为箭头按钮，拖拽留后续迭代
+  - #UI-D3 表格响应式改为 overflow-x: auto 横向滚动
+  - #UI-D4 impact 改为结构化 Props，避免 v-html
+  - R2 新增 §10 API 契约清单（6 组 20+ endpoint）可实现性良好
+- 关联迭代：v0.5
+- 遗留：无。UI 方案已定稿，Architect + Developer 双通过。
+
+## 2026-06-06 — v0.5 UI 方案 R1 Review
+
+- 本次角色：全栈开发（Developer）
+- 动作：Review
+- 涉及文档：docs/progress/iterations/v0.5-ui-spec.md、docs/progress/iterations/v0.5.md
+- 结论：❌需修改。1 项中严重度 + 3 项建议。
+  - 中：#UI-D1 SpacePills/ChannelPills 单个 Pill 承载六种交互，组件边界模糊，拖拽与编辑态交叉未定义。
+  - 低：#UI-D2 拖拽排序未明确技术方案（原生 vs 库）；#UI-D3 表格→卡片响应式需维护两套渲染逻辑；#UI-D4 DeleteConfirmDialog impactSummary HTML 支持存在 XSS 风险。
+- 关联迭代：v0.5
+- 遗留：等待 Architect Review + UI 修改后复审。
+
+## 2026-06-06 — v0.5 PRD R2 Review
+
+- 本次角色：全栈开发（Developer）
+- 动作：Review（复审）
+- 涉及文档：docs/progress/iterations/v0.5-prd.md、docs/progress/iterations/v0.5.md
+- 结论：✅通过（附 1 条中严重度观察，不阻塞定稿）。
+  - R1 全部 10 条意见（2 阻断/1 高/4 中/3 低）已正确关闭。
+  - R2 新增 1 条中严重度：§4.6 失败计数口径与异常处理表在部分解析失败的判定上存在矛盾（"部分解析失败→视为失败" vs "单条内容解析失败→仍视为成功"），设计阶段由架构师确认后即可消除。
+- 关联迭代：v0.5
+- 遗留：无。PRD 已达到设计阶段准入标准。
+
+## 2026-06-06 — v0.5 PRD R1 Review
+
+- 本次角色：全栈开发（Developer）
+- 动作：Review
+- 涉及文档：docs/progress/iterations/v0.5-prd.md、docs/progress/iterations/v0.5.md
+- 结论：❌需修改。共 10 条意见（2 阻断 + 1 高 + 4 中 + 3 低）。
+  - 阻断：#D1 Source 状态模型未拆分（与 UI 一致）；#D2 "未使用状态"引用未定义（与 UI 一致）。
+  - 高：#D3 告警状态流转和交互未定义（与 UI 一致）。
+  - 中：#D4 频道删除迁移冲突规则未定义（与 UI 一致）；#D5 空间管理页新建 Source 回流路径未定义（与 UI 一致）；#D6 展示位置快照数据模型未明确；#D7 搜索与筛选组合语义未定义。
+  - 低：#D8 空间创建/重命名/排序范围未明确（与 UI 一致）；#D9 信息源库表格未提及分页；#D10 "连续失败"计数口径未定义。
+- 关联迭代：v0.5
+- 遗留：等待 PM 汇总其余角色 R1 Review 后提交 R2；届时由 Developer 复审。
+
 ## 2026-05-31 — Developer 当日工作链条闭环（会话级收工记录）
 
 - 本次角色：全栈开发（Developer）

@@ -1,5 +1,88 @@
 # 架构师工作日志
 
+## 2026-06-06 — v0.5 设计文档 已定稿
+
+**本次角色**：架构师
+- 动作：定稿（PM/Developer/DevOps 三方 R2 全部通过）
+- 涉及文档：`docs/progress/iterations/v0.5-design.md`
+- 12 条 R1 意见全部在 R2 中关闭，3/3 Review 通过。设计阶段完成。
+- v0.5 当前进度：PRD ✅ → UI 方案 ✅ → 设计 ✅，下一步进入实现阶段
+- 关联迭代：v0.5
+
+## 2026-06-06 — v0.5 设计文档 R2 修订
+
+**本次角色**：架构师
+- 动作：修改（响应 PM 3 条 + Developer 5 条 + DevOps 4 条 R1 Review）
+- 涉及文档：`docs/progress/iterations/v0.5-design.md`、`docs/progress/iterations/v0.5.md`
+- 修订覆盖（12 条全部关闭）：
+  - 数据模型：#D1 部分唯一索引（阻断）
+  - API 合约：DELETE channels action 参数、GET positions channel_id 语义、DELETE→PATCH positions、operational_status CTE、PUT identity 补偿
+  - 核心流程：§4.6 频道删除迁移逻辑（新增）、§4.2 失败计数对齐 PRD、§4.3 Stream/systemd 区分
+  - 迁移：§6.2 清理脚本改旧表名、§6.3 环境变量汇总（新增）
+- 下一步：PM、Developer、DevOps 复审 R2
+
+## 2026-06-06 — v0.5 设计文档 R1 产出
+
+**本次角色**：架构师
+- 动作：产出（基于定稿 PRD + UI 方案，创建 v0.5 技术设计文档）
+- 涉及文档：`docs/progress/iterations/v0.5-design.md`（新建）、`docs/progress/iterations/v0.5.md`
+- 产出覆盖：
+  - 数据模型：10 表变更 + 3 新表。sub_channels→channels 重命名、sources 大幅扩展（双维度状态 + 10+ 新字段）、display_positions 替代 channel_sources、news_positions m:n 关联、alerts scope 解耦、source_identity_history
+  - 5 项设计决策：operational_status 动态计算、软删除快照、dedup_key 告警去重、debounced 规则同步、事务包裹 DELETE 清理
+  - API 合约：6 组 20+ 端点重写，3 个关键响应 Shape
+  - 核心流程：Worker per-source 调度、X Stream Manager、告警生命周期、自动启停
+  - 数据清理脚本：FK 依赖顺序 + 事务回滚 + pg_dump 前置
+- Review 方：PM、Developer、DevOps
+- 关联迭代：v0.5
+
+## 2026-06-06 — v0.5 UI 方案 R2 Review
+
+**本次角色**：架构师
+- 动作：Review（审 UI 的 v0.5 UI 方案 R2）
+- 涉及文档：`docs/progress/iterations/v0.5-ui-spec.md`、`docs/progress/iterations/v0.5.md`
+- 结论：通过。R1 全部 5 条意见核验通过：#A1 API 契约已补充（§10，6 组 20+ endpoint）、#A2 身份编辑约束已定义、#A3 约束归属已标注、#A4 mini 模式已定义、#A5 由 API 契约覆盖。
+- R2 全部 8 条意见（Architect 4 + Developer 4）正确关闭。UI 方案达到设计阶段准入标准。
+- 关联迭代：v0.5
+
+## 2026-06-06 — v0.5 UI 方案 R1 Review
+
+**本次角色**：架构师
+- 动作：Review（审 UI 产出的 v0.5 UI 方案 R1）
+- 涉及文档：`docs/progress/iterations/v0.5-ui-spec.md`、`docs/progress/iterations/v0.5.md`
+- 结论：需修改。共 5 条意见（1 高 + 2 中 + 2 低）。
+  - 高：#A1 缺少 API 契约清单，设计阶段无法接续
+  - 中：#A2 Source 身份修改 UI 未体现 PRD 状态约束、#A3 删除最后空间约束 PRD 未定义
+  - 低：#A4 浏览页 mini Pill 交互未展开、#A5 SourceCard 抓取条数数据来源不明
+- PRD 覆盖：9 个功能章节全部核验通过。路由设计合理。
+- 关联迭代：v0.5
+- 遗留问题/风险：等待 UI 汇总 Architect/Developer R1 反馈后提交 R2。
+
+## 2026-06-06 — v0.5 PRD R2 Review
+
+**本次角色**：架构师
+- 动作：Review（审 PM 的 v0.5 PRD R2）
+- 涉及文档：`docs/progress/iterations/v0.5-prd.md`、`docs/progress/iterations/v0.5.md`
+- 结论：通过。R1 全部 9 条意见核验通过：
+  - 3 项高：状态模型双维度拆分 ✅、UNIQUE 约束调整列 §7 ✅、m:n 关联表列 §7 ✅
+  - 4 项中：source_states/fetch_policy 迁移列 §7 ✅、alerts 解耦列 §7 ✅、identity_history 纳入范围+列 §7 ✅、快照内容已定义 ✅
+  - 2 项低：sub_channels 重命名列 §7 ✅、fetch_policy 迁移列 §7 ✅
+- R2 新增内容（pg_dump 备份、事务回滚、57 条 AC、并发风险登记）无架构风险。
+- PRD 达到设计阶段准入标准。下一步：等待 PM 在 UI 方案阶段前委托 UI 产出方案，或等待 Developer/Tester/DevOps 完成 R2 Review 后 PRD 正式定稿。
+- 关联迭代：v0.5
+
+## 2026-06-06 — v0.5 PRD R1 Review
+
+**本次角色**：架构师
+- 动作：Review（审 PM 的 v0.5 PRD R1）
+- 涉及文档：`docs/progress/iterations/v0.5-prd.md`、`docs/progress/iterations/v0.5.md`
+- 结论：需修改。共 9 条意见（3 高 + 4 中 + 2 低）。
+  - 高严重度：#A1 Source 状态模型拆分（与 UI/Developer/Tester 同源）、#A2 展示位置 UNIQUE 约束冲突、#A3 新闻 m:n 关联表缺失
+  - 中严重度：#A4 source_states 移至 Source 级、#A5 alerts 空间解耦、#A6 source_identity_history 缺失、#A7 历史位置快照未建模
+  - 低严重度：#A8 sub_channels → channels 重命名、#A9 fetch_policy 移至 Source 级
+- 整体评价：三条主线方向正确，但当前 schema 与 PRD 描述的产品行为存在 3 项结构性冲突（状态模型、唯一约束、m:n 关联），设计阶段开始前必须修正。
+- 关联迭代：v0.5
+- 遗留问题/风险：等待 PM 汇总全部 5 方 R1 Review 后提交 R2。
+
 ## 2026-05-31 — 会话收尾（架构师整日 3 次出场汇总）
 
 **本次角色**：架构师

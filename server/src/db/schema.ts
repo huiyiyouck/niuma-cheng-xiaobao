@@ -10,36 +10,25 @@ import {
   timestamp,
   index,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
 // ── channel_spaces ────────────────────────────────────────
-
+// v0.5: 新增 sort_order、icon
 export const channelSpaces = pgTable("channel_spaces", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 200 }).notNull().unique(),
   description: text("description"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  icon: text("icon").default("📁"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// ── sources ───────────────────────────────────────────────
-
-export const sources = pgTable("sources", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  type: varchar("type", { length: 50 }).notNull(),
-  displayName: varchar("display_name", { length: 200 }).notNull(),
-  sourceUrl: text("source_url"),
-  status: varchar("status", { length: 20 }).notNull().default("unverified"),
-  config: jsonb("config").notNull().default({}),
-  lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
-  verifyError: text("verify_error"),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-// ── sub_channels ──────────────────────────────────────────
-
-export const subChannels = pgTable(
-  "sub_channels",
+// ── channels（原 sub_channels）─────────────────────────────
+// v0.5: 表名从 sub_channels 重命名为 channels，字段结构不变
+export const channels = pgTable(
+  "channels",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     channelSpaceId: uuid("channel_space_id")
@@ -50,91 +39,139 @@ export const subChannels = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    unique("uq_sub_channels_space_name").on(table.channelSpaceId, table.name),
-    index("ix_sub_channels_space_sort").on(table.channelSpaceId, table.sortOrder),
+    unique("uq_channels_space_name").on(table.channelSpaceId, table.name),
+    index("ix_channels_space_sort").on(table.channelSpaceId, table.sortOrder),
   ],
 );
 
-// ── channel_sources ───────────────────────────────────────
-
-export const channelSources = pgTable(
-  "channel_sources",
+// ── sources（大幅扩展）─────────────────────────────────────
+// v0.5: 新增双维度状态、标签字段、抓取配置，identity 替代 source_url
+export const sources = pgTable(
+  "sources",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    channelSpaceId: uuid("channel_space_id")
+    // 身份
+    type: varchar("type", { length: 20 }).notNull(),
+    identity: varchar("identity", { length: 500 }).notNull(), // 原 source_url，统一为"来源身份"
+    displayName: varchar("display_name", { length: 200 }).notNull(),
+    // 双维度状态
+    lifecycleStatus: varchar("lifecycle_status", { length: 20 })
       .notNull()
-      .references(() => channelSpaces.id, { onDelete: "cascade" }),
-    sourceId: uuid("source_id")
-      .notNull()
-      .references(() => sources.id, { onDelete: "cascade" }),
-    enabled: boolean("enabled").notNull().default(true),
-    fetchPolicy: jsonb("fetch_policy").notNull().default({}),
-    subChannelId: uuid("sub_channel_id").references(() => subChannels.id, {
-      onDelete: "set null",
-    }),
+      .default("normal"),
+    // operational_status 为计算字段，不存储
+    // 标签
+    domainTags: jsonb("domain_tags").notNull().default(sql`'{}'::jsonb`),
+    sourceRole: varchar("source_role", { length: 20 }).notNull().default("other"),
+    contentTopics: jsonb("content_topics").notNull().default(sql`'{}'::jsonb`),
+    attentionLevel: varchar("attention_level", { length: 20 }).notNull().default("regular"),
+    notes: text("notes"),
+    // 抓取配置（全局）
+    fetchIntervalSec: integer("fetch_interval_sec"),
+    maxItemsPerFetch: integer("max_items_per_fetch"),
+    compensationIntervalSec: integer("compensation_interval_sec").default(86400),
+    config: jsonb("config").notNull().default(sql`'{}'::jsonb`),
+    // 验证
+    lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
+    verifyError: text("verify_error"),
+    // 时间戳
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    unique("uq_channel_sources_space_source").on(table.channelSpaceId, table.sourceId),
-    index("ix_channel_sources_space_enabled").on(table.channelSpaceId, table.enabled),
+    // 去重索引：同一类型的来源身份全局唯一（大小写不敏感）
+    uniqueIndex("uq_sources_type_identity").on(
+      table.type,
+      sql`LOWER(${table.identity})`,
+    ),
   ],
 );
 
-// ── source_states ─────────────────────────────────────────
+// ── display_positions（新表，替代 channel_sources）─────────
+// v0.5: channel_id=NULL 表示空间根节点；软删除 deleted_at
+export const displayPositions = pgTable(
+  "display_positions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceId: uuid("source_id")
+      .notNull()
+      .references(() => sources.id, { onDelete: "cascade" }),
+    channelSpaceId: uuid("channel_space_id")
+      .notNull()
+      .references(() => channelSpaces.id, { onDelete: "cascade" }),
+    channelId: uuid("channel_id").references(() => channels.id, {
+      onDelete: "cascade",
+    }), // NULL = 空间根节点
+    enabled: boolean("enabled").notNull().default(true),
+    // 软删除（历史快照）
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    removalReason: text("removal_reason"), // 'channel_deleted' | 'space_deleted' | 'manual'
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    // 同一空间内，同一 Source 不能在同一位置重复
+    unique("uq_dp_source_space_channel").on(
+      table.sourceId,
+      table.channelSpaceId,
+      table.channelId,
+    ),
+    // 部分唯一索引：防止根节点重复（NULL != NULL 在 UNIQUE 中）
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_dp_source_space_root ON display_positions(source_id, channel_space_id) WHERE channel_id IS NULL AND deleted_at IS NULL`,
+    // 计算 operational_status 的查询依赖此索引
+    sql`CREATE INDEX IF NOT EXISTS ix_dp_source_enabled ON display_positions(source_id, enabled, deleted_at) WHERE deleted_at IS NULL`,
+    // 获取空间+频道下的展示位置
+    sql`CREATE INDEX IF NOT EXISTS ix_dp_space_channel ON display_positions(channel_space_id, channel_id, deleted_at) WHERE deleted_at IS NULL`,
+  ],
+);
 
+// ── source_states（升至 Source 级）─────────────────────────
+// v0.5: channel_source_id → source_id（UNIQUE），新增 last_fetch_count
 export const sourceStates = pgTable(
   "source_states",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    channelSourceId: uuid("channel_source_id")
+    sourceId: uuid("source_id")
       .notNull()
       .unique()
-      .references(() => channelSources.id, { onDelete: "cascade" }),
-    cursor: jsonb("cursor").notNull().default({}),
+      .references(() => sources.id, { onDelete: "cascade" }),
+    cursor: jsonb("cursor").notNull().default(sql`'{}'::jsonb`),
     nextFetchAt: timestamp("next_fetch_at", { withTimezone: true }),
     consecutiveFailures: integer("consecutive_failures").notNull().default(0),
     lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
     lastError: text("last_error"),
+    lastFetchCount: integer("last_fetch_count"), // 最近一次抓取产出条数
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("ix_source_states_next_fetch_at").on(table.nextFetchAt)],
+  (table) => [index("ix_source_states_next_fetch").on(table.nextFetchAt)],
 );
 
 // ── raw_items ─────────────────────────────────────────────
-
+// v0.5: 移除 channel_space_id，新增 fetched_at
 export const rawItems = pgTable(
   "raw_items",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    channelSpaceId: uuid("channel_space_id")
-      .notNull()
-      .references(() => channelSpaces.id, { onDelete: "cascade" }),
     sourceId: uuid("source_id")
       .notNull()
       .references(() => sources.id, { onDelete: "cascade" }),
     sourceItemId: text("source_item_id").notNull(),
     sourceItemUrl: text("source_item_url"),
     publishedAt: timestamp("published_at", { withTimezone: true }),
-    content: jsonb("content").notNull().default({}),
+    content: jsonb("content").notNull().default(sql`'{}'::jsonb`),
     contentHash: text("content_hash"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     unique("uq_raw_items_source_item").on(table.sourceId, table.sourceItemId),
-    index("ix_raw_items_space_published").on(table.channelSpaceId, table.publishedAt),
-    index("ix_raw_items_url").on(table.sourceItemUrl).where(sql`${table.sourceItemUrl} IS NOT NULL`),
+    index("ix_raw_items_source_published").on(table.sourceId, table.publishedAt),
+    sql`CREATE INDEX IF NOT EXISTS ix_raw_items_url ON raw_items(source_item_url) WHERE source_item_url IS NOT NULL`,
   ],
 );
 
 // ── processed_news ────────────────────────────────────────
-
+// v0.5: 移除 channel_space_id 和 channel_id
 export const processedNews = pgTable(
   "processed_news",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    channelSpaceId: uuid("channel_space_id")
-      .notNull()
-      .references(() => channelSpaces.id, { onDelete: "cascade" }),
     rawItemId: uuid("raw_item_id")
       .notNull()
       .unique()
@@ -142,37 +179,50 @@ export const processedNews = pgTable(
     title: text("title").notNull(),
     summary: text("summary").notNull(),
     language: varchar("language", { length: 20 }).notNull().default("zh"),
-    sourceRefs: jsonb("source_refs").notNull().default({}),
+    sourceRefs: jsonb("source_refs").notNull().default(sql`'{}'::jsonb`),
     publishedAt: timestamp("published_at", { withTimezone: true }),
-    bullets: jsonb("bullets").notNull().default([]),
-    tags: jsonb("tags").notNull().default([]),
-    entities: jsonb("entities").notNull().default([]),
+    bullets: jsonb("bullets").notNull().default(sql`'[]'::jsonb`),
+    tags: jsonb("tags").notNull().default(sql`'[]'::jsonb`),
+    entities: jsonb("entities").notNull().default(sql`'[]'::jsonb`),
     importanceScore: numeric("importance_score").notNull().default("0"),
-    subChannelId: uuid("sub_channel_id").references(() => subChannels.id, {
-      onDelete: "set null",
-    }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [index("ix_processed_news_published").on(table.publishedAt)],
+);
+
+// ── news_positions（新 m:n 关联表）─────────────────────────
+export const newsPositions = pgTable(
+  "news_positions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    newsId: uuid("news_id")
+      .notNull()
+      .references(() => processedNews.id, { onDelete: "cascade" }),
+    positionId: uuid("position_id")
+      .notNull()
+      .references(() => displayPositions.id, { onDelete: "cascade" }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index("ix_processed_news_space_published").on(table.channelSpaceId, table.publishedAt),
-    index("ix_processed_news_sub_published").on(table.channelSpaceId, table.subChannelId, table.publishedAt),
+    unique("uq_np_news_position").on(table.newsId, table.positionId),
+    index("ix_np_position_news").on(table.positionId, table.newsId),
+    index("ix_np_news").on(table.newsId),
   ],
 );
 
 // ── tasks ─────────────────────────────────────────────────
-
+// v0.5: 移除 channel_space_id、channel_source_id，新增 source_id
 export const tasks = pgTable(
   "tasks",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     type: text("type").notNull(),
-    channelSpaceId: uuid("channel_space_id")
+    sourceId: uuid("source_id")
       .notNull()
-      .references(() => channelSpaces.id, { onDelete: "cascade" }),
-    channelSourceId: uuid("channel_source_id").references(() => channelSources.id, {
+      .references(() => sources.id, { onDelete: "cascade" }),
+    rawItemId: uuid("raw_item_id").references(() => rawItems.id, {
       onDelete: "cascade",
     }),
-    rawItemId: uuid("raw_item_id").references(() => rawItems.id, { onDelete: "cascade" }),
     status: text("status").notNull().default("queued"),
     priority: integer("priority").notNull().default(0),
     runAfter: timestamp("run_after", { withTimezone: true }).notNull().defaultNow(),
@@ -191,20 +241,43 @@ export const tasks = pgTable(
 );
 
 // ── alerts ────────────────────────────────────────────────
-
+// v0.5: channel_space_id nullable，新增 source_id、scope、dedup_key、resolved_at、last_triggered_at
 export const alerts = pgTable(
   "alerts",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    channelSpaceId: uuid("channel_space_id")
-      .notNull()
-      .references(() => channelSpaces.id, { onDelete: "cascade" }),
+    scope: varchar("scope", { length: 20 }).notNull().default("source"),
+    sourceId: uuid("source_id").references(() => sources.id, {
+      onDelete: "set null",
+    }),
+    channelSpaceId: uuid("channel_space_id").references(() => channelSpaces.id, {
+      onDelete: "set null",
+    }), // 改为 nullable
     type: text("type").notNull(),
     severity: text("severity").notNull().default("warning"),
     status: varchar("status", { length: 20 }).notNull().default("active"),
     message: text("message").notNull(),
-    meta: jsonb("meta").notNull().default({}),
+    meta: jsonb("meta").notNull().default(sql`'{}'::jsonb`),
+    // 去重
+    dedupKey: text("dedup_key"),
+    lastTriggeredAt: timestamp("last_triggered_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [index("ix_alerts_space_created").on(table.channelSpaceId, table.createdAt)],
+  (table) => [
+    index("ix_alerts_scope_source").on(table.scope, table.sourceId, table.status),
+    sql`CREATE INDEX IF NOT EXISTS ix_alerts_unread ON alerts(status, created_at) WHERE status = 'active'`,
+    sql`CREATE INDEX IF NOT EXISTS ix_alerts_dedup ON alerts(dedup_key) WHERE status = 'active'`,
+  ],
 );
+
+// ── source_identity_history（新表）─────────────────────────
+export const sourceIdentityHistory = pgTable("source_identity_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  sourceId: uuid("source_id")
+    .notNull()
+    .references(() => sources.id, { onDelete: "cascade" }),
+  oldIdentity: text("old_identity").notNull(),
+  newIdentity: text("new_identity").notNull(),
+  changedAt: timestamp("changed_at", { withTimezone: true }).notNull().defaultNow(),
+});

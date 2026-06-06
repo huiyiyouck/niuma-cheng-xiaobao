@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.5
 - 当前模式：标准迭代
-- 当前阶段：PRD 阶段 R1 Review中；UI 已 Review 并要求修改，等待 Architect / Developer / Tester / DevOps Review
+- 当前阶段：设计阶段已完成（R2 全部通过）
 - 阻塞项：无
-- 下一步入口：切换到 Architect、Developer、Tester、DevOps 角色分别 Review `iterations/v0.5-prd.md`；PM 汇总后提交 R2
+- 下一步入口：切换到 Developer（开发工程师）进入实现阶段
 
 ## 版本列表
 
@@ -18,7 +18,7 @@
 | v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | [iterations/v0.2-ui-spec.md](iterations/v0.2-ui-spec.md) | [iterations/v0.2-design.md](iterations/v0.2-design.md) | — | 已完成 |
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
-| v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | 待产出 | 待产出 | — | PRD 阶段 R1 Review中（UI：需修改） |
+| v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | 待产出 | — | UI 方案+原型已完成，设计阶段待启动 |
 
 ## 当前 Change Notes
 
@@ -47,6 +47,9 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-06 | Tester | v0.5 PRD R2 Tester 复审 | 通过：R1 全部 13 条已关闭（2 高/7 中/4 低）；附 1 条中严重度观察（失败计数矛盾，设计阶段消除）。PRD 已定稿 | 切换到 UI 进入 UI 方案阶段 |
+| 2026-06-06 | Tester | v0.5 PRD R1 Tester Review | 需修改：状态模型混用导致 AC 不可测试、外部 API 失败场景缺失 2 项高严重度；并发/空白状态/数据清理回滚/告警抖动/30s同步可测试性/迁移冲突 7 项中严重度；评分 AC 主观性/不回归/迁移粒度/计数口径 4 项低严重度 | 等待 PM 汇总 R1 并提交 R2；届时由 Tester 复审 |
+| 2026-06-06 | Developer | v0.5 PRD R1 Developer Review | 需修改：状态模型和"未使用"未定义 2 项阻断；告警动作未定义 1 项高；删除迁移冲突/创建回流/历史快照/搜索筛选 AND-OR 4 项中；空间管理/分页/计数口径 3 项低 | 等待 PM 汇总 R1 并提交 R2；届时由 Developer 复审 |
 | 2026-06-02 | UI | v0.5 PRD R1 UI Review | 需修改：Source 状态模型存在 1 项高严重度问题；告警流转、频道删除迁移冲突、新建 Source 回流存在 3 项中严重度问题；空间级管理范围存在 1 项低严重度问题 | 等待 PM 汇总其余角色 R1 Review 并提交 R2；届时由 UI 复审 |
 | 2026-06-02 | PM | v0.5 三条主线规划 + 标准迭代启动 + PRD R1 + 会话收尾 | ✅ 已完成当日规划工作；v0.5 停留在 PRD R1 Review中；PM 日志已分层归档 | UI / Architect / Developer / Tester / DevOps 分别 Review `iterations/v0.5-prd.md` |
 | 2026-05-31 | DevOps | Step 3：drizzle 迁移机制部署侧落地 | ✅ 全 8 步完成 — baseline 注入 / A2 移依赖 / systemd ExecStartPre + StartLimitBurst / #B1 复现拦截已验证 / 操作手册落档；整条 P2 关闭从待办移除 | — |
@@ -75,6 +78,7 @@
 | P1 | 完成 v0.5 PRD 规划：确认三条主线范围（X/Twitter 实时监听、信息源管理重构、评分体系方法论） | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：三条主线已收编进 v0.5 PRD R1，标准迭代已启动 |
 | P1 | 展开并确认「信息源管理重构」产品方案：信息源 Tab、频道空间/子频道树、绑定规则、删除预览、验收边界 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认 |
 | P2 | 确认并产出「评分体系方法论」文档范围：维度、评分锚点、综合分、状态草稿、LLM 输出结构、版本化；本轮不落地代码 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认；不讨论评分后分流 |
+| P2 | 领域标签管理：支持自定义增删改标签选项（当前为固定硬编码 AI/财经/开源/科技/其他），非 v0.5 范围 | PM | 2026-06-06 UI 方案讨论 — UI 侧提出标签管理需求 | 待 PM 评估，纳入后续迭代规划 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）

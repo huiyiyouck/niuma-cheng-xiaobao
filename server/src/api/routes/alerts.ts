@@ -1,75 +1,155 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { pool } from "../../db/pool.ts";
 import { asDict } from "../../shared/utils.ts";
-import { AlertStatusUpdate, AlertsAcknowledgeAll } from "../schemas/index.ts";
+import { AlertStatusUpdate, AlertsQuery } from "../schemas/index.ts";
+import { toISO } from "./channel-spaces.ts";
 
 export async function alertsRoutes(app: FastifyInstance): Promise<void> {
-  app.get("/alerts", async (req: FastifyRequest, reply: FastifyReply) => {
-    const query = req.query as Record<string, string>;
-    const limit = Math.min(Math.max(parseInt(query.limit || "50"), 1), 200);
+  // ── 告警列表（含 counts）──────────────────────────────
 
-    const params: any[] = [limit];
-    let where = "";
-    if (query.channel_space_id) {
-      where = "WHERE channel_space_id = $2";
-      params.push(query.channel_space_id);
+  app.get("/alerts", async (req: FastifyRequest, reply: FastifyReply) => {
+    const q = AlertsQuery.parse(req.query);
+
+    const conditions: string[] = [];
+    const params: any[] = [];
+    let idx = 0;
+
+    if (q.status) {
+      conditions.push(`a.status = $${++idx}`);
+      params.push(q.status);
+    }
+    if (q.type) {
+      conditions.push(`a.type = $${++idx}`);
+      params.push(q.type);
+    }
+    if (q.severity) {
+      conditions.push(`a.severity = $${++idx}`);
+      params.push(q.severity);
     }
 
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // 分页
+    const pageSize = q.page_size;
+    const offset = (q.page - 1) * pageSize;
+    params.push(pageSize, offset);
+    const limitIdx = ++idx;
+    const offsetIdx = ++idx;
+
     const { rows } = await pool.query(
-      `SELECT * FROM alerts ${where} ORDER BY created_at DESC LIMIT $1`,
+      `SELECT a.*,
+              s.display_name AS source_display_name,
+              cs.name AS space_name,
+              NULL AS channel_name
+       FROM alerts a
+       LEFT JOIN sources s ON s.id = a.source_id
+       LEFT JOIN channel_spaces cs ON cs.id = a.channel_space_id
+       ${where}
+       ORDER BY a.created_at DESC
+       LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
       params,
     );
-    return reply.send(rows.map(alertToOut));
+
+    // 获取各状态计数
+    const { rows: countRows } = await pool.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE status = 'active')::int AS active,
+         COUNT(*) FILTER (WHERE status = 'acknowledged')::int AS acknowledged,
+         COUNT(*) FILTER (WHERE status = 'resolved')::int AS resolved,
+         COUNT(*) FILTER (WHERE status = 'ignored')::int AS ignored,
+         COUNT(*)::int AS total
+       FROM alerts`,
+    );
+
+    const counts = countRows[0] || { active: 0, acknowledged: 0, resolved: 0, ignored: 0, total: 0 };
+
+    return reply.send({
+      alerts: rows.map(alertToOut),
+      total: counts.total,
+      counts: {
+        active: counts.active,
+        acknowledged: counts.acknowledged,
+        resolved: counts.resolved,
+        ignored: counts.ignored,
+      },
+    });
   });
 
-  // v0.4: 更新告警状态
+  // ── 更新告警状态 ──────────────────────────────────────
+
   app.patch("/alerts/:id", async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const body = AlertStatusUpdate.parse(req.body);
 
-    const { rows: [existing] } = await pool.query("SELECT * FROM alerts WHERE id = $1", [id]);
+    const { rows: [existing] } = await pool.query(
+      "SELECT * FROM alerts WHERE id = $1", [id],
+    );
     if (!existing) return reply.status(404).send({ detail: "告警不存在" });
 
-    // 状态机校验（Zod 已排除 "active"，API 层只接收 acknowledged/resolved）
-    const current: string = existing.status;
-    if (current === "resolved") {
-      return reply.status(422).send({ detail: "已解决的告警不可再次修改状态" });
-    }
-    // active→acknowledged, active→resolved, acknowledged→resolved 均合法
+    const current = existing.status;
 
+    // 状态流转校验
+    const allowedTransitions: Record<string, string[]> = {
+      active: ["acknowledged", "ignored"],
+      acknowledged: ["resolved", "ignored"],
+      resolved: [], // 终态
+      ignored: ["active"], // 只能重新打开
+    };
+
+    const allowed = allowedTransitions[current] || [];
+    if (!allowed.includes(body.status)) {
+      return reply.status(422).send({
+        detail: `不允许从 ${current} 转换到 ${body.status}`,
+      });
+    }
+
+    // 更新
+    const updates: string[] = [];
+    const vals: any[] = [body.status];
+    let idx = 1;
+
+    if (body.status === "resolved") {
+      updates.push(`resolved_at = now()`);
+    }
+
+    updates.push(`status = $${idx}`);
+
+    vals.push(id);
     const { rows: [updated] } = await pool.query(
-      "UPDATE alerts SET status = $1 WHERE id = $2 RETURNING *", [body.status, id],
+      `UPDATE alerts SET ${updates.join(", ")} WHERE id = $${++idx} RETURNING *`,
+      vals,
     );
+
     return reply.send(alertToOut(updated));
   });
 
-  // v0.4: 批量标记已确认
-  app.post("/alerts/acknowledge-all", async (req: FastifyRequest, reply: FastifyReply) => {
-    const body = AlertsAcknowledgeAll.parse(req.body);
+  // ── 未处理数量（顶栏角标）─────────────────────────────
 
-    const params: any[] = [];
-    let where = "status = 'active'";
-    if (body.channel_space_id) {
-      where += " AND channel_space_id = $1";
-      params.push(body.channel_space_id);
-    }
-
-    const { rowCount } = await pool.query(
-      `UPDATE alerts SET status = 'acknowledged' WHERE ${where}`, params,
+  app.get("/alerts/unread-count", async (_req: FastifyRequest, reply: FastifyReply) => {
+    const { rows: [row] } = await pool.query(
+      "SELECT COUNT(*)::int AS count FROM alerts WHERE status = 'active'",
     );
-    return reply.send({ updated: rowCount ?? 0 });
+    return reply.send({ count: row?.count ?? 0 });
   });
 }
 
 function alertToOut(r: any) {
   return {
     id: r.id,
+    scope: r.scope,
+    source_id: r.source_id,
+    source_display_name: r.source_display_name ?? null,
     channel_space_id: r.channel_space_id,
+    space_name: r.space_name ?? null,
+    channel_name: r.channel_name ?? null,
     type: r.type,
     severity: r.severity,
     status: r.status,
     message: r.message,
     meta: asDict(r.meta),
-    created_at: r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at,
+    dedup_key: r.dedup_key,
+    last_triggered_at: toISO(r.last_triggered_at),
+    resolved_at: toISO(r.resolved_at),
+    created_at: toISO(r.created_at),
   };
 }

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>浏览页 — 牛马程小报 v0.5</title>
+<style>
+  :root {
+    --bg: #FAFAFA; --card: #FFF; --accent: #3498db; --accent-light: #EBF5FB;
+    --text: #1a1a2e; --text-secondary: #5F6B7A; --text-muted: #94A3B8;
+    --border: #E6E7EB; --border-light: #F0F1F3;
+    --success: #27ae60; --success-light: #E8F8F0;
+    --warning: #f39c12; --warning-light: #FEF9E7;
+    --danger: #e74c3c; --danger-light: #FDEDEC;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); }
+  /* TopNav */
+  .topnav { position: sticky; top: 0; z-index: 50; height: 52px; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 24px; }
+  .topnav-brand { font-weight: 800; font-size: 16px; margin-right: 32px; }
+  .topnav-links { display: flex; gap: 4px; }
+  .topnav-link { padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); text-decoration: none; transition: .15s; }
+  .topnav-link:hover { color: var(--accent); background: var(--accent-light); }
+  .topnav-link.active { color: var(--accent); background: var(--accent-light); }
+  .topnav-alert { position: relative; }
+  .topnav-badge { position: absolute; top: 2px; right: 2px; background: var(--danger); color: #FFF; border-radius: 10px; padding: 1px 6px; font-size: 10px; font-weight: 700; min-width: 18px; text-align: center; }
+  /* Content */
+  .content { max-width: 1120px; margin: 0 auto; padding: 20px 24px 80px; }
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border-light); border-radius: 12px; padding: 16px 18px; }
+  .stat-num { font-size: 26px; font-weight: 800; letter-spacing: -0.5px; }
+  .stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+  .stat-sub { font-size: 11px; color: var(--text-muted); }
+  /* Context Card */
+  .context-card { background: var(--card); border: 1px solid var(--border-light); border-radius: 14px; padding: 16px 20px; margin-bottom: 16px; }
+  .cc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .cc-label { font-size: 11px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; min-width: 32px; }
+  .cc-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+  .cc-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: .12s; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); white-space: nowrap; }
+  .cc-pill:hover { border-color: var(--accent); color: var(--accent); }
+  .cc-pill.on { background: var(--accent); color: #FFF; border-color: var(--accent); }
+  .cc-pill.all { border-style: dashed; }
+  .cc-divider { border: none; border-top: 1px solid var(--border-light); margin: 0 0 10px 0; }
+  .cc-filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .cc-search { display: flex; align-items: center; flex: 1; min-width: 180px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; transition: .15s; background: #FAFAFA; }
+  .cc-search:focus-within { border-color: var(--accent); background: var(--card); }
+  .cc-search-icon { font-size: 13px; opacity: 0.4; margin-right: 6px; }
+  .cc-search-input { border: none; padding: 7px 0; font-size: 13px; outline: none; background: transparent; flex: 1; }
+  .cc-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: var(--card); color: var(--text-secondary); cursor: pointer; }
+  .cc-divider-v { width: 1px; height: 20px; background: var(--border); }
+  .cc-range { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+  /* News list */
+  .news-list { display: flex; flex-direction: column; gap: 8px; }
+  .news-card { background: var(--card); border: 1px solid var(--border-light); border-radius: 12px; padding: 18px 20px; transition: .15s; cursor: pointer; }
+  .news-card:hover { border-color: #CBD5E1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transform: translateY(-1px); }
+  .news-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .news-title { font-size: 15px; font-weight: 700; line-height: 1.4; flex: 1; }
+  .news-score { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .score-high { background: var(--success-light); color: var(--success); }
+  .score-mid { background: var(--warning-light); color: var(--warning); }
+  .score-low { background: #F1F5F9; color: var(--text-muted); }
+  .news-summary { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .news-meta { display: flex; gap: 10px; align-items: center; margin-top: 8px; font-size: 11px; color: var(--text-muted); }
+  .news-channel { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .news-tag { padding: 2px 8px; border-radius: 10px; background: var(--accent-light); color: var(--accent); font-size: 10px; font-weight: 700; }
+  .news-time { margin-left: auto; }
+  /* Removed source */
+  .source-removed { color: var(--text-muted); font-style: italic; cursor: default; }
+  /* Empty state */
+  .empty-state { text-align: center; padding: 48px 24px; }
+  .empty-icon { font-size: 40px; opacity: 0.4; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px; }
+  .empty-desc { font-size: 12px; color: var(--text-muted); }
+  /* Detail panel */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 90; }
+  .detail-panel { position: fixed; right: 0; top: 0; bottom: 0; width: 480px; max-width: 100vw; background: var(--card); z-index: 100; box-shadow: -4px 0 24px rgba(0,0,0,0.12); overflow-y: auto; }
+  .detail-header { position: sticky; top: 0; background: var(--card); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; z-index: 5; }
+  .detail-header-label { font-size: 13px; font-weight: 700; color: var(--text-muted); }
+  .detail-close { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .detail-body { padding: 24px 20px; }
+  .detail-title { font-size: 20px; font-weight: 800; line-height: 1.4; margin-bottom: 16px; }
+  .detail-summary { font-size: 14px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 20px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-title { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+  .detail-bullets { list-style: none; }
+  .detail-bullets li { padding: 4px 0 4px 16px; position: relative; font-size: 13px; color: var(--text-secondary); }
+  .detail-bullets li::before { content: ''; position: absolute; left: 0; top: 10px; width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  /* Skeleton */
+  .skeleton { background: linear-gradient(90deg, #f0f1f3 25%, #e6e7eb 50%, #f0f1f3 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 6px; }
+  .sk-card { background: var(--card); border: 1px solid var(--border-light); border-radius: 12px; padding: 18px 20px; margin-bottom: 8px; }
+  .sk-title { height: 16px; width: 65%; margin-bottom: 8px; }
+  .sk-line { height: 12px; width: 90%; margin-bottom: 6px; }
+  .sk-line-short { height: 12px; width: 75%; margin-bottom: 8px; }
+  .sk-tags { display: flex; gap: 6px; }
+  .sk-tag { height: 22px; width: 48px; border-radius: 10px; }
+  @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+  /* Error bar */
+  .error-bar { padding: 10px 14px; border-radius: 8px; background: var(--danger-light); border: 1px solid rgba(231,76,60,0.2); color: #991b1b; font-size: 12px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .error-close { margin-left: auto; cursor: pointer; color: #991b1b; background: none; border: none; font-size: 16px; }
+</style>
+</head>
+<body>
+
+<!-- TopNav -->
+<nav class="topnav">
+  <div class="topnav-brand">🐂 牛马程小报</div>
+  <div class="topnav-links">
+    <a href="browse.html" class="topnav-link active">浏览</a>
+    <a href="admin.html" class="topnav-link">管理</a>
+    <a href="logs.html" class="topnav-link">系统日志</a>
+    <a href="alerts.html" class="topnav-link topnav-alert">告警<span class="topnav-badge">3</span></a>
+  </div>
+</nav>
+
+<div class="content">
+
+  <!-- Stats Cards -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-num" style="color:#3498db">47</div>
+      <div class="stat-label">今日新增</div>
+      <div class="stat-sub">较昨日 +12</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#27ae60">8</div>
+      <div class="stat-label">活跃信息源</div>
+      <div class="stat-sub">共 12 个信息源</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#1a1a2e">3,286</div>
+      <div class="stat-label">总新闻数</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num" style="color:#1a1a2e">5</div>
+      <div class="stat-label">频道数</div>
+    </div>
+  </div>
+
+  <!-- Context Card (space + channel + filters unified) -->
+  <div class="context-card">
+    <div class="cc-row">
+      <span class="cc-label">空间</span>
+      <div class="cc-pills">
+        <span class="cc-pill on">AI</span>
+        <span class="cc-pill">财经</span>
+        <span class="cc-pill">开源</span>
+      </div>
+    </div>
+    <div class="cc-row">
+      <span class="cc-label">频道</span>
+      <div class="cc-pills">
+        <span class="cc-pill all on">全部</span>
+        <span class="cc-pill">模型动态</span>
+        <span class="cc-pill">行业资讯</span>
+        <span class="cc-pill">开源项目</span>
+        <span class="cc-pill">学术前沿</span>
+        <span class="cc-pill">工具产品</span>
+      </div>
+    </div>
+    <hr class="cc-divider">
+    <div class="cc-filter-row">
+      <div class="cc-search">
+        <span class="cc-search-icon">🔍</span>
+        <input class="cc-search-input" placeholder="搜索新闻…">
+      </div>
+      <span class="cc-divider-v"></span>
+      <select class="cc-select"><option>最新优先</option><option>最高评分</option><option>最低评分</option></select>
+      <span class="cc-divider-v"></span>
+      <div class="cc-range">
+        <span>最低评分</span>
+        <input type="range" min="0" max="10" step="0.5" value="0" style="width:70px;accent-color:var(--accent)">
+        <span style="color:var(--accent);font-weight:700">不限</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- News List (normal state) -->
+  <div class="news-list">
+    <div class="news-card">
+      <div class="news-top">
+        <div class="news-title">OpenAI 发布 GPT-5 技术报告，多项基准超越人类水平</div>
+        <span class="news-score score-high">9.0</span>
+      </div>
+      <div class="news-summary">OpenAI 今日正式发布 GPT-5 技术报告，在 MMLU、HumanEval 等多项基准测试中达到新高度。报告详细阐述了模型架构改进和训练方法创新。</div>
+      <div class="news-meta">
+        <span class="news-channel">AI · 模型动态</span>
+        <span class="news-tag">模型发布</span>
+        <span>📎 OpenAI</span>
+        <span>🔗 OpenAI 官方 X</span>
+        <span class="news-time">18 分钟前</span>
+      </div>
+    </div>
+
+    <div class="news-card">
+      <div class="news-top">
+        <div class="news-title">Anthropic 开源 MCP 协议 v2.0，支持流式工具调用</div>
+        <span class="news-score score-high">8.5</span>
+      </div>
+      <div class="news-summary">Anthropic 发布 MCP v2.0 规范，新增流式工具调用支持、双向通信机制和增强的权限模型。已有超过 200 个开源 MCP Server 宣布兼容。</div>
+      <div class="news-meta">
+        <span class="news-channel">AI · 开源项目</span>
+        <span class="news-tag">开源</span>
+        <span>📎 Anthropic</span>
+        <span>🔗 Anthropic 官方 X</span>
+        <span class="news-time">42 分钟前</span>
+      </div>
+    </div>
+
+    <div class="news-card">
+      <div class="news-top">
+        <div class="news-title">DeepSeek 发布最新论文：稀疏注意力机制大幅降低推理成本</div>
+        <span class="news-score score-mid">7.5</span>
+      </div>
+      <div class="news-summary">DeepSeek 团队在 arXiv 发表论文，提出一种新型稀疏注意力机制，在保持模型质量的同时将推理成本降低 60%。论文已在 Hugging Face 社区引起广泛讨论。</div>
+      <div class="news-meta">
+        <span class="news-channel">AI · 学术前沿</span>
+        <span class="news-tag">研究动态</span>
+        <span>📎 DeepSeek</span>
+        <span>🔗 arXiv</span>
+        <span class="news-time">1 小时前</span>
+      </div>
+    </div>
+
+    <div class="news-card">
+      <div class="news-top">
+        <div class="news-title">美联储维持利率不变，暗示年内可能降息两次</div>
+        <span class="news-score score-mid">6.0</span>
+      </div>
+      <div class="news-summary">美联储 FOMC 会议决定维持联邦基金利率在 5.25%-5.50% 不变。点阵图显示多数委员预计年内将有两次降息，市场对此反应积极。</div>
+      <div class="news-meta">
+        <span class="news-channel">财经 · 行业资讯</span>
+        <span class="news-tag">宏观</span>
+        <span>📎 美联储</span>
+        <span>🔗 Reuters</span>
+        <span class="news-time">2 小时前</span>
+      </div>
+    </div>
+
+    <div class="news-card">
+      <div class="news-top">
+        <div class="news-title">一款已停运的开源项目分析工具的历史文章</div>
+        <span class="news-score score-low">4.5</span>
+      </div>
+      <div class="news-summary">该信息源已从平台移除，历史新闻保留供参考。</div>
+      <div class="news-meta">
+        <span class="news-channel">开源 · 工具产品</span>
+        <span class="source-removed">来源已移除</span>
+        <span class="news-time">3 天前</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Panel (shown for demo) -->
+  <div class="overlay" id="overlay" style="display:none"></div>
+  <div class="detail-panel" id="panel" style="display:none">
+    <div class="detail-header">
+      <span class="detail-header-label">新闻详情</span>
+      <button class="detail-close" onclick="closePanel()">×</button>
+    </div>
+    <div class="detail-body">
+      <div class="detail-title">OpenAI 发布 GPT-5 技术报告，多项基准超越人类水平</div>
+      <span class="news-score score-high" style="display:inline-block;margin-bottom:16px">9.0</span>
+      <div class="detail-summary">OpenAI 今日正式发布 GPT-5 技术报告，在 MMLU、HumanEval 等多项基准测试中达到新高度。报告详细阐述了模型架构改进和训练方法创新，包括改进的 RLHF 对齐策略和增强的多模态能力。</div>
+      <div class="detail-section">
+        <div class="detail-section-title">要点</div>
+        <ul class="detail-bullets">
+          <li>GPT-5 在 MMLU 基准上达到 92.3%，超越人类专家水平</li>
+          <li>多模态能力增强：支持图像、音频、视频输入</li>
+          <li>推理成本较 GPT-4 降低 40%</li>
+        </ul>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">标签</div>
+        <span class="news-tag" style="margin-right:6px">模型发布</span>
+        <span class="news-tag" style="margin-right:6px">GPT-5</span>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">来源</div>
+        <div style="padding:6px 12px;background:#F4F5F7;border-radius:8px;font-size:13px;color:var(--accent)">🔗 OpenAI 官方 X · @OpenAI</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll('.news-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.getElementById('overlay').style.display = 'block'
+      document.getElementById('panel').style.display = 'block'
+    })
+  })
+  function closePanel() {
+    document.getElementById('overlay').style.display = 'none'
+    document.getElementById('panel').style.display = 'none'
+  }
+  document.getElementById('overlay')?.addEventListener('click', closePanel)
+</script>
+</body>
+</html>

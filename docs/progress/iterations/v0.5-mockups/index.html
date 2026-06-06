@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>牛马程小报 v0.5 — 原型导航</title>
+<style>
+  :root {
+    --bg: #FAFAFA;
+    --card: #FFF;
+    --accent: #3498db;
+    --accent-light: #EBF5FB;
+    --text: #1a1a2e;
+    --text-secondary: #5F6B7A;
+    --text-muted: #94A3B8;
+    --border: #E6E7EB;
+    --border-light: #F0F1F3;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --success: #27ae60;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: var(--text); }
+  .container { max-width: 720px; margin: 0 auto; padding: 60px 24px; }
+  h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 40px; }
+  .grid { display: grid; gap: 12px; }
+  .card {
+    display: block; background: var(--card); border: 1px solid var(--border-light);
+    border-radius: 12px; padding: 24px 28px; text-decoration: none; color: inherit;
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+  }
+  .card:hover { border-color: var(--accent); box-shadow: 0 2px 12px rgba(52,152,219,0.1); transform: translateY(-1px); }
+  .card h2 { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .card p { font-size: 13px; color: var(--text-secondary); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 10px; font-weight: 700; }
+  .badge-new { background: #E8F8F0; color: var(--success); }
+  .badge-mod { background: var(--accent-light); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🐂 牛马程小报 v0.5</h1>
+  <p class="subtitle">原型导航 — 管理端全面重构 · 告警页新增 · Source 资产化</p>
+  <div class="grid">
+    <a href="browse.html" class="card">
+      <h2>浏览页 <span class="badge badge-mod">微调</span></h2>
+      <p>新闻浏览 · 空间/频道两层Pill · 统计卡片 · 详情面板</p>
+    </a>
+    <a href="admin.html" class="card">
+      <h2>管理页 <span class="badge badge-new">重构</span></h2>
+      <p>双Tab: 空间管理(空间Pill+频道Pill+Source卡片) + 信息源库(表格+分页)</p>
+    </a>
+    <a href="logs.html" class="card">
+      <h2>系统日志 <span class="badge badge-mod">保留</span></h2>
+      <p>日志表格 · 级别/来源/关键字筛选 · 复制详情</p>
+    </a>
+    <a href="alerts.html" class="card">
+      <h2>告警页 <span class="badge badge-new">新建</span></h2>
+      <p>状态Tab·行内操作·顶栏角标</p>
+    </a>
+    <a href="source-detail.html" class="card">
+      <h2>Source 详情页 <span class="badge badge-new">新建</span></h2>
+      <p>双栏布局 · 展示位置管理 · 身份变更历史</p>
+    </a>
+  </div>
+</div>
+</body>
+</html>

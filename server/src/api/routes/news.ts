@@ -4,53 +4,91 @@ import { asDict } from "../../shared/utils.ts";
 import { NewsQuery } from "../schemas/index.ts";
 
 export async function newsRoutes(app: FastifyInstance): Promise<void> {
-  // 列表
-  app.get("/channel-spaces/:space_id/news", async (req: FastifyRequest, reply: FastifyReply) => {
-    const { space_id } = req.params as { space_id: string };
+  // ── 新闻列表（通过 news_positions JOIN + DISTINCT 去重）─
+
+  app.get("/news", async (req: FastifyRequest, reply: FastifyReply) => {
     const q = NewsQuery.parse(req.query);
+
+    if (!q.space_id) {
+      return reply.status(400).send({ detail: "space_id is required" });
+    }
+
+    // 验证空间存在
+    const { rows: [space] } = await pool.query(
+      "SELECT id FROM channel_spaces WHERE id = $1", [q.space_id],
+    );
+    if (!space) return reply.status(400).send({ detail: "频道空间不存在" });
 
     let orderCol: string;
     if (q.sort === "score_desc") {
-      orderCol = "pn.importance_score DESC NULLS LAST";
-    } else if (q.sort === "score_asc") {
-      orderCol = "pn.importance_score ASC NULLS LAST";
+      orderCol = "importance_score DESC NULLS LAST";
     } else {
-      orderCol = "pn.published_at DESC NULLS LAST";
+      orderCol = "published_at DESC NULLS LAST";
     }
 
-    const params: any[] = [space_id, q.limit, q.offset];
-    let subFilter = "";
-    let idx = 3;
-    if (q.sub_channel_id) {
-      const ids = q.sub_channel_id.split(",").map((s) => s.trim()).filter(Boolean);
-      if (ids.length === 1) {
-        subFilter = `AND pn.sub_channel_id = $${++idx}`;
-        params.push(ids[0]);
-      } else if (ids.length > 1) {
-        subFilter = `AND pn.sub_channel_id = ANY($${++idx})`;
-        params.push(ids);
-      }
-    }
-    // v0.4: 搜索参数
-    if (q.q) {
-      subFilter += ` AND (pn.title ILIKE '%' || $${++idx} || '%' OR pn.summary ILIKE '%' || $${++idx} || '%')`;
-      params.push(q.q);
+    const conditions: string[] = [];
+    const params: any[] = [q.space_id];
+    let idx = 1;
+
+    conditions.push("dp.channel_space_id = $1");
+    conditions.push("dp.deleted_at IS NULL");
+    conditions.push("dp.enabled = true");
+
+    // 频道筛选
+    if (q.channel_id) {
+      conditions.push(`dp.channel_id = $${++idx}`);
+      params.push(q.channel_id);
     }
 
+    // 搜索（同一参数值复用 $n 引用）
+    if (q.search) {
+      params.push(q.search);
+      const searchIdx = ++idx;
+      conditions.push(
+        `(pn.title ILIKE '%' || $${searchIdx} || '%' OR pn.summary ILIKE '%' || $${searchIdx} || '%')`,
+      );
+    }
+
+    // 最低评分
+    if (q.min_score !== undefined) {
+      conditions.push(`pn.importance_score >= $${++idx}`);
+      params.push(q.min_score);
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    // 分页
+    const pageSize = q.page_size;
+    const offset = (q.page - 1) * pageSize;
+    params.push(pageSize, offset);
+    const limitIdx = ++idx;
+    const offsetIdx = ++idx;
+
+    // DISTINCT ON 要求 pn.id 排在第一，外层子查询再按业务排序
     const { rows } = await pool.query(
-      `SELECT pn.* FROM processed_news pn
-       WHERE pn.channel_space_id = $1 ${subFilter}
-       ORDER BY ${orderCol}, pn.created_at DESC
-       LIMIT $2 OFFSET $3`,
+      `SELECT * FROM (
+         SELECT DISTINCT ON (pn.id) pn.*
+         FROM processed_news pn
+         JOIN news_positions np ON np.news_id = pn.id
+         JOIN display_positions dp ON dp.id = np.position_id
+         ${where}
+         ORDER BY pn.id
+       ) AS deduped
+       ORDER BY ${orderCol}
+       LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
       params,
     );
+
     return reply.send(rows.map(newsToOut));
   });
 
-  // 详情
+  // ── 新闻详情 ──────────────────────────────────────────
+
   app.get("/news/:news_id", async (req: FastifyRequest, reply: FastifyReply) => {
     const { news_id } = req.params as { news_id: string };
-    const { rows: [row] } = await pool.query("SELECT * FROM processed_news WHERE id = $1", [news_id]);
+    const { rows: [row] } = await pool.query(
+      "SELECT * FROM processed_news WHERE id = $1", [news_id],
+    );
     if (!row) return reply.status(404).send({ detail: "news not found" });
     return reply.send(newsToOut(row));
   });
@@ -59,9 +97,7 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
 function newsToOut(r: any) {
   return {
     id: r.id,
-    channel_space_id: r.channel_space_id,
     raw_item_id: r.raw_item_id,
-    sub_channel_id: r.sub_channel_id,
     title: r.title,
     summary: r.summary,
     language: r.language,

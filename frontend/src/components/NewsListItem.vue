@@ -20,21 +20,23 @@ function fmtTime(iso: string | null): string {
   return `${Math.floor(hours / 24)} 天前`;
 }
 
-function sourceUrl(item: ProcessedNews): string | null {
-  const v = item.source_refs?.url;
-  return typeof v === "string" && v.length > 0 ? v : null;
-}
+// v0.5: 来源已移除时不可点击
+const isSourceRemoved = props.item.source_availability_status === "source_removed";
 </script>
 
 <template>
-  <div class="ni" :class="{ expanded }" @click="toggle">
+  <div class="ni" :class="{ expanded, 'ni--removed': isSourceRemoved }" @click="isSourceRemoved ? null : toggle()">
     <div class="ni-row">
       <ScoreBadge :score="item.importance_score ?? null" />
       <div class="ni-body">
         <div class="ni-title">{{ item.title }}</div>
         <div class="ni-meta">
-          <span>📄 {{ item.channel_space_id }}</span>
+          <!-- v0.5: 显示频道名称 -->
+          <span v-if="item.channel_name"># {{ item.channel_name }}</span>
           <span>{{ fmtTime(item.published_at) }}</span>
+          <!-- v0.5: 来源已移除 -->
+          <span v-if="isSourceRemoved" class="source-removed-label">来源已移除</span>
+          <span v-else class="source-label">{{ item.source_display_name }}</span>
         </div>
       </div>
       <span class="ni-arrow">{{ expanded ? '▾' : '▸' }}</span>
@@ -47,10 +49,6 @@ function sourceUrl(item: ProcessedNews): string | null {
       <div class="ni-bullets" v-if="item.bullets && item.bullets.length">
         <div v-for="(b, i) in item.bullets" :key="i">{{ b }}</div>
       </div>
-      <div class="ni-links">
-        <a v-if="sourceUrl(item)" :href="sourceUrl(item)!" target="_blank" rel="noreferrer">📎 原文链接</a>
-        <a href="#" @click.prevent>📊 查看评分详情</a>
-      </div>
     </div>
   </div>
 </template>
@@ -60,6 +58,10 @@ function sourceUrl(item: ProcessedNews): string | null {
   background: var(--card); border: 1px solid var(--border);
   border-radius: var(--radius); overflow: hidden;
   box-shadow: var(--shadow-soft); cursor: pointer;
+}
+.ni--removed {
+  cursor: default;
+  opacity: 0.7;
 }
 .ni-row {
   display: flex; align-items: center; gap: 12px;
@@ -71,13 +73,20 @@ function sourceUrl(item: ProcessedNews): string | null {
   font-size: 13px; font-weight: 700;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ni-meta { display: flex; gap: 10px; margin-top: 3px; font-size: 11px; color: var(--muted); }
+.ni-meta { display: flex; gap: 10px; margin-top: 3px; font-size: 11px; color: var(--muted); align-items: center; }
 .ni-arrow { font-size: 11px; color: var(--muted); flex-shrink: 0; }
 .ni-detail { padding: 0 16px 16px; border-top: 1px solid #f1f5f9; }
 .ni-summary { font-size: 13px; color: #334155; line-height: 1.7; margin-top: 12px; }
 .ni-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
 .tag { padding: 3px 8px; border-radius: 999px; font-size: 10px; background: #f1f5f9; color: #475569; }
 .ni-bullets { margin-top: 10px; font-size: 11px; color: var(--muted); }
-.ni-links { margin-top: 10px; display: flex; gap: 12px; font-size: 11px; }
-.ni-links a { color: var(--primary); font-weight: 600; }
+
+/* v0.5: 来源已移除灰色标记 */
+.source-removed-label {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.source-label {
+  color: var(--accent);
+}
 </style>

@@ -1,5 +1,52 @@
 # DevOps 工作日志
 
+## 2026-06-06 — v0.5 设计文档 R2 Review
+
+- 本次角色：DevOps（运维/部署工程师）
+- 工作模式：标准迭代 设计阶段 R2 复审
+- R1 4 条意见（1 高/2 中/1 低）逐项核验，全部已正确关闭
+- 结论：通过
+- R2 新增内容（§6.3 环境变量汇总、§4.3 Stream/systemd 交互明确、`X_BEARER_TOKEN` 缺失降级策略）均运维友好
+- 设计文档已达到实现阶段准入标准
+- 产出：R2 Review 记录已写入 `iterations/v0.5-design.md`、`iterations/v0.5.md`、`INDEX.md`
+- 下一步入口：Developer 进入实现阶段
+
+## 2026-06-06 — v0.5 设计文档 R1 Review
+
+- 本次角色：DevOps（运维/部署工程师）
+- 工作模式：标准迭代 设计阶段 Review
+- 审查范围：数据清理脚本安全性、X Stream 单实例约束可行性、迁移步骤可执行性、环境依赖
+- 结论：需修改
+- 发现 1 高（清理脚本引用迁移后表名）、2 中（新旧表名混用、缺环境变量汇总）、1 低（Stream/systemd 交互未定义）
+- 已确认正确：单实例约束、清理安全措施四层防护、FK 删除顺序、X API 端点依赖、ExecStartPre 兼容性
+- 产出：Review 记录已写入 `iterations/v0.5-design.md`、`iterations/v0.5.md`、`INDEX.md`
+- 下一步入口：PM 完成 R1 Review → Architect 汇总 → 设计文档 R2
+
+## 2026-06-06 — v0.5 PRD R2 Review
+
+- 本次角色：DevOps（运维/部署工程师）
+- 工作模式：标准迭代 PRD R2 复审
+- R1 4 条意见（1 高/2 中/1 低）逐项核验，全部已正确关闭：
+  - 高：pg_dump 备份 → §4.10 + §7 + AC-5.8.1 三层覆盖
+  - 中：环境变量 → §7.4 列出 `X_BEARER_TOKEN`，完整清单委托设计阶段
+  - 中：X API 门禁 → §7.2 明确"核验不通过则 X 主线阻塞"
+  - 低：/health + 日志 → 维持现状可接受；R2 新增事务回滚和 /health 回归 AC 为额外收益
+- 结论：通过
+- R2 新增内容（清理回滚、空库迁移、健康检查回归、告警去重）从运维视角均正面
+- 产出：R2 Review 记录已写入 `iterations/v0.5-prd.md`、`iterations/v0.5.md`、`INDEX.md`
+- 下一步入口：Tester 完成 R2 复审 → PRD 定稿 → UI 方案阶段
+
+## 2026-06-06 — v0.5 PRD R1 Review
+
+- 本次角色：DevOps（运维/部署工程师）
+- 工作模式：标准迭代 PRD Review（非独立运维任务）
+- 审查范围：X API 环境依赖、环境变量、单实例约束、不可逆数据清理、上线验证风险、回滚条件
+- 结论：需修改
+- 发现 1 项高严重度（数据重置缺 pg_dump 备份）、2 项中严重度（环境变量清单缺失、X API 核验未设部署门禁）、1 项低严重度（/health 不感知 Stream、日志保留策略未明确）
+- 已确认无问题：单实例约束、不可逆清理审批链、现有基础设施（drizzle/systemd/nginx）、删除操作不丢数据
+- 产出：PRD Review 记录已写入 `iterations/v0.5-prd.md`；`iterations/v0.5.md` 门禁状态已更新；`INDEX.md` 当前阶段已更新
+- 下一步入口：Architect 完成 R1 Review → PM 汇总 → PRD R2
+
 ## 2026-05-31 — 会话收尾
 
 - 本次会话：DevOps（运维/部署工程师），完成 5 件事，全部归档推送
