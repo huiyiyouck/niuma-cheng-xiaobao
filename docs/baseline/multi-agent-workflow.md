@@ -1,14 +1,16 @@
-# claude-workflow 多角色协作基线
+# 多角色协作基线
 
 | 字段 | 值 |
 |------|-----|
 | 版本 | v1.0 |
 | 状态 | 通用模板 |
-| 适用范围 | 使用 Claude Code 的单人/小型项目 |
+| 适用范围 | 使用 AI 编程 Agent 的单人/小型项目 |
 
 ## 1. 目标
 
-这套基线把 Claude Code 会话组织成一个轻量开发团队：同一个人可以在不同时间以 PM（产品经理）、UI（界面设计师）、Architect（架构师）、Developer（开发工程师）、Tester（测试工程师）、DevOps（运维/部署工程师）等角色启动 Agent，让项目拥有启动、需求、界面、设计、实现、测试、部署和复盘的持续记忆。
+这套基线把多个角色工作会话组织成一个轻量开发团队：同一个人可以在不同时间以 PM（产品经理）、UI（界面设计师）、Architect（架构师）、Developer（开发工程师）、Tester（测试工程师）、DevOps（运维/部署工程师）等角色启动 Agent，让项目拥有启动、需求、界面、设计、实现、测试、部署和复盘的持续记忆。
+
+工作流只关心当前会话承担的角色，不关心会话由哪一种客户端启动。一个会话只承担一个角色；不同会话可以分别承担不同角色。
 
 人类用户是项目 Owner（负责人）和实际项目经理，负责最终协调、优先级判断和流程取舍。工作流不设置常驻 Project Manager（项目经理）Agent，避免让一人公司产生没有实际价值的管理层。
 
@@ -17,37 +19,38 @@
 ## 2. 文件结构
 
 ```text
-CLAUDE.md
-└── docs/
-    ├── baseline/
-    │   ├── project-context.md
-    │   ├── runtime.md
-    │   ├── multi-agent-workflow.md
-    │   ├── work-modes.md
-    │   ├── knowledge-base.md
-    │   ├── context-policy.md
-    │   ├── mechanisms.md
-    │   ├── bootstrap.md
-    │   ├── role-pm.md
-    │   ├── role-ui.md
-    │   ├── role-architect.md
-    │   ├── role-developer.md
-    │   ├── role-tester.md
-    │   ├── role-devops.md
-    │   ├── role-wm.md
-    │   └── subagents/
-    │       ├── sub-frontend.md
-    │       └── sub-backend.md
-    └── progress/
-        ├── INDEX.md
-        ├── iterations/
-        ├── ad-hoc/
-        ├── archive/
-        └── roles/
-└── docs/knowledge/                 ← 团队知识库（沉淀“以后还值得知道什么”）
+CLAUDE.md                         ← Claude Code 入口
+AGENTS.md                         ← Codex 入口
+docs/
+├── baseline/
+│   ├── project-context.md
+│   ├── runtime.md
+│   ├── multi-agent-workflow.md
+│   ├── work-modes.md
+│   ├── knowledge-base.md
+│   ├── context-policy.md
+│   ├── mechanisms.md
+│   ├── bootstrap.md
+│   ├── role-pm.md
+│   ├── role-ui.md
+│   ├── role-architect.md
+│   ├── role-developer.md
+│   ├── role-tester.md
+│   ├── role-devops.md
+│   ├── role-wm.md
+│   └── subagents/
+│       ├── sub-frontend.md
+│       └── sub-backend.md
+├── progress/
+│   ├── INDEX.md
+│   ├── iterations/
+│   ├── ad-hoc/
+│   ├── archive/
+│   └── roles/
+└── knowledge/                     ← 团队知识库（沉淀“以后还值得知道什么”）
 ```
 
-`baseline/` 写”怎么协作”，`progress/` 写”实际做了什么”。`CLAUDE.md` 是项目根目录的入口文件，随工作流一起存在。
+`baseline/` 写”怎么协作”，`progress/` 写”实际做了什么”。`CLAUDE.md` 和 `AGENTS.md` 是项目根目录中面向不同客户端的入口文件，随工作流一起存在；它们进入团队模式后共用同一套基线。
 
 ## 3. 角色名称
 

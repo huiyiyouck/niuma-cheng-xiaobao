@@ -1,6 +1,6 @@
 # 代码与协作规范
 
-> **迁移说明（2026-05-30）：** 本文件中的工作流规则（状态管理、Review 流程、基线修正等）已升级为 claude-workflow v1.0 基线，详见 `docs/baseline/multi-agent-workflow.md`、`docs/baseline/mechanisms.md`。本文件保留项目特有的 Git 规范和 commit 约定，这些内容在新基线中没有覆盖。
+> **迁移说明（2026-05-30）：** 本文件中的工作流规则（状态管理、Review 流程、基线修正等）已升级为多角色协作 v1.0 基线，详见 `docs/baseline/multi-agent-workflow.md`、`docs/baseline/mechanisms.md`。本文件保留项目特有的 Git 规范和 commit 约定，这些内容在新基线中没有覆盖。
 >
 > 最后更新：2026-05-23
 > 维护者：架构师
@@ -22,7 +22,7 @@
 ## Git 规范
 
 ### 工作流（每次会话）
-> 与 CLAUDE.md 启动必做 + 设计文档第 6.3 节保持一致。此处为完整版。
+> 与当前客户端入口文件中的启动必做 + 设计文档第 6.3 节保持一致。此处为完整版。
 
 ```
 开始：
@@ -105,6 +105,7 @@
 - `docs/baseline/`
 - `docs/templates/`
 - `CLAUDE.md`
+- `AGENTS.md`
 
 ### 主门禁流程
 1. **停止删除**：Agent 不得直接执行 `git rm`、`rm`、`Edit` 删除文件内容、或在 commit 中产生删除变更。
@@ -131,7 +132,7 @@
 受保护路径的删除 commit，标题第一行必须包含「删除」「移除」「清理」等明示字样；禁止用「同步」「对齐」「整理」等模糊动词遮蔽删除事实。
 
 #### 协作 commit 二次核对
-标注 `Co-Authored-By: Claude` 的 commit（无论是否涉及删除），push 前 Agent 必须把 `git diff --stat` 输出贴进会话；如果 stat 与 commit message 描述范围不一致，停下等 Owner 决策。
+由 AI Agent 生成或标注 `Co-Authored-By` 的 commit（无论是否涉及删除），push 前 Agent 必须把 `git diff --stat` 输出贴进会话；如果 stat 与 commit message 描述范围不一致，停下等 Owner 决策。
 
 ### 例外情况
 - **架构师自身需要删除受保护路径文件**：架构师不能自审。此时必须由 Owner 直接 Review（不能切换到其他 Agent 角色代替）。

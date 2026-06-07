@@ -30,7 +30,7 @@
 
 ## 受保护路径删除 Review 职责
 
-按 `conventions.md` §受保护路径删除 Review 门禁，架构师是受保护路径（`server/`、`frontend/src/`、`deploy/`、`docs/baseline/`、`docs/templates/`、`CLAUDE.md`）删除操作的指定 Review 方。
+按 `conventions.md` §受保护路径删除 Review 门禁，架构师是受保护路径（`server/`、`frontend/src/`、`deploy/`、`docs/baseline/`、`docs/templates/`、`CLAUDE.md`、`AGENTS.md`）删除操作的指定 Review 方。
 
 被请求 Review 时：
 1. 读取删除清单中每个文件的当前内容和最近 commit 记录
@@ -92,7 +92,7 @@
 
 ## 启动检查
 
-1. 完成 `CLAUDE.md` 启动必做。
+1. 完成当前客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）中的启动必做。
 2. 如果 `docs/progress/roles/architect.md` 不存在，从 `docs/templates/role-log.md` 创建。
 3. 读取当前迭代记录和项目架构上下文。
 4. 判断本次出场场景：

@@ -69,7 +69,7 @@
 
 ## 启动检查
 
-1. 完成 `CLAUDE.md` 启动必做。
+1. 完成当前客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）中的启动必做。
 2. 如果 `docs/progress/roles/pm.md` 不存在，从 `docs/templates/role-log.md` 创建。
 3. 读取当前迭代记录。
 4. 判断本次出场场景：

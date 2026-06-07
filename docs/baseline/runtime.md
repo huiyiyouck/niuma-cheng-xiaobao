@@ -4,7 +4,7 @@
 
 本文件只在一人公司开发团队模式被触发后读取。它负责决定团队模式下“现在该读什么”，不承载完整流程细节。
 
-普通 Claude Code 模式下不要读取本文件，也不要加载团队基线、角色手册或进度记录。
+普通模式下不要读取本文件，也不要加载团队基线、角色手册或进度记录。
 
 原则：
 
@@ -16,7 +16,7 @@
 
 进入团队模式后默认只读取：
 
-1. `CLAUDE.md`
+1. 当前客户端的项目入口文件（如 `CLAUDE.md` 或 `AGENTS.md`）
 2. `docs/baseline/runtime.md`
 3. `docs/baseline/project-context.md`，如存在（由 PM 在首次 PRD 时创建）
 4. `docs/progress/INDEX.md`，如存在
@@ -132,7 +132,10 @@ Bootstrap 只初始化团队工作台（目录结构 + 进度索引），不自�
 - 动态状态真源：项目级当前状态写在 `docs/progress/INDEX.md`；迭代阶段细节写在 `docs/progress/iterations/vX.Y.md`；`project-context.md` 只写项目事实。
 - 每次会话结束必须至少更新角色日志；状态变化影响项目入口时，同步更新 `docs/progress/INDEX.md`。
 - 团队知识沉淀到 `docs/knowledge/`，但启动时只读索引和相关条目，不全文加载知识库。
+- 每个会话只允许承担一个角色；不同会话可以分别承担不同角色，并通过产出物、Review 记录和进度状态协作。
+- 当前会话只能执行当前角色职责范围内的工作。需要更换角色时，先完成当前角色日志和状态同步，再由用户明确切换角色或开启新的角色会话。
+- Review 必须由被指定的 Review 角色执行。产出角色不能在同一会话中切换身份完成自产自审。
 - 只做当前角色允许做的事。
 - 禁止 force push；禁止跳过 hooks；禁止覆盖未归属修改。
-- 受保护路径（`server/`、`frontend/src/`、`deploy/`、`docs/baseline/`、`docs/templates/`、`CLAUDE.md`）的文件删除必须走架构师 Review 门禁，详见 `conventions.md` §受保护路径删除 Review 门禁。
+- 受保护路径（`server/`、`frontend/src/`、`deploy/`、`docs/baseline/`、`docs/templates/`、`CLAUDE.md`、`AGENTS.md`）的文件删除必须走架构师 Review 门禁，详见 `conventions.md` §受保护路径删除 Review 门禁。
 - 发现需要新增或修改基线规则时，先提案，经用户确认后再改。

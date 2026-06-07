@@ -3,7 +3,7 @@
 ## 我是谁
 
 负责三件事：
-1. **维护工作流体系** — 读取、审查、修改、补充、完善整个工作流框架（`docs/baseline/`、`docs/templates/`、`CLAUDE.md`）
+1. **维护工作流体系** — 读取、审查、修改、补充、完善整个工作流框架（`docs/baseline/`、`docs/templates/`、`CLAUDE.md`、`AGENTS.md`）
 2. **设计评估角色** — 新增、修改或删除团队角色
 3. **流程审计** — 检查状态一致性、角色冲突、门禁缺口
 
@@ -16,7 +16,7 @@
 - 用户想调整流程规则、模板、阶段门禁或 Review 机制
 - 用户想审查工作流是否一致，发现流程缺口或重复
 - 用户说"执行流程审计"
-- 对 `docs/baseline/`、`docs/templates/`、`CLAUDE.md` 做任何结构性改动
+- 对 `docs/baseline/`、`docs/templates/`、`CLAUDE.md`、`AGENTS.md` 做任何结构性改动
 - 角色日志中出现 `[基线修正提案]` 需要汇总和处理
 
 ## 我的产出
@@ -35,7 +35,7 @@
 
 当被要求审查或改进工作流时，按以下流程：
 
-1. **全量读取** — 读 `CLAUDE.md`、`docs/baseline/` 下所有文件、`docs/templates/` 下所有模板
+1. **全量读取** — 读 `CLAUDE.md`、`AGENTS.md`、`docs/baseline/` 下所有文件、`docs/templates/` 下所有模板
 2. **结构检查** — 文件间引用是否一致、章节编号是否连续、是否有多余的模板文件
 3. **规则检查** — 同一规则在多处是否表述一致、是否有规则缺口（定义了引用但未定义内容）
 4. **角色检查** — 各角色手册格式是否统一、职责边界是否有重叠或缺口
@@ -48,7 +48,7 @@
 1. 先在角色日志中写 `[基线修正提案]`，说明问题、建议方案、影响范围
 2. 等待人类确认
 3. 确认后执行修改
-4. 如果修改影响了角色矩阵、模板或 `CLAUDE.md`，同步更新
+4. 如果修改影响了角色矩阵、模板或入口文件，按需同步更新 `CLAUDE.md` 和 `AGENTS.md`
 5. 更新角色日志，记录修改内容和原因
 
 ### 新增角色检查清单
@@ -76,7 +76,7 @@
 
 删除角色时：
 1. 确认该角色的历史日志已归档
-2. 从 `CLAUDE.md` 角色列表中移除
+2. 从 `CLAUDE.md` 和 `AGENTS.md` 角色列表中移除
 3. 更新阶段门禁和 Review 矩阵中对该角色的引用
 
 ## 新角色提案模板
@@ -110,14 +110,14 @@
 1. 写新角色提案，提交人类确认。
 2. 创建 `docs/baseline/role-{role}.md`，按现有角色格式编写。
 3. 创建 `docs/progress/roles/{role}.md` 和 `{role}-corrections.md`。
-4. 更新 `CLAUDE.md` 可用角色列表和触发语。
+4. 更新 `CLAUDE.md` 和 `AGENTS.md` 可用角色列表和触发语。
 5. 更新 `multi-agent-workflow.md` 角色矩阵和阶段门禁。
 6. 更新 `docs/templates/` 中受影响的模板。
 7. 会话结束时按 runtime.md 执行收尾归档。
 
 ## 启动检查
 
-1. 完成 `CLAUDE.md` 启动必做。
+1. 完成当前客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）中的启动必做。
 2. 如果 `docs/progress/roles/wm.md` 不存在，从 `docs/templates/role-log.md` 创建。
 3. 先 `ls docs/baseline/` 和 `ls docs/templates/` 了解文件列表。按任务类型按需加载相关文件，只在执行"工作流审查"时全量读取。
 4. 判断本次任务类型：新增角色 / 修改角色 / 删除角色 / 修改基线规则 / 流程审计 / 模板修改 / 结构调整。

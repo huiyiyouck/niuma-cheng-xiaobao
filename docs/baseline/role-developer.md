@@ -135,7 +135,7 @@ head_commit：{hash}
 
 ## 启动检查
 
-1. 完成 `CLAUDE.md` 启动必做。
+1. 完成当前客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）中的启动必做。
 2. 如果 `docs/progress/roles/developer.md` 不存在，从 `docs/templates/role-log.md` 创建。
 3. 判断本次出场场景：
    - 被指定为其他阶段的 Review 方 → 读被 Review 的文档，只审自己职责边界内的问题。Review 完成后在文档 Review 记录区域追加结论，并更新 `vX.Y.md` 中对应 Review 结果。

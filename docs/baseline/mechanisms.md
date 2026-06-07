@@ -37,7 +37,7 @@
 
 检测到缺失时只允许建议，不能自动创建文件。用户只是问候、闲聊或询问状态时，Agent 必须等待用户确认是否执行 Bootstrap。
 
-`CLAUDE.md` 随工作流存在，不需要 Bootstrap 生成。`project-context.md` 由 PM（产品经理）在首次 PRD 时创建。角色日志由对应角色首次激活时自行创建。这些都不再作为 Bootstrap 的触发条件。
+客户端入口文件（如 `CLAUDE.md`、`AGENTS.md`）随工作流存在，不需要 Bootstrap 生成。`project-context.md` 由 PM（产品经理）在首次 PRD 时创建。角色日志由对应角色首次激活时自行创建。这些都不再作为 Bootstrap 的触发条件。
 
 ### 执行者
 

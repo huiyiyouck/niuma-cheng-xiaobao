@@ -50,6 +50,6 @@ docs/progress/roles/{role}-corrections.md
 
 ## 不允许做的事
 
-- 不允许把所有历史日志塞进 `CLAUDE.md`
+- 不允许把所有历史日志塞进客户端入口文件（如 `CLAUDE.md`、`AGENTS.md`）
 - 不允许为了省上下文删除历史，只能归档和摘要
 - 不允许把密钥、Token、Cookie 写入摘要或知识库

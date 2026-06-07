@@ -1,5 +1,26 @@
 # WM（工作流管理者）角色日志
 
+## 2026-06-07 — 接入 Codex 第二客户端（事后补登基线修正提案）
+
+- 本次角色：WM
+- 动作：基线修正（事后追认）— 在工作流中正式接入 Codex 作为第二个客户端入口；与 Claude Code 共用同一套 baseline / progress / knowledge 工作台
+- 触发源：Owner 直接动手添加了 `AGENTS.md` 并把 baseline 中硬编码的 `CLAUDE.md` 引用泛化；未走 WM 提案流程；本次 WM 会话核对未提交变更时发现并补登
+- 修改范围（12 个变更文件，净 +7 行，主题单一、内部一致）：
+  - 新增：`AGENTS.md`（76 行，结构与 `CLAUDE.md` 完全镜像，仅把"Claude Code"换为"Codex"）
+  - 入口文件引用泛化（`CLAUDE.md` → 「客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）」）：`context-policy.md`、`mechanisms.md`、`runtime.md`（默认只读列表）、`conventions.md`（Git 工作流引用）、`role-architect.md`、`role-developer.md`、`role-devops.md`、`role-pm.md`、`role-tester.md`、`role-ui.md`、`role-wm.md`（6 处职责描述）
+  - 受保护路径同步增列 `AGENTS.md`：`conventions.md` §受保护路径删除门禁、`role-architect.md` 删除 Review 职责、`runtime.md` §质量底线
+  - `multi-agent-workflow.md`：标题去 "claude-workflow" 专属化；适用范围"Claude Code"→"AI 编程 Agent"；目录结构图加 `AGENTS.md`；新增一段"工作流不关心由哪种客户端启动"
+  - `conventions.md` §协作 commit 二次核对：去 Claude 专属化，"标注 Co-Authored-By: Claude" → "由 AI Agent 生成或标注 Co-Authored-By"
+  - `runtime.md` §质量底线：补充 3 条原本散落在角色手册的底线规则（一会话一角色 / 换角色先收尾 / Review 必须被指定角色执行）
+- WM 双侧检查结果：受保护路径在 3 处引用全部同步加上 `AGENTS.md`；WM 自身职责范围 6 处全部同步纳入 `AGENTS.md`；`AGENTS.md` 与 `CLAUDE.md` 结构完全一致；`mechanisms.md` Bootstrap 触发条件、`runtime.md` 默认只读清单均已泛化；未发现规则缺口、引用不一致或漏改
+- Owner 决策路径：Owner 已先行修改；本次 WM 会话核对后判定变更主题单一、内部一致、质量合格；Owner 确认按"事后补提案 + 收尾 + commit"路径处理
+- 流程偏离说明：本次绕过了 `role-wm.md` §基线修改流程要求的"先提案 → 等人类确认 → 再执行"。Owner 自改属于已有人类决策，但缺失 WM 影响分析留痕；事后通过本日志和提交记录补齐
+- 关联迭代：无（基线修正，元流程）
+- 关联非迭代工作：无
+- 遗留问题/风险：无；后续涉及客户端差异化行为时，应当在 `CLAUDE.md` 与 `AGENTS.md` 中分别维护，baseline 不再针对单一客户端硬编码
+- 下一步入口：v0.5 部署就绪检查继续（Owner 浏览器手测 v0.5.1 前端 UI）
+- 收尾状态：待提交 commit
+
 ## 2026-05-31 — 三项基线修正提案落地
 
 - 本次角色：WM
