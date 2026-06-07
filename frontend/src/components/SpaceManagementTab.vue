@@ -81,9 +81,9 @@ async function doEditChannel() {
 
 async function doDeleteChannel(ch: Channel) {
   try {
-    let preview = { positions_count: 0, conflict_count: 0 };
+    let preview: import("@/lib/types").ChannelDeletePreview = { channel_name: ch.name, position_count: 0, has_space_root_position: false };
     try { preview = await getChannelDeletePreview(selectedSpaceId.value!, ch.id); } catch {}
-    const ok = await modal.confirm("删除频道", `将移除 <b>${preview.positions_count}</b> 个展示位置。Source 和新闻保留。`, { confirmText: "确认删除", danger: true });
+    const ok = await modal.confirm("删除频道", `将移除 <b>${preview.position_count}</b> 个展示位置。Source 和新闻保留。`, { confirmText: "确认删除", danger: true });
     if (!ok) return;
     await deleteChannel(selectedSpaceId.value!, ch.id);
     toast.success("已删除"); refreshChannels(); refreshSources();

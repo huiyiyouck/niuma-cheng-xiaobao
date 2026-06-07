@@ -1,5 +1,56 @@
 # 全栈开发工作日志
 
+## 2026-06-07 — v0.5.1 前端 TS 错误修复（P0 阻塞解除前半部分）
+
+- 本次角色：全栈开发（Developer）
+- 动作：Bugfix（v0.5 重构遗孤）+ 提交删除请求
+- 触发：2026-06-07 DevOps v0.5.1 上线时 `npm run build` 失败（31 个 TS 错误），公网前端仍是 5-31 旧版本，阻塞 v0.5/v0.5.1 前端验证
+
+### 错误分类盘点
+
+- 31 个 TS 错误来自 14 个文件，分两类：
+  - **A. 5 个孤儿组件（22 个错误）**：v0.5 重构后被新版组件完全替代，`src/` 内零引用，但旧文件未删除
+    - `InlineAddSource.vue` → `SearchSourceModal.vue` + `SourceCreateForm.vue`
+    - `SubChannelManager.vue` → `SpaceManagementTab.vue` 内置频道列表
+    - `VerifyDialog.vue` → `SourceVerifyDialog.vue`
+    - `ChannelFilter.vue` → `ChannelPills.vue` + NewsPage 内置 context-card
+    - `SearchFilterBar.vue` → `SourceLibraryTab.vue` 内置筛选 + `FilterSelect.vue`
+  - **B. 9 个正用文件（9 个错误）**：可直接修复
+
+### 本会话已完成（B 类 9 个错误清零）
+
+| 文件 | 修法 |
+|------|------|
+| `SourceCreateForm.vue` | `"research"` → `"paper_institute"`（对齐 `SourceRole` 类型） |
+| `SourceLibraryTab.vue` | 同上 + 删未使用 `UUID` import |
+| `SourceDetailPage.vue` | 同上 + 删未使用 `Space/Channel/BaseFormField` import + template 中 `source` 加 non-null 断言 |
+| `SpaceManagementTab.vue` | `ChannelDeletePreview` fallback 对齐新形状（`position_count/has_space_root_position`） |
+| `SpacePills.vue` | `SpaceDeletePreview` fallback 对齐新形状（`channel_count/position_count/news_count`） |
+| `api.ts` | `mapLifecycleStatus`/`domain_tags` 加类型断言 |
+| `NewsListItem.vue` | 删未使用 `ref` import |
+| `SearchSourceModal.vue` | 删未使用 `typeLabel` 函数 |
+| `NewsPage.vue` | 删未使用 `SpacePills/ChannelPills` import |
+
+构建验证：`npm run build` exit 2，剩余 17 个错误全部集中在 5 个孤儿文件中（B 类清零）。
+
+### 待 Architect Review（A 类）
+
+按 `docs/baseline/conventions.md §受保护路径删除 Review 门禁`，`frontend/src/` 删除必须经架构师 Review。已提交：
+- 删除请求：[`ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md`](../ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md)
+- INDEX 已登记：当前非迭代工作 + P0 待办状态更新为 🟡
+
+Owner 已明确："不允许加 @ts-nocheck 绕过，部署推迟到 Architect 删除后"——本会话 Developer 严格遵守，未对孤儿文件做任何修改。
+
+### 顺手扫尾的契约一致性
+
+`"research"` 标签在 3 处出现（`SourceCreateForm.vue` / `SourceLibraryTab.vue` / `SourceDetailPage.vue`），后两处虽然 TS 没报（string literal 数组未声明类型），但若不一并修改，"角色筛选"和"详情页角色编辑"运行时会失效（后端只认 `paper_institute`）——属于"本次任务必须扫尾"范围，一并修复。
+
+- 关联迭代：v0.5（v0.5.1 部署阻塞解除工作）
+- commit：待提交（待 Architect Review 完成后，删除 commit 与本修复 commit 一起 push）
+- 下一步：Owner 切换 Architect 角色 Review 删除清单 → Developer 接力执行 git rm + commit + 构建验证 → DevOps 重新部署
+
+---
+
 ## 2026-06-07 — v0.5 Owner 试用 Bugfix 批次 + 收尾
 
 - 本次角色：全栈开发（Developer）

@@ -42,9 +42,9 @@ async function doEdit() {
 
 async function doDelete(space: Space) {
   try {
-    let preview = { channels_count: 0, positions_count: 0 };
+    let preview: import("@/lib/types").SpaceDeletePreview = { space_name: space.name, channel_count: 0, position_count: 0, news_count: 0 };
     try { preview = await getSpaceDeletePreview(space.id); } catch {}
-    const ok = await modal.confirm("删除空间", `将删除 <b>${space.name}</b>、${preview.channels_count} 个频道、${preview.positions_count} 个展示位置。Source 和新闻保留。`, { confirmText: "确认删除", danger: true });
+    const ok = await modal.confirm("删除空间", `将删除 <b>${space.name}</b>、${preview.channel_count} 个频道、${preview.position_count} 个展示位置。Source 和新闻保留。`, { confirmText: "确认删除", danger: true });
     if (!ok) return;
     await deleteSpace(space.id); toast.success("已删除"); emit("changed");
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }

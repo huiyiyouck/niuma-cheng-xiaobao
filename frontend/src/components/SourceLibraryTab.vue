@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import type { SourceWithPositions, SourceListParams, Space, UUID } from "@/lib/types";
+import type { SourceWithPositions, SourceListParams, Space } from "@/lib/types";
 import { listSources, listSpaces, deleteSource, getSourceDeleteImpact, syncXRules } from "@/lib/api";
 import SourceLibraryCard from "@/components/SourceLibraryCard.vue";
 import SourceCreateForm from "@/components/SourceCreateForm.vue";
@@ -169,7 +169,7 @@ const ROLE_OPTS = [
   { value: "media", label: "媒体" },
   { value: "kol", label: "KOL" },
   { value: "community", label: "社区" },
-  { value: "research", label: "论文机构" },
+  { value: "paper_institute", label: "论文机构" },
   { value: "other", label: "其他" },
 ];
 const LEVEL_OPTS = [

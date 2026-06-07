@@ -32,7 +32,7 @@ const DOMAIN_TAG_OPTIONS: DomainTag[] = ["AI", "财经", "开源", "科技", "�
 const ROLE_OPTIONS: { value: SourceRole; label: string }[] = [
   { value: "official", label: "官方" }, { value: "media", label: "媒体" },
   { value: "kol", label: "KOL" }, { value: "community", label: "社区" },
-  { value: "research", label: "论文机构" }, { value: "other", label: "其他" },
+  { value: "paper_institute", label: "论文机构" }, { value: "other", label: "其他" },
 ];
 const ATTENTION_OPTIONS: { value: AttentionLevel; label: string }[] = [
   { value: "core", label: "核心" }, { value: "regular", label: "常规" }, { value: "observe", label: "观察" },

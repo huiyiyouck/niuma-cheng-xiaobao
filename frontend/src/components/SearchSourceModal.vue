@@ -65,7 +65,6 @@ async function onAdd(s: SourceWithPositions) {
   }
 }
 
-function typeLabel(t: string) { return t === "x_twitter" ? "X/Twitter" : "RSS"; }
 function availText(s: string) {
   return s === "normal" ? "正常" : s === "source_error" ? "异常" : s === "awaiting_repair" ? "待修复" : s === "source_removed" ? "已移除" : s;
 }

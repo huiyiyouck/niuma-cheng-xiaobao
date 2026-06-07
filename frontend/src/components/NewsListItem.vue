@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref } from "vue";
 import type { ProcessedNews } from "@/lib/types";
 import ScoreBadge from "@/components/ScoreBadge.vue";
 

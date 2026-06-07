@@ -3,13 +3,11 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { SourceWithPositions, DisplayPosition, IdentityChangeRecord } from "@/lib/types";
 import { getSource, getIdentityHistory, toggleDisplayPosition, removeDisplayPosition, deleteSource, pauseSource, resumeSource, updateSource, listSpaces, listChannels, addDisplayPosition } from "@/lib/api";
-import type { Space, Channel } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge.vue";
 import ErrorBar from "@/components/base/ErrorBar.vue";
 import LoadingState from "@/components/base/LoadingState.vue";
 import BaseButton from "@/components/base/BaseButton.vue";
 import BaseModal from "@/components/base/BaseModal.vue";
-import BaseFormField from "@/components/base/BaseFormField.vue";
 import { useToast } from "@/composables/useToast";
 import { useModal } from "@/composables/useModal";
 
@@ -85,7 +83,7 @@ const ROLE_OPTIONS = [
   { value: "media", label: "媒体" },
   { value: "kol", label: "KOL" },
   { value: "community", label: "社区" },
-  { value: "research", label: "论文机构" },
+  { value: "paper_institute", label: "论文机构" },
   { value: "other", label: "其他" },
 ];
 const LEVEL_OPTIONS = [
@@ -326,7 +324,7 @@ const positionStats = computed(() => {
                     <option v-for="r in ROLE_OPTIONS" :key="r.value" :value="r.value">{{ r.label }}</option>
                   </select>
                 </template>
-                <span v-else class="kv-value">{{ ROLE_OPTIONS.find(r => r.value === source.source_role)?.label || source.source_role }}</span>
+                <span v-else class="kv-value">{{ ROLE_OPTIONS.find(r => r.value === source!.source_role)?.label || source!.source_role }}</span>
               </div>
               <div class="kv-row">
                 <span class="kv-label">关注级别</span>
@@ -335,7 +333,7 @@ const positionStats = computed(() => {
                     <option v-for="l in LEVEL_OPTIONS" :key="l.value" :value="l.value">{{ l.label }}</option>
                   </select>
                 </template>
-                <span v-else class="kv-value">{{ LEVEL_OPTIONS.find(l => l.value === source.attention_level)?.label || source.attention_level }}</span>
+                <span v-else class="kv-value">{{ LEVEL_OPTIONS.find(l => l.value === source!.attention_level)?.label || source!.attention_level }}</span>
               </div>
               <div class="kv-row" v-if="editing || source.content_topics.length > 0">
                 <span class="kv-label">内容主题</span>

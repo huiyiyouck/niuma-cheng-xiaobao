@@ -4,8 +4,6 @@ import { useDebounceFn } from "@vueuse/core";
 import { listNews, listSpaces, listChannels, getSpaceStats, getGlobalStats } from "@/lib/api";
 import type { Space, Channel, ProcessedNews, UUID, NewsSort, SpaceStats } from "@/lib/types";
 import StatsCards from "@/components/StatsCards.vue";
-import SpacePills from "@/components/SpacePills.vue";
-import ChannelPills from "@/components/ChannelPills.vue";
 import NewsListItem from "@/components/NewsListItem.vue";
 import NewsDetailPanel from "@/components/NewsDetailPanel.vue";
 
