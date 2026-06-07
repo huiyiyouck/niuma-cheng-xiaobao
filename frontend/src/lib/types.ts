@@ -58,6 +58,10 @@ export type Source = {
   fetch_config: FetchConfig;
   // 统计
   total_news_count: number;
+  // v0.5.1: X 反向同步
+  source_origin: "manual" | "x_synced";
+  x_rule_id: string | null;
+  paused: boolean;
   created_at: string;
   updated_at: string;
 };

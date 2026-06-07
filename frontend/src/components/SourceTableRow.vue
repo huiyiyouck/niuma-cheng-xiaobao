@@ -2,9 +2,10 @@
 import type { SourceWithPositions } from "@/lib/types";
 import { computed } from "vue";
 import StatusBadge from "@/components/StatusBadge.vue";
+import TypeBadge from "@/components/base/TypeBadge.vue";
+import MiniTag from "@/components/base/MiniTag.vue";
+import BaseButton from "@/components/base/BaseButton.vue";
 
-// v0.5: 信息源库表格行
-// 分列展示：信息源、类型、标签、运行状态、使用位置、最近抓取、历史新闻、操作
 const props = defineProps<{
   source: SourceWithPositions;
 }>();
@@ -14,10 +15,6 @@ const emit = defineEmits<{
   edit: [id: string];
   delete: [id: string];
 }>();
-
-function typeLabel(t: string): string {
-  return t === "x_twitter" ? "X/Twitter" : "RSS";
-}
 
 function formatTime(iso: string | null): string {
   if (!iso) return "--";
@@ -30,61 +27,59 @@ function formatTime(iso: string | null): string {
   return `${Math.floor(hours / 24)}天前`;
 }
 
-// 启用位置数 / 总位置数
 const positionSummary = computed(() => {
   const positions = props.source.display_positions || [];
   const enabled = positions.filter(p => p.enabled).length;
   return `${enabled}/${positions.length}`;
 });
+
+const levelLabel = computed(() =>
+  props.source.attention_level === "core" ? "核心"
+    : props.source.attention_level === "regular" ? "常规" : "观察",
+);
 </script>
 
 <template>
-  <tr class="table-row" @click="emit('view', source.id)">
-    <!-- 信息源名称 -->
+  <tr class="table-row" :class="{ 'row-paused': source.paused }" @click="emit('view', source.id)">
     <td class="col-name">
       <div class="name-cell">
-        <span class="source-name">{{ source.display_name }}</span>
+        <span class="source-name">
+          {{ source.display_name }}
+          <MiniTag v-if="source.source_origin === 'x_synced'" variant="domain" class="x-sync-tag">X 同步</MiniTag>
+          <MiniTag v-if="source.paused" variant="level" class="paused-tag">已暂停</MiniTag>
+        </span>
         <span class="source-identity muted">{{ source.source_identity }}</span>
       </div>
     </td>
-    <!-- 类型 -->
     <td class="col-type">
-      <span class="type-badge" :class="source.type === 'x_twitter' ? 'type-twitter' : 'type-rss'">
-        {{ typeLabel(source.type) }}
-      </span>
+      <TypeBadge :type="source.type" />
     </td>
-    <!-- 标签 -->
     <td class="col-tags">
       <div class="tags-cell">
-        <span v-if="source.domain_tags.length > 0" class="mini-tag">{{ source.domain_tags[0] }}</span>
-        <span v-if="source.domain_tags.length > 1" class="mini-tag more-tag">+{{ source.domain_tags.length - 1 }}</span>
-        <span class="mini-tag role-tag">{{ source.source_role }}</span>
-        <span class="mini-tag level-tag">{{ source.attention_level === 'core' ? '核心' : source.attention_level === 'regular' ? '常规' : '观察' }}</span>
+        <MiniTag v-if="source.domain_tags.length > 0" variant="domain">{{ source.domain_tags[0] }}</MiniTag>
+        <MiniTag v-if="source.domain_tags.length > 1" variant="domain">+{{ source.domain_tags.length - 1 }}</MiniTag>
+        <MiniTag variant="role">{{ source.source_role }}</MiniTag>
+        <MiniTag variant="level">{{ levelLabel }}</MiniTag>
       </div>
     </td>
-    <!-- 双维度状态 -->
     <td class="col-status">
       <div class="status-cell">
         <StatusBadge kind="availability" :status="source.availability_status" size="sm" />
         <StatusBadge kind="operational" :status="source.operational_status" size="sm" />
       </div>
     </td>
-    <!-- 使用位置 -->
     <td class="col-positions">
       <span class="pos-count">{{ positionSummary }}</span>
     </td>
-    <!-- 最近抓取 -->
     <td class="col-fetch">
       <span class="muted">{{ formatTime(source.last_fetched_at) }}</span>
     </td>
-    <!-- 历史新闻 -->
     <td class="col-news">
       <span>{{ source.total_news_count }}</span>
     </td>
-    <!-- 操作 -->
     <td class="col-actions" @click.stop>
-      <button class="btn-xs" @click="emit('edit', source.id)">编辑</button>
-      <button class="btn-xs btn-danger" @click="emit('delete', source.id)">删除</button>
+      <BaseButton size="xs" @click="emit('edit', source.id)">编辑</BaseButton>
+      <BaseButton v-if="source.type !== 'x_twitter'" size="xs" variant="danger" @click="emit('delete', source.id)">删除</BaseButton>
     </td>
   </tr>
 </template>
@@ -95,7 +90,7 @@ const positionSummary = computed(() => {
   transition: background 0.1s;
   border-bottom: 1px solid var(--border-light);
 }
-.table-row:hover { background: #F8FAFB; }
+.table-row:hover { background: var(--hover-bg); }
 .table-row:last-child { border-bottom: none; }
 .table-row td {
   padding: 10px 14px;
@@ -105,49 +100,18 @@ const positionSummary = computed(() => {
 .col-name { min-width: 180px; }
 .name-cell { display: flex; flex-direction: column; gap: 2px; }
 .source-name { font-weight: 700; color: var(--text); font-size: 13px; }
-.source-identity { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
+.source-identity { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; font-family: var(--font-mono); }
 .col-type { min-width: 80px; }
-.type-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 700;
-}
-.type-twitter { background: var(--accent-light); color: var(--accent); }
-.type-rss { background: var(--warning-light); color: var(--warning); }
 .col-tags { min-width: 140px; }
 .tags-cell { display: flex; gap: 4px; flex-wrap: wrap; }
-.mini-tag {
-  padding: 1px 6px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  background: #F1F5F9;
-  color: var(--text-secondary);
-}
-.more-tag { background: var(--accent-light); color: var(--accent); }
-.role-tag { background: #E8F8F0; color: var(--success); }
-.level-tag { background: var(--warning-light); color: var(--warning); }
 .col-status { min-width: 150px; }
 .status-cell { display: flex; gap: 4px; flex-wrap: wrap; }
 .col-positions { min-width: 60px; text-align: center; }
 .pos-count { font-weight: 700; font-size: 12px; color: var(--text-secondary); }
 .col-fetch { min-width: 80px; }
 .col-news { min-width: 60px; text-align: center; }
-.col-actions { min-width: 110px; }
-.btn-xs {
-  padding: 2px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text-secondary);
-  cursor: pointer;
-  margin-right: 4px;
-}
-.btn-xs:hover { background: #F4F5F7; }
-.btn-danger { color: var(--danger); }
-.btn-danger:hover { background: var(--danger-light); }
+.col-actions { min-width: 110px; display: flex; gap: 4px; }
+.row-paused { background: var(--hover-bg, #f6f7f8); opacity: 0.7; }
+.x-sync-tag { margin-left: 6px; }
+.paused-tag { margin-left: 4px; }
 </style>

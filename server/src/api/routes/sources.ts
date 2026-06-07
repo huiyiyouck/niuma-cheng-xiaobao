@@ -99,6 +99,13 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
   app.post("/sources", async (req: FastifyRequest, reply: FastifyReply) => {
     const body = SourceCreate.parse(req.body);
 
+    // v0.5.1: X Source 由 X Developer Portal 规则自动同步，禁止平台创建
+    if (body.type === "x_twitter") {
+      return reply.status(400).send({
+        detail: "X 信息源由 X Developer Portal 规则自动同步，请在 Portal 创建规则后等待同步",
+      });
+    }
+
     // 标准化 identity
     let identity = body.identity.trim();
     if (body.type === "x_twitter") {
@@ -259,6 +266,13 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     );
     if (!existing) return reply.status(404).send({ detail: "信息源不存在" });
 
+    // v0.5.1: X Source 的 display_name 由 X rule.tag 同步覆盖，UI 不可编辑
+    if (existing.type === "x_twitter" && body.display_name !== undefined) {
+      return reply.status(400).send({
+        detail: "X 信息源的展示名由 X Developer Portal Tag 同步，不可在此修改",
+      });
+    }
+
     const sets: string[] = [];
     const vals: any[] = [];
     let idx = 0;
@@ -318,6 +332,13 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
       "SELECT * FROM sources WHERE id = $1", [id],
     );
     if (!existing) return reply.status(404).send({ detail: "信息源不存在" });
+
+    // v0.5.1: X Source 的 identity（username）由 X Portal 同步决定，禁止平台修改
+    if (existing.type === "x_twitter") {
+      return reply.status(400).send({
+        detail: "X 信息源的身份由 X Developer Portal 同步，请在 Portal 修改规则",
+      });
+    }
 
     // 仅待修复/来源异常状态允许修改身份
     if (existing.lifecycle_status !== "needs_fix" && existing.lifecycle_status !== "source_error") {
@@ -397,9 +418,16 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
   app.delete("/sources/:id", async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const { rows: [existing] } = await pool.query(
-      "SELECT id, lifecycle_status FROM sources WHERE id = $1", [id],
+      "SELECT id, type, lifecycle_status FROM sources WHERE id = $1", [id],
     );
     if (!existing) return reply.status(404).send({ detail: "信息源不存在" });
+
+    // v0.5.1: X Source 由 X Portal 规则同步管理，禁止平台删除
+    if (existing.type === "x_twitter") {
+      return reply.status(400).send({
+        detail: "X 信息源请在 X Developer Portal 删除规则，平台会在 5 分钟内自动同步",
+      });
+    }
 
     if (existing.lifecycle_status === "removed") {
       return reply.status(409).send({ detail: "信息源已被移除" });
@@ -470,6 +498,13 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
   app.post("/sources/verify", async (req: FastifyRequest, reply: FastifyReply) => {
     const body = SourceVerify.parse(req.body);
 
+    // v0.5.1: X Source 不允许手动验证（由同步流程保证）
+    if (body.type === "x_twitter") {
+      return reply.status(400).send({
+        detail: "X 信息源无需手动验证，由 X Developer Portal 同步流程保证",
+      });
+    }
+
     let identity = body.identity.trim();
     if (body.type === "x_twitter") {
       identity = identity.replace(/^@/, "").toLowerCase();
@@ -502,6 +537,34 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
         total_fetched: 0,
       });
     }
+  });
+
+  // ── X Source 暂停/恢复（v0.5.1）────────────────────────
+
+  app.post("/sources/:id/pause", async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const { rows: [existing] } = await pool.query(
+      "SELECT id, type FROM sources WHERE id = $1", [id],
+    );
+    if (!existing) return reply.status(404).send({ detail: "信息源不存在" });
+    if (existing.type !== "x_twitter") {
+      return reply.status(400).send({ detail: "暂停/恢复仅适用于 X 信息源" });
+    }
+    await pool.query("UPDATE sources SET paused = true WHERE id = $1", [id]);
+    return reply.send({ paused: true });
+  });
+
+  app.post("/sources/:id/resume", async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const { rows: [existing] } = await pool.query(
+      "SELECT id, type FROM sources WHERE id = $1", [id],
+    );
+    if (!existing) return reply.status(404).send({ detail: "信息源不存在" });
+    if (existing.type !== "x_twitter") {
+      return reply.status(400).send({ detail: "暂停/恢复仅适用于 X 信息源" });
+    }
+    await pool.query("UPDATE sources SET paused = false WHERE id = $1", [id]);
+    return reply.send({ paused: false });
   });
 }
 
@@ -578,6 +641,10 @@ function sourceToOut(r: any) {
     config: asDict(r.config),
     last_verified_at: toISO(r.last_verified_at),
     verify_error: r.verify_error,
+    // v0.5.1: X 反向同步字段
+    source_origin: r.source_origin ?? "manual",
+    x_rule_id: r.x_rule_id ?? null,
+    paused: r.paused ?? false,
     created_at: toISO(r.created_at),
   };
 }
@@ -598,6 +665,10 @@ function sourceCardToOut(r: any) {
     last_success_at: toISO(r.last_success_at),
     consecutive_failures: r.consecutive_failures ?? 0,
     news_count: r.news_count ?? 0,
+    // v0.5.1: X 反向同步字段
+    source_origin: r.source_origin ?? "manual",
+    x_rule_id: r.x_rule_id ?? null,
+    paused: r.paused ?? false,
     created_at: toISO(r.created_at),
   };
 }

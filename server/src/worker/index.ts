@@ -7,6 +7,7 @@ import { workerLoop } from "./dispatcher.ts";
 import { zeroNewMonitorTick } from "./monitor.ts";
 import { reclaimStaleTick } from "./reclaim.ts";
 import { xStreamManager } from "./x-stream-manager.ts";
+import { xRuleSyncer } from "./x-rule-sync.ts";
 import "./fetchers/index.ts";
 
 const log = workerLogger;
@@ -111,9 +112,13 @@ export function startWorker(stopSignal: AbortSignal): void {
     log.error("X Stream Manager failed to start: %s", err.stack || err.message);
   });
 
+  // 启动 X Rule Syncer（拉模式，X Portal 为唯一真理源）
+  xRuleSyncer.start();
+
   // 注册关闭回调
   stopSignal.addEventListener("abort", () => {
     xStreamManager.stop();
+    xRuleSyncer.stop();
   }, { once: true });
 
   // 启动各循环

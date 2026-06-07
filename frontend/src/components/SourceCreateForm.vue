@@ -4,6 +4,7 @@ import type { DomainTag, SourceRole, AttentionLevel } from "@/lib/types";
 import { createSource, checkDuplicateSource } from "@/lib/api";
 import { useToast } from "@/composables/useToast";
 import SourceVerifyDialog from "@/components/SourceVerifyDialog.vue";
+import BaseButton from "@/components/base/BaseButton.vue";
 import type { SourceVerifyResponse } from "@/lib/types";
 
 // v0.5: Source 创建表单，支持双路径创建
@@ -129,7 +130,6 @@ function onVerified(result: SourceVerifyResponse) {
         类型
         <select v-model="sourceType" class="select" style="min-width:120px">
           <option value="rss">RSS</option>
-          <option value="x_twitter">X/Twitter</option>
         </select>
       </label>
       <label class="form-label" style="flex:1">
@@ -137,7 +137,7 @@ function onVerified(result: SourceVerifyResponse) {
         <input
           class="input"
           v-model="sourceIdentity"
-          :placeholder="sourceType === 'x_twitter' ? 'X 用户名 (如 @OpenAI)' : 'RSS URL'"
+          placeholder="RSS URL"
           :disabled="!identityEditable"
         />
       </label>
@@ -149,7 +149,7 @@ function onVerified(result: SourceVerifyResponse) {
         展示名称
         <input class="input" v-model="displayName" placeholder="显示在页面上的名称" />
       </label>
-      <button class="btn verify-btn" @click="showVerify = true" type="button">验证来源</button>
+      <BaseButton variant="default" size="sm" @click="showVerify = true">验证来源</BaseButton>
     </div>
 
     <!-- 领域标签（多选） -->
@@ -226,10 +226,10 @@ function onVerified(result: SourceVerifyResponse) {
 
     <!-- 按钮 -->
     <div class="form-actions">
-      <button class="btn" @click="emit('cancel')" :disabled="submitting">取消</button>
-      <button class="btn primary" :disabled="submitting" @click="doSubmit">
+      <BaseButton :disabled="submitting" @click="emit('cancel')">取消</BaseButton>
+      <BaseButton variant="primary" :disabled="submitting" @click="doSubmit">
         {{ submitting ? '创建中…' : '创建信息源' }}
-      </button>
+      </BaseButton>
     </div>
 
     <!-- 验证弹窗 -->
@@ -327,26 +327,6 @@ function onVerified(result: SourceVerifyResponse) {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-}
-.btn {
-  padding: 8px 20px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  border: 1px solid var(--border);
-  background: var(--card);
-  cursor: pointer;
-}
-.btn.primary {
-  background: var(--accent);
-  color: #FFF;
-  border-color: var(--accent);
-}
-.btn.primary:disabled { opacity: 0.4; cursor: not-allowed; }
-.verify-btn {
-  padding: 8px 16px;
-  font-size: 12px;
-  flex-shrink: 0;
 }
 .textarea {
   padding: 8px 12px;

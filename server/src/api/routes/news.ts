@@ -65,13 +65,16 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
     const offsetIdx = ++idx;
 
     // DISTINCT ON 要求 pn.id 排在第一，外层子查询再按业务排序
+    // v0.5.1: JOIN sources 排除 paused=true 的来源（X 暂停后历史隐藏，恢复后重新可见）
     const { rows } = await pool.query(
       `SELECT * FROM (
          SELECT DISTINCT ON (pn.id) pn.*
          FROM processed_news pn
          JOIN news_positions np ON np.news_id = pn.id
          JOIN display_positions dp ON dp.id = np.position_id
-         ${where}
+         JOIN raw_items ri ON ri.id = pn.raw_item_id
+         JOIN sources s ON s.id = ri.source_id
+         ${where}${where ? " AND" : "WHERE"} s.paused = false
          ORDER BY pn.id
        ) AS deduped
        ORDER BY ${orderCol}

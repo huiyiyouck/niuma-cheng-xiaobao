@@ -2,7 +2,6 @@ import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { pool } from "../../db/pool.ts";
 import { PositionCreate, PositionUpdate, PositionsQuery } from "../schemas/index.ts";
 import { toISO } from "./channel-spaces.ts";
-import { xStreamManager } from "../../worker/x-stream-manager.ts";
 
 export async function positionsRoutes(app: FastifyInstance): Promise<void> {
   // ── 展示位置列表（含 Source 卡片信息）──────────────────
@@ -109,7 +108,6 @@ export async function positionsRoutes(app: FastifyInstance): Promise<void> {
         [body.source_id, space_id, channelId],
       );
       // 同步 X Stream 规则（30s debounced）
-      if (src.type === "x_twitter") xStreamManager.triggerRuleSync();
       return reply.status(201).send(positionRowToOut(row));
     } catch (err: any) {
       if (err.code === "23505") {
@@ -146,16 +144,12 @@ export async function positionsRoutes(app: FastifyInstance): Promise<void> {
          WHERE id = $1`,
         [id, body.removal_reason ?? "manual"],
       );
-      // 移除后同步 X Stream 规则
-      xStreamManager.triggerRuleSync();
       return reply.send({ deleted: true });
     }
 
     const { rows: [updated] } = await pool.query(
       "SELECT * FROM display_positions WHERE id = $1", [id],
     );
-    // 暂停/恢复后同步 X Stream 规则（30s debounced）
-    xStreamManager.triggerRuleSync();
     return reply.send(positionRowToOut(updated));
   });
 }

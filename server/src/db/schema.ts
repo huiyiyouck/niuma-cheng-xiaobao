@@ -73,6 +73,10 @@ export const sources = pgTable(
     // 验证
     lastVerifiedAt: timestamp("last_verified_at", { withTimezone: true }),
     verifyError: text("verify_error"),
+    // X Filtered Stream 反向同步标识（v0.5.1）
+    sourceOrigin: varchar("source_origin", { length: 20 }).notNull().default("manual"),
+    xRuleId: text("x_rule_id"),
+    paused: boolean("paused").notNull().default(false),
     // 时间戳
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

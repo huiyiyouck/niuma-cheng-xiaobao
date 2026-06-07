@@ -124,6 +124,19 @@ export async function deleteSource(id: UUID): Promise<void> {
   return requestJson(buildUrl(`/v1/sources/${id}`), { method: "DELETE" });
 }
 
+// v0.5.1: X Source 反向同步
+export async function syncXRules(): Promise<{ added: number; updated: number; removed: number; restored: number }> {
+  return requestJson(buildUrl(`/v1/x/sync-rules`), { method: "POST" });
+}
+
+export async function pauseSource(id: UUID): Promise<{ paused: boolean }> {
+  return requestJson(buildUrl(`/v1/sources/${id}/pause`), { method: "POST" });
+}
+
+export async function resumeSource(id: UUID): Promise<{ paused: boolean }> {
+  return requestJson(buildUrl(`/v1/sources/${id}/resume`), { method: "POST" });
+}
+
 export async function getSourceDeleteImpact(id: UUID): Promise<import("@/lib/types").DeleteImpact> {
   return requestJson(buildUrl(`/v1/sources/${id}/delete-impact`));
 }

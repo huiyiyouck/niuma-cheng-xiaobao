@@ -23,8 +23,11 @@ if [ ! -d node_modules ]; then
   npm install
 fi
 
-# 启动服务
+# 启动服务（带代理环境变量，X API 在国内需走代理）
 echo "🚀 启动牛马程小报..."
+HTTPS_PROXY="${HTTPS_PROXY:-http://127.0.0.1:1087}" \
+HTTP_PROXY="${HTTP_PROXY:-http://127.0.0.1:1087}" \
+NODE_USE_ENV_PROXY=1 \
 nohup npx tsx src/index.ts > /tmp/niuma-server.log 2>&1 &
 PID=$!
 echo "✅ API + Worker 已启动 (PID=$PID)"

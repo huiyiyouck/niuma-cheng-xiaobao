@@ -12,6 +12,7 @@ import { newsRoutes } from "./routes/news.ts";
 import { statsRoutes } from "./routes/stats.ts";
 import { adminLogsRoutes } from "./routes/admin-logs.ts";
 import { alertsRoutes } from "./routes/alerts.ts";
+import { xSyncRoutes } from "./routes/x-sync.ts";
 
 export async function buildApp() {
   const app = Fastify({ logger: false });
@@ -63,6 +64,7 @@ export async function buildApp() {
     await statsRoutes(scope);
     await adminLogsRoutes(scope);
     await alertsRoutes(scope);
+    await xSyncRoutes(scope);
   }, { prefix: "/v1" });
 
   // 根页面
