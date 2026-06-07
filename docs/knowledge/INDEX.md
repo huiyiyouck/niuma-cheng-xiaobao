@@ -19,6 +19,7 @@
 
 ## DevOps（运维/部署）
 
+- [全栈部署检查清单](devops/full-stack-deploy-handbook.md) — 前端构建 + 后端 systemd + nginx 反代全链路部署审计与检查表、翻牌标准、故障排查（v0.5.1 DevOps 失误沉淀）
 - [数据库 Schema 迁移操作手册](devops/db-migration-handbook.md) — drizzle 迁移机制（generate → commit → systemd ExecStartPre 自动 migrate）的执行说明、版本约束、首次部署 baseline 注入、故障排查（含 v0.5.1 新增「三方漂移」现象 4）、回滚步骤（v0.4 #B1 教训后规范化）
 - [Node 依赖变更同步检查手册](devops/dependency-change-handbook.md) — Developer 改 `package.json` 后到部署机生效的检查链路、`ERR_MODULE_NOT_FOUND` 故障排查、`devDependencies` vs `dependencies` 边界、systemd `StartLimitBurst` 锁定的恢复（v0.5.1 事故沉淀）
 

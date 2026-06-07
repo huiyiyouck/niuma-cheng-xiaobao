@@ -69,19 +69,52 @@
 
 ### 下一步入口
 
-Owner 浏览器手测前端 → 通过则 PM 执行 v0.5 迭代关闭检查。
+~~Owner 浏览器手测前端 → 通过则 PM 执行 v0.5 迭代关闭检查。~~（已作废，见下方"收尾发现"）
+
+### 收尾发现：前端部署阻塞（重大失误复盘）
+
+Owner 要求给生产 URL 用于浏览器验证。检查发现：
+
+- 公网 `https://news.huiyiyou.cloud/` 由 nginx 托管 `/var/www/news.huiyiyou.cloud/`
+- 该目录 + 项目内 `frontend/dist/` 时间戳均为 **2026-05-31 14:32**（v0.4 末期，比 v0.5 PRD 启动还早 1 天）
+- **整个 v0.5 / v0.5.1 期间从未发生过前端构建/部署**
+- 现场重新 `cd frontend && npm run build` → vue-tsc 报 **31 个 TS 错误**（14 个文件，v0.5 重构遗孤）：
+  - 7 处 TS2724：`SubChannel` → `Channel` 重命名遗孤（`InlineAddSource.vue`、`SubChannelManager.vue`、`VerifyDialog.vue` 等）
+  - 5 处 TS2339：`Source.source_url` / `Source.status` 字段消失
+  - 3 处 TS2322：`SourceRole` / `AvailabilityStatus` / `DomainTag` 类型契约偏移
+  - 2 处 TS2739：`SpaceDeletePreview` / `ChannelDeletePreview` 形状变化
+  - 2 处 TS2305：`markVerified` / `listSubChannels` 函数已删
+  - 12 处 lint/未使用 imports / null 检查未通过
+  - 完整清单：[`v0.5.1-frontend-ts-errors.txt`](../iterations/v0.5.1-frontend-ts-errors.txt)
+
+**失误复盘**：
+
+1. **根因**：本次部署计划只覆盖了后端 systemd 链路，**完全没有把前端构建/部署纳入检查清单**。我从 v0.5.md「部署阻塞」条目的描述（"前后端路由不匹配"由 Developer commit 75ca9ae 修复）就主观推断"前端已经在某处部署过了"，没有 verify。
+2. **错误的翻牌**：Step 7 把部署就绪表翻成「部署通过」、INDEX 当前阶段写「v0.5.1 生产部署通过」——**这是不准确的报告**，只是后端通过，前端从未部署。已在本次收尾里如实修正为「后端部署通过 / 前端部署阻塞」。
+3. **如果不是 Owner 在收尾时要 URL**，这个失误会让"v0.5 关闭"在错误前提下推进——PM 会以为前端已上线，Owner 试用时拿到旧前端会得出"v0.5/v0.5.1 全部没生效"的错误结论，反而怀疑后端有 bug。
+4. **教训**：DevOps 部署检查清单必须**显式列前端构建 + 部署**为独立步骤，且任一失败都阻塞「部署通过」翻牌。这条已沉淀到 [`devops/full-stack-deploy-handbook.md`](../../knowledge/devops/full-stack-deploy-handbook.md)（本次会话同步落档）。
+
+**正确的下一步入口**：
+
+```
+Developer 修复 31 个 TS 错误（P0，已登记 INDEX 跨任务待办）
+   → DevOps 重新 npm run build → 部署到 /var/www/news.huiyiyou.cloud/
+   → Owner 浏览器验证（https://news.huiyiyou.cloud/）
+   → PM 执行 v0.5 迭代关闭检查
+```
 
 ### 知识沉淀（同一会话补做，按角色手册 step 6）
 
-按 Owner 要求"知识沉淀必须做"，本次部署的 2 条经验已落档到 `docs/knowledge/devops/`：
+按 Owner 要求"知识沉淀必须做"，本次部署的 **3 条经验**已落档到 `docs/knowledge/devops/`：
 
 1. **新建** [`devops/dependency-change-handbook.md`](../../knowledge/devops/dependency-change-handbook.md) — Node 依赖变更全链路规范：Developer 改 package.json 必做 4 步、commit 检查清单、DevOps 部署前 dry-check 命令、`ERR_MODULE_NOT_FOUND` / 版本不一致 / devDeps 边界 / StartLimitBurst 锁定 4 个故障排查、5 条禁止事项。
 2. **补充** [`devops/db-migration-handbook.md`](../../knowledge/devops/db-migration-handbook.md)：
    - 故障排查新增「现象 4：journal / `__drizzle_migrations` / DB schema 三方漂移」——含触发原因、风险评估表（按 SQL 是否幂等分流处置）、检测命令、预防规则
    - 禁止事项新增 1 行：「用 psql 跑迁移不同步 `__drizzle_migrations` 和 `_journal.json`」
-3. **更新** [`docs/knowledge/INDEX.md`](../../knowledge/INDEX.md) DevOps 节，新增 1 条索引、修订 db-migration-handbook 索引描述。
+3. **新建** [`devops/full-stack-deploy-handbook.md`](../../knowledge/devops/full-stack-deploy-handbook.md) — 全栈部署检查清单：前端构建 + 后端 systemd + nginx 反代的全链路审计、8 项部署执行检查表、翻牌「部署通过」前的 verify 命令、3 类故障排查（TS 错误强行构建禁令 / dist 时间戳盲区 / 浏览器缓存）、5 条禁止事项。**触发事件**：本次 DevOps 翻牌「部署通过」后才被 Owner 索取 URL 时发现前端从未构建/部署，是本次会话最大的失误。
+4. **更新** [`docs/knowledge/INDEX.md`](../../knowledge/INDEX.md) DevOps 节，新增 2 条索引、修订 db-migration-handbook 索引描述。
 
-知识写入符合 [`knowledge-base.md`](../../baseline/knowledge-base.md) 规则：含适用/不适用场景、来源链接（v0.5.1 部署日志）、无密钥/Token、写短不写流水账（dependency-handbook 约 250 行、migration-handbook 增量约 50 行）。
+知识写入符合 [`knowledge-base.md`](../../baseline/knowledge-base.md) 规则：含适用/不适用场景、来源链接（v0.5.1 部署日志）、无密钥/Token、写短不写流水账。
 
 ---
 

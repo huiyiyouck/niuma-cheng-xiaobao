@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.5（含 v0.5.1 X 反向同步子任务，已实施完成）
 - 当前模式：标准迭代
-- 当前阶段：v0.5.1 生产部署通过（systemd news-api 已运行新代码 + 新 schema + 新 token）；前端 UI 视觉验证待 Owner 浏览器手测
-- 阻塞项：—
-- 下一步入口：Owner 浏览器验证 v0.5.1 前端 UI（X 同步徽章 / 详情页侧栏暂停按钮 / 同步规则按钮 / 暂停后 news 列表过滤）
+- 当前阶段：v0.5.1 **后端**已部署上线；**前端部署阻塞**——构建失败 31 个 TS 错误（详见 [v0.5.1-frontend-ts-errors.txt](iterations/v0.5.1-frontend-ts-errors.txt) 与 v0.5.md 部署就绪表）。公网 https://news.huiyiyou.cloud/ 仍是 5-31 旧前端，不可用于 v0.5/v0.5.1 验证
+- 阻塞项：前端 14 个组件类型契约与最新 API 不一致（v0.5 重构遗孤），归属 Developer
+- 下一步入口：Developer 修复前端 TS 错误 → DevOps 重新构建 + 部署 → Owner 浏览器验证
 
 ## 版本列表
 
@@ -47,7 +47,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
-| 2026-06-07 | DevOps | v0.5.1 生产部署上线（.env 8 项变更 + npm install + systemd restart + 健康检查） | ✅ 部署通过 — 服务 active running (PID 547457)；drizzle migrate 幂等通过；X RULE SYNC `+0 ~4 -0 ↻0`；X STREAM connected；x_rule_id 4/4 回填。部署期前向修复 2 问题：undici 依赖缺失（commit 75ca9ae 引入未跑 npm install）+ drizzle journal 漂移（自动对齐）| Owner 浏览器验证前端 UI |
+| 2026-06-07 | DevOps | v0.5.1 生产部署上线 + 收尾发现前端阻塞 | ⚠️ **仅后端部署通过** — systemd active (PID 547457)；drizzle migrate 幂等通过；X RULE SYNC `+0 ~4 -0 ↻0`；X STREAM connected；x_rule_id 4/4 回填。部署期前向修复 2 问题：undici 缺失 + drizzle journal 漂移。**收尾验证 URL 时发现前端 dist 是 5-31 旧版本，重新 npm run build 失败 31 个 TS 错误**（v0.5 重构遗孤 14 个文件），公网 https://news.huiyiyou.cloud/ 不可用于 v0.5/v0.5.1 验证 | 已登记 P0 给 Developer 修复 TS 错误 |
 | 2026-06-07 | WM | 接入 Codex 第二客户端（事后补登基线修正提案） | ✅ 12 个文件 +7 行净增，主题单一、内部一致：新增 `AGENTS.md`（Codex 入口，与 `CLAUDE.md` 镜像）+ baseline 中 `CLAUDE.md` 硬引用泛化为「客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）」+ 受保护路径同步纳入 `AGENTS.md`；WM 双侧检查通过；Owner 直接动手未走提案流程，事后补齐 wm.md 留痕 | v0.5 部署就绪检查继续（Owner 浏览器手测 v0.5.1 前端 UI） |
 | 2026-06-07 | Developer | v0.5 Owner 试用 Bugfix 批次：前后端契约对齐 + 空间/频道/源管理 + 告警批量 + 详情页重构 + Worker 并行化 + MCP 接入 + 全局代理 | ✅ 31 files, +2483/-970；前后端字段名/URL 全面统一；Worker 真正 7 并发；金十 MCP 直显模式已验证；commit `75ca9ae`；INDEX 登记 4 条 P1/P2 待办 | 上线部署：远程 DB 迁移 + npm install + 配置 .env |
 | 2026-06-06 | Tester | v0.5 PRD R2 Tester 复审 | 通过：R1 全部 13 条已关闭（2 高/7 中/4 低）；附 1 条中严重度观察（失败计数矛盾，设计阶段消除）。PRD 已定稿 | 切换到 UI 进入 UI 方案阶段 |
@@ -78,6 +78,7 @@
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
+| **P0** | **修复 frontend 31 个 TS 错误使 `npm run build` 通过**（v0.5 重构遗孤：14 个文件含 SubChannel→Channel 重命名、Source.source_url/status 字段消失、SourceRole/AvailabilityStatus/DomainTag 类型契约偏移、SpaceDeletePreview/ChannelDeletePreview 形状变化、markVerified/listSubChannels 函数已删；详见 `iterations/v0.5.1-frontend-ts-errors.txt`） | Developer | 2026-06-07 DevOps v0.5.1 部署发现：公网前端仍是 5-31 旧版本，本次构建失败无法部署 | 🔴 待启动 — 阻塞 v0.5 / v0.5.1 前端验证与迭代关闭 |
 | P1 | 完成 v0.5 PRD 规划：确认三条主线范围（X/Twitter 实时监听、信息源管理重构、评分体系方法论） | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：三条主线已收编进 v0.5 PRD R1，标准迭代已启动 |
 | P1 | 展开并确认「信息源管理重构」产品方案：信息源 Tab、频道空间/子频道树、绑定规则、删除预览、验收边界 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认 |
 | P2 | 确认并产出「评分体系方法论」文档范围：维度、评分锚点、综合分、状态草稿、LLM 输出结构、版本化；本轮不落地代码 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认；不讨论评分后分流 |

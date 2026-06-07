@@ -1,0 +1,31 @@
+src/components/ChannelFilter.vue(4,15): error TS2305: Module '"@/lib/types"' has no exported member 'ChannelSpace'.
+src/components/InlineAddSource.vue(3,10): error TS2724: '"@/lib/api"' has no exported member named 'listSubChannels'. Did you mean 'listChannels'?
+src/components/InlineAddSource.vue(4,15): error TS2724: '"@/lib/types"' has no exported member named 'SubChannel'. Did you mean 'Channel'?
+src/components/NewsListItem.vue(2,1): error TS6133: 'ref' is declared but its value is never read.
+src/components/SearchFilterBar.vue(4,1): error TS6192: All imports in import declaration are unused.
+src/components/SearchSourceModal.vue(68,10): error TS6133: 'typeLabel' is declared but its value is never read.
+src/components/SourceCreateForm.vue(35,5): error TS2322: Type '"research"' is not assignable to type 'SourceRole'.
+src/components/SourceLibraryTab.vue(3,61): error TS6196: 'UUID' is declared but never used.
+src/components/SpaceManagementTab.vue(85,11): error TS2739: Type 'ChannelDeletePreview' is missing the following properties from type '{ positions_count: number; conflict_count: number; }': positions_count, conflict_count
+src/components/SpacePills.vue(46,11): error TS2739: Type 'SpaceDeletePreview' is missing the following properties from type '{ channels_count: number; positions_count: number; }': channels_count, positions_count
+src/components/SubChannelManager.vue(3,10): error TS2724: '"@/lib/api"' has no exported member named 'listSubChannels'. Did you mean 'listChannels'?
+src/components/SubChannelManager.vue(3,27): error TS2724: '"@/lib/api"' has no exported member named 'createSubChannel'. Did you mean 'createChannel'?
+src/components/SubChannelManager.vue(3,45): error TS2724: '"@/lib/api"' has no exported member named 'updateSubChannel'. Did you mean 'updateChannel'?
+src/components/SubChannelManager.vue(3,63): error TS2724: '"@/lib/api"' has no exported member named 'deleteSubChannel'. Did you mean 'deleteChannel'?
+src/components/SubChannelManager.vue(4,15): error TS2724: '"@/lib/types"' has no exported member named 'SubChannel'. Did you mean 'Channel'?
+src/components/VerifyDialog.vue(3,24): error TS2305: Module '"@/lib/api"' has no exported member 'markVerified'.
+src/components/VerifyDialog.vue(53,27): error TS2551: Property 'source_url' does not exist on type 'Source'. Did you mean 'source_role'?
+src/components/VerifyDialog.vue(53,80): error TS2551: Property 'source_url' does not exist on type 'Source'. Did you mean 'source_role'?
+src/components/VerifyDialog.vue(54,79): error TS2339: Property 'status' does not exist on type 'Source'.
+src/components/VerifyDialog.vue(54,109): error TS2339: Property 'status' does not exist on type 'Source'.
+src/components/VerifyDialog.vue(54,159): error TS2339: Property 'status' does not exist on type 'Source'.
+src/components/VerifyDialog.vue(54,226): error TS2339: Property 'status' does not exist on type 'Source'.
+src/components/VerifyDialog.vue(84,60): error TS2339: Property 'status' does not exist on type 'Source'.
+src/lib/api.ts(212,9): error TS2322: Type 'string' is not assignable to type 'AvailabilityStatus'.
+src/lib/api.ts(214,9): error TS2322: Type 'string[]' is not assignable to type 'DomainTag[]'.
+src/views/NewsPage.vue(7,1): error TS6133: 'SpacePills' is declared but its value is never read.
+src/views/NewsPage.vue(8,1): error TS6133: 'ChannelPills' is declared but its value is never read.
+src/views/SourceDetailPage.vue(6,1): error TS6192: All imports in import declaration are unused.
+src/views/SourceDetailPage.vue(12,1): error TS6133: 'BaseFormField' is declared but its value is never read.
+src/views/SourceDetailPage.vue(329,85): error TS18047: '__VLS_ctx.source' is possibly 'null'.
+src/views/SourceDetailPage.vue(338,86): error TS18047: '__VLS_ctx.source' is possibly 'null'.
