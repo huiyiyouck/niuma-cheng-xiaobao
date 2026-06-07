@@ -67,6 +67,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     // 使用简单的子查询替代 CTE
     const sql = `SELECT s.*, ss.last_success_at, ss.consecutive_failures, ss.last_fetch_count, ss.last_error,
       CASE
+        WHEN s.paused THEN 'stopped'
         WHEN s.lifecycle_status IN ('needs_fix', 'source_error', 'removed') THEN 'stopped'
         WHEN EXISTS(SELECT 1 FROM display_positions dp2 WHERE dp2.source_id = s.id AND dp2.enabled = true AND dp2.deleted_at IS NULL) THEN 'fetching'
         ELSE 'stopped'
@@ -114,15 +115,27 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
       identity = identity.replace(/\/+$/, "");
     }
 
-    // 去重检查
-    const { rows: [dup] } = await pool.query(
+    // 去重检查：身份
+    const { rows: [dupIdentity] } = await pool.query(
       "SELECT id FROM sources WHERE type = $1 AND LOWER(identity) = LOWER($2)",
       [body.type, identity],
     );
-    if (dup) {
+    if (dupIdentity) {
       return reply.status(409).send({
-        detail: "相同类型的来源身份已存在",
-        existing_source_id: dup.id,
+        detail: "相同类型的来源身份已存在，请勿重复创建",
+        existing_source_id: dupIdentity.id,
+      });
+    }
+
+    // 去重检查：展示名称
+    const { rows: [dupName] } = await pool.query(
+      "SELECT id FROM sources WHERE LOWER(display_name) = LOWER($1)",
+      [body.display_name.trim()],
+    );
+    if (dupName) {
+      return reply.status(409).send({
+        detail: `展示名称「${body.display_name.trim()}」已存在，请使用不同的名称`,
+        existing_source_id: dupName.id,
       });
     }
 
@@ -185,6 +198,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
         COALESCE(ss.last_error, NULL) AS last_error,
         COALESCE(ss.next_fetch_at, NULL) AS next_fetch_at,
         CASE
+          WHEN s.paused THEN 'stopped'
           WHEN s.lifecycle_status IN ('needs_fix', 'source_error', 'removed') THEN 'stopped'
           WHEN EXISTS(
             SELECT 1 FROM display_positions dp
@@ -230,28 +244,28 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return reply.send({
-      source: {
-        ...sourceToOut(row),
-        operational_status: row.operational_status,
-        last_success_at: toISO(row.last_success_at),
-        consecutive_failures: row.consecutive_failures,
-        last_error: row.last_error,
-        last_fetch_count: row.last_fetch_count,
-        next_fetch_at: toISO(row.next_fetch_at),
-        positions: positions.map((p: any) => ({
-          id: p.id,
-          space_name: p.space_name,
-          channel_name: p.channel_name ?? null,
-          enabled: p.enabled,
-          created_at: toISO(p.created_at),
-        })),
-        identity_history: identityHistory.map((h: any) => ({
-          old_identity: h.old_identity,
-          new_identity: h.new_identity,
-          changed_at: toISO(h.changed_at),
-        })),
-        news_count: newsCount?.count ?? 0,
-      },
+      ...sourceToOut(row),
+      operational_status: row.operational_status,
+      consecutive_failures: row.consecutive_failures,
+      last_error: row.last_error,
+      last_fetch_count: row.last_fetch_count,
+      next_fetch_at: toISO(row.next_fetch_at),
+      total_news_count: newsCount?.count ?? 0,
+      display_positions: positions.map((p: any) => ({
+        id: p.id,
+        space_name: p.space_name,
+        channel_name: p.channel_name ?? null,
+        enabled: p.enabled,
+        created_at: toISO(p.created_at),
+        source_id: row.id,
+        space_id: p.channel_space_id,
+        channel_id: p.channel_id ?? null,
+      })),
+      identity_history: identityHistory.map((h: any) => ({
+        old_identity: h.old_identity,
+        new_identity: h.new_identity,
+        changed_at: toISO(h.changed_at),
+      })),
     });
   });
 
@@ -539,17 +553,14 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     }
   });
 
-  // ── X Source 暂停/恢复（v0.5.1）────────────────────────
+  // ── 信息源暂停/恢复 ────────────────────────────────────
 
   app.post("/sources/:id/pause", async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const { rows: [existing] } = await pool.query(
-      "SELECT id, type FROM sources WHERE id = $1", [id],
+      "SELECT id FROM sources WHERE id = $1", [id],
     );
     if (!existing) return reply.status(404).send({ detail: "信息源不存在" });
-    if (existing.type !== "x_twitter") {
-      return reply.status(400).send({ detail: "暂停/恢复仅适用于 X 信息源" });
-    }
     await pool.query("UPDATE sources SET paused = true WHERE id = $1", [id]);
     return reply.send({ paused: true });
   });
@@ -557,12 +568,9 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
   app.post("/sources/:id/resume", async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const { rows: [existing] } = await pool.query(
-      "SELECT id, type FROM sources WHERE id = $1", [id],
+      "SELECT id FROM sources WHERE id = $1", [id],
     );
     if (!existing) return reply.status(404).send({ detail: "信息源不存在" });
-    if (existing.type !== "x_twitter") {
-      return reply.status(400).send({ detail: "暂停/恢复仅适用于 X 信息源" });
-    }
     await pool.query("UPDATE sources SET paused = false WHERE id = $1", [id]);
     return reply.send({ paused: false });
   });
@@ -623,24 +631,37 @@ function truncatePreview(item: any, maxChars: number): string {
 
 // ── 输出格式化 ──────────────────────────────────────────
 
+function mapAvailabilityStatus(dbStatus: string): string {
+  // 将 DB lifecycle_status 值映射为前端 availability_status 值
+  const map: Record<string, string> = {
+    normal: "normal",
+    needs_fix: "awaiting_repair",
+    source_error: "source_error",
+    removed: "source_removed",
+  };
+  return map[dbStatus] || dbStatus;
+}
+
 function sourceToOut(r: any) {
   return {
     id: r.id,
     type: r.type,
-    identity: r.identity,
+    source_identity: r.identity,
     display_name: r.display_name,
-    lifecycle_status: r.lifecycle_status,
-    domain_tags: r.domain_tags || [],
+    availability_status: mapAvailabilityStatus(r.lifecycle_status),
+    domain_tags: Array.isArray(r.domain_tags) ? r.domain_tags : [],
     source_role: r.source_role,
     content_topics: r.content_topics || [],
     attention_level: r.attention_level,
     notes: r.notes,
-    fetch_interval_sec: r.fetch_interval_sec,
-    max_items_per_fetch: r.max_items_per_fetch,
-    compensation_interval_sec: r.compensation_interval_sec,
-    config: asDict(r.config),
+    fetch_config: {
+      rss_interval_seconds: r.fetch_interval_sec,
+      x_compensation_interval_seconds: r.compensation_interval_sec,
+      max_items_per_run: r.max_items_per_fetch,
+    },
     last_verified_at: toISO(r.last_verified_at),
     verify_error: r.verify_error,
+    last_fetched_at: toISO(r.last_success_at),
     // v0.5.1: X 反向同步字段
     source_origin: r.source_origin ?? "manual",
     x_rule_id: r.x_rule_id ?? null,
@@ -653,18 +674,23 @@ function sourceCardToOut(r: any) {
   return {
     id: r.id,
     type: r.type,
-    identity: r.identity,
+    source_identity: r.identity,
     display_name: r.display_name,
-    lifecycle_status: r.lifecycle_status,
+    availability_status: mapAvailabilityStatus(r.lifecycle_status),
     operational_status: r.operational_status,
-    domain_tags: r.domain_tags || [],
+    domain_tags: Array.isArray(r.domain_tags) ? r.domain_tags : [],
     source_role: r.source_role,
     attention_level: r.attention_level,
     position_count: r.position_count ?? 0,
     enabled_position_count: r.enabled_position_count ?? 0,
-    last_success_at: toISO(r.last_success_at),
+    fetch_config: {
+      rss_interval_seconds: r.fetch_interval_sec,
+      x_compensation_interval_seconds: r.compensation_interval_sec,
+      max_items_per_run: r.max_items_per_fetch,
+    },
+    last_fetched_at: toISO(r.last_success_at),
     consecutive_failures: r.consecutive_failures ?? 0,
-    news_count: r.news_count ?? 0,
+    total_news_count: r.news_count ?? 0,
     // v0.5.1: X 反向同步字段
     source_origin: r.source_origin ?? "manual",
     x_rule_id: r.x_rule_id ?? null,

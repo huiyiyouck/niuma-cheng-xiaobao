@@ -39,7 +39,7 @@ export async function statsRoutes(app: FastifyInstance): Promise<void> {
         FROM display_positions dp
         JOIN sources s ON s.id = dp.source_id
         WHERE dp.channel_space_id = $1 AND dp.deleted_at IS NULL AND dp.enabled = true
-          AND s.lifecycle_status = 'normal'`;
+          AND s.lifecycle_status = 'normal' AND s.paused = false`;
 
       channelCountQuery = `SELECT COUNT(*)::int AS count FROM channels WHERE channel_space_id = $1`;
 
@@ -64,7 +64,7 @@ export async function statsRoutes(app: FastifyInstance): Promise<void> {
 
       activeSourcesQuery = `SELECT COUNT(DISTINCT s.id)::int AS count
         FROM sources s
-        WHERE s.lifecycle_status = 'normal'
+        WHERE s.lifecycle_status = 'normal' AND s.paused = false
         AND EXISTS(
           SELECT 1 FROM display_positions dp
           WHERE dp.source_id = s.id AND dp.enabled = true AND dp.deleted_at IS NULL

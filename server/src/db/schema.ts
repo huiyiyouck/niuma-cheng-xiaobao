@@ -35,6 +35,7 @@ export const channels = pgTable(
       .notNull()
       .references(() => channelSpaces.id, { onDelete: "cascade" }),
     name: varchar("name", { length: 100 }).notNull(),
+    description: text("description"),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -86,6 +87,7 @@ export const sources = pgTable(
       table.type,
       sql`LOWER(${table.identity})`,
     ),
+    uniqueIndex("uq_sources_display_name").on(sql`LOWER(${table.displayName})`),
   ],
 );
 
@@ -112,13 +114,8 @@ export const displayPositions = pgTable(
   },
   (table) => [
     // 同一空间内，同一 Source 不能在同一位置重复
-    unique("uq_dp_source_space_channel").on(
-      table.sourceId,
-      table.channelSpaceId,
-      table.channelId,
-    ),
-    // 部分唯一索引：防止根节点重复（NULL != NULL 在 UNIQUE 中）
-    sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_dp_source_space_root ON display_positions(source_id, channel_space_id) WHERE channel_id IS NULL AND deleted_at IS NULL`,
+    // 部分唯一索引：同一空间下，一个 Source 只能有一个活跃位置（无论根节点还是频道）
+    sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_dp_source_space ON display_positions(source_id, channel_space_id) WHERE deleted_at IS NULL`,
     // 计算 operational_status 的查询依赖此索引
     sql`CREATE INDEX IF NOT EXISTS ix_dp_source_enabled ON display_positions(source_id, enabled, deleted_at) WHERE deleted_at IS NULL`,
     // 获取空间+频道下的展示位置

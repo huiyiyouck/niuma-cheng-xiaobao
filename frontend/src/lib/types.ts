@@ -6,15 +6,20 @@ export type Space = {
   name: string;
   description: string | null;
   sort_order: number;
+  icon: string;
+  channel_count: number;
+  source_count: number;
   created_at: string;
 };
 
 // ── v0.5: 频道 Channel ────────────────────────────────────
 export type Channel = {
   id: UUID;
-  space_id: UUID;
+  channel_space_id: UUID;
   name: string;
+  description: string | null;
   sort_order: number;
+  source_count: number;
   created_at: string;
 };
 
@@ -58,6 +63,9 @@ export type Source = {
   fetch_config: FetchConfig;
   // 统计
   total_news_count: number;
+  last_fetch_count: number;
+  next_fetch_at: string | null;
+  last_error: string | null;
   // v0.5.1: X 反向同步
   source_origin: "manual" | "x_synced";
   x_rule_id: string | null;

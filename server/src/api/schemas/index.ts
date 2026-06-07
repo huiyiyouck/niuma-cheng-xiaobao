@@ -40,11 +40,13 @@ export const ChannelSpacesReorder = z.object({
 
 export const ChannelCreate = z.object({
   name: nonBlankStr(100),
+  description: z.string().nullable().optional(),
   sort_order: z.number().int().min(0).default(0),
 });
 
 export const ChannelUpdate = z.object({
   name: nonBlankStr(100).optional(),
+  description: z.string().nullable().optional(),
   sort_order: z.number().int().min(0).optional(),
 });
 
@@ -67,7 +69,7 @@ export const ChannelsReorder = z.object({
 // ── Source ────────────────────────────────────────────────
 
 export const SourceCreate = z.object({
-  type: z.enum(["x_twitter", "rss"]),
+  type: z.enum(["x_twitter", "rss", "jin10_flash"]),
   identity: nonBlankStr(500),
   display_name: nonBlankStr(200),
   domain_tags: z.array(z.string()).default([]),
@@ -106,7 +108,7 @@ export const SourceIdentityUpdate = z.object({
 });
 
 export const SourceVerify = z.object({
-  type: z.enum(["x_twitter", "rss"]),
+  type: z.enum(["x_twitter", "rss", "jin10_flash"]),
   identity: nonBlankStr(500),
   config: z.record(z.unknown()).default({}),
 });
@@ -115,7 +117,7 @@ export const SourceVerify = z.object({
 
 export const SourcesQuery = z.object({
   search: z.string().optional(),
-  type: z.enum(["x_twitter", "rss"]).optional(),
+  type: z.enum(["x_twitter", "rss", "jin10_flash"]).optional(),
   lifecycle_status: z
     .enum(["normal", "needs_fix", "source_error", "removed"])
     .optional(),
@@ -177,8 +179,9 @@ export const PositionCreate = z.object({
 });
 
 export const PositionUpdate = z.object({
-  action: z.enum(["pause", "resume", "remove"]),
+  action: z.enum(["pause", "resume", "remove", "move"]),
   removal_reason: z.string().optional(),
+  channel_id: z.string().uuid().nullable().optional(),
 });
 
 export const PositionsQuery = z.object({

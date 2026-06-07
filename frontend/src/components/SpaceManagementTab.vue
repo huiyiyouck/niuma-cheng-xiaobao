@@ -6,6 +6,7 @@ import { createChannel, updateChannel, deleteChannel, getChannelDeletePreview, r
 import SpacePills from "@/components/SpacePills.vue";
 import SourceCard from "@/components/SourceCard.vue";
 import SourceCreateForm from "@/components/SourceCreateForm.vue";
+import SlidePanel from "@/components/base/SlidePanel.vue";
 import SearchSourceModal from "@/components/SearchSourceModal.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import ErrorBar from "@/components/base/ErrorBar.vue";
@@ -29,7 +30,7 @@ const selectedChannelId = ref<UUID | null>(null);
 // 频道弹窗
 const showChannelCreate = ref(false);
 const showChannelEdit = ref(false);
-const channelForm = ref({ name: "" });
+const channelForm = ref({ name: "", description: "" });
 const editingChannel = ref<Channel | null>(null);
 
 // 添加信息源
@@ -59,28 +60,32 @@ async function refreshSources() {
 function onSpaceSelect(id: string) { selectedSpaceId.value = id; selectedChannelId.value = null; }
 function onChannelSelect(id: string | null) { selectedChannelId.value = id; }
 
-function openChannelCreate() { channelForm.value = { name: "" }; showChannelCreate.value = true; }
+function openChannelCreate() { channelForm.value = { name: "", description: "" }; showChannelCreate.value = true; }
 async function doCreateChannel() {
   const name = channelForm.value.name.trim();
   if (!name || !selectedSpaceId.value) return;
-  try { await createChannel(selectedSpaceId.value, { name }); showChannelCreate.value = false; toast.success("频道已创建"); refreshChannels(); }
+  const desc = channelForm.value.description.trim() || null;
+  try { await createChannel(selectedSpaceId.value, { name, description: desc }); showChannelCreate.value = false; toast.success("频道已创建"); refreshChannels(); }
   catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
 
-function openChannelEdit(ch: Channel) { editingChannel.value = ch; channelForm.value = { name: ch.name }; showChannelEdit.value = true; }
+function openChannelEdit(ch: Channel) { editingChannel.value = ch; channelForm.value = { name: ch.name, description: ch.description || "" }; showChannelEdit.value = true; }
 async function doEditChannel() {
   if (!editingChannel.value || !selectedSpaceId.value) return;
-  try { await updateChannel(editingChannel.value.id, { name: channelForm.value.name.trim() }); showChannelEdit.value = false; toast.success("已更新"); refreshChannels(); }
+  const name = channelForm.value.name.trim();
+  if (!name) return;
+  const desc = channelForm.value.description.trim() || null;
+  try { await updateChannel(selectedSpaceId.value!, editingChannel.value.id, { name, description: desc }); showChannelEdit.value = false; toast.success("已更新"); refreshChannels(); }
   catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
 
 async function doDeleteChannel(ch: Channel) {
   try {
     let preview = { positions_count: 0, conflict_count: 0 };
-    try { preview = await getChannelDeletePreview(ch.id); } catch {}
+    try { preview = await getChannelDeletePreview(selectedSpaceId.value!, ch.id); } catch {}
     const ok = await modal.confirm("删除频道", `将移除 <b>${preview.positions_count}</b> 个展示位置。Source 和新闻保留。`, { confirmText: "确认删除", danger: true });
     if (!ok) return;
-    await deleteChannel(ch.id);
+    await deleteChannel(selectedSpaceId.value!, ch.id);
     toast.success("已删除"); refreshChannels(); refreshSources();
   } catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
@@ -104,7 +109,7 @@ async function moveChannel(idx: number, delta: number) {
 }
 
 async function onRemovePosition(positionId: string) {
-  try { await removeDisplayPosition(positionId); toast.success("已移除"); refreshSources(); }
+  try { await removeDisplayPosition(positionId); toast.success("已移除"); refreshSources(); refreshChannels(); }
   catch (e) { toast.error(e instanceof Error ? e.message : String(e)); }
 }
 
@@ -171,27 +176,31 @@ watch(selectedChannelId, () => refreshSources());
           </div>
         </div>
 
-        <!-- 新建信息源表单 -->
-        <SourceCreateForm
-          v-if="showCreateForm"
-          entryPoint="space_management"
-          :targetSpaceId="selectedSpaceId!"
-          :targetChannelId="selectedChannelId"
-          @created="onSourceCreated"
-          @cancel="showCreateForm = false"
-        />
+        <!-- 新建信息源侧边抽屉 -->
+        <SlidePanel :show="showCreateForm" title="新建信息源" @close="showCreateForm = false">
+          <SourceCreateForm
+            entryPoint="space_management"
+            :targetSpaceId="selectedSpaceId!"
+            :targetChannelId="selectedChannelId"
+            @created="onSourceCreated"
+            @cancel="showCreateForm = false"
+          />
+        </SlidePanel>
         <LoadingState v-if="loading" />
         <div v-else-if="sources.length === 0" class="empty-wrap"><EmptyState icon="📡" title="当前位置暂无信息源" description="点击「添加信息源」开始" /></div>
         <div v-else class="source-list">
-          <SourceCard v-for="s in sources" :key="s.id" :source="s" :currentSpaceId="selectedSpaceId!" :currentChannelId="selectedChannelId" @refresh="refreshSources()" @remove="onRemovePosition" />
+          <SourceCard v-for="s in sources" :key="s.id" :source="s" :currentSpaceId="selectedSpaceId!" :currentChannelId="selectedChannelId" :channels="channels" @refresh="refreshSources()" @remove="onRemovePosition" />
         </div>
       </div>
     </div>
 
     <!-- 新建频道弹窗 -->
-    <BaseModal v-if="showChannelCreate" title="新建频道" @close="showChannelCreate = false">
+    <BaseModal v-if="showChannelCreate" :title="`新建频道 — ${spaces.find(s => s.id === selectedSpaceId)?.name || ''}`" @close="showChannelCreate = false">
       <BaseFormField label="频道名称">
         <input class="form-f" v-model="channelForm.name" placeholder="如：模型动态、行业资讯" @keydown.enter="doCreateChannel" />
+      </BaseFormField>
+      <BaseFormField label="描述">
+        <input class="form-f" v-model="channelForm.description" placeholder="可选，简短描述此频道的用途" @keydown.enter="doCreateChannel" />
       </BaseFormField>
       <template #footer>
         <BaseButton @click="showChannelCreate = false">取消</BaseButton>
@@ -203,6 +212,9 @@ watch(selectedChannelId, () => refreshSources());
     <BaseModal v-if="showChannelEdit" title="编辑频道" @close="showChannelEdit = false">
       <BaseFormField label="频道名称">
         <input class="form-f" v-model="channelForm.name" @keydown.enter="doEditChannel" />
+      </BaseFormField>
+      <BaseFormField label="描述">
+        <input class="form-f" v-model="channelForm.description" placeholder="可选，简短描述此频道的用途" @keydown.enter="doEditChannel" />
       </BaseFormField>
       <template #footer>
         <BaseButton @click="showChannelEdit = false">取消</BaseButton>
@@ -217,6 +229,7 @@ watch(selectedChannelId, () => refreshSources());
       :channelId="selectedChannelId"
       :spaceName="spaces.find(s => s.id === selectedSpaceId)?.name || ''"
       :channelName="selectedChannelId === null ? '全部' : (channels.find(c => c.id === selectedChannelId)?.name || '')"
+      :existingSourceIds="sources.map(s => s.id)"
       @close="showSearchModal = false"
       @added="onSearchAdded"
       @createNew="openCreateForm"

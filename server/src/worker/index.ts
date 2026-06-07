@@ -8,9 +8,20 @@ import { zeroNewMonitorTick } from "./monitor.ts";
 import { reclaimStaleTick } from "./reclaim.ts";
 import { xStreamManager } from "./x-stream-manager.ts";
 import { xRuleSyncer } from "./x-rule-sync.ts";
+import { EnvHttpProxyAgent, ProxyAgent, setGlobalDispatcher } from "undici";
 import "./fetchers/index.ts";
 
 const log = workerLogger;
+
+// 全局代理：所有 fetch 调用（包括 RSS fetcher）都走代理
+const proxyUrl = config.xProxyUrl || config.httpsProxy;
+if (proxyUrl) {
+  setGlobalDispatcher(new ProxyAgent(proxyUrl));
+  log.info("Worker 全局代理: %s", proxyUrl);
+} else {
+  setGlobalDispatcher(new EnvHttpProxyAgent());
+  log.info("Worker 使用环境变量代理（https_proxy）");
+}
 
 // 简易信号量
 class Semaphore {
@@ -51,16 +62,21 @@ async function schedulerLoop(stopSignal: AbortSignal): Promise<void> {
 async function workerLoopRunner(stopSignal: AbortSignal): Promise<void> {
   const fetchSem = new Semaphore(config.fetchConcurrency);
   const processSem = new Semaphore(config.processConcurrency);
+  const totalWorkers = config.fetchConcurrency + config.processConcurrency;
 
-  while (!stopSignal.aborted) {
-    try {
-      await workerLoop(dbPool, config.workerId, fetchSem, processSem);
-    } catch (err: any) {
-      log.error("WORKER LOOP ERROR: %s", err.message);
+  // 启动多个并发 worker
+  const workers = Array.from({ length: totalWorkers }, async () => {
+    while (!stopSignal.aborted) {
+      try {
+        await workerLoop(dbPool, config.workerId, fetchSem, processSem);
+      } catch (err: any) {
+        log.error("WORKER LOOP ERROR: %s", err.message);
+      }
+      await sleep(50, stopSignal);
     }
-    // 无任务时短暂休眠
-    await sleep(50, stopSignal);
-  }
+  });
+
+  await Promise.all(workers);
 }
 
 async function monitorLoop(stopSignal: AbortSignal): Promise<void> {

@@ -2,8 +2,9 @@
 import { onMounted, ref } from "vue";
 import type { SourceWithPositions, SourceListParams, Space, UUID } from "@/lib/types";
 import { listSources, listSpaces, deleteSource, getSourceDeleteImpact, syncXRules } from "@/lib/api";
-import SourceTable from "@/components/SourceTable.vue";
+import SourceLibraryCard from "@/components/SourceLibraryCard.vue";
 import SourceCreateForm from "@/components/SourceCreateForm.vue";
+import SlidePanel from "@/components/base/SlidePanel.vue";
 import Pagination from "@/components/Pagination.vue";
 import DeleteConfirmDialog from "@/components/DeleteConfirmDialog.vue";
 import ErrorBar from "@/components/base/ErrorBar.vue";
@@ -183,21 +184,7 @@ const LEVEL_OPTS = [
   <div class="source-library">
     <ErrorBar :message="errorText" />
 
-    <!-- 操作栏 -->
-    <div class="toolbar">
-      <BaseButton v-if="!showCreateForm" variant="primary" @click="showCreateForm = true">+ 新建信息源</BaseButton>
-      <span class="total-info muted">共 {{ total }} 个信息源</span>
-    </div>
-
-    <!-- 新建表单 -->
-    <SourceCreateForm
-      v-if="showCreateForm"
-      entryPoint="library"
-      @created="onSourceCreated"
-      @cancel="showCreateForm = false"
-    />
-
-    <!-- 搜索 -->
+    <!-- 搜索 + 操作 -->
     <div class="lib-search-row">
       <div class="lib-search-box">
         <span class="lib-search-icon">🔍</span>
@@ -205,6 +192,19 @@ const LEVEL_OPTS = [
       </div>
       <BaseButton variant="primary" @click="showCreateForm = true">新建信息源</BaseButton>
       <BaseButton :disabled="xSyncing" @click="onSyncXRules">{{ xSyncing ? '同步中…' : '同步 X 规则' }}</BaseButton>
+    </div>
+
+    <!-- 新建信息源侧边抽屉 -->
+    <SlidePanel :show="showCreateForm" title="新建信息源" @close="showCreateForm = false">
+      <SourceCreateForm
+        entryPoint="library"
+        @created="onSourceCreated"
+        @cancel="showCreateForm = false"
+      />
+    </SlidePanel>
+
+    <div class="lib-meta">
+      <span class="total-info muted">共 {{ total }} 个信息源</span>
     </div>
 
     <!-- 筛选 -->
@@ -223,15 +223,21 @@ const LEVEL_OPTS = [
       <span class="filter-hint">多个筛选为「且」关系，同类多选为「或」</span>
     </div>
 
-    <!-- 加载/表格 -->
+    <!-- 加载/卡片网格 -->
     <LoadingState v-if="loading" />
-    <SourceTable
-      v-else
-      :sources="sources"
-      @view="viewSource"
-      @edit="editSource"
-      @delete="prepareDelete"
-    />
+    <div v-else-if="sources.length === 0" class="lib-empty">
+      <span class="muted">暂无匹配的信息源，试试调整筛选条件或点击「新建信息源」</span>
+    </div>
+    <div v-else class="lib-card-grid">
+      <SourceLibraryCard
+        v-for="s in sources"
+        :key="s.id"
+        :source="s"
+        @view="viewSource"
+        @edit="editSource"
+        @delete="prepareDelete"
+      />
+    </div>
 
     <!-- 分页 -->
     <Pagination
@@ -257,8 +263,6 @@ const LEVEL_OPTS = [
 
 <style scoped>
 .source-library { display: flex; flex-direction: column; gap: 12px; }
-.toolbar { display: flex; align-items: center; gap: 12px; }
-.total-info { font-size: 12px; }
 
 .lib-search-row { display: flex; gap: 12px; align-items: center; }
 .lib-search-box {
@@ -273,6 +277,19 @@ const LEVEL_OPTS = [
 .lib-search-icon { font-size: 14px; opacity: 0.4; margin-right: 8px; }
 .lib-search-input { flex: 1; border: none; padding: 9px 0; font-size: 13px; outline: none; background: transparent; }
 
+.lib-meta { display: flex; align-items: center; }
+.total-info { font-size: 12px; }
+
 .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .filter-hint { font-size: 10px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+
+.lib-card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.lib-empty {
+  padding: 40px 0;
+  text-align: center;
+}
 </style>

@@ -160,7 +160,14 @@ export class XStreamManager {
         this.consecutiveDisconnects = 0;
       } catch (err: any) {
         this.consecutiveDisconnects++;
+        const is429 = err.message?.includes("429") || String(err).includes("429");
         log.error("X STREAM disconnected (consecutive=%d): %s", this.consecutiveDisconnects, err.message);
+
+        // 429 限流：直接等 5 分钟
+        if (is429) {
+          this.reconnectDelay = 300000;
+          log.warn("X STREAM 429 rate limited, waiting 5min before retry");
+        }
 
         if (this.consecutiveDisconnects >= 3) {
           try {

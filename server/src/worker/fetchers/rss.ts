@@ -3,7 +3,6 @@ import { register } from "./registry.ts";
 import { NonRetryableError } from "../errors.ts";
 
 const parser = new Parser({
-  timeout: 15000,
   headers: { "User-Agent": "NiumaNewsBot/0.4" },
 });
 
@@ -14,7 +13,14 @@ async function fetchRSS(
 ): Promise<[any[], Record<string, unknown>]> {
   let feed: Parser.Output<{ [key: string]: any }>;
   try {
-    feed = await parser.parseURL(feedUrl);
+    // 用 fetch（走全局 undici proxy agent）而不是 rss-parser 内置的 http 模块
+    const resp = await fetch(feedUrl, {
+      headers: { "User-Agent": "NiumaNewsBot/0.4" },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const xml = await resp.text();
+    feed = await parser.parseString(xml);
   } catch (err: any) {
     throw new NonRetryableError(`RSS 抓取/解析失败: ${err.message}`);
   }

@@ -10,10 +10,14 @@ import TypeBadge from "@/components/base/TypeBadge.vue";
 import MiniTag from "@/components/base/MiniTag.vue";
 import { useRouter } from "vue-router";
 
+import type { Channel } from "@/lib/types";
+import { moveDisplayPosition } from "@/lib/api";
+
 const props = defineProps<{
   source: SourceWithPositions;
   currentSpaceId: string;
   currentChannelId: string | null;
+  channels?: Channel[];
 }>();
 
 const emit = defineEmits<{
@@ -26,12 +30,31 @@ const modal = useModal();
 const router = useRouter();
 
 const toggling = ref(new Set<string>());
+const moving = ref(new Set<string>());
+
+function onMoveSelect(posId: string, e: Event) {
+  const val = (e.target as HTMLSelectElement).value;
+  movePosition(posId, val === "__root__" ? null : val || null);
+}
+
+async function movePosition(posId: string, newChannelId: string | null) {
+  moving.value.add(posId);
+  try {
+    await moveDisplayPosition(posId, newChannelId);
+    emit("refresh");
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : String(e));
+  } finally {
+    moving.value.delete(posId);
+  }
+}
 
 const relevantPositions = computed(() => {
   return (props.source.display_positions || []).filter(p => {
     if (p.space_id !== props.currentSpaceId) return false;
+    // 指定频道 → 只显示该频道的；全部 → 显示所有（根+各频道）
     if (props.currentChannelId) return p.channel_id === props.currentChannelId;
-    return p.channel_id === null;
+    return true;
   });
 });
 
@@ -119,15 +142,16 @@ const levelLabel = computed(() =>
       </span>
     </div>
 
-    <!-- 第 4 行：展示位置 + 操作（紧凑底部条） -->
+    <!-- 第 4 行：展示位置 + 操作 -->
     <div class="card-actions-row" v-if="!isRemoved">
       <div class="positions-summary">
-        <span v-if="relevantPositions.length === 0" class="muted">当前无展示位置</span>
+        <span v-if="relevantPositions.length === 0" class="muted">当前空间无展示位置</span>
         <span v-else class="pos-summary-text">
-          {{ relevantPositions.length }} 个位置 ·
-          <span :class="relevantPositions.every(p => p.enabled) ? 'pos-on' : 'pos-mixed'">
-            {{ relevantPositions.filter(p => p.enabled).length }} 启用
-          </span>
+          <template v-if="currentChannelId === null">
+            <span v-if="relevantPositions[0].channel_name" class="pos-loc">{{ relevantPositions[0].channel_name }}</span>
+            <span v-else class="pos-loc root">根节点</span>
+          </template>
+          <span v-if="!relevantPositions[0].enabled" class="pos-paused">已暂停</span>
         </span>
       </div>
       <div class="card-actions">
@@ -139,8 +163,27 @@ const levelLabel = computed(() =>
             :disabled="toggling.has(relevantPositions[0].id)"
             @click="onTogglePosition(relevantPositions[0])"
           >{{ relevantPositions[0].enabled ? '暂停' : '恢复' }}</BaseButton>
-          <BaseButton size="xs" variant="danger" @click="onRemovePosition(relevantPositions[0])">从当前位置移除</BaseButton>
+          <div v-if="channels && channels.length > 0 && currentChannelId === null" class="move-wrap">
+            <select class="move-select" :value="relevantPositions[0].channel_id || '__root__'" :disabled="moving.has(relevantPositions[0].id)" @change="onMoveSelect(relevantPositions[0].id, $event)">
+              <option value="__root__">根节点</option>
+              <option v-for="ch in channels" :key="ch.id" :value="ch.id">{{ ch.name }}</option>
+            </select>
+          </div>
+          <BaseButton size="xs" variant="danger" @click="onRemovePosition(relevantPositions[0])">移除</BaseButton>
         </template>
+      </div>
+    </div>
+
+    <!-- 多位置展开（保留兼容） -->
+    <div v-if="!isRemoved && relevantPositions.length > 1" class="positions-info">
+      <div v-for="pos in relevantPositions" :key="pos.id" class="position-item">
+        <span class="pos-target">
+          {{ pos.channel_name ? `频道「${pos.channel_name}」` : '空间根节点' }}
+        </span>
+        <BaseButton size="xs" :variant="pos.enabled ? 'warn' : 'success'" :disabled="toggling.has(pos.id)" @click="onTogglePosition(pos)">
+          {{ pos.enabled ? '暂停' : '恢复' }}
+        </BaseButton>
+        <BaseButton size="xs" variant="danger" @click="onRemovePosition(pos)">移除</BaseButton>
       </div>
     </div>
 
@@ -157,6 +200,11 @@ const levelLabel = computed(() =>
           @click="onTogglePosition(pos)"
         >{{ pos.enabled ? '暂停' : '恢复' }}</BaseButton>
         <BaseButton size="xs" variant="danger" @click="onRemovePosition(pos)">移除</BaseButton>
+        <select v-if="channels && channels.length > 0" class="move-select" :disabled="moving.has(pos.id)" @change="movePosition(pos.id, ($event.target as HTMLSelectElement).value || null)">
+          <option value="">移动…</option>
+          <option :value="null">根节点</option>
+          <option v-for="ch in channels" :key="ch.id" :value="ch.id">{{ ch.name }}</option>
+        </select>
       </div>
     </div>
   </div>
@@ -276,5 +324,19 @@ const levelLabel = computed(() =>
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+  align-items: center;
 }
+.pos-loc {
+  font-size: 11px; color: var(--text-secondary); font-weight: 600;
+}
+.pos-loc.root { color: var(--text-muted); }
+.pos-paused { font-size: 10px; color: var(--warning); margin-left: 6px; }
+.move-wrap { position: relative; }
+.move-select {
+  font-size: 11px; padding: 4px 8px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--card);
+  color: var(--accent); cursor: pointer; font-weight: 600;
+  font-family: inherit; max-width: 110px;
+}
+.move-select:hover { border-color: var(--accent); }
 </style>

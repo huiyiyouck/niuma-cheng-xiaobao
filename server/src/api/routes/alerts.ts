@@ -63,9 +63,21 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
 
     const counts = countRows[0] || { active: 0, acknowledged: 0, resolved: 0, ignored: 0, total: 0 };
 
+    // 按筛选条件重新计总数
+    let filteredTotal: number;
+    if (conditions.length > 0) {
+      const { rows: [ft] } = await pool.query(
+        `SELECT COUNT(*)::int AS c FROM alerts a ${where}`,
+        params.slice(0, -2), // 去掉 limit/offset 参数
+      );
+      filteredTotal = ft?.c ?? 0;
+    } else {
+      filteredTotal = counts.total;
+    }
+
     return reply.send({
       alerts: rows.map(alertToOut),
-      total: counts.total,
+      total: filteredTotal,
       counts: {
         active: counts.active,
         acknowledged: counts.acknowledged,
@@ -121,6 +133,21 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
     );
 
     return reply.send(alertToOut(updated));
+  });
+
+  // ── 批量更新告警状态 ────────────────────────────────────
+
+  app.patch("/alerts/batch", async (req: FastifyRequest, reply: FastifyReply) => {
+    const body = AlertStatusUpdate.parse(req.body);
+    // body.status: acknowledged | ignored | resolved
+    // 根据目标状态推断源状态（确认→来自活跃，恢复→来自已确认）
+    const fromMap: Record<string, string> = { acknowledged: "active", resolved: "acknowledged", ignored: "active" };
+    const fromStatus = fromMap[body.status] || "active";
+    const result = await pool.query(
+      `UPDATE alerts SET status = $1 WHERE status = $2 RETURNING id`,
+      [body.status, fromStatus],
+    );
+    return reply.send({ updated: result.rowCount ?? 0 });
   });
 
   // ── 未处理数量（顶栏角标）─────────────────────────────

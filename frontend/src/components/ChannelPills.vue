@@ -31,7 +31,7 @@ async function doCreate() {
   if (!name) return;
   try {
     // 从空间上下文获取 space_id — 从第一个频道推断
-    const spaceId = props.channels[0]?.space_id;
+    const spaceId = props.channels[0]?.channel_space_id;
     if (!spaceId) { toast.error("无可用空间"); return; }
     await createChannel(spaceId, { name, sort_order: props.channels.length });
     newName.value = "";
@@ -52,8 +52,10 @@ async function doRename() {
   if (!editingId.value) return;
   const name = editName.value.trim();
   if (!name) return;
+  const ch = props.channels.find(c => c.id === editingId.value);
+  if (!ch) return;
   try {
-    await updateChannel(editingId.value, { name });
+    await updateChannel(ch.channel_space_id, editingId.value, { name });
     editingId.value = null;
     toast.success("已重命名");
     emit("changed");
@@ -73,7 +75,7 @@ async function moveChannel(index: number, direction: -1 | 1) {
   const reorderItems = newList.map((ch, i) => ({ id: ch.id, sort_order: i }));
 
   try {
-    await reorderChannels(filtered[0].space_id, { items: reorderItems });
+    await reorderChannels(filtered[0].channel_space_id, { items: reorderItems });
     emit("changed");
   } catch (e) {
     toast.error(e instanceof Error ? e.message : String(e));
@@ -82,7 +84,7 @@ async function moveChannel(index: number, direction: -1 | 1) {
 
 async function doDeleteChannel(ch: Channel) {
   try {
-    const preview = await getChannelDeletePreview(ch.id);
+    const preview = await getChannelDeletePreview(ch.channel_space_id, ch.id);
     const additionalInfo = preview.has_space_root_position
       ? "该 Source 已在空间根节点存在展示位置，将直接移除频道位置而不迁移。"
       : "";
@@ -92,7 +94,7 @@ async function doDeleteChannel(ch: Channel) {
       { confirmText: "确认删除", danger: true },
     );
     if (!ok) return;
-    await deleteChannel(ch.id);
+    await deleteChannel(ch.channel_space_id, ch.id);
     toast.success("频道已删除");
     emit("changed");
   } catch (e) {

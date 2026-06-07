@@ -45,6 +45,7 @@ export async function positionsRoutes(app: FastifyInstance): Promise<void> {
         s.identity,
         s.display_name,
         s.lifecycle_status,
+        s.paused AS source_paused,
         s.domain_tags,
         s.source_role,
         s.attention_level,
@@ -101,6 +102,16 @@ export async function positionsRoutes(app: FastifyInstance): Promise<void> {
       if (!ch) return reply.status(400).send({ detail: "频道不属于当前空间" });
     }
 
+    // 去重检查：同一空间下该 Source 是否已有活跃位置
+    const { rows: [dup] } = await pool.query(
+      "SELECT id, channel_id FROM display_positions WHERE source_id = $1 AND channel_space_id = $2 AND deleted_at IS NULL",
+      [body.source_id, space_id],
+    );
+    if (dup) {
+      const loc = dup.channel_id ? "指定频道" : "根节点";
+      return reply.status(409).send({ detail: `该信息源在此空间已存在（${loc}），请使用移动功能调整位置` });
+    }
+
     try {
       const { rows: [row] } = await pool.query(
         `INSERT INTO display_positions(source_id, channel_space_id, channel_id, enabled)
@@ -145,6 +156,29 @@ export async function positionsRoutes(app: FastifyInstance): Promise<void> {
         [id, body.removal_reason ?? "manual"],
       );
       return reply.send({ deleted: true });
+    } else if (body.action === "move") {
+      if (body.channel_id === undefined) {
+        return reply.status(400).send({ detail: "move 操作需要提供 channel_id" });
+      }
+      // 检查目标频道属于同一空间
+      if (body.channel_id !== null) {
+        const { rows: [ch] } = await pool.query(
+          "SELECT id FROM channels WHERE id = $1 AND channel_space_id = $2",
+          [body.channel_id, existing.channel_space_id],
+        );
+        if (!ch) return reply.status(400).send({ detail: "目标频道不属于当前空间" });
+      }
+      // 检查目标位置是否冲突
+      const { rows: [conflict] } = await pool.query(
+        `SELECT id FROM display_positions
+         WHERE source_id = $1 AND channel_space_id = $2
+           AND channel_id IS NOT DISTINCT FROM $3
+           AND deleted_at IS NULL AND id != $4`,
+        [existing.source_id, existing.channel_space_id, body.channel_id, id],
+      );
+      if (conflict) return reply.status(409).send({ detail: "该信息源在目标位置已存在" });
+      await pool.query("UPDATE display_positions SET channel_id = $1 WHERE id = $2",
+        [body.channel_id, id]);
     }
 
     const { rows: [updated] } = await pool.query(
@@ -170,6 +204,7 @@ function positionToOut(r: any) {
       identity: r.identity,
       display_name: r.display_name,
       lifecycle_status: r.lifecycle_status,
+      paused: r.source_paused ?? false,
       domain_tags: r.domain_tags || [],
       source_role: r.source_role,
       attention_level: r.attention_level,

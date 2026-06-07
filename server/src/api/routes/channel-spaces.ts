@@ -215,9 +215,9 @@ export async function channelSpacesRoutes(app: FastifyInstance): Promise<void> {
 
     try {
       const { rows: [row] } = await pool.query(
-        `INSERT INTO channels(channel_space_id, name, sort_order)
-         VALUES($1, $2, $3) RETURNING *`,
-        [id, body.name, body.sort_order ?? 0],
+        `INSERT INTO channels(channel_space_id, name, description, sort_order)
+         VALUES($1, $2, $3, $4) RETURNING *`,
+        [id, body.name, body.description ?? null, body.sort_order ?? 0],
       );
       return reply.status(201).send(channelToOut(row));
     } catch (err: any) {
@@ -244,6 +244,7 @@ export async function channelSpacesRoutes(app: FastifyInstance): Promise<void> {
     let idx = 0;
 
     if (body.name !== undefined) { sets.push(`name = $${++idx}`); vals.push(body.name); }
+    if (body.description !== undefined) { sets.push(`description = $${++idx}`); vals.push(body.description); }
     if (body.sort_order !== undefined) { sets.push(`sort_order = $${++idx}`); vals.push(body.sort_order); }
     if (sets.length === 0) {
       return reply.status(400).send({ detail: "at least one field required" });
@@ -418,6 +419,7 @@ function channelToOut(r: any) {
     id: r.id,
     channel_space_id: r.channel_space_id,
     name: r.name,
+    description: r.description ?? null,
     sort_order: r.sort_order,
     source_count: r.source_count ?? 0,
     created_at: toISO(r.created_at),

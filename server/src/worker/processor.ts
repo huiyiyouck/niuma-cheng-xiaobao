@@ -26,19 +26,39 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
   if (!row) throw new Error("raw_item not found");
 
   const content = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
-  let text: string;
-  const typeFetcher = find(row.source_type);
-  if (typeFetcher) {
-    text = typeFetcher.renderForLLM(content);
-  } else {
-    text = JSON.stringify(content);
-  }
 
-  // LLM 处理
-  const t0 = Date.now();
-  const result = await processLLM(text, row.source_item_url);
-  const elapsed = (Date.now() - t0) / 1000;
-  log.info("LLM CALL source_type=%s source_id=%s duration=%.2fs", row.source_type, sourceId, elapsed);
+  // 金十快讯不走 LLM，直接展示原始内容
+  let title: string;
+  let summary: string;
+  let bullets: string[] = [];
+  let tags: string[] = [];
+  let entities: any[] = [];
+  let importanceScore = 0;
+
+  if (row.source_type === "jin10_flash") {
+    summary = (content.summary as string) || (content.introduction as string) || "";
+    title = (content.title as string) || summary.slice(0, 40) || "金十快讯";
+    tags = ["金十快讯"];
+    log.info("JIN10 DIRECT source_id=%s title=%s", sourceId, title.slice(0, 80));
+  } else {
+    let text: string;
+    const typeFetcher = find(row.source_type);
+    if (typeFetcher) {
+      text = typeFetcher.renderForLLM(content);
+    } else {
+      text = JSON.stringify(content);
+    }
+    const t0 = Date.now();
+    const result = await processLLM(text, row.source_item_url);
+    const elapsed = (Date.now() - t0) / 1000;
+    log.info("LLM CALL source_type=%s source_id=%s duration=%.2fs", row.source_type, sourceId, elapsed);
+    title = result.title || "";
+    summary = result.summary || "";
+    bullets = result.bullets || [];
+    tags = result.tags || [];
+    entities = result.entities || [];
+    importanceScore = Number(result.importance_score || 0);
+  }
 
   // 插入 processed_news（ON CONFLICT raw_item_id 去重）
   const { rows: [inserted] } = await conn.query(
@@ -50,15 +70,15 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
      RETURNING id, title, published_at`,
     [
       rawItemId,
-      result.title || "",
-      result.summary || "",
-      result.language || "zh",
+      title,
+      summary,
+      "zh",
       JSON.stringify({ url: row.source_item_url, source_id: String(row.source_id) }),
       row.published_at || null,
-      JSON.stringify(result.bullets || []),
-      JSON.stringify(result.tags || []),
-      JSON.stringify(result.entities || []),
-      Number(result.importance_score || 0),
+      JSON.stringify(bullets),
+      JSON.stringify(tags),
+      JSON.stringify(entities),
+      importanceScore,
     ],
   );
 

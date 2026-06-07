@@ -62,6 +62,10 @@ export const config = {
   corsAllowOrigins: get("CORS_ALLOW_ORIGINS", "*"),
   trustProxyHeaders: getBool("TRUST_PROXY_HEADERS", false),
 
+  // 金十 MCP
+  jin10McpUrl: get("JIN10_MCP_URL", "https://mcp.jin10.com/mcp"),
+  jin10McpToken: get("JIN10_MCP_TOKEN", ""),
+
   // 代理
   httpProxy: get("HTTP_PROXY", "") || get("http_proxy", ""),
   httpsProxy: get("HTTPS_PROXY", "") || get("https_proxy", ""),
