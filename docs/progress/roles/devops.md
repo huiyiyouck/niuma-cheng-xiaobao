@@ -1,5 +1,78 @@
 # DevOps 工作日志
 
+## 2026-06-07 — v0.5.1 生产部署上线
+
+> 角色：DevOps（运维/部署工程师）；模式：标准迭代部署执行。
+
+### 部署范围
+
+- 代码：HEAD `a032dbe`（含 v0.5.1 X 反向同步 commit `7aca9d6` + Owner 试用 Bugfix commit `75ca9ae`）
+- Schema：`drizzle/0001-0004`（首次正式经由 drizzle migrate 同步到生产 `__drizzle_migrations` 表）
+- 配置：.env 8 项变更（详见下方），符合「合并不替换」原则
+- 目标环境：本机生产 systemd `news-api.service`（同机部署 = 部署人在生产机操作）
+
+### 执行步骤（按计划 7 步）
+
+1. **Step 1 .env 对比**：原 27 项 vs 用户贴出 8 项 → 6 改 + 2 新增 + 21 保留
+   - 关键 catch：用户贴的 `DATABASE_URL` 指向 `:5433`，本机 PG 在 `:5432` → **保留 5432 端口，仅去掉 `+asyncpg` 旧 Python 驱动头**
+2. **Step 2 dry-check**（4 项全过）
+   - `LOWER(display_name)` 无重复 ✅（0004 唯一索引安全）
+   - drizzle journal 与 `__drizzle_migrations` 严重漂移：journal 仅 0000/0001，DB 仅 baseline，但 DB schema 已是 v0.5.1 终态。0001-0004 SQL 全部使用 `IF [NOT] EXISTS`，确认幂等安全
+   - sources 表 4 条 x_twitter 全部 `x_synced`，与 X Portal 4 条 rules 完美对应
+   - X API GET rules 走 `X_PROXY_URL=http://127.0.0.1:10809` 联通 ✅
+3. **Step 3 pg_dump 备份**：`/var/backups/niuma-news/db-pre-v0.5.1-20260607-173753.sql.gz`（4.6K / 12 表）
+4. **Step 4 .env 精准 patch**：Python 脚本逐 key 替换，diff 校验只动了预期的 8 项；备份原 .env 至 `/var/backups/niuma-news/env-pre-v0.5.1-*.env`
+5. **Step 5 systemctl restart** — **第一次失败**（见下方"部署期发现")
+6. **Step 5 retry** — npm install 后 reset-failed → restart → 3s 内 active running
+7. **Step 6 健康检查 6/6 通过**
+8. **Step 7 回写产出物**（本日志 + v0.5.md + INDEX.md）
+
+### 部署期发现并已修复的问题
+
+| # | 问题 | 根因 | 修复 |
+|---|------|------|------|
+| A | worker 启动崩 `ERR_MODULE_NOT_FOUND: undici` | commit `75ca9ae` 新增 `"undici": "^7.27.2"` 到 `server/package.json`，但部署机未跑 `npm install` | `cd server && npm install` → 装 183 包，8s 完成 |
+| B | drizzle journal 与 DB 三方不一致：`_journal.json` 只有 0000/0001、`__drizzle_migrations` 表只有 baseline、disk 上有 0001-0004、DB 实际 schema 已是 v0.5.1 终态 | 历史上人工 `psql` 应用了部分迁移、`db:generate` 没跟上 schema.ts 变更，节奏不规范 | drizzle migrate 幂等重跑 0001-0004（全部 IF [NOT] EXISTS 保护），journal 与 DB 状态自动对齐。同时把 0002 写入 journal（由 drizzle-kit 自动完成） |
+| C | scheduler 旧版日志狂刷 `relation "channel_sources" does not exist` | 旧 worker 进程还跑 v0.4 代码 + 新 schema（channel_sources 已 DROP），跨版本不一致 | restart 后旧进程退出，新 worker 用新代码不再查 channel_sources，噪音消失 ✅ |
+
+### .env 变更（脱敏）
+
+| 字段 | 旧 → 新 |
+|------|---------|
+| `DATABASE_URL` | `postgresql+asyncpg://news:news@localhost:5432/news` → `postgresql://news:news@localhost:5432/news`（仅去 Python 驱动头） |
+| `OPENAI_BASE_URL` | `ark.cn-beijing.volces.com` → `token-plan-cn.xiaomimimo.com` |
+| `OPENAI_MODEL` | `deepseek-v4-pro` → `mimo-v2.5-pro` |
+| `OPENAI_API_KEY` | 旧 token → 新 token（换供应商） |
+| `X_BEARER_TOKEN` | 旧 → 新 |
+| `PROCESS_CONCURRENCY` | `1` → `5` |
+| `JIN10_MCP_URL` / `JIN10_MCP_TOKEN` | 新增（金十数据 MCP 接入） |
+
+### 健康检查结果（6/6）
+
+| # | 检查 | 结果 |
+|---|------|------|
+| 6.1 | GET /health | 200 `{status:ok}` |
+| 6.2 | GET /v1/spaces | 200，3 空间 |
+| 6.3 | POST /v1/x/sync-rules（带 ADMIN_TOKEN） | 200 `{added:0, updated:4, removed:0, restored:0}` |
+| 6.4 | sources 表 x_rule_id 回填 | 4/4（OpenAI / Solanamobile / 加密狗 / Claude code）|
+| 6.5 | X STREAM connected | ✅ XRuleSyncer 启动、首次 sync `remote=4 local=4`、Stream 连接成功 |
+| 6.6 | 全局代理 | `http://127.0.0.1:10809` 生效 |
+
+### 遗留与建议
+
+- **🔴 密钥轮换建议**：本次部署的 X_BEARER_TOKEN / OPENAI_API_KEY / JIN10_MCP_TOKEN 在与 Owner 的对话历史中**已明文出现**。强烈建议 Owner 尽快在各服务控制台轮换。本日志按手册原则不记录原始值。
+- **🟡 知识沉淀建议**（待 Owner 决定是否新增）：
+  - 「Developer 改 `server/package.json` 必须同步通知 DevOps 跑 `npm install`」—— 可考虑列入 `docs/baseline/conventions.md` 或 `db-migration-handbook` 类似的"应用变更手册"
+  - 「drizzle journal 漂移可通过幂等 migrate 自动修复，但仅当所有 SQL 严格使用 IF [NOT] EXISTS 时安全」—— 可补充进 `docs/knowledge/devops/db-migration-handbook.md`
+- **🟡 工作区遗留**：`docs/baseline/*.md` 12 文件未提交修改 + `AGENTS.md` 未跟踪文件，是一项**未结的 WM 域多客户端基线迁移工作**（把 baseline 同时支持 Claude Code + Codex 入口）。**DevOps 本会话未动**这些文件，按角色边界由 WM/Owner 后续处理。
+- **🟢 v0.5.1 后端部署已完成**，等 Owner 浏览器验证 v0.5 / v0.5.1 前端 UI 即可关闭 v0.5 迭代。
+
+### 下一步入口
+
+Owner 浏览器手测前端 → 通过则 PM 执行 v0.5 迭代关闭检查。
+
+---
+
 ## 2026-06-07 — v0.5.1 X 反向同步迁移落库 + 拓扑变更
 
 > 本次工作以 Owner + Developer 实施为主，DevOps 视角记录 schema migration 与运行时拓扑变更。
