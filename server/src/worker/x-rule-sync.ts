@@ -26,11 +26,11 @@ interface SyncResult {
  * - remote 无 / local 有 → 软删除（lifecycle_status='removed'）
  * - remote 有 / local 有(removed) → 恢复（lifecycle_status='normal'）
  *
- * 触发：worker 启动一次 + 每 5min 定时 + 管理页手动按钮
+ * 触发：worker 启动一次 + 每 24h 定时兜底 + 管理页手动按钮（业务侧默认走手动按钮，定时仅兜底）
  */
 export class XRuleSyncer {
   private timer: ReturnType<typeof setInterval> | null = null;
-  private readonly intervalMs = 5 * 60 * 1000;
+  private readonly intervalMs = 24 * 60 * 60 * 1000;
 
   private async fetchRemoteRules(): Promise<XRule[]> {
     const resp = await fetch("https://api.twitter.com/2/tweets/search/stream/rules", {
