@@ -1,5 +1,43 @@
 # 全栈开发工作日志
 
+## 2026-06-07 — v0.5.1 前端 TS 错误 P0 全部解除（删除门禁后半段）
+
+- 本次角色：全栈开发（Developer）
+- 动作：执行 Architect ✅通过 的删除请求 + 构建验证 + 移交 DevOps
+- 触发：Architect Review 通过 5 个孤儿组件删除请求（见架构师日志 2026-06-07 / commit `b02cbd4`）
+
+### 执行步骤
+
+1. **删除 commit（`a79acfb`）**——按 Architect 执行条件严格落实：
+   - 标题第一行含「删除」字样
+   - body 含完整删除清单 + Review 留痕（架构师 ✅通过 + architect.md 日期/条目索引）
+   - 与 9 个正用文件修复 commit（`ebd9d1e`）**完全分开**
+   - 不夹带 `ChannelPills.vue`（Architect 已提醒同属孤儿但本次不在 Review 范围；下次另起 Review）
+
+   ```
+   git rm 5 个 .vue 文件 → 5 files changed, 759 deletions(-)
+   ```
+
+2. **构建验证**：`npm run build` exit 0
+   - vue-tsc：0 错误（原 31 错误全部清零）
+   - vite build：135 modules transformed → dist/ 完整产出
+   - 产出 size：index 114k js / 11k css（gzip 43.6k / 2.8k）
+
+3. **push**：`ebd9d1e` + `b02cbd4`（Architect 留痕代提）+ `a79acfb` 三 commit 全部 push origin/main
+
+### 顺手登记的提醒（来自 Architect Review）
+
+`ChannelPills.vue` 实际全仓零引用（NewsPage 频道筛选已完全内联 `.cc-pill`），与本次已删的 `ChannelFilter.vue` 同属孤儿。**不在本次 Review 范围**，建议在下次合适时机另起一次受保护路径删除 Review 请求处理。已在 INDEX 跨任务待办登记 P2。
+
+### 移交 DevOps
+
+- 前端代码 + dist 已就绪
+- 下一步：DevOps 把 `frontend/dist/` 同步到生产 `/var/www/news.huiyiyou.cloud/`
+- 关联迭代：v0.5（v0.5.1 部署阻塞最终解除）
+- 关联 commits：`ebd9d1e`（修复 9 个正用文件）+ `b02cbd4`（Architect Review 留痕）+ `a79acfb`（删除 5 个孤儿）
+
+---
+
 ## 2026-06-07 — v0.5.1 前端 TS 错误修复（P0 阻塞解除前半部分）
 
 - 本次角色：全栈开发（Developer）
