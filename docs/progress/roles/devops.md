@@ -71,6 +71,18 @@
 
 Owner 浏览器手测前端 → 通过则 PM 执行 v0.5 迭代关闭检查。
 
+### 知识沉淀（同一会话补做，按角色手册 step 6）
+
+按 Owner 要求"知识沉淀必须做"，本次部署的 2 条经验已落档到 `docs/knowledge/devops/`：
+
+1. **新建** [`devops/dependency-change-handbook.md`](../../knowledge/devops/dependency-change-handbook.md) — Node 依赖变更全链路规范：Developer 改 package.json 必做 4 步、commit 检查清单、DevOps 部署前 dry-check 命令、`ERR_MODULE_NOT_FOUND` / 版本不一致 / devDeps 边界 / StartLimitBurst 锁定 4 个故障排查、5 条禁止事项。
+2. **补充** [`devops/db-migration-handbook.md`](../../knowledge/devops/db-migration-handbook.md)：
+   - 故障排查新增「现象 4：journal / `__drizzle_migrations` / DB schema 三方漂移」——含触发原因、风险评估表（按 SQL 是否幂等分流处置）、检测命令、预防规则
+   - 禁止事项新增 1 行：「用 psql 跑迁移不同步 `__drizzle_migrations` 和 `_journal.json`」
+3. **更新** [`docs/knowledge/INDEX.md`](../../knowledge/INDEX.md) DevOps 节，新增 1 条索引、修订 db-migration-handbook 索引描述。
+
+知识写入符合 [`knowledge-base.md`](../../baseline/knowledge-base.md) 规则：含适用/不适用场景、来源链接（v0.5.1 部署日志）、无密钥/Token、写短不写流水账（dependency-handbook 约 250 行、migration-handbook 增量约 50 行）。
+
 ---
 
 ## 2026-06-07 — v0.5.1 X 反向同步迁移落库 + 拓扑变更

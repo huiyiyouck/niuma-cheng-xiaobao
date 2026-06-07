@@ -184,11 +184,50 @@ sudo systemctl reset-failed news-api.service
 sudo systemctl restart news-api.service
 ```
 
-### 现象 3：迁移跑了一半失败
+### 现象 3：迁移跑了一半失败（原有，drizzle 事务保护消除了此风险）
 
 drizzle-orm 默认把所有迁移**包在一个事务里**（看 `node_modules/drizzle-orm/pg-core/dialect.js` `session.transaction`）。失败时整个事务回滚，`__drizzle_migrations` 不会留半应用记录。修完 SQL 重启即可。
 
 但**多语句 SQL 文件**中如果某语句使用了 `--> statement-breakpoint` 分隔，drizzle-orm 会按 breakpoint 拆分逐条执行——仍在事务里，仍是全有全无。
+
+### 现象 4：drizzle journal / `__drizzle_migrations` / 实际 DB schema 三方漂移
+
+```text
+症状：
+- `server/drizzle/` 目录有 0001-0004.sql 四个文件
+- `_journal.json` 只有 0000-0001 两条 entries
+- `drizzle.__drizzle_migrations` 表只有 baseline 一行
+- 但 DB 实际 schema 已经是 0004 之后的终态（手工 psql 应用过 SQL）
+```
+
+**根因**：开发期有人手动用 `psql` 跑了 SQL，但没更新 journal 和 `__drizzle_migrations`；或者 `db:generate` 跑了但 `_journal.json` 没 commit 上来；或两者混合发生。
+
+**风险评估**：
+
+| 0001-0004 SQL 是否全部使用 `CREATE/ALTER ... IF [NOT] EXISTS` | 处置 | 后果 |
+|---|---|---|
+| ✅ 是（幂等） | 直接 `systemctl restart` 让 drizzle migrate 幂等重跑，journal 与 DB 自动对齐 | 安全。0 个 ALTER 实际执行（全 no-op），但 `__drizzle_migrations` 表会被补全 |
+| ❌ 否（含无保护的 ADD COLUMN / CREATE TABLE） | **必须先用「首次部署到新环境」章节的 baseline 注入流程，按当前 DB 真实状态补 hash**，再 restart | 否则会报 `relation already exists` / `column already exists` 导致 ExecStartPre 失败 |
+
+**检测命令**：
+
+```bash
+# 1. journal entries
+jq '.entries[].tag' server/drizzle/meta/_journal.json
+# 2. DB 已应用迁移
+psql "$DATABASE_URL" -c "SELECT id, hash FROM drizzle.__drizzle_migrations ORDER BY id;"
+# 3. disk 上的迁移文件
+ls server/drizzle/*.sql
+# 4. 比对——三者数量与顺序应该完全一致
+```
+
+**预防**：
+
+- 任何时候**不要**用 `psql < migration.sql` 在生产/共享 DB 上跑迁移——只走 `systemctl restart` 触发的 `ExecStartPre=drizzle-kit migrate`
+- 开发期改 schema 必须走 `db:generate`，禁止直接编辑 disk 上的 SQL 后手动应用
+- `_journal.json` 和 `*_snapshot.json` 必须**与 SQL 文件同 commit**入库
+
+**触发事件**：[v0.5.1 生产部署](../../progress/roles/devops.md#2026-06-07--v051-生产部署上线)——0001-0004 全部 `IF [NOT] EXISTS` 保护，幂等 migrate 自动对齐了三方状态，零数据风险。
 
 ## 回滚
 
@@ -225,6 +264,7 @@ drizzle migrator 按 `created_at` 时序判断哪些迁移要跑。**不允许**
 | ❌ 漏 commit `_journal.json` 或 `*_snapshot.json` | 部署机看不到这条迁移，且 generate 会重复 |
 | ❌ 修改已 commit 的迁移文件 SQL 内容 | hash 变化会导致部署时 migrate 试图重跑或失败 |
 | ❌ 把 `drizzle-kit` 放回 devDependencies | `npm install --production` 会缺失，systemd ExecStartPre 失败 |
+| ❌ 用 `psql < migration.sql` 在生产/共享 DB 跑迁移而不同步 `__drizzle_migrations` 和 `_journal.json` | 三方漂移（详见故障排查现象 4），后续 drizzle migrate 行为不可预测 |
 
 ## 关联文档
 
