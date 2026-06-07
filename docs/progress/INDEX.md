@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.5（含 v0.5.1 X 反向同步子任务，已实施完成）
 - 当前模式：标准迭代
-- 当前阶段：v0.5.1 **后端**已部署上线；**前端代码侧已就绪**——Developer 已修复 9 个正用文件 TS 错误 + 删除 5 个孤儿组件（经 Architect ✅通过）+ 本地 `npm run build` 通过（0 错误，dist 已生成）。等待 DevOps 把新 dist 部署到 `/var/www/news.huiyiyou.cloud/`。公网 https://news.huiyiyou.cloud/ 仍是 5-31 旧前端
-- 阻塞项：等待 DevOps 部署新前端 dist
-- 下一步入口：Owner 切换到 DevOps 角色 → 部署 `frontend/dist/` 到生产 → Owner 浏览器验证 v0.5/v0.5.1 前端 UI
+- 当前阶段：v0.5.1 **后端 + 前端全部部署通过** — 公网 `https://news.huiyiyou.cloud/` 已上线 v0.5/v0.5.1 全部前端改动（17 bundles，sha256 字节级验证一致）；后端 systemd active running、X RULE SYNC 5min 同步稳定
+- 阻塞项：—
+- 下一步入口：Owner 浏览器验证 v0.5/v0.5.1 前端 UI → 通过则 PM 执行 v0.5 迭代关闭检查
 
 ## 版本列表
 
@@ -48,6 +48,8 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-07 | DevOps | v0.5.1 前端部署上线 + 软链接架构发现 | ✅ 公网 https://news.huiyiyou.cloud/ 全栈 v0.5/v0.5.1 已上线。`npm run build` 0 TS 错误 / 135 modules / 17 bundles。12 项 verify 全过（HTML 引用 `index-hZzDm_iU.js`、bundle 字节 sha256 与本地 dist 一致、API 反代 200）。**架构发现**：`/var/www/news.huiyiyou.cloud` 是软链接 → `frontend/dist/`，build 即上线无需 rsync——已增补 [`full-stack-deploy-handbook.md`](../knowledge/devops/full-stack-deploy-handbook.md)「软链接部署模式」适配章节 | Owner 浏览器验证前端 UI |
+| 2026-06-07 | Developer | 死代码扫尾 — ChannelPills.vue 第 6 个孤儿（Owner 直接同意路径） | ✅ 已完成 — 申请 `f5baf99` → Owner 在会话明确「项目负责人 + 零引用 = 直接同意，跳过 Architect Review」（依据 conventions §例外条款第 3 条）→ 执行 `git rm` + 撤回申请文档（commit `e35bcf1`，244 + 81 行净删）。`npm run build` 仍 0 错误。本次会话内 6 个孤儿全部清算完毕。日志同步登记 [基线修正提案]「前端组件替代时需对称约束」 | WM 启动时扫到本提醒处理 |
 | 2026-06-07 | Developer | v0.5.1 前端 TS 错误 P0 阻塞解除（删除门禁后半段） | ✅ 已完成 — Architect ✅通过后，执行 `git rm` 5 个孤儿组件（commit `a79acfb`，按规范独立 commit + body 含删除清单 + Review 留痕）；`npm run build` 通过 0 错误，dist 已生成（135 modules / 114k js / 11k css gzip）。前端代码侧完全就绪 | Owner 切换到 DevOps 角色 → 部署 `frontend/dist/` 到 `/var/www/news.huiyiyou.cloud/` → Owner 浏览器验证 |
 | 2026-06-07 | Architect | 受保护路径删除 Review：Developer 5 个孤儿前端组件 | ✅ 通过 — 零引用复核 + 依赖已删 API/类型/字段事实核查 + 替代关系一览成立；附 1 项观察 `ChannelPills.vue` 同属孤儿建议另起删除请求（不阻塞本次）。Developer 按规范执行 `git rm` + 独立 commit + 含「删除」字样和清单 Review 留痕即可 | Owner 切换到 Developer 角色执行删除 + 构建验证 + 移交 DevOps |
 | 2026-06-07 | DevOps | v0.5.1 生产部署上线 + 收尾发现前端阻塞 | ⚠️ **仅后端部署通过** — systemd active (PID 547457)；drizzle migrate 幂等通过；X RULE SYNC `+0 ~4 -0 ↻0`；X STREAM connected；x_rule_id 4/4 回填。部署期前向修复 2 问题：undici 缺失 + drizzle journal 漂移。**收尾验证 URL 时发现前端 dist 是 5-31 旧版本，重新 npm run build 失败 31 个 TS 错误**（v0.5 重构遗孤 14 个文件），公网 https://news.huiyiyou.cloud/ 不可用于 v0.5/v0.5.1 验证 | 已登记 P0 给 Developer 修复 TS 错误 |

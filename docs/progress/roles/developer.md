@@ -34,7 +34,22 @@
 - 前端代码 + dist 已就绪
 - 下一步：DevOps 把 `frontend/dist/` 同步到生产 `/var/www/news.huiyiyou.cloud/`
 - 关联迭代：v0.5（v0.5.1 部署阻塞最终解除）
-- 关联 commits：`ebd9d1e`（修复 9 个正用文件）+ `b02cbd4`（Architect Review 留痕）+ `a79acfb`（删除 5 个孤儿）
+- 关联 commits：`ebd9d1e`（修复 9 个正用文件）+ `b02cbd4`（Architect Review 留痕）+ `a79acfb`（删除 5 个孤儿）+ `cda1a75`（收尾归档）+ `f5baf99`（ChannelPills 申请，已撤回）+ `e35bcf1`（ChannelPills 删除 + 撤回申请）
+
+### 追加：ChannelPills.vue 处理（第 6 个孤儿 · Owner 直接同意路径）
+
+Architect Review 时附带观察到的第 6 个孤儿（`ChannelPills.vue`，自身 TS 编译通过、不阻塞构建、零引用），最初按规范提交了独立删除 Review 申请（`f5baf99`）。Owner 在会话中明确：作为项目负责人，已确认零引用 + 已在 ad-hoc 登记的死代码可直接同意，无需再走 Architect Review（依据 `conventions.md §受保护路径删除门禁 §例外情况` 第 3 条）。
+
+执行（`e35bcf1`）：
+- `git rm` `ChannelPills.vue`（244 行）+ 同时撤回申请文档
+- commit body 含「删除清单」+「Review 跳过路径说明」（援引 conventions.md 例外条款 + Owner 直接授权）
+- 构建验证：`npm run build` 仍 0 错误
+
+### 遗留问题/风险
+
+- **[基线修正提案] v0.5 重构留 6 个孤儿前端组件未及时删除（5 个直接阻塞 + 1 个静默死代码）**——根因是 `role-developer.md §跨轮契约变更同步` 基线只覆盖了「砍后端能力时前端 grep 引用扫描」，没覆盖「前端重构替代旧组件时清理旧文件」。**建议方案**：在 §跨轮契约变更同步 节追加一条「前端组件替代时必须同步删除被替代组件」规则，要求 commit 包含 `grep -rn "OldComponent" frontend/src/` 零引用证明（类似已删 API 的对称约束）。本次会话内已通过事后 6 文件删除消化历史欠账，但机制层面仍有缺口。建议 WM 启动会话时扫到本提醒后处理。
+
+- **[移交 DevOps] 前端 dist 部署到生产服务器**——本地 dist 已构建（135 modules，gzip 43.6k js / 2.8k css），等待 DevOps 同步到 `/var/www/news.huiyiyou.cloud/`。整个 v0.5/v0.5.1 部署能否最终关闭迭代取决于这一步 + Owner 浏览器验证。
 
 ---
 
