@@ -29,6 +29,7 @@
 
 | 日期 | 模式 | 记录 | 状态 | 下一步 |
 |------|------|------|------|--------|
+| 2026-06-07 | Delete Request | [Developer 删除请求：ChannelPills.vue（v0.5 重构遗孤 · 第 6 个）](ad-hoc/2026-06-07-developer-delete-request-channelpills.md) | 🟡 待 Architect Review — 单文件、零引用、不阻塞部署（P2 清理）；触发源是上一批 Review 的「附 1 项观察」 | Architect 切换角色后复核 + 给出结论 |
 | 2026-06-07 | Delete Request | [Developer 删除请求：5 个孤儿前端组件](ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md) | ✅ 全线完成 — Architect ✅通过（b02cbd4）→ Developer 执行 `git rm` + commit（a79acfb）→ `npm run build` 通过 0 错误。附：`ChannelPills.vue` 同属孤儿，建议另起删除请求 | 待 DevOps 部署 dist |
 | 2026-05-31 | Proposal | [DevOps 提案：数据库迁移机制规范化](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) | ✅ 全线完成 — Step 1（Architect R1）+ Step 2（Developer）+ R2（Architect 复审）+ Step 3（DevOps 部署侧）+ #B2（Architect 独立评估）；ADR-001 落 [`docs/baseline/architecture.md`](../baseline/architecture.md)；操作手册落 [`docs/knowledge/devops/db-migration-handbook.md`](../knowledge/devops/db-migration-handbook.md) | — |
 | 2026-05-31 | Ops Task | [清理 v0.3 Python 遗留 systemd unit + Node 后端 systemd 化](ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md) | ✅已完成（旧 unit 全清 + Node 后端已切换为 systemd 管理，崩溃重启已验证） | — |
@@ -82,7 +83,7 @@
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
 | **P0** | **修复 frontend 31 个 TS 错误使 `npm run build` 通过**（v0.5 重构遗孤：14 个文件含 SubChannel→Channel 重命名、Source.source_url/status 字段消失、SourceRole/AvailabilityStatus/DomainTag 类型契约偏移、SpaceDeletePreview/ChannelDeletePreview 形状变化、markVerified/listSubChannels 函数已删；详见 `iterations/v0.5.1-frontend-ts-errors.txt`） | Developer | 2026-06-07 DevOps v0.5.1 部署发现：公网前端仍是 5-31 旧版本，本次构建失败无法部署 | ✅ 已完成（2026-06-07）— 修复 commit `ebd9d1e` + Architect Review 留痕 `b02cbd4` + 删除 commit `a79acfb`；`npm run build` 通过 0 错误 |
-| P2 | `ChannelPills.vue` 受保护路径删除 Review：与已删的 `ChannelFilter.vue` 同属孤儿（NewsPage 频道筛选已完全内联 `.cc-pill`），全仓零引用 | Developer | 2026-06-07 Architect Review 提醒（不阻塞本次 5 文件删除门禁） | 待 Developer 另起一次受保护路径删除 Review 请求处理 |
+| P2 | `ChannelPills.vue` 受保护路径删除 Review：与已删的 `ChannelFilter.vue` 同属孤儿（NewsPage 频道筛选已完全内联 `.cc-pill`），全仓零引用 | Developer | 2026-06-07 Architect Review 提醒（不阻塞本次 5 文件删除门禁） | 🟡 已提交[删除请求](ad-hoc/2026-06-07-developer-delete-request-channelpills.md)等待 Architect Review |
 | P1 | 完成 v0.5 PRD 规划：确认三条主线范围（X/Twitter 实时监听、信息源管理重构、评分体系方法论） | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：三条主线已收编进 v0.5 PRD R1，标准迭代已启动 |
 | P1 | 展开并确认「信息源管理重构」产品方案：信息源 Tab、频道空间/子频道树、绑定规则、删除预览、验收边界 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认 |
 | P2 | 确认并产出「评分体系方法论」文档范围：维度、评分锚点、综合分、状态草稿、LLM 输出结构、版本化；本轮不落地代码 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认；不讨论评分后分流 |
