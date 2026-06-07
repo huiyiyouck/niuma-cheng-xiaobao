@@ -4,6 +4,7 @@ import { listSubChannels, createSubChannel, updateSubChannel, deleteSubChannel }
 import type { SubChannel, UUID } from "@/lib/types";
 import { useToast } from "@/composables/useToast";
 import { useModal } from "@/composables/useModal";
+import BaseButton from "@/components/base/BaseButton.vue";
 
 const props = defineProps<{ channelSpaceId: UUID }>();
 
@@ -95,16 +96,16 @@ onMounted(refresh);
           @keydown.enter="doUpdate(ch.id)"
           style="flex:1"
         />
-        <button class="btn btn-sm" style="color:#27ae60" @click="doUpdate(ch.id)">保存</button>
-        <button class="btn btn-sm" @click="editingId = null">取消</button>
+        <BaseButton size="sm" variant="success" @click="doUpdate(ch.id)">保存</BaseButton>
+        <BaseButton size="sm" @click="editingId = null">取消</BaseButton>
       </template>
       <template v-else>
         <span class="scm-handle muted">::</span>
         <span class="scm-seq">{{ i + 1 }}</span>
         <span class="scm-name">{{ ch.name }}</span>
         <div class="scm-actions">
-          <button class="btn btn-sm" @click="startEdit(ch)">重命名</button>
-          <button class="btn btn-sm danger" @click="doDelete(ch)">删除</button>
+          <BaseButton size="sm" @click="startEdit(ch)">重命名</BaseButton>
+          <BaseButton size="sm" variant="danger" @click="doDelete(ch)">删除</BaseButton>
         </div>
       </template>
     </div>
@@ -120,7 +121,7 @@ onMounted(refresh);
         @keydown.enter="doAdd"
         style="flex:1"
       />
-      <button class="btn primary btn-sm" :disabled="adding" @click="doAdd">添加</button>
+      <BaseButton size="sm" variant="primary" :disabled="adding" @click="doAdd">添加</BaseButton>
     </div>
   </div>
 </template>
@@ -140,6 +141,5 @@ onMounted(refresh);
 .scm-seq { font-size: 11px; color: var(--muted); min-width: 20px; text-align: center; }
 .scm-name { font-weight: 700; font-size: 13px; flex: 1; }
 .scm-actions { display: flex; gap: 4px; }
-.btn-sm { padding: 6px 10px; font-size: 11px; border-radius: 8px; }
 .empty { padding: 28px 16px; text-align: center; }
 </style>

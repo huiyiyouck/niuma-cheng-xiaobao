@@ -5,10 +5,11 @@ import { toggleDisplayPosition } from "@/lib/api";
 import { useToast } from "@/composables/useToast";
 import { useModal } from "@/composables/useModal";
 import StatusBadge from "@/components/StatusBadge.vue";
+import BaseButton from "@/components/base/BaseButton.vue";
+import TypeBadge from "@/components/base/TypeBadge.vue";
+import MiniTag from "@/components/base/MiniTag.vue";
 import { useRouter } from "vue-router";
 
-// v0.5: 空间管理 Tab 内的 SourceCard（替代旧版 SourceCard）
-// 展示双维度状态 + 标签 + 抓取信息 + 告警内联条 + 操作按钮
 const props = defineProps<{
   source: SourceWithPositions;
   currentSpaceId: string;
@@ -26,7 +27,6 @@ const router = useRouter();
 
 const toggling = ref(new Set<string>());
 
-// 当前空间/频道下的展示位置
 const relevantPositions = computed(() => {
   return (props.source.display_positions || []).filter(p => {
     if (p.space_id !== props.currentSpaceId) return false;
@@ -34,10 +34,6 @@ const relevantPositions = computed(() => {
     return p.channel_id === null;
   });
 });
-
-function typeLabel(t: string): string {
-  return t === "x_twitter" ? "X/Twitter" : "RSS";
-}
 
 function formatTime(iso: string | null): string {
   if (!iso) return "--";
@@ -50,7 +46,6 @@ function formatTime(iso: string | null): string {
   return `${Math.floor(hours / 24)}天前`;
 }
 
-// 来源已移除时不可操作
 const isRemoved = computed(() => props.source.availability_status === "source_removed");
 
 async function onTogglePosition(pos: DisplayPosition) {
@@ -80,8 +75,11 @@ function viewDetail() {
   router.push(`/sources/${props.source.id}`);
 }
 
-// 领域标签
 const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
+const levelLabel = computed(() =>
+  props.source.attention_level === "core" ? "核心"
+    : props.source.attention_level === "regular" ? "常规" : "观察",
+);
 </script>
 
 <template>
@@ -92,18 +90,16 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
         {{ source.display_name }}
         <span v-if="isRemoved" class="removed-tag">来源已移除</span>
       </span>
-      <span class="type-badge" :class="source.type === 'x_twitter' ? 'type-twitter' : 'type-rss'">
-        {{ typeLabel(source.type) }}
-      </span>
+      <TypeBadge :type="source.type" />
       <StatusBadge kind="availability" :status="source.availability_status" size="sm" />
       <StatusBadge kind="operational" :status="source.operational_status" size="sm" />
     </div>
 
     <!-- 第 2 行：标签 + 抓取信息 -->
     <div class="card-row2">
-      <span v-if="domainLabel" class="mini-tag">{{ domainLabel }}</span>
-      <span class="mini-tag role-tag">{{ source.source_role }}</span>
-      <span class="mini-tag level-tag">{{ source.attention_level === 'core' ? '核心' : source.attention_level === 'regular' ? '常规' : '观察' }}</span>
+      <MiniTag v-if="domainLabel" variant="domain">{{ domainLabel }}</MiniTag>
+      <MiniTag variant="role">{{ source.source_role }}</MiniTag>
+      <MiniTag variant="level">{{ levelLabel }}</MiniTag>
       <span class="sep">·</span>
       <span>身份: <code class="identity-code">{{ source.source_identity }}</code></span>
       <span class="sep">·</span>
@@ -114,7 +110,7 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
 
     <!-- 第 3 行：告警内联条 -->
     <div v-if="source.availability_status === 'source_error' || source.availability_status === 'awaiting_repair'" class="card-alert">
-      <span class="alert-icon">&#9888;</span>
+      <span>⚠️</span>
       <span v-if="source.availability_status === 'source_error'">
         连续失败 {{ source.consecutive_failures }} 次，来源异常
       </span>
@@ -123,27 +119,44 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
       </span>
     </div>
 
-    <!-- 第 4 行：展示位置（当前空间/频道内） + 操作 -->
-    <div class="card-row3" v-if="!isRemoved">
-      <div class="positions-info">
+    <!-- 第 4 行：展示位置 + 操作（紧凑底部条） -->
+    <div class="card-actions-row" v-if="!isRemoved">
+      <div class="positions-summary">
         <span v-if="relevantPositions.length === 0" class="muted">当前无展示位置</span>
-        <div v-for="pos in relevantPositions" :key="pos.id" class="position-item">
-          <span class="pos-target">
-            {{ pos.channel_name ? `频道「${pos.channel_name}」` : '空间根节点' }}
+        <span v-else class="pos-summary-text">
+          {{ relevantPositions.length }} 个位置 ·
+          <span :class="relevantPositions.every(p => p.enabled) ? 'pos-on' : 'pos-mixed'">
+            {{ relevantPositions.filter(p => p.enabled).length }} 启用
           </span>
-          <button
-            class="btn-xs"
-            :class="{ 'btn--pause': pos.enabled, 'btn--resume': !pos.enabled }"
-            :disabled="toggling.has(pos.id)"
-            @click="onTogglePosition(pos)"
-          >
-            {{ pos.enabled ? '暂停' : '恢复' }}
-          </button>
-          <button class="btn-xs btn-danger" @click="onRemovePosition(pos)">移除</button>
-        </div>
+        </span>
       </div>
       <div class="card-actions">
-        <button class="btn-xs" @click="viewDetail">详情</button>
+        <BaseButton size="xs" @click="viewDetail">详情</BaseButton>
+        <template v-if="relevantPositions.length === 1">
+          <BaseButton
+            size="xs"
+            :variant="relevantPositions[0].enabled ? 'warn' : 'success'"
+            :disabled="toggling.has(relevantPositions[0].id)"
+            @click="onTogglePosition(relevantPositions[0])"
+          >{{ relevantPositions[0].enabled ? '暂停' : '恢复' }}</BaseButton>
+          <BaseButton size="xs" variant="danger" @click="onRemovePosition(relevantPositions[0])">从当前位置移除</BaseButton>
+        </template>
+      </div>
+    </div>
+
+    <!-- 多位置展开 -->
+    <div v-if="!isRemoved && relevantPositions.length > 1" class="positions-info">
+      <div v-for="pos in relevantPositions" :key="pos.id" class="position-item">
+        <span class="pos-target">
+          {{ pos.channel_name ? `频道「${pos.channel_name}」` : '空间根节点' }}
+        </span>
+        <BaseButton
+          size="xs"
+          :variant="pos.enabled ? 'warn' : 'success'"
+          :disabled="toggling.has(pos.id)"
+          @click="onTogglePosition(pos)"
+        >{{ pos.enabled ? '暂停' : '恢复' }}</BaseButton>
+        <BaseButton size="xs" variant="danger" @click="onRemovePosition(pos)">移除</BaseButton>
       </div>
     </div>
   </div>
@@ -166,7 +179,7 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
 }
 .card--removed {
   opacity: 0.65;
-  background: #F8FAFB;
+  background: var(--hover-bg);
 }
 .card-row1 {
   display: flex;
@@ -194,15 +207,6 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
   padding: 1px 6px;
   border-radius: 10px;
 }
-.type-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-size: 10px;
-  font-weight: 700;
-}
-.type-twitter { background: var(--accent-light); color: var(--accent); }
-.type-rss { background: var(--warning-light); color: var(--warning); }
 .card-row2 {
   display: flex;
   gap: 6px;
@@ -211,20 +215,10 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
   font-size: 11px;
   color: var(--text-secondary);
 }
-.mini-tag {
-  padding: 1px 6px;
-  border-radius: 10px;
-  font-size: 10px;
-  font-weight: 600;
-  background: #F1F5F9;
-  color: var(--text-secondary);
-}
-.role-tag { background: #E8F8F0; color: var(--success); }
-.level-tag { background: var(--warning-light); color: var(--warning); }
 .sep { color: var(--border); }
 .identity-code {
   font-size: 10px;
-  background: #F8FAFB;
+  background: var(--hover-bg);
   padding: 1px 4px;
   border-radius: 4px;
   color: var(--text-muted);
@@ -234,6 +228,7 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
   white-space: nowrap;
   display: inline-block;
   vertical-align: middle;
+  font-family: var(--font-mono);
 }
 .card-alert {
   display: flex;
@@ -245,6 +240,17 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
   font-size: 11px;
   color: #92400e;
 }
+.card-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 2px;
+}
+.positions-summary { font-size: 11px; color: var(--text-secondary); }
+.pos-summary-text { font-weight: 600; }
+.pos-on { color: var(--success); }
+.pos-mixed { color: var(--warning); }
 .card-row3 {
   display: flex;
   align-items: flex-start;
@@ -271,20 +277,4 @@ const domainLabel = computed(() => props.source.domain_tags?.[0] || "");
   gap: 6px;
   flex-shrink: 0;
 }
-.btn-xs {
-  padding: 2px 8px;
-  font-size: 10px;
-  font-weight: 600;
-  border-radius: 4px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.btn-xs:hover { background: #F4F5F7; }
-.btn-xs:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn--pause { color: var(--warning); }
-.btn--resume { color: var(--success); }
-.btn-danger { color: var(--danger); }
-.btn-danger:hover { background: var(--danger-light); }
 </style>

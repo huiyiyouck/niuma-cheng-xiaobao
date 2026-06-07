@@ -2,6 +2,9 @@
 import { ref } from "vue";
 import type { Space } from "@/lib/types";
 import { createSpace, updateSpace, deleteSpace, getSpaceDeletePreview } from "@/lib/api";
+import BaseModal from "@/components/base/BaseModal.vue";
+import BaseButton from "@/components/base/BaseButton.vue";
+import BaseFormField from "@/components/base/BaseFormField.vue";
 import { useToast } from "@/composables/useToast";
 import { useModal } from "@/composables/useModal";
 
@@ -11,15 +14,13 @@ const props = withDefaults(defineProps<{
   mode?: "full" | "mini";
 }>(), { mode: "full" });
 
-const emit = defineEmits<{ select: [id: string]; changed: []; }>();
+const emit = defineEmits<{ select: [id: string]; changed: [] }>();
 const toast = useToast();
 const modal = useModal();
 
-// 新建弹窗
 const showCreate = ref(false);
 const createForm = ref({ name: "", icon: "📁" });
 
-// 编辑弹窗
 const showEdit = ref(false);
 const editTarget = ref<Space | null>(null);
 const editForm = ref({ name: "", icon: "📁" });
@@ -73,38 +74,40 @@ async function doDelete(space: Space) {
   </div>
 
   <!-- 新建空间弹窗 -->
-  <div v-if="showCreate" class="modal-overlay" @click.self="showCreate = false">
-    <div class="modal-dialog">
-      <h3>新建空间</h3>
-      <div class="form-g"><label class="form-l">空间名称</label><input class="form-f" v-model="createForm.name" placeholder="如：AI、财经" @keydown.enter="doCreate" /></div>
-      <div class="form-g"><label class="form-l">图标</label><input class="form-f" v-model="createForm.icon" placeholder="📁" /></div>
-      <div class="modal-actions">
-        <button class="btn btn-cancel" @click="showCreate = false">取消</button>
-        <button class="btn btn-primary" @click="doCreate">确认创建</button>
-      </div>
-    </div>
-  </div>
+  <BaseModal v-if="showCreate" title="新建空间" @close="showCreate = false">
+    <BaseFormField label="空间名称">
+      <input class="form-f" v-model="createForm.name" placeholder="如：AI、财经" @keydown.enter="doCreate" />
+    </BaseFormField>
+    <BaseFormField label="图标">
+      <input class="form-f" v-model="createForm.icon" placeholder="📁" />
+    </BaseFormField>
+    <template #footer>
+      <BaseButton @click="showCreate = false">取消</BaseButton>
+      <BaseButton variant="primary" @click="doCreate">确认创建</BaseButton>
+    </template>
+  </BaseModal>
 
   <!-- 编辑空间弹窗 -->
-  <div v-if="showEdit" class="modal-overlay" @click.self="showEdit = false">
-    <div class="modal-dialog">
-      <h3>编辑空间</h3>
-      <div class="form-g"><label class="form-l">空间名称</label><input class="form-f" v-model="editForm.name" @keydown.enter="doEdit" /></div>
-      <div class="form-g"><label class="form-l">图标</label><input class="form-f" v-model="editForm.icon" /></div>
-      <div class="modal-actions">
-        <button class="btn btn-cancel" @click="showEdit = false">取消</button>
-        <button class="btn btn-primary" @click="doEdit">保存</button>
-      </div>
-    </div>
-  </div>
+  <BaseModal v-if="showEdit" title="编辑空间" @close="showEdit = false">
+    <BaseFormField label="空间名称">
+      <input class="form-f" v-model="editForm.name" @keydown.enter="doEdit" />
+    </BaseFormField>
+    <BaseFormField label="图标">
+      <input class="form-f" v-model="editForm.icon" />
+    </BaseFormField>
+    <template #footer>
+      <BaseButton @click="showEdit = false">取消</BaseButton>
+      <BaseButton variant="primary" @click="doEdit">保存</BaseButton>
+    </template>
+  </BaseModal>
 </template>
 
 <style scoped>
 .space-section { margin-bottom: 4px; }
-.space-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; }
+.space-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
 .space-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
-.space-card { background: var(--card); border: 2px solid var(--border-light); border-radius: 14px; padding: 18px 20px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 14px; position: relative; }
-.space-card:hover { border-color: #CBD5E1; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.space-card { background: var(--card); border: 1px solid var(--border-light); border-radius: 14px; padding: 18px 20px; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; gap: 14px; position: relative; }
+.space-card:hover { border-color: #CBD5E1; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
 .space-card.selected { border-color: var(--accent); background: var(--accent-light); }
 .space-card.add { border-style: dashed; color: var(--accent); justify-content: center; }
 .space-card.add:hover { border-color: var(--accent); background: var(--accent-light); }
@@ -119,19 +122,4 @@ async function doDelete(space: Space) {
 .act-icon { width: 28px; height: 28px; border-radius: 8px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; }
 .act-icon:hover { background: #F4F5F7; border-color: var(--border); color: var(--text); }
 .act-icon.danger:hover { background: var(--danger-light); border-color: var(--danger); color: var(--danger); }
-
-/* Modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 100; display: flex; align-items: center; justify-content: center; }
-.modal-dialog { background: var(--card); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.12); padding: 24px; min-width: 380px; max-width: 440px; }
-.modal-dialog h3 { font-size: 15px; font-weight: 800; margin: 0 0 16px 0; }
-.form-g { margin-bottom: 12px; }
-.form-l { display: block; font-size: 11px; font-weight: 700; color: var(--text-muted); margin-bottom: 4px; }
-.form-f { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
-.form-f:focus { border-color: var(--accent); outline: none; }
-.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
-.btn { padding: 8px 20px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: .15s; }
-.btn-cancel { border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); }
-.btn-cancel:hover { border-color: var(--accent); color: var(--accent); }
-.btn-primary { border: none; background: var(--accent); color: #FFF; }
-.btn-primary:hover { opacity: 0.9; }
 </style>

@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import type { SourceVerifyResponse, SourceType } from "@/lib/types";
 import { preVerifySource } from "@/lib/api";
+import BaseButton from "@/components/base/BaseButton.vue";
 
 // v0.5: 统一的 Source 验证弹窗
 // 展示 X 账号信息或 RSS 站点预览
@@ -91,18 +92,18 @@ function confirmVerified() {
 
         <!-- 按钮 -->
         <div class="verify-actions">
-          <button class="btn" @click="emit('close')">关闭</button>
-          <button
+          <BaseButton @click="emit('close')">关闭</BaseButton>
+          <BaseButton
             v-if="!result"
-            class="btn primary"
+            variant="primary"
             :disabled="loading"
             @click="doVerify"
-          >{{ loading ? "验证中…" : "开始验证" }}</button>
-          <button
+          >{{ loading ? "验证中…" : "开始验证" }}</BaseButton>
+          <BaseButton
             v-if="result && result.status === 'ok'"
-            class="btn primary"
+            variant="primary"
             @click="confirmVerified"
-          >确认使用</button>
+          >确认使用</BaseButton>
         </div>
       </div>
     </div>
@@ -185,17 +186,6 @@ function confirmVerified() {
 .verify-actions {
   display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px;
 }
-.verify-actions .btn {
-  padding: 8px 20px; font-size: 13px; font-weight: 600;
-  border-radius: 8px; border: 1px solid var(--border);
-  background: var(--card); cursor: pointer;
-}
-.verify-actions .btn.primary {
-  border-color: rgba(52,152,219,0.25);
-  background: rgba(52,152,219,0.06);
-  color: var(--accent);
-}
-.verify-actions .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 @keyframes modalIn {
   from { opacity: 0; transform: scale(0.95) translateY(-8px); }
   to   { opacity: 1; transform: scale(1) translateY(0); }

@@ -2,13 +2,14 @@
 import { onMounted, ref } from "vue";
 import type { Alert, AlertStatus } from "@/lib/types";
 import { listAlerts, updateAlertStatus } from "@/lib/api";
-import StatusBadge from "@/components/StatusBadge.vue";
 import EmptyState from "@/components/EmptyState.vue";
 import { useToast } from "@/composables/useToast";
 import { useRouter } from "vue-router";
 
-// v0.5: 告警页
-// 告警列表 + 状态 Tab（含计数）+ 告警行（操作按钮按状态显示）
+// v0.5: 告警页（原型对齐 alerts.html）
+// - 状态 Tab 含计数（active/acknowledged/resolved/ignored）
+// - 告警行高/中严重度有左边框（severity-high/medium）
+// - 行内操作按钮按状态显示
 
 const toast = useToast();
 const router = useRouter();
@@ -22,7 +23,7 @@ const activeStatus = ref<AlertStatus | "">("active");
 const currentPage = ref(1);
 const pageSize = ref(20);
 
-const statusCounts = ref<Record<string, number>>({ active: 0, acknowledged: 0, resolved: 0, ignored: 0 });
+const statusCounts = ref<Record<string, number>>({ "": 0, active: 0, acknowledged: 0, resolved: 0, ignored: 0 });
 
 const STATUS_TABS: { value: AlertStatus | ""; label: string }[] = [
   { value: "", label: "全部" },
@@ -33,8 +34,18 @@ const STATUS_TABS: { value: AlertStatus | ""; label: string }[] = [
 ];
 
 function statusLabel(s: string): string {
-  const m: Record<string,string> = { active:'未处理', acknowledged:'已确认', resolved:'已恢复', ignored:'已忽略' };
+  const m: Record<string, string> = { active: "未处理", acknowledged: "已确认", resolved: "已恢复", ignored: "已忽略" };
   return m[s] || s;
+}
+
+function statusBadgeClass(s: string): string {
+  const m: Record<string, string> = {
+    active: "badge badge-active",
+    acknowledged: "badge badge-ack",
+    resolved: "badge badge-resolved",
+    ignored: "badge badge-ignored",
+  };
+  return m[s] || "badge badge-info";
 }
 
 const alertTypeLabel: Record<string, string> = {
@@ -44,6 +55,21 @@ const alertTypeLabel: Record<string, string> = {
   system_db: "数据库异常",
   system_queue: "任务队列异常",
 };
+
+// 严重度映射：决定左边框颜色 + emoji
+function severityLevel(a: Alert): "high" | "medium" | "low" {
+  if (a.type === "x_auth_failure" || a.type === "system_db") return "high";
+  if (a.severity === "warning") return "medium";
+  return "low";
+}
+function severityEmoji(a: Alert): string {
+  const lv = severityLevel(a);
+  return lv === "high" ? "🔴" : lv === "medium" ? "🟡" : "🔵";
+}
+function rowSeverityClass(a: Alert): string {
+  const lv = severityLevel(a);
+  return lv === "high" ? "alert-row--high" : lv === "medium" ? "alert-row--medium" : "";
+}
 
 async function loadAlerts() {
   loading.value = true;
@@ -58,11 +84,6 @@ async function loadAlerts() {
     const res = await listAlerts(params);
     alerts.value = res.alerts;
     total.value = res.total;
-
-    // 同时加载各状态计数（简单策略：全量加载一次计数）
-    const allRes = await listAlerts({ limit: 1 });
-    // 分别获取各状态计数
-    // 简化：从单次查询中解析（实际后端应返回计数）
   } catch (e) {
     errorText.value = e instanceof Error ? e.message : String(e);
   } finally {
@@ -72,14 +93,14 @@ async function loadAlerts() {
 
 async function loadCounts() {
   try {
-    // 为每个状态查询计数
+    let sum = 0;
     for (const tab of STATUS_TABS) {
       if (tab.value === "") continue;
       const res = await listAlerts({ status: tab.value, limit: 1 });
       statusCounts.value[tab.value] = res.total;
+      sum += res.total;
     }
-    // 全部 = 各状态之和
-    statusCounts.value[""] = Object.values(statusCounts.value).reduce((a, b) => a + b, 0);
+    statusCounts.value[""] = sum;
   } catch { /* 计数加载失败不影响列表 */ }
 }
 
@@ -92,22 +113,12 @@ async function onStatusChange(status: AlertStatus | "") {
 async function onUpdateAlert(alert: Alert, newStatus: AlertStatus) {
   try {
     await updateAlertStatus(alert.id, newStatus);
-    toast.success(`告警已${newStatus === 'acknowledged' ? '确认' : newStatus === 'ignored' ? '忽略' : '更新'}`);
+    toast.success(`告警已${newStatus === "acknowledged" ? "确认" : newStatus === "ignored" ? "忽略" : newStatus === "resolved" ? "标记恢复" : "更新"}`);
     await loadAlerts();
     await loadCounts();
   } catch (e) {
     toast.error(e instanceof Error ? e.message : String(e));
   }
-}
-
-function viewSource(sourceId: string | null) {
-  if (sourceId) {
-    router.push(`/sources/${sourceId}`);
-  }
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString();
 }
 
 onMounted(async () => {
@@ -117,11 +128,13 @@ onMounted(async () => {
 
 <template>
   <div class="alerts-page">
-    <h1 class="page-title">告警</h1>
+    <div class="page-head">
+      <h1 class="page-title">告警</h1>
+    </div>
 
-    <div v-if="errorText" class="error-bar"><span>&#9888;</span><span>{{ errorText }}</span></div>
+    <div v-if="errorText" class="error-bar"><span>⚠️</span><span>{{ errorText }}</span></div>
 
-    <!-- 状态 Tab（原型对齐：无边框按钮 + 计数） -->
+    <!-- 状态 Tab -->
     <div class="status-tabs">
       <button
         v-for="tab in STATUS_TABS"
@@ -131,7 +144,7 @@ onMounted(async () => {
         @click="onStatusChange(tab.value)"
       >
         {{ tab.label }}
-        <span v-if="statusCounts[tab.value] !== undefined" class="count">{{ statusCounts[tab.value] }}</span>
+        <span v-if="statusCounts[tab.value] !== undefined" class="status-tab-count">{{ statusCounts[tab.value] }}</span>
       </button>
     </div>
 
@@ -146,24 +159,30 @@ onMounted(async () => {
 
     <EmptyState
       v-else-if="alerts.length === 0"
-      icon="&#9989;"
+      icon="✅"
       title="一切正常，暂无告警"
     />
 
     <div v-else class="alert-list">
-      <div v-for="a in alerts" :key="a.id" class="alert-row">
-        <span class="alert-severity">{{ a.type === 'x_auth_failure' || a.type === 'system_db' ? '🔴' : a.severity === 'warning' ? '🟡' : '🔵' }}</span>
+      <div
+        v-for="a in alerts"
+        :key="a.id"
+        class="alert-row"
+        :class="rowSeverityClass(a)"
+      >
+        <span class="alert-severity">{{ severityEmoji(a) }}</span>
         <div class="alert-info">
           <span class="alert-type">{{ alertTypeLabel[a.type] || a.type }}</span>
-          <span v-if="a.source_display_name" class="alert-source">· {{ a.source_display_name }}</span>
+          <span v-if="a.source_display_name" class="alert-source">{{ a.source_display_name }}</span>
           <div class="alert-msg">{{ a.message }}</div>
         </div>
-        <span class="badge" :class="'badge-' + a.status">{{ statusLabel(a.status) }}</span>
+        <span :class="statusBadgeClass(a.status)">{{ statusLabel(a.status) }}</span>
         <div class="alert-actions">
-          <button v-if="a.status === 'active'" class="btn-xs warn" @click="onUpdateAlert(a, 'acknowledged')">确认</button>
-          <button v-if="a.status === 'active'" class="btn-xs muted" @click="onUpdateAlert(a, 'ignored')">忽略</button>
-          <button v-if="a.status === 'acknowledged'" class="btn-xs success" @click="onUpdateAlert(a, 'resolved')">标记恢复</button>
-          <button v-if="a.status === 'ignored'" class="btn-xs muted" @click="onUpdateAlert(a, 'active')">重新打开</button>
+          <button v-if="a.status === 'active'" class="btn btn--xs btn--warn" @click="onUpdateAlert(a, 'acknowledged')">确认</button>
+          <button v-if="a.status === 'active'" class="btn btn--xs btn--muted" @click="onUpdateAlert(a, 'ignored')">忽略</button>
+          <button v-if="a.status === 'acknowledged'" class="btn btn--xs btn--success" @click="onUpdateAlert(a, 'resolved')">标记恢复</button>
+          <button v-if="a.status === 'acknowledged'" class="btn btn--xs btn--muted" @click="onUpdateAlert(a, 'ignored')">忽略</button>
+          <button v-if="a.status === 'ignored'" class="btn btn--xs btn--muted" @click="onUpdateAlert(a, 'active')">重新打开</button>
         </div>
       </div>
     </div>
@@ -172,40 +191,77 @@ onMounted(async () => {
 
 <style scoped>
 .alerts-page { display: flex; flex-direction: column; gap: 16px; }
-.page-title { font-size: 20px; font-weight: 800; margin: 0; }
 
+/* Status Tabs */
 .status-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-.status-tab { padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--text-secondary); transition: .15s; display: flex; gap: 6px; align-items: center; }
+.status-tab {
+  padding: 6px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: 0.15s;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-family: inherit;
+}
 .status-tab:hover { background: #F4F5F7; }
 .status-tab.active { background: var(--accent); color: #FFF; }
-.count { padding: 1px 6px; border-radius: 8px; font-size: 11px; font-weight: 700; background: #E2E8F0; color: var(--text-secondary); }
-.status-tab.active .count { background: rgba(255,255,255,0.25); color: #FFF; }
+.status-tab-count {
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #E2E8F0;
+  color: var(--text-secondary);
+}
+.status-tab.active .status-tab-count { background: rgba(255, 255, 255, 0.25); color: #FFF; }
 
 .filter-bar { display: flex; gap: 8px; }
-.filter-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: var(--card); color: var(--text-secondary); cursor: pointer; }
 
+/* Alert List */
 .alert-list { display: flex; flex-direction: column; gap: 8px; }
-.alert-row { background: var(--card); border: 1px solid var(--border-light); border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; transition: .15s; }
+.alert-row {
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: 0.15s;
+}
 .alert-row:hover { border-color: #CBD5E1; }
+.alert-row--high   { border-left: 3px solid var(--danger); }
+.alert-row--medium { border-left: 3px solid var(--warning); }
+
 .alert-severity { font-size: 16px; flex-shrink: 0; }
 .alert-info { flex: 1; min-width: 0; }
-.alert-type { font-size: 11px; font-weight: 700; color: var(--text-secondary); }
-.alert-source { font-size: 11px; color: var(--text-muted); }
-.alert-msg { font-size: 12px; color: var(--text); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.alert-actions { display: flex; gap: 4px; flex-shrink: 0; }
-
-.badge { padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 700; white-space: nowrap; }
-.badge-active { background: var(--danger-light); color: var(--danger); }
-.badge-acknowledged { background: var(--warning-light); color: var(--warning); }
-.badge-resolved { background: var(--success-light); color: var(--success); }
-.badge-ignored { background: #F1F5F9; color: var(--text-muted); }
-
-.btn-xs { padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); transition: .15s; white-space: nowrap; }
-.btn-xs:hover { border-color: var(--accent); color: var(--accent); }
-.btn-xs.warn { color: var(--warning); }
-.btn-xs.success { color: var(--success); }
-.btn-xs.muted { color: var(--text-muted); }
-
-.loading-state { text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; }
-.error-bar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 8px; background: var(--danger-light); border: 1px solid rgba(231,76,60,0.2); color: #991b1b; font-size: 12px; }
+.alert-type {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.alert-source {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+.alert-msg {
+  font-size: 12px;
+  color: var(--text);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.alert-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
 </style>

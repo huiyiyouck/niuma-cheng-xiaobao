@@ -1,6 +1,4 @@
 <script setup lang="ts">
-// v0.5: 管理页双 Tab 切换器
-// 空间管理 | 信息源库
 defineProps<{
   activeTab: "space_management" | "source_library";
 }>();
@@ -16,16 +14,12 @@ const emit = defineEmits<{
       class="admin-tab"
       :class="{ active: activeTab === 'space_management' }"
       @click="emit('update:activeTab', 'space_management')"
-    >
-      空间管理
-    </button>
+    >空间管理</button>
     <button
       class="admin-tab"
       :class="{ active: activeTab === 'source_library' }"
       @click="emit('update:activeTab', 'source_library')"
-    >
-      信息源库
-    </button>
+    >信息源库</button>
   </div>
 </template>
 
@@ -44,11 +38,12 @@ const emit = defineEmits<{
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background 0.15s, color 0.15s, box-shadow 0.15s;
   border: none;
   background: transparent;
+  font-family: inherit;
 }
-.admin-tab:hover { color: var(--accent); }
+.admin-tab:hover:not(.active) { color: var(--accent); }
 .admin-tab.active {
   background: var(--card);
   color: var(--accent);

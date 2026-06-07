@@ -14,9 +14,10 @@ const cards = [
 <template>
   <div class="stats-grid">
     <div v-for="c in cards" :key="c.key" class="stat-card">
+      <div class="stat-value" :style="{ color: c.color }">
+        {{ (stats as any)[c.key] >= 0 ? (stats as any)[c.key] : "--" }}
+      </div>
       <div class="stat-label">{{ c.label }}</div>
-      <div class="stat-value" v-if="(stats as any)[c.key] >= 0" :style="{ color: c.color }">{{ (stats as any)[c.key] }}</div>
-      <div class="stat-value muted" v-else>--</div>
     </div>
   </div>
 </template>
@@ -26,16 +27,27 @@ const cards = [
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 .stat-card {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  padding: 16px 18px;
   box-shadow: var(--shadow-soft);
 }
-.stat-label { font-size: 11px; color: var(--muted); font-weight: 600; margin-bottom: 6px; }
-.stat-value { font-size: 28px; font-weight: 900; margin-top: 2px; }
-.stat-value.muted { font-size: 16px; color: var(--muted); }
+.stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+.stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
 </style>

@@ -193,7 +193,7 @@ onMounted(async () => {
 
     <div v-if="items.length === 0 && !loading" class="empty-state">暂无新闻<br><small>请先在管理页添加信息来源</small></div>
     <div class="list" v-if="filteredItems.length > 0">
-      <NewsListItem v-for="item in filteredItems" :key="item.id" :item="item" @click="openDetail(item)" />
+      <NewsListItem v-for="item in filteredItems" :key="item.id" :item="item" @open="openDetail" />
     </div>
     <div v-if="items.length > 0 && filteredItems.length === 0" class="empty-state">筛选条件下无匹配新闻<br><small>试试调整最低评分或切换频道</small></div>
     <div class="more" v-if="items.length > 0">

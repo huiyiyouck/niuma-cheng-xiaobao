@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref } from "vue";
+import BaseButton from "@/components/base/BaseButton.vue";
 
-// v0.5: 删除确认弹窗
-// impact 为结构化数据，组件内部渲染，不使用 v-html
 const props = defineProps<{
   title: string;
   targetName: string;
@@ -71,14 +70,14 @@ defineExpose({ reset: () => { submitting.value = false; inputValue.value = ""; c
 
         <!-- 按钮 -->
         <div class="delete-actions">
-          <button class="btn" @click="emit('cancel')" :disabled="submitting">取消</button>
-          <button
-            class="btn danger"
+          <BaseButton :disabled="submitting" @click="emit('cancel')">取消</BaseButton>
+          <BaseButton
+            variant="danger-fill"
             :disabled="!canConfirm || submitting"
             @click="onSubmit"
           >
             {{ submitting ? "删除中…" : "确认删除" }}
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -145,24 +144,6 @@ defineExpose({ reset: () => { submitting.value = false; inputValue.value = ""; c
   display: flex;
   gap: 8px;
   justify-content: flex-end;
-}
-.delete-actions .btn {
-  padding: 8px 20px;
-  font-size: 13px;
-  font-weight: 600;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--card);
-  cursor: pointer;
-}
-.delete-actions .btn.danger {
-  border-color: rgba(231,76,60,0.25);
-  background: rgba(231,76,60,0.06);
-  color: var(--danger);
-}
-.delete-actions .btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 @keyframes modalIn {
   from { opacity: 0; transform: scale(0.95) translateY(-8px); }

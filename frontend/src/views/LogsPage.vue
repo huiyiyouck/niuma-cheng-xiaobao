@@ -4,6 +4,7 @@ import { queryLogs } from "@/lib/api";
 import type { LogEntry } from "@/lib/types";
 import { useToast } from "@/composables/useToast";
 
+// v0.5: 系统日志页（原型对齐：真表格 + 等宽字体 + 浅底深字 badge）
 const toast = useToast();
 const entries = ref<LogEntry[]>([]);
 const total = ref(0);
@@ -11,7 +12,7 @@ const loading = ref(false);
 const errorText = ref<string | null>(null);
 
 const LEVEL_OPTIONS = ["ERROR", "WARNING", "INFO", "DEBUG"] as const;
-const SOURCE_OPTIONS = ["api", "worker"] as const;
+const SOURCE_OPTIONS = ["api", "worker", "scheduler"] as const;
 
 const selectedLevel = ref("");
 const selectedSource = ref("");
@@ -47,120 +48,163 @@ async function copyDetail(entry: LogEntry) {
   }
 }
 
-function levelBadgeClass(lv: string) {
-  return `lv-badge lv-badge--${lv.toLowerCase()}`;
+function badgeClass(lv: string): string {
+  const map: Record<string, string> = {
+    ERROR: "badge-error",
+    WARNING: "badge-warn",
+    INFO: "badge-info",
+    DEBUG: "badge-debug",
+  };
+  return `badge ${map[lv] || "badge-info"}`;
 }
-function levelLabel(lv: string) {
-  const map: Record<string, string> = { ERROR: "🔴", WARNING: "🟡", INFO: "🔵", DEBUG: "" };
-  return map[lv] || lv;
+
+function rowClass(lv: string): string {
+  if (lv === "ERROR") return "row-error";
+  if (lv === "WARNING") return "row-warn";
+  return "";
+}
+
+function fmtTime(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleTimeString("zh-CN", { hour12: false });
 }
 
 watch([selectedLevel, selectedSource, keyword], () => load());
-
 onMounted(() => load());
 </script>
 
 <template>
   <div class="logs-page">
-    <div class="page-header">
-      <span class="page-title">📋 系统日志</span>
-      <span class="page-sub">全局 · 不限频道空间</span>
+    <div class="page-head">
+      <div>
+        <div class="page-title">📋 系统日志</div>
+        <div class="page-sub">全局 · 不限频道空间</div>
+      </div>
+      <span class="muted total-info">共 {{ total }} 条</span>
     </div>
 
     <div v-if="errorText" class="error-bar">
       <span>⚠️</span><span>{{ errorText }}</span>
     </div>
 
-    <div class="toolbar">
-      <select v-model="selectedLevel" class="select" style="width:auto;min-width:100px;">
+    <!-- 筛选栏 -->
+    <div class="filter-bar">
+      <select v-model="selectedLevel" class="filter-select">
         <option value="">全部级别</option>
-        <option v-for="lv in LEVEL_OPTIONS" :key="lv" :value="lv">{{ levelLabel(lv) }} {{ lv }}</option>
+        <option v-for="lv in LEVEL_OPTIONS" :key="lv" :value="lv">{{ lv }}</option>
       </select>
-      <select v-model="selectedSource" class="select" style="width:auto;min-width:100px;">
+      <select v-model="selectedSource" class="filter-select">
         <option value="">全部来源</option>
         <option v-for="s in SOURCE_OPTIONS" :key="s" :value="s">{{ s }}</option>
       </select>
-      <input class="input" v-model="keyword" placeholder="搜索关键字…" style="width:180px" @keydown.enter="load()" />
-      <span class="summary muted">共 {{ total }} 条</span>
+      <input class="filter-input" v-model="keyword" placeholder="搜索关键字…" @keydown.enter="load()" />
     </div>
 
-    <div v-if="loading && entries.length === 0" class="muted" style="padding:12px 0">加载中…</div>
-    <div v-else-if="entries.length === 0" class="empty-state">📋 无匹配日志<br><small>试试调整筛选条件</small></div>
-    <div v-else class="log-table">
-      <div class="log-header">
-        <span class="col-time">时间</span>
-        <span class="col-level">级别</span>
-        <span class="col-source">来源</span>
-        <span class="col-msg">消息</span>
-        <span class="col-action">操作</span>
-      </div>
-      <div
-        v-for="e in entries" :key="(e.timestamp || '') + (e.message || '')"
-        class="log-row"
-        :class="{ 'row--error': e.level === 'ERROR', 'row--warn': e.level === 'WARNING' }"
-      >
-        <span class="col-time">{{ new Date(e.timestamp).toLocaleString() }}</span>
-        <span class="col-level"><span :class="levelBadgeClass(e.level)">{{ e.level }}</span></span>
-        <span class="col-source">{{ e.logger }}</span>
-        <span class="col-msg" :title="e.message">{{ e.message }}</span>
-        <span class="col-action">
-          <button class="btn-sm" @click="copyDetail(e)">📋 复制</button>
-        </span>
-      </div>
+    <!-- 真表格 -->
+    <div v-if="loading && entries.length === 0" class="loading-state">加载中…</div>
+    <div v-else-if="entries.length === 0" class="empty-state">
+      📋 无匹配日志<br><small>试试调整筛选条件</small>
+    </div>
+    <div v-else class="table-wrap">
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th class="th-time">时间</th>
+            <th class="th-level">级别</th>
+            <th class="th-source">来源</th>
+            <th class="th-msg">消息</th>
+            <th class="th-act">操作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            v-for="(e, idx) in entries"
+            :key="(e.timestamp || '') + idx"
+            :class="rowClass(e.level)"
+          >
+            <td class="cell-time">{{ fmtTime(e.timestamp) }}</td>
+            <td><span :class="badgeClass(e.level)">{{ e.level === 'WARNING' ? 'WARN' : e.level }}</span></td>
+            <td class="cell-source">{{ e.logger }}</td>
+            <td class="cell-msg" :title="e.message">{{ e.message }}</td>
+            <td><button class="btn btn--xs" @click="copyDetail(e)">📋 复制</button></td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </template>
 
 <style scoped>
 .logs-page { display: flex; flex-direction: column; gap: 14px; }
-.page-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; }
-.page-title { font-size: 14px; font-weight: 700; color: var(--text); }
-.page-sub { font-size: 11px; color: var(--text-muted); }
-.toolbar { display: flex; gap: 8px; align-items: center; padding: 4px 0 10px; }
-.select, .input { font-size: 12px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--border); }
-.summary { font-size: 11px; margin-left: auto; }
+.total-info { font-size: 11px; }
 
-.log-table {
-  border: 1px solid var(--border-light); border-radius: 12px; background: var(--card);
+.filter-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 4px; }
+.filter-input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 12px;
+  font-size: 13px;
+  outline: none;
+  width: 180px;
+  font-family: inherit;
+}
+.filter-input:focus { border-color: var(--accent); }
+
+.table-wrap {
+  background: var(--card);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
   overflow: hidden;
 }
-.log-header {
-  display: grid; grid-template-columns: 150px 70px 70px 1fr 60px;
-  gap: 8px; padding: 8px 14px;
-  background: #F8FAFB; border-bottom: 2px solid var(--border);
-  font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;
+.log-table {
+  width: 100%;
+  border-collapse: collapse;
 }
-.log-row {
-  display: grid; grid-template-columns: 150px 70px 70px 1fr 60px;
-  gap: 8px; padding: 8px 14px; font-size: 12px;
+.log-table th {
+  background: #F8FAFB;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 10px 14px;
+  text-align: left;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+.th-time   { width: 110px; }
+.th-level  { width: 80px; }
+.th-source { width: 90px; }
+.th-act    { width: 80px; }
+
+.log-table td {
+  padding: 8px 14px;
+  font-size: 12px;
   border-bottom: 1px solid var(--border-light);
+  font-family: var(--font-mono);
+  vertical-align: middle;
 }
-.log-row:hover { background: #F8FAFB; }
-.log-row:last-child { border-bottom: none; }
-.row--error { background: var(--danger-light); }
-.row--warn  { background: var(--warning-light); }
-.col-time { font-size: 10px; color: var(--text-muted); font-family: monospace; }
-.col-msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 360px; }
-.col-source { color: var(--text-secondary); }
+.log-table tbody tr:last-child td { border-bottom: none; }
+.log-table tbody tr:hover td { background: var(--hover-bg); }
 
-.lv-badge {
-  display: inline-block; padding: 2px 8px; border-radius: 20px;
-  font-size: 10px; font-weight: 700;
+.row-error td { background: var(--danger-light); }
+.row-warn  td { background: var(--warning-light); }
+.row-error:hover td { background: var(--danger-light); }
+.row-warn:hover  td { background: var(--warning-light); }
+
+.cell-time {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
 }
-.lv-badge--error  { background: var(--danger); color: #FFF; }
-.lv-badge--warning { background: var(--warning); color: #FFF; }
-.lv-badge--info   { background: #E2E8F0; color: var(--text-secondary); }
-.lv-badge--debug  { background: #F1F5F9; color: var(--text-muted); }
-
-.btn-sm { padding: 3px 8px; font-size: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); cursor: pointer; color: var(--text-muted); }
-.btn-sm:hover { color: var(--text); border-color: var(--text-muted); }
-
-.empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 14px; font-weight: 600; }
-.empty-state small { font-size: 12px; font-weight: 400; display: block; margin-top: 4px; }
-.error-bar {
-  display: flex; align-items: center; gap: 8px;
-  padding: 10px 14px; border-radius: 8px;
-  background: var(--danger-light); border: 1px solid rgba(231,76,60,0.2);
-  color: #991b1b; font-size: 12px; font-weight: 500;
+.cell-source {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.cell-msg {
+  max-width: 500px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 </style>

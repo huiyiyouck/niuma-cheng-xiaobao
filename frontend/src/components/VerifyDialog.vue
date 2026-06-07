@@ -2,6 +2,7 @@
 import { ref } from "vue";
 import { verifySource, markVerified } from "@/lib/api";
 import type { Source, SourceVerifyResponse, VerifyItem } from "@/lib/types";
+import BaseButton from "@/components/base/BaseButton.vue";
 
 const props = defineProps<{ source: Source }>();
 const emit = defineEmits<{ close: []; verified: [] }>();
@@ -71,20 +72,20 @@ function previewText(item: VerifyItem): string {
         </div>
       </div>
 
-      <div class="row" style="margin-top:16px;justify-content:flex-end">
-        <button class="btn" @click="emit('close')">关闭</button>
-        <button
+      <div class="row" style="margin-top:16px;justify-content:flex-end;display:flex;gap:8px">
+        <BaseButton @click="emit('close')">关闭</BaseButton>
+        <BaseButton
           v-if="!result"
-          class="btn primary"
+          variant="primary"
           :disabled="loading"
           @click="doVerify"
-        >{{ loading ? "验证中…" : "开始验证" }}</button>
-        <button
+        >{{ loading ? "验证中…" : "开始验证" }}</BaseButton>
+        <BaseButton
           v-if="result && result.status === 'ok' && source.status === 'unverified'"
-          class="btn primary"
+          variant="primary"
           :disabled="marking"
           @click="doMarkVerified"
-        >{{ marking ? "标记中…" : "标记已验证" }}</button>
+        >{{ marking ? "标记中…" : "标记已验证" }}</BaseButton>
       </div>
     </div>
   </div>
