@@ -20,6 +20,49 @@
 - 纯文档/baseline/配置类迭代
 - 容器化部署（Docker compose 把 frontend build 嵌入镜像构建期）——本手册的分离链路不适用
 
+## 部署模式判别（执行前必做）
+
+部署前**必须**先判别本项目前端是哪种模式，因为这决定「部署」具体动作：
+
+```bash
+# 检查 nginx 静态目录是不是软链接
+ls -la /var/www/<domain> | head -3
+readlink -f /var/www/<domain>
+```
+
+| 模式 | 判别 | 部署动作 |
+|---|---|---|
+| **A. 软链接模式**（本项目当前架构）| `/var/www/<domain>` 是 symlink → 项目内 `frontend/dist/` | `npm run build` 即上线，无需 rsync |
+| **B. rsync 模式** | `/var/www/<domain>` 是独立目录 | `rsync -av --delete frontend/dist/ /var/www/<domain>/` |
+| **C. 不一致**（symlink 指向陌生位置）| readlink 输出非预期路径 | **stop the line**，先排查为什么 |
+
+### 软链接模式的特性
+
+- 优点：单源真理零漂移、build 即生效、不存在"dist 与 /var/www 不一致"问题
+- 风险 1：**无灰度** — 一旦 build，全公网用户立刻看到新版本（要灰度需切回 rsync 模式或加 CDN）
+- 风险 2：**回滚要重新 build 旧版本** — `git checkout <旧 commit> && npm run build`，不能简单"切回旧 dist"
+- 风险 3：**备份必须在 build 之前做** — build 一旦发生，原 dist 已被覆盖；如果只在 build 之后才想到备份，会备份到刚 build 的新版本（误以为是旧的）
+
+### 软链接模式下"部署"的精确动作
+
+```bash
+# 1. 备份当前 dist（如果想保留回滚点）—— 必须在 build 之前！
+cp -rp /var/www/<domain>/ /var/backups/<project>/frontend-pre-<tag>-$(date +%Y%m%d-%H%M%S)/
+
+# 2. 拉最新代码
+cd <project>
+git pull --rebase
+
+# 3. 前端构建（这一步直接生效）
+cd frontend
+npm install
+npm run build
+
+# 4. 验证（见下方 12 项 verify）
+```
+
+不需要 `rsync`，不需要 `systemctl reload nginx`（nginx 跟着 symlink 走，文件变化自动可见）。
+
 ## 部署前必做：全链路 audit
 
 每次部署任务的 Pre-flight check 必须包含以下 4 维：
@@ -127,3 +170,4 @@ curl -sS -H "Cache-Control: no-cache" -H "Pragma: no-cache" https://<domain>/
 | 日期 | 事件 | 教训 |
 |---|---|---|
 | 2026-06-07 | v0.5.1 后端上线翻牌「部署通过」后，Owner 索取验证 URL 才发现 `frontend/dist/` 与 `/var/www/news.huiyiyou.cloud/` 均为 7 天前的版本，重新 build 报 31 个 TS 错误（v0.5 重构遗孤） | 形成本手册——DevOps 必须把全栈部署作为整体检查，不能只看后端 systemd |
+| 2026-06-07 | Developer 修完 TS 错误后 DevOps 重新部署：照本手册先执行 rsync，结果 `sent 716 bytes` 异常 + sha256 完全一致两条线索发现 `/var/www/news.huiyiyou.cloud` 是软链接 → `frontend/dist/`，build 即生效；备份在 build 之后做、备到的是新 dist 自己 | 增补本手册「部署模式判别」章节 + 「软链接模式」3 条风险；DevOps 每次部署第一步必须 `readlink -f` 确认部署模式 |

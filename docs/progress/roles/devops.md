@@ -1,5 +1,52 @@
 # DevOps 工作日志
 
+## 2026-06-07 — v0.5.1 前端部署上线 + 软链接架构发现（同日第 2 次出场）
+
+> 角色：DevOps；模式：标准迭代部署执行（前端补部署）。
+
+### 触发
+
+Developer 已交付前端 TS 错误修复（commit `ebd9d1e` 修 9 个正用文件 + `a79acfb` 删 5 个孤儿组件，经 Architect Review `b02cbd4` ✅通过，`cda1a75` 收尾归档），Owner 切回 DevOps 执行前端部署。
+
+### 执行
+
+1. **代码就位**：`git fetch` 显示本地已是 origin/main HEAD（无需 pull）
+2. **前端构建**：`cd frontend && npm install`（幂等 OK）→ `npm run build` 通过 **0 TS 错误 / 135 modules / 17 bundles**（114k js + 11k css gzip）
+3. **本计划走 rsync**：执行 `rsync -av --delete frontend/dist/ /var/www/news.huiyiyou.cloud/`，结果 `sent 716 bytes received 13 bytes` —— 几乎零字节传输
+4. **异常根因排查**：
+   - sha256 对比：备份与新 dist 的 `index-hZzDm_iU.js` 完全一致（`c7d98fb8...`）
+   - `stat`：`/var/www/news.huiyiyou.cloud/index.html` 与 `frontend/dist/index.html` **同 Inode 561912 同 Device 253,2**
+   - `ls -la /var/www/`：`news.huiyiyou.cloud -> /root/Project/niuma-cheng-xiaobao/frontend/dist`（May 26 08:57 创建的软链接）
+   - **真相**：`/var/www/news.huiyiyou.cloud` 是软链接到项目内 `frontend/dist/`，`npm run build` 一完成就立即上线，rsync 是无效但无害的操作
+5. **完整 12 项 verify 全过**：
+   - 后端 1-5：systemd active / undici 已装 / /health 200 / /v1/spaces 200 / X RULE SYNC 18:18/18:23/18:28 三次 `remote=4 local=4`
+   - 前端 6-8：deps OK / dist 时间戳 18:28 / nginx -t syntax ok
+   - 公网 9-12：HTTPS 首页含 `index-hZzDm_iU.js` 引用 / 引用的 bundle 200 可下载 / API 反代 200 返回 3 空间 / **公网下载的 bundle sha256 与本地 dist 完全一致**
+
+### 本次会话的两个失误及修正
+
+| # | 失误 | 修正 |
+|---|------|------|
+| A | 一开始按 handbook 走了 rsync 步骤，没先 `readlink -f` 确认部署模式 | 已增补 `full-stack-deploy-handbook.md` 新章节「部署模式判别」+「软链接模式」3 条风险，DevOps 每次部署第一步必须做模式判别 |
+| B | 备份在 `cp -r` 时序上发生在 `npm run build` 之后（计划时混淆了顺序），结果"备份的 5-31 旧前端"实际是刚 build 完的新 dist 自己。本次没真的留下回滚点 | 已在 handbook「软链接模式」节明确：备份必须在 build 之前；本次具体回滚路径：`git checkout <旧 commit> && cd frontend && npm run build`（用 git 历史回退而非备份文件） |
+
+### 知识沉淀
+
+[`docs/knowledge/devops/full-stack-deploy-handbook.md`](../../knowledge/devops/full-stack-deploy-handbook.md) 新增：
+- §「部署模式判别（执行前必做）」—— `readlink -f` 命令、A/B/C 三种模式判别表、软链接模式精确动作清单
+- §「软链接模式的特性」—— 3 条风险（无灰度 / 回滚需 git checkout / 备份必须 build 之前）
+- §「验证证据」追加本次 2026-06-07 第 2 次出场条目
+
+### 下一步入口
+
+Owner 浏览器验证：
+- `https://news.huiyiyou.cloud/` 打开应看到 v0.5/v0.5.1 全部前端改动
+- 检查项：信息源管理页 X 同步徽章 / paused 行变灰 / 详情页侧栏「暂停/恢复」按钮 / 「同步 X 规则」按钮 toast / 暂停后 news 列表过滤 / AdminTabs / SearchSourceModal / 详情页重构 / 全部 v0.5 Bugfix 批次效果
+
+验证通过 → PM 执行 v0.5 迭代关闭检查。
+
+---
+
 ## 2026-06-07 — v0.5.1 生产部署上线
 
 > 角色：DevOps（运维/部署工程师）；模式：标准迭代部署执行。
