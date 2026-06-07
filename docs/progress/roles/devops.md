@@ -1,5 +1,26 @@
 # DevOps 工作日志
 
+## 2026-06-07 — v0.5.1 X 反向同步迁移落库 + 拓扑变更
+
+> 本次工作以 Owner + Developer 实施为主，DevOps 视角记录 schema migration 与运行时拓扑变更。
+
+- 数据库 migration：
+  - 新增 `server/drizzle/0002_x_reverse_sync.sql`，已落本地（通过 SSH tunnel 连服务器 PostgreSQL）
+  - 字段：sources 表 `source_origin varchar(20) NOT NULL DEFAULT 'manual'` / `x_rule_id text` / `paused boolean NOT NULL DEFAULT false`
+  - 数据回填：所有 `type='x_twitter'` 且 `source_origin='manual'` 的旧记录回写为 `x_synced`（之后 syncOnce 按 username 匹配自动回填 `x_rule_id`）
+  - 备注：本次绕过 `drizzle-kit push`（因检测到 channel_spaces 一处不相关变更要求 TTY 交互），直接 `pg.query()` 执行 SQL；线上发布时需手动 `psql -f 0002_x_reverse_sync.sql`，迁移与 baseline 注入流程不变
+- worker 拓扑变更：
+  - **新增**：`XRuleSyncer` 定时任务（启动一次 + 每 5min 一次 `setInterval`），调 X API `GET /2/tweets/search/stream/rules`
+  - **移除**：X Stream 推规则方向的所有出站请求（`POST /2/tweets/search/stream/rules` 不再调用）
+  - **移除**：x_twitter 类型从 scheduler polling 队列排除
+  - 总体出站调用频次变化：每 5min 1 次 GET（轻量）+ 长连接保持（不变）
+- 环境变量：无新增；`X_BEARER_TOKEN` 未配置时 XRuleSyncer 与 XStreamManager 都自动跳过
+- 已验证：本地启动 `bash server/start.sh`，日志 `X RULE SYNC done: +0 ~1 -0 ↻0`、`X STREAM connected`，端到端 10 项 API 测试通过
+- 遗留：
+  - 线上服务器（systemd 管理的 news-api）部署本次变更时需先停服 → 执行 `0002_x_reverse_sync.sql` → 拉新代码 → systemd restart
+  - 前端 UI 视觉验证待 Owner 浏览器手测
+- 下一步入口：等 Owner 浏览器验证通过后，由 DevOps 安排线上部署窗口
+
 ## 2026-06-06 — 会话收尾
 
 - 本次会话：DevOps（运维/部署工程师），完成 3 件事
