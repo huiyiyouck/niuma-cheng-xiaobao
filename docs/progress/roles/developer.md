@@ -1,5 +1,65 @@
 # 全栈开发工作日志
 
+## 2026-06-07 — v0.5 Owner 试用 Bugfix 批次 + 收尾
+
+- 本次角色：全栈开发（Developer）
+- 动作：Bugfix + 功能补全 + 会话收尾归档
+- 触发：Owner 浏览器试用 v0.5，逐页走查发现问题
+
+**前后端契约对齐（根因：v0.5 实现阶段前后端字段名/URL 全面不匹配）**：
+- 空间管理：Channel API URL 修正（updateChannel/deleteChannel 补 spaceId）、DisplayPosition toggle/remove/move URL 对齐后端 PATCH 路由
+- 详情页：Source 字段名统一（lifecycle_status→availability_status, identity→source_identity, positions→display_positions）、后端 API 结构从嵌套改平面
+- 全局：api.ts 中 createSpace/updateSpace/listSpaceSources/addDisplayPosition/batchUpdateAlerts 等十余处契约修正
+
+**空间/频道/源管理**：
+- 频道新增 description 字段（全栈：DB 迁移 → schema → 路由 → 前端表单）
+- 新建频道弹窗标题显示所属空间名
+- SourceCard 全部视图显示归属频道 + 位置切换下拉（移动功能）
+- 空间根节点 Source 移除按钮修复
+- 移除后刷新频道计数
+
+**信息源库**：
+- 重复「新建信息源」按钮去重
+- 表格改卡片（SourceLibraryCard）+ 单列全宽
+- 新建源从内联改为 SlidePanel 侧边抽屉
+- SearchSourceModal 已添加源灰显 + 禁用
+- 空 domain_tags 兼容（{}→[]）
+
+**详情页**：
+- 按原型重构双栏布局：基本资料/标签与备注/抓取状态/身份变更历史（左）+ 使用概况/展示位置/操作（右）
+- 标签与备注内联编辑（领域/角色/级别/备注）
+- 「添加到空间」弹窗改为列表式（含已添加校验 + 重复防护）
+- 全局暂停联动展示位置（已暂停遮罩 + 禁用按钮）
+- 暂停/恢复按钮 tooltip 说明
+
+**告警页**：
+- 批量一键确认/忽略/恢复
+- 计数按筛选条件修正（后端 total 之前不管 WHERE 条件）
+- UI 重构（Tab Pill + 卡片式行 + 严重度圆点）
+
+**Worker & 抓取**：
+- Worker 串行改真正并行（fetchConcurrency + processConcurrency 个独立 worker）
+- RSS 抓取从 rss-parser 内置 HTTP 改为 fetch（走全局代理）
+- 全局代理配置统一到 Worker 入口（X_PROXY_URL / https_proxy）
+- X Stream 429 限流 5 分钟退避
+- 金十 MCP 协议接入（fetcher + processor 直显模式，不走 LLM）
+
+**数据库**：
+- channels.description 列 + 远程 DB 手动执行
+- sources.display_name 唯一索引
+- display_positions 空间级唯一约束（一个 Source 同一空间只能一个位置）
+
+**新增文件**：
+- `SourceLibraryCard.vue` — 信息源库卡片
+- `SlidePanel.vue` — 侧边抽屉基础组件
+- `jin10-mcp.ts` — 金十 MCP Fetcher
+- `0003_channels_description.sql` / `0004_sources_display_name_unique.sql` — DB 迁移
+
+- 关联迭代：v0.5
+- commit：`75ca9ae`（31 files, +2483/-970）
+- 遗留：金十 MCP 完整 UI 接入（待办 P1），频道图标（待办 P2），源级代理控制（待办 P2），空间图标上传（待办 P2）
+- 下班；v0.5 Owner 试用 Bugfix 批次完成，准备上线部署
+
 ## 2026-06-06 — Developer 最终收尾
 
 - 本次角色：全栈开发（Developer）
