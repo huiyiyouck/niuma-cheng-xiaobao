@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.5（含 v0.5.1 X 反向同步子任务，已实施完成）
 - 当前模式：标准迭代
-- 当前阶段：v0.5.1 **后端**已部署上线；**前端部署仍阻塞**——Developer 已修复 9 个正用文件 TS 错误，剩余 17 个错误集中在 5 个孤儿组件，已提交[删除请求](ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md)等待 Architect Review。公网 https://news.huiyiyou.cloud/ 仍是 5-31 旧前端
-- 阻塞项：5 个孤儿前端组件待 Architect Review 通过后删除（受保护路径删除门禁）
-- 下一步入口：Owner 切换到 Architect 角色 → Review 删除清单 → Developer 执行删除 + 构建 → DevOps 部署 → Owner 浏览器验证
+- 当前阶段：v0.5.1 **后端**已部署上线；**前端部署仍阻塞但删除门禁已通过**——Developer 已修复 9 个正用文件 TS 错误，剩余 17 个错误集中在 5 个孤儿组件，[删除请求](ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md)已经 Architect ✅通过。公网 https://news.huiyiyou.cloud/ 仍是 5-31 旧前端
+- 阻塞项：等待 Developer 执行 `git rm` 5 个孤儿组件 + 重新构建 → DevOps 部署
+- 下一步入口：Owner 切换到 Developer 角色 → 执行删除 commit + `npm run build` 验证 → 移交 DevOps 部署 → Owner 浏览器验证
 
 ## 版本列表
 
@@ -29,7 +29,7 @@
 
 | 日期 | 模式 | 记录 | 状态 | 下一步 |
 |------|------|------|------|--------|
-| 2026-06-07 | Delete Request | [Developer 删除请求：5 个孤儿前端组件](ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md) | 🟡 待 Architect Review — Developer 已修复 9 个正用文件 TS 错误，剩余 17 个错误集中在 5 个孤儿组件；零引用核对完成 | Architect 切换角色后复核 + 给出结论 |
+| 2026-06-07 | Delete Request | [Developer 删除请求：5 个孤儿前端组件](ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md) | ✅ Architect ✅通过（2026-06-07）— 待 Developer 执行 `git rm` + commit + 重新构建；附 1 项观察：`ChannelPills.vue` 同属孤儿，建议另起删除请求 | Developer 切换角色后执行删除 + 验证 + 移交 DevOps |
 | 2026-05-31 | Proposal | [DevOps 提案：数据库迁移机制规范化](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) | ✅ 全线完成 — Step 1（Architect R1）+ Step 2（Developer）+ R2（Architect 复审）+ Step 3（DevOps 部署侧）+ #B2（Architect 独立评估）；ADR-001 落 [`docs/baseline/architecture.md`](../baseline/architecture.md)；操作手册落 [`docs/knowledge/devops/db-migration-handbook.md`](../knowledge/devops/db-migration-handbook.md) | — |
 | 2026-05-31 | Ops Task | [清理 v0.3 Python 遗留 systemd unit + Node 后端 systemd 化](ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md) | ✅已完成（旧 unit 全清 + Node 后端已切换为 systemd 管理，崩溃重启已验证） | — |
 | 2026-05-31 | Incident | [Node.js 后端源码被基线同步 commit 误删](ad-hoc/2026-05-31-incident-server-source-deleted-by-baseline-sync.md) | 已完成：恢复→推送 GitHub→重启→健康检查通过 | （留观，无后续动作） |
@@ -48,6 +48,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-07 | Architect | 受保护路径删除 Review：Developer 5 个孤儿前端组件 | ✅ 通过 — 零引用复核 + 依赖已删 API/类型/字段事实核查 + 替代关系一览成立；附 1 项观察 `ChannelPills.vue` 同属孤儿建议另起删除请求（不阻塞本次）。Developer 按规范执行 `git rm` + 独立 commit + 含「删除」字样和清单 Review 留痕即可 | Owner 切换到 Developer 角色执行删除 + 构建验证 + 移交 DevOps |
 | 2026-06-07 | DevOps | v0.5.1 生产部署上线 + 收尾发现前端阻塞 | ⚠️ **仅后端部署通过** — systemd active (PID 547457)；drizzle migrate 幂等通过；X RULE SYNC `+0 ~4 -0 ↻0`；X STREAM connected；x_rule_id 4/4 回填。部署期前向修复 2 问题：undici 缺失 + drizzle journal 漂移。**收尾验证 URL 时发现前端 dist 是 5-31 旧版本，重新 npm run build 失败 31 个 TS 错误**（v0.5 重构遗孤 14 个文件），公网 https://news.huiyiyou.cloud/ 不可用于 v0.5/v0.5.1 验证 | 已登记 P0 给 Developer 修复 TS 错误 |
 | 2026-06-07 | WM | 接入 Codex 第二客户端（事后补登基线修正提案） | ✅ 12 个文件 +7 行净增，主题单一、内部一致：新增 `AGENTS.md`（Codex 入口，与 `CLAUDE.md` 镜像）+ baseline 中 `CLAUDE.md` 硬引用泛化为「客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）」+ 受保护路径同步纳入 `AGENTS.md`；WM 双侧检查通过；Owner 直接动手未走提案流程，事后补齐 wm.md 留痕 | v0.5 部署就绪检查继续（Owner 浏览器手测 v0.5.1 前端 UI） |
 | 2026-06-07 | Developer | v0.5 Owner 试用 Bugfix 批次：前后端契约对齐 + 空间/频道/源管理 + 告警批量 + 详情页重构 + Worker 并行化 + MCP 接入 + 全局代理 | ✅ 31 files, +2483/-970；前后端字段名/URL 全面统一；Worker 真正 7 并发；金十 MCP 直显模式已验证；commit `75ca9ae`；INDEX 登记 4 条 P1/P2 待办 | 上线部署：远程 DB 迁移 + npm install + 配置 .env |
@@ -79,7 +80,7 @@
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
-| **P0** | **修复 frontend 31 个 TS 错误使 `npm run build` 通过**（v0.5 重构遗孤：14 个文件含 SubChannel→Channel 重命名、Source.source_url/status 字段消失、SourceRole/AvailabilityStatus/DomainTag 类型契约偏移、SpaceDeletePreview/ChannelDeletePreview 形状变化、markVerified/listSubChannels 函数已删；详见 `iterations/v0.5.1-frontend-ts-errors.txt`） | Developer | 2026-06-07 DevOps v0.5.1 部署发现：公网前端仍是 5-31 旧版本，本次构建失败无法部署 | 🟡 Developer 已修复 9 个正用文件（9 个错误清零）；剩余 17 个错误集中在 5 个孤儿组件，已提交[删除请求](ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md)等待 Architect Review，通过后可完成构建 |
+| **P0** | **修复 frontend 31 个 TS 错误使 `npm run build` 通过**（v0.5 重构遗孤：14 个文件含 SubChannel→Channel 重命名、Source.source_url/status 字段消失、SourceRole/AvailabilityStatus/DomainTag 类型契约偏移、SpaceDeletePreview/ChannelDeletePreview 形状变化、markVerified/listSubChannels 函数已删；详见 `iterations/v0.5.1-frontend-ts-errors.txt`） | Developer | 2026-06-07 DevOps v0.5.1 部署发现：公网前端仍是 5-31 旧版本，本次构建失败无法部署 | 🟢 删除门禁已通过（Architect ✅ 2026-06-07）— Developer 已修复 9 个正用文件；待 Developer 执行 `git rm` 5 个孤儿组件 + 验证 `npm run build` 通过 |
 | P1 | 完成 v0.5 PRD 规划：确认三条主线范围（X/Twitter 实时监听、信息源管理重构、评分体系方法论） | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：三条主线已收编进 v0.5 PRD R1，标准迭代已启动 |
 | P1 | 展开并确认「信息源管理重构」产品方案：信息源 Tab、频道空间/子频道树、绑定规则、删除预览、验收边界 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认 |
 | P2 | 确认并产出「评分体系方法论」文档范围：维度、评分锚点、综合分、状态草稿、LLM 输出结构、版本化；本轮不落地代码 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认；不讨论评分后分流 |

@@ -74,4 +74,57 @@ git commit  # 标题含「删除」字样 + body 含删除清单 + Review 留痕
 
 ## Review 结论
 
-> 待 Architect 填写
+### 2026-06-07 — Architect Review：✅ 通过
+
+**Reviewer**：Architect（架构师）
+**Review 方法**：实际读 5 个文件 + 全仓 grep + 核查被引用的已删 API/类型/字段是否真已删 + 复核新替代组件存在与引用关系
+**结论**：✅通过。同意 Developer 执行 `git rm` 5 个文件并 commit。
+
+#### 复核详情
+
+1. **零引用复核**：✅
+   - `src/`、`index.html`、`vite.config.*` 全部扫描通过（grep -rn `\b<name>\b`）
+   - 整个 `frontend/` 子串扫描（含 `.vue/.ts/.js/.json/.html`，剔除 `node_modules/dist`）仅 `VerifyDialog` 命中 `SourceVerifyDialog`（子串伪命中，非引用本体）
+   - 单分支单 worktree，无本仓库内编外分支风险
+
+2. **依赖已删 API/类型/字段事实成立**：✅（抽样核查）
+   - `lib/api.ts` 中 `listSubChannels/createSubChannel/updateSubChannel/deleteSubChannel/markVerified` 全部不存在
+   - `lib/types.ts` 中 `SubChannel/ChannelSpace` 类型不存在；Source 字段 `source_url` 不存在
+   - 5 个旧组件中 4 个明确引用了上述已删导出（详见 grep 结果）；`SearchFilterBar.vue` 是 v0.5 实现 R1 中途产物（commit `9b83263`），在 UI 收尾 `f10ceb8` 后被 `SourceLibraryTab.vue` 内置筛选 + `FilterSelect.vue` 取代，整体零引用即足以判废
+
+3. **替代关系一览**：✅总体成立，附 1 项观察（不阻塞本次删除）
+   - InlineAddSource → SearchSourceModal + SourceCreateForm：替代组件均被 SpaceManagementTab/SourceLibraryTab 引用 ✅
+   - SubChannelManager → SpaceManagementTab 内置频道列表：SpaceManagementTab 由 AdminPage 引用 ✅
+   - VerifyDialog → SourceVerifyDialog：被 SourceCreateForm 引用 ✅
+   - SearchFilterBar → SourceLibraryTab 内置 + FilterSelect：均被引用 ✅
+   - ⚠️ ChannelFilter → ChannelPills + NewsPage context-card：**`ChannelPills.vue` 实际全仓零引用**，NewsPage 中的频道筛选已**完全内联**（`.cc-pill` 直接渲染 `channels.value`，无组件包裹）。Developer 的替代描述"ChannelPills + NewsPage 内置 context-card"中前半段是冗余表述——`ChannelPills.vue` 与本次待删的 `ChannelFilter.vue` 同属孤儿组件。**但 `ChannelPills.vue` 不在本次删除清单内，不在本次 Review 范围**；建议 Developer 在本次删除完成后另起一次受保护路径删除 Review 请求处理（不要在本次门禁内偷夹带，保持删除原子可追溯）。
+
+#### 风险评估复核
+
+- 运行时风险：✅ 零（同意 Developer 自评）
+- 数据风险：✅ 零
+- 回滚成本：✅ 低（git 历史完整）
+- 编外分支引用：本地仅 `main` 单分支、单 worktree，本仓库可见范围无风险。如远端 GitHub 仍有他人 fork/PR 引用，需 Owner 兜底，但这类风险与本删除决策本身无关。
+
+#### 执行条件
+
+- Developer 按预案执行 `git rm` 5 个文件，**修复 commit 与删除 commit 分两个独立 commit 提交**（已在请求中承诺）
+- 删除 commit 标题第一行必须含「删除」字样（满足 conventions §commit message 规范）
+- 删除 commit body 必须含：
+
+  ```
+  删除清单：
+    - frontend/src/components/InlineAddSource.vue（v0.5 重构已被 SearchSourceModal+SourceCreateForm 替代）
+    - frontend/src/components/SubChannelManager.vue（v0.5 重命名后由 SpaceManagementTab 内置替代）
+    - frontend/src/components/VerifyDialog.vue（v0.5 由 SourceVerifyDialog 替代）
+    - frontend/src/components/ChannelFilter.vue（v0.5 频道筛选改由 NewsPage 内置 context-card 实现）
+    - frontend/src/components/SearchFilterBar.vue（v0.5 由 SourceLibraryTab 内置+FilterSelect 替代）
+  Review：架构师 ✅通过（2026-06-07 / docs/progress/roles/architect.md 本日条目）
+  ```
+
+- 删除后 `npm run build`（vue-tsc）应清零，DevOps 才能重新部署前端 dist 解除 v0.5/v0.5.1 阻塞
+
+#### 后续动作
+
+- Developer：执行删除 + commit + push + `npm run build` 验证 → 移交 DevOps 部署
+- Developer（建议另起）：把 `ChannelPills.vue` 列入下一次受保护路径删除 Review 请求（不阻塞本次）
