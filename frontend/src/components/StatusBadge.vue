@@ -69,11 +69,11 @@ const showDot = computed(() => isOperational.value && (operationalMap[props.stat
 }
 .status-badge--md {
   padding: 2px 10px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .status-badge--sm {
-  padding: 1px 8px;
-  font-size: 10px;
+  padding: 2px 8px;
+  font-size: 11px;
 }
 .status-dot-inline {
   width: 6px; height: 6px;

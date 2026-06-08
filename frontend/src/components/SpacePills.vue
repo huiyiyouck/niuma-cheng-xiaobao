@@ -127,7 +127,7 @@ async function doDelete(space: Space) {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
   margin-bottom: 8px;
@@ -144,12 +144,12 @@ async function doDelete(space: Space) {
 .space-card.selected .space-icon { background: var(--accent-light); }
 .space-card.add .space-icon { background: var(--accent-light); color: var(--accent); font-size: 20px; }
 .space-body { flex: 1; min-width: 0; }
-.space-name { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
-.space-meta { font-size: 11px; color: var(--text-muted); }
+.space-name { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+.space-meta { font-size: 12px; color: var(--text-muted); }
 .space-card-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
 .space-card:hover .space-card-actions { opacity: 1; }
-.act-icon { width: 26px; height: 26px; border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; }
-.act-icon.sort { width: 22px; height: 22px; font-size: 11px; }
+.act-icon { width: 26px; height: 26px; border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; }
+.act-icon.sort { width: 22px; height: 22px; font-size: 12px; }
 .act-icon:hover { background: #F4F5F7; border-color: var(--border); color: var(--text); }
 .act-icon.danger:hover { background: var(--danger-light); border-color: var(--danger); color: var(--danger); }
 </style>

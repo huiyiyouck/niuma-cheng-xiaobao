@@ -269,13 +269,13 @@ const LEVEL_OPTS = [
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(52,152,219,0.08);
 }
-.lib-search-icon { font-size: 14px; opacity: 0.4; margin-right: 8px; }
-.lib-search-input { flex: 1; border: none; padding: 9px 0; font-size: 13px; outline: none; background: transparent; }
+.lib-search-icon { font-size: 15px; opacity: 0.4; margin-right: 8px; }
+.lib-search-input { flex: 1; border: none; padding: 10px 0; font-size: 14px; outline: none; background: transparent; }
 
 .lib-meta { display: flex; align-items: center; }
-.total-info { font-size: 12px; }
+.total-info { font-size: 13px; }
 
 .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-.filter-hint { font-size: 10px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
+.filter-hint { font-size: 11px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
 
 </style>

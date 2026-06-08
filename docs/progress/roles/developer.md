@@ -1,5 +1,34 @@
 # 全栈开发工作日志
 
+## 2026-06-08 — 生产前端字号与管理页视觉校准
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix / 视觉对齐
+- 触发：Owner 反馈生产前端“字体有点小”，与运行图存在 UI 样式差异；功能符合预期
+
+### 修改
+
+- 全局视觉层 `style.css`：
+  - `body` 增加 14px 基础字号和 1.5 行高
+  - 页面标题、说明文字、按钮、筛选下拉、徽章、错误条、加载态、模态标题、表单标签/输入框、MiniTag、TypeBadge 统一上调一档
+- 管理页关键组件：
+  - `AdminTabs.vue`：Tab 字号 13px → 14px
+  - `SpacePills.vue`：空间名称、空间统计、操作图标上调
+  - `SpaceManagementTab.vue`：频道栏、当前上下文、频道计数、新建频道入口上调
+  - `SourceCard.vue`：信息源卡片标题、元信息、身份、告警条、展示位置、移动下拉上调
+  - `SourceLibraryTab.vue`：搜索框、统计、筛选提示上调
+  - `SourceTable.vue` / `SourceTableRow.vue`：表头、行正文、信息源名称/身份、使用位置 hover 与 popover 上调
+  - `StatusBadge.vue`、`Pagination.vue`：状态徽章和分页控件同步上调
+
+### 验证与部署
+
+- `cd frontend && npm run build`：通过，`vue-tsc` 0 错误，Vite 138 modules
+- 软链接部署模式下 `frontend/dist` build 即上线
+- 新产物：`index-C86--L2V.js` / `index-Dj2gUCgE.css`，`AdminPage-Cn6FLtJ0.js` / `AdminPage-CDelNH4K.css`
+- `nginx` active，`news-api.service` active
+
+---
+
 ## 2026-06-08 — 前端动态 import 旧 chunk 兼容修复
 
 - 本次角色：全栈开发（Developer）

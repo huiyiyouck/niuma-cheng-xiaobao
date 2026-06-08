@@ -54,6 +54,8 @@ body {
   background: var(--bg);
   color: var(--text);
   min-width: 360px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -69,14 +71,14 @@ a:hover { color: var(--accent); }
  * 页面标题（PageTitle）— 全站统一
  * ================================================================= */
 .page-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.3px;
   color: var(--text);
 }
 .page-sub {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-muted);
   font-weight: 500;
 }
@@ -123,8 +125,8 @@ a:hover { color: var(--accent); }
 }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.btn--xs { padding: 4px 10px; font-size: 10px; border-radius: 6px; }
-.btn--sm { padding: 6px 12px; font-size: 11px; border-radius: 6px; }
+.btn--xs { padding: 5px 10px; font-size: 11px; border-radius: 6px; }
+.btn--sm { padding: 7px 13px; font-size: 12px; border-radius: 6px; }
 .btn--block { width: 100%; }
 
 .btn--primary {
@@ -176,7 +178,7 @@ a:hover { color: var(--accent); }
   background: var(--card);
   padding: 8px 12px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   color: var(--text);
   outline: none;
@@ -195,7 +197,7 @@ a:hover { color: var(--accent); }
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: 13px;
   background: var(--card);
   color: var(--text-secondary);
   cursor: pointer;
@@ -216,7 +218,7 @@ a:hover { color: var(--accent); }
   gap: 4px;
   padding: 2px 10px;
   border-radius: 20px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
   flex-shrink: 0;
@@ -252,7 +254,7 @@ a:hover { color: var(--accent); }
   background: var(--danger-light);
   border: 1px solid rgba(231, 76, 60, 0.2);
   color: #991b1b;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
 }
 
@@ -263,7 +265,7 @@ a:hover { color: var(--accent); }
   text-align: center;
   padding: 24px;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: 14px;
 }
 .empty-state {
   text-align: center;
@@ -305,7 +307,7 @@ a:hover { color: var(--accent); }
 }
 .modal-dialog h3,
 .modal-title {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 800;
   margin: 0 0 16px 0;
   color: var(--text);
@@ -323,7 +325,7 @@ a:hover { color: var(--accent); }
 .form-g { margin-bottom: 12px; }
 .form-l {
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   color: var(--text-muted);
   margin-bottom: 4px;
@@ -333,7 +335,7 @@ a:hover { color: var(--accent); }
   padding: 8px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-family: inherit;
   outline: none;
 }
@@ -345,7 +347,7 @@ a:hover { color: var(--accent); }
 .mini-tag {
   padding: 1px 6px;
   border-radius: 10px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   background: #F1F5F9;
   color: var(--text-secondary);
@@ -359,7 +361,7 @@ a:hover { color: var(--accent); }
   display: inline-block;
   padding: 2px 8px;
   border-radius: 20px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
 }
 .type-badge--twitter { background: var(--accent-light);  color: var(--accent); }

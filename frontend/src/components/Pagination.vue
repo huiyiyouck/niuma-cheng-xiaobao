@@ -89,7 +89,7 @@ function changePageSize(e: Event) {
   flex-wrap: wrap;
 }
 .pg-info {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 .pg-controls {
@@ -99,7 +99,7 @@ function changePageSize(e: Event) {
 }
 .pg-btn {
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   border-radius: 8px;
   border: 1px solid var(--border);
@@ -133,7 +133,7 @@ function changePageSize(e: Event) {
   padding: 6px 8px;
   border-radius: 8px;
   border: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 13px;
   background: var(--card);
   outline: none;
 }

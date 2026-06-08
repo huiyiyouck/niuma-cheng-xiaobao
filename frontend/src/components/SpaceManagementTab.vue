@@ -252,22 +252,22 @@ watch(selectedChannelId, () => refreshSources());
 
 .split-left { background: var(--card); border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden; align-self: start; }
 .split-left-header { display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px; }
-.side-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.side-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
 
 .channel-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid var(--border-light); min-height: 43px; }
 .channel-item:last-child { border-bottom: none; }
 .channel-item:hover { background: var(--hover-bg); }
 .channel-item.selected { background: var(--accent-light); border-left: 3px solid var(--accent); padding-left: 13px; }
 .channel-item.all { font-weight: 600; }
-.ch-name { font-size: 13px; font-weight: 600; flex: 1; }
-.ch-count { font-size: 11px; color: var(--text-muted); margin-left: auto; }
-.ch-badge { font-size: 10px; padding: 1px 6px; border-radius: 6px; background: #F1F5F9; color: var(--text-muted); font-weight: 400; }
+.ch-name { font-size: 14px; font-weight: 600; flex: 1; }
+.ch-count { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+.ch-badge { font-size: 11px; padding: 1px 6px; border-radius: 6px; background: #F1F5F9; color: var(--text-muted); font-weight: 400; }
 .ch-actions { display: flex; gap: 2px; opacity: 0; transition: opacity 0.15s; }
 .channel-item:hover .ch-actions { opacity: 1; }
-.channel-add-btn { width: 100%; padding: 10px; border: none; border-top: 1px dashed var(--border); background: transparent; color: var(--accent); font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; text-align: center; }
+.channel-add-btn { width: 100%; padding: 10px; border: none; border-top: 1px dashed var(--border); background: transparent; color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; text-align: center; }
 .channel-add-btn:hover { background: var(--accent-light); }
 
-.act-icon { width: 24px; height: 24px; border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; flex-shrink: 0; }
+.act-icon { width: 24px; height: 24px; border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; flex-shrink: 0; }
 .act-icon.sort { margin-left: auto; }
 .act-icon:hover:not(:disabled) { background: #F4F5F7; border-color: var(--border); color: var(--text); }
 .act-icon:disabled { opacity: 0.25; cursor: not-allowed; }
@@ -276,10 +276,10 @@ watch(selectedChannelId, () => refreshSources());
 .split-right { min-width: 0; }
 .split-right-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; gap: 12px; }
 .ctx-info { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.ctx-label { font-size: 12px; color: var(--text-muted); }
-.ctx-value { font-size: 14px; font-weight: 700; color: var(--accent); }
+.ctx-label { font-size: 13px; color: var(--text-muted); }
+.ctx-value { font-size: 15px; font-weight: 700; color: var(--accent); }
 .ctx-sep { color: var(--border); margin: 0 6px; }
-.ctx-count { font-size: 11px; color: var(--text-muted); margin-left: 10px; }
+.ctx-count { font-size: 12px; color: var(--text-muted); margin-left: 10px; }
 .source-list { display: flex; flex-direction: column; gap: 10px; }
 
 .add-source-wrap { position: relative; flex-shrink: 0; }

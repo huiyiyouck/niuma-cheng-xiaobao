@@ -66,7 +66,7 @@ const emit = defineEmits<{
 }
 .table-header th {
   padding: 10px 14px;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;

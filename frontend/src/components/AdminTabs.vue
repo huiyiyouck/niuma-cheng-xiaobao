@@ -34,7 +34,7 @@ const emit = defineEmits<{
 .admin-tab {
   padding: 8px 20px;
   border-radius: 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--text-secondary);
   cursor: pointer;

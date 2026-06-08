@@ -223,7 +223,7 @@ const levelLabel = computed(() =>
   flex-wrap: wrap;
 }
 .card-name {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--text);
   cursor: pointer;
@@ -235,7 +235,7 @@ const levelLabel = computed(() =>
 .name--removed { color: var(--text-muted); cursor: default; }
 .name--removed:hover { color: var(--text-muted); }
 .removed-tag {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-muted);
   background: #F1F5F9;
@@ -247,12 +247,12 @@ const levelLabel = computed(() =>
   gap: 6px;
   align-items: center;
   flex-wrap: wrap;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary);
 }
 .sep { color: var(--border); }
 .identity-code {
-  font-size: 10px;
+  font-size: 11px;
   background: var(--hover-bg);
   padding: 1px 4px;
   border-radius: 4px;
@@ -272,7 +272,7 @@ const levelLabel = computed(() =>
   padding: 6px 10px;
   background: var(--warning-light);
   border-radius: 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: #92400e;
 }
 .card-actions-row {
@@ -282,7 +282,7 @@ const levelLabel = computed(() =>
   gap: 12px;
   margin-top: 2px;
 }
-.positions-summary { font-size: 11px; color: var(--text-secondary); }
+.positions-summary { font-size: 12px; color: var(--text-secondary); }
 .pos-summary-text { font-weight: 600; }
 .pos-on { color: var(--success); }
 .pos-mixed { color: var(--warning); }
@@ -301,7 +301,7 @@ const levelLabel = computed(() =>
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .pos-target {
   color: var(--text-secondary);
@@ -314,13 +314,13 @@ const levelLabel = computed(() =>
   align-items: center;
 }
 .pos-loc {
-  font-size: 11px; color: var(--text-secondary); font-weight: 600;
+  font-size: 12px; color: var(--text-secondary); font-weight: 600;
 }
 .pos-loc.root { color: var(--text-muted); }
-.pos-paused { font-size: 10px; color: var(--warning); margin-left: 6px; }
+.pos-paused { font-size: 11px; color: var(--warning); margin-left: 6px; }
 .move-wrap { position: relative; }
 .move-select {
-  font-size: 11px; padding: 4px 8px; border-radius: 6px;
+  font-size: 12px; padding: 5px 8px; border-radius: 6px;
   border: 1px solid var(--border); background: var(--card);
   color: var(--accent); cursor: pointer; font-weight: 600;
   font-family: inherit; max-width: 110px;

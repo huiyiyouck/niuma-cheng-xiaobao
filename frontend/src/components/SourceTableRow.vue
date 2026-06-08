@@ -120,14 +120,14 @@ const roleLabel = computed(() => {
 .table-row:hover { background: var(--hover-bg); }
 .table-row:last-child { border-bottom: none; }
 .table-row td {
-  padding: 10px 14px;
-  font-size: 12px;
+  padding: 11px 14px;
+  font-size: 13px;
   vertical-align: middle;
 }
 .col-name { min-width: 200px; }
 .name-cell { display: flex; flex-direction: column; gap: 2px; }
-.source-name { font-weight: 700; color: var(--text); font-size: 13px; }
-.source-identity { font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; font-family: var(--font-mono); }
+.source-name { font-weight: 700; color: var(--text); font-size: 14px; }
+.source-identity { font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; font-family: var(--font-mono); }
 .col-type { min-width: 80px; }
 .col-tags { min-width: 160px; }
 .tags-cell { display: flex; gap: 4px; flex-wrap: wrap; }
@@ -138,7 +138,7 @@ const roleLabel = computed(() => {
 .pos-hover {
   color: var(--accent);
   cursor: help;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   text-decoration: underline dotted var(--accent);
   text-underline-offset: 3px;
@@ -162,9 +162,9 @@ const roleLabel = computed(() => {
   justify-content: space-between;
   gap: 10px;
   padding: 5px 4px;
-  font-size: 11px;
+  font-size: 12px;
 }
-.pos-pop-empty { padding: 6px 4px; font-size: 11px; color: var(--text-muted); }
+.pos-pop-empty { padding: 6px 4px; font-size: 12px; color: var(--text-muted); }
 .pos-pop-loc { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pos-pop-on { color: var(--success); flex-shrink: 0; }
 .pos-pop-off { color: var(--text-muted); flex-shrink: 0; }

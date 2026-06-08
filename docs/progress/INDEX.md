@@ -49,6 +49,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-08 | Developer | 生产前端字号与管理页视觉校准 | ✅ 已完成 — 针对 Owner 反馈“生产字体偏小、与运行图存在视觉差异”，统一上调全局基础字号、按钮/筛选/徽章/表单/分页，并重点校准管理页空间卡片、频道栏、信息源卡片、信息源库表格和状态徽章。`cd frontend && npm run build` 通过，软链接部署已上线，`nginx` 与 `news-api.service` 均 active | Owner 刷新生产页面验证视觉大小；若仍偏小，再按具体页面做二次微调 |
 | 2026-06-08 | Developer | 前端动态 import 旧 chunk 兼容修复 | ✅ 已完成 — Owner 浏览器仍加载旧入口 `index-DWBXrqru.js`，但旧懒加载 chunk 已被新 build 清空，导致 `NewsPage-CjeHC2FU.js` 动态 import 失败。已补回旧 chunk 兼容副本；nginx `/assets/` 改为缺失直接 404、HTML 入口禁缓存；`frontend/vite.config.ts` 设置 `build.emptyOutDir=false`，后续 build 保留旧 hash 资源。`nginx -t`、`systemctl reload nginx`、`npm run build` 均通过 | Owner 刷新页面验证；后续部署无需手工清旧 chunk，若需清理资产需另做保留周期策略 |
 | 2026-06-08 | Developer | 管理页原型对齐：信息源库表格 + 空间显示修复 + 频道补回 | ✅ 已完成 — 修复 `SpaceManagementTab.vue` 漏导入 `SpacePills` 导致空间区渲染异常；信息源库从卡片列表切回既有 `SourceTable/SourceTableRow`，按原型拆成 9 列并复用现有 Badge/Button/Filter/Pagination 组件；`GET /v1/sources` 补返回 `display_positions` 明细，修复信息源使用位置不展示；生产库补回 AI/财经原型频道，保留现有 `财经/Web3`。前后端 build 均通过，`news-api.service` active，本机 API 验证通过 | Owner 浏览器验证 `/admin` 空间管理与信息源库；如外网仍打不开，交 DevOps 查反代/TLS 链路 |
 | 2026-06-08 | Developer | 管理页原型对齐：空间卡片与分栏细节 | ✅ 已完成 — `SpacePills.vue` 空间区改为更接近原型的卡片式样式并补描述字段；`SpaceManagementTab.vue` 收紧左右分栏、频道栏和排序图标外观；`SourceCard.vue` 删除重复多位置操作块。`cd frontend && npm run build` 通过，公网首页已引用新 bundle `index-Cn1YU1yc.js` | Owner 浏览器验证管理页视觉 |
