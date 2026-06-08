@@ -546,7 +546,7 @@ const positionStats = computed(() => {
 .kv-value { font-size: 13px; font-weight: 600; color: var(--text); }
 .kv-code {
   font-size: 12px; background: #F8FAFB; padding: 2px 6px; border-radius: 4px;
-  font-family: monospace; color: var(--text-secondary); word-break: break-all;
+  font-family: var(--font-mono); color: var(--text-secondary); word-break: break-all;
 }
 .kv-empty { font-size: 12px; color: var(--text-muted); }
 .editable-hint { font-size: 10px; color: var(--warning); }

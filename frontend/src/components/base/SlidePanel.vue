@@ -32,14 +32,19 @@ function onOverlayClick() { emit("close"); }
 
 <style scoped>
 .slide-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0); z-index: 100;
-  transition: background 0.25s;
+  position: fixed; inset: 0; background: rgba(15, 23, 42, 0); z-index: 100;
+  transition: background 0.25s, backdrop-filter 0.25s;
 }
-.slide-overlay.open { background: rgba(0,0,0,0.2); }
+.slide-overlay.open {
+  background: rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
 
 .slide-panel {
   position: fixed; top: 0; right: 0; width: 460px; max-width: 100vw; height: 100vh;
-  background: var(--bg); box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+  background: var(--card); box-shadow: -8px 0 30px rgba(2, 6, 23, 0.1);
+  border-left: 1px solid var(--border);
   z-index: 101; display: flex; flex-direction: column;
   transform: translateX(100%); transition: transform 0.25s ease-out;
 }
@@ -47,15 +52,17 @@ function onOverlayClick() { emit("close"); }
 
 .slide-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 20px; border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+  padding: 16px 20px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+  background: var(--card);
 }
-.slide-title { font-size: 16px; font-weight: 800; margin: 0; }
+.slide-title { font-size: var(--text-h4); font-weight: var(--weight-xbold); margin: 0; color: var(--text); }
 .slide-close {
-  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--card); cursor: pointer; font-size: 14px; display: flex;
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card); cursor: pointer; font-size: var(--text-h4); display: flex;
   align-items: center; justify-content: center; color: var(--text-muted);
+  transition: 0.15s;
 }
-.slide-close:hover { background: var(--hover-bg); color: var(--text); }
+.slide-close:hover { background: #F4F5F7; color: var(--text); }
 
-.slide-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.slide-body { flex: 1; overflow-y: auto; padding: 24px 20px; }
 </style>

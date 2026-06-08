@@ -41,6 +41,21 @@
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
 
+  /* ── 字号层级 ────────────────────────────────────── */
+  --text-xs:   10px;   /* 角标、极小辅助 */
+  --text-sm:   11px;   /* 标签、徽章、统计标签 */
+  --text-base: 13px;   /* 正文、按钮 */
+  --text-md:   14px;   /* 大正文、输入框 */
+  --text-h4:   16px;   /* 弹窗标题、节标题 */
+  --text-h3:   20px;   /* 细节标题（详情页名称） */
+  --text-h2:   22px;   /* 页面主标题 */
+  --text-h1:   26px;   /* 统计数字 */
+
+  /* ── 字重层级 ────────────────────────────────────── */
+  --weight-bold:   700;
+  --weight-xbold:  800;
+  --weight-black:  900;
+
   color-scheme: light;
   font-family: var(--font-sans);
   text-rendering: optimizeLegibility;
@@ -54,7 +69,7 @@ body {
   background: var(--bg);
   color: var(--text);
   min-width: 360px;
-  font-size: 14px;
+  font-size: var(--text-md);
   line-height: 1.5;
 }
 
@@ -72,8 +87,8 @@ a:hover { color: var(--accent); }
  * 页面标题（PageTitle）— 全站统一
  * ================================================================= */
 .page-title {
-  font-size: 22px;
-  font-weight: 800;
+  font-size: var(--text-h2);
+  font-weight: var(--weight-xbold);
   margin: 0;
   letter-spacing: -0.3px;
   color: var(--text);
@@ -308,8 +323,8 @@ a:hover { color: var(--accent); }
 }
 .modal-dialog h3,
 .modal-title {
-  font-size: 16px;
-  font-weight: 800;
+  font-size: var(--text-h4);
+  font-weight: var(--weight-xbold);
   margin: 0 0 16px 0;
   color: var(--text);
 }

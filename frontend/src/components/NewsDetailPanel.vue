@@ -67,7 +67,8 @@ function fmtTime(iso: string | null): string {
   inset: 0;
   z-index: 200;
   background: rgba(15, 23, 42, 0.3);
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
 }
 .panel {
   position: absolute;

@@ -159,7 +159,7 @@ onMounted(async () => { await loadAlerts(); });
 
 <style scoped>
 .alerts-page { display: flex; flex-direction: column; gap: 14px; }
-.page-title { font-size: 22px; font-weight: 900; margin: 0; }
+/* .page-title 走全局定义（style.css），不在此重写以保持字号字重一致 */
 
 /* Tabs */
 .tabs-row { display: flex; gap: 4px; flex-wrap: wrap; }

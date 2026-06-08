@@ -19,14 +19,14 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
     <transition name="fade">
       <div v-if="state.visible" class="modal-overlay" @click.self="close(false)">
         <transition name="modal">
-          <div v-if="state.visible" class="modal-box">
+          <div v-if="state.visible" class="modal-dialog">
             <h3 class="modal-title">{{ state.title }}</h3>
             <p class="modal-body" v-html="state.body"></p>
             <div class="modal-actions">
               <button class="btn" @click="close(false)">取消</button>
               <button
                 class="btn"
-                :class="state.danger ? 'danger' : 'primary'"
+                :class="state.danger ? 'btn--danger-fill' : 'btn--primary'"
                 :disabled="state.loading"
                 @click="close(true)"
               >
@@ -41,22 +41,8 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKeydown));
 </template>
 
 <style scoped>
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 60;
-  background: rgba(0,0,0,0.35);
-  display: flex; align-items: center; justify-content: center;
-}
-.modal-box {
-  background: var(--card); border-radius: 12px;
-  box-shadow: 0 12px 32px rgba(0,0,0,0.12);
-  padding: 24px; min-width: 360px; max-width: 440px;
-}
-.modal-title { font-size: 15px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
-.modal-body { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; }
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.modal-actions .btn { padding: 8px 20px; font-size: 13px; }
-.modal-actions .btn.danger { border-color: rgba(231, 76, 60, 0.25); background: rgba(231, 76, 60, 0.06); color: var(--danger); }
-.modal-actions .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* 仅保留本组件特有内容：modal-body 文案样式 + 进出场动画 */
+.modal-body { font-size: var(--text-base); color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px; }
 
 .fade-enter-active { animation: fadeIn 0.15s ease-out; }
 .fade-leave-active { transition: opacity 0.1s; }
