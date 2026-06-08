@@ -1,6 +1,90 @@
 # 全栈开发工作日志
 
-## 2026-06-08 — 大屏展示区域宽度限制修复
+## 2026-06-08 — 前端规范统一：字体层级 / 弹窗抽屉 / 死代码清理
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix / 前端规范化（非迭代）
+- 触发：Owner 提出 5 项前端规范要求 — 字体统一规划、弹窗风格统一、抽屉统一、组件复用、清理死代码
+- commit：`7969e08`（1280px 居中收口）+ `ddfb8e5`（规范化主体）
+
+### 1. 大屏宽度回调（commit `7969e08`）
+
+Owner 反馈整屏铺满显得分散，要求内容回归中间。`App.vue` `.topbar-inner` / `.main-content` + `style.css` `.container` 从 `max-width: none` 改为 `max-width: 1280px; margin: 0 auto`，响应式断点 1120 → 1280。
+
+### 2. 前端规范统一（commit `ddfb8e5`）
+
+**摸底发现的问题**：
+- 字体变量只有 `--font-sans`/`--font-mono`，没有字号字重层级
+- 弹窗存在 3 套样式：`BaseModal` 的 `.modal-dialog` / `ModalContainer` 自有的 `.modal-box` / `CreateSpaceModal` 自有的 `.modal-box`
+- 抽屉不同步：`SlidePanel` 背景 `var(--bg)` 灰，`NewsDetailPanel` 背景 `var(--card)` 白
+- 4 个零引用死组件：`PageTitle.vue` / `CreateSpaceModal.vue` / `SourceLibraryCard.vue` / `TagSelector.vue`
+- `SourceDetailPage.vue` 硬编码 `font-family: monospace`
+- `AlertsPage.vue` 自定义 `.page-title` 22px/900 与全局 22px/800 冲突
+
+**修改**：
+
+| 文件 | 改动 |
+|------|------|
+| `style.css` | 新增 `--text-xs/sm/base/md/h1-h4` 字号变量和 `--weight-bold/xbold/black` 字重变量；`body`/`page-title`/`modal-dialog h3`/`modal-title` 迁移为变量引用 |
+| `ModalContainer.vue` | 移除自有 `.modal-overlay`/`.modal-box` 重复样式，改用全局 `.modal-dialog`；按钮 `danger`/`primary` 改为 `btn--danger-fill`/`btn--primary` |
+| `SlidePanel.vue` | 背景 `var(--bg)`→`var(--card)`；遮罩 `rgba(0,0,0,0.2)`→`rgba(15,23,42,0.3)+blur(4px)`；标题字号改用 `var(--text-h4)`+`var(--weight-xbold)` |
+| `NewsDetailPanel.vue` | backdrop blur 2px → 4px，与全局弹窗一致 |
+| `AlertsPage.vue` | 删除 scoped `.page-title 22px/900` 覆盖，走全局 |
+| `SourceDetailPage.vue` | `font-family: monospace` → `var(--font-mono)` |
+| 删除 4 个组件 | `PageTitle.vue` / `CreateSpaceModal.vue` / `SourceLibraryCard.vue` / `TagSelector.vue` |
+
+**死代码删除路径说明**：4 个组件全仓零引用已验证（`grep` 仅命中文件自身和 `style.css` 一处注释）。按 `conventions.md §受保护路径删除门禁 §例外情况` 第 3 条 + Owner 在会话中直接提出"清理不使用的死代理（代码）"= Owner 直接授权，跳过 Architect Review（与 2026-06-07 `ChannelPills.vue` 同路径）。删除 commit 与规范化改动合并提交，body 含完整删除清单和 Review 跳过说明。
+
+### 3. 不做的事
+
+- 不合并 `SourceCard.vue` / `SourceTableRow.vue`（用途不同：管理卡片 vs 库表格行）
+- 不强行迁 `DeleteConfirmDialog.vue` / `SourceVerifyDialog.vue` 到 BaseModal（业务逻辑独立）
+- 不批量改组件 scoped 内的所有字号（surgical 原则；仅改与全局冲突的 AlertsPage `.page-title`）
+
+### 验证与部署
+
+- `cd frontend && npm run build`：通过，`vue-tsc` 0 错误，Vite 138 modules
+- 软链接部署模式 `frontend/dist` 即上线
+- 公网入口验证：`https://news.huiyiyou.cloud/` 已引用新 bundle `index-BQEdeaA1.js` / `index-CQbJ6lGf.css`
+- 净代码变更：+45 行 / -453 行（含 4 个死组件删除）
+
+### 待 Owner 验证
+
+刷新生产页面验证：
+1. 弹窗（如批量确认、删除确认）样式是否统一
+2. 侧边抽屉（信息源详情 / 新建信息源 SlidePanel）背景是否统一为白色
+3. 字号层级（标题/正文/徽章）视觉是否协调
+
+如某处仍偏差，再针对性微调。
+
+---
+
+## 2026-06-08 — 大屏展示区域宽度限制修复（已被同日 1280 回调覆盖）
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix / 视觉对齐
+- 触发：Owner 反馈电脑端可用空间很多，但页面显示区域被固定宽度限制；字号变大后造成挤压
+
+### 修改
+
+- `frontend/src/App.vue`：
+  - `.topbar-inner` 取消 `max-width: 1120px` 和居中限制，改为 `width: 100%; max-width: none`
+  - `.main-content` 取消 `max-width: 1120px` 和居中限制，使用整屏宽度
+  - 桌面左右 padding 改为 32px，窄屏继续按 media query 收紧
+- `frontend/src/style.css`：
+  - 全局 `.container` 同步取消 1120px 固定宽度，避免其他页面仍被限制
+
+### 验证与部署
+
+- `cd frontend && npm run build`：通过，`vue-tsc` 0 错误，Vite 138 modules
+- 软链接部署模式下 `frontend/dist` build 即上线
+- 新产物：`index-DCeR9mJf.js` / `index-DgcnnkhM.css`
+
+> 后续 Owner 反馈"铺满太散，左右仍需留白"，已在本日"前端规范统一"前置 commit `7969e08` 中回调为 1280px 居中。
+
+---
+
+
 
 - 本次角色：全栈开发（Developer）
 - 模式：Bugfix / 视觉对齐
