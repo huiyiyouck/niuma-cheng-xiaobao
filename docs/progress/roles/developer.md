@@ -45,6 +45,24 @@
 
 验证：`cd server && npm run build` 通过。
 
+### 临时部署（Owner 授权）
+
+Owner 明确表示本次属于 Bugfix 阶段并授予 Developer 临时部署权限，不切换常规 DevOps 流程。
+
+部署结果：
+
+- `server npm install --no-audit --no-fund`：up to date
+- 发现 `news-api.service` failed 但 `/health` 可用，根因是残留手工 Node 进程 `622361` 占用 8000，systemd 重启时报 `EADDRINUSE`
+- `kill -TERM 622361` 后端口释放
+- `systemctl reset-failed news-api.service`
+- `systemctl restart news-api.service`
+- `news-api.service` 已恢复 `active (running)`，MainPID `629597`
+- 本机 `/health`：`{"status":"ok"}`
+- 公网 `/v1/alerts/unread-count`：200
+- 日志确认 `X RULE SYNC done: +0 ~4 -0 ↻0` + `X STREAM connected`
+
+追加发现：4 个 X Source 当前 `enabled_positions=0`，所以即使后端 Stream 已恢复，前端空间/频道列表仍不会展示这些账号内容；需要 Owner 在 UI 里把 X Source 添加到空间/频道展示位置。
+
 ---
 
 ## 2026-06-08 — 生产事故：npm test 清空数据库 + 紧急止血

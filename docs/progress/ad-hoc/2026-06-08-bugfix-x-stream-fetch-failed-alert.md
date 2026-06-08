@@ -81,3 +81,55 @@
 
 - 这只能修复后续漏收和未来补偿；已经超过 X recent search/user timeline 可返回窗口或 API 不可返回的历史内容，无法保证完全补回。
 - 如果某个 X Source 没有启用展示位置，Scheduler 仍不会调度补偿抓取；即使 Stream 入库，处理后的新闻也可能没有展示位置。
+
+## 临时部署记录
+
+- 时间：2026-06-08 11:22 CST
+- 执行角色：Developer（Owner 明确授予本次 Bugfix 临时部署权限）
+- 部署 commits：
+  - `871f1d6` — 修复 X Stream `fetch failed` 误告警
+  - `05e330e` — 接回 X Stream 断流补偿抓取
+
+### 部署过程
+
+1. `cd server && npm install --no-audit --no-fund`：通过，`up to date`。
+2. 部署前检查发现 `news-api.service` 处于 `failed`，但 `/health` 可用。
+3. 端口归属核查：`0.0.0.0:8000` 被残留手工进程占用：
+   - PID `622361`
+   - 命令：`node --import tsx -e process.env.PORT = '8000'; import('./src/index.ts')...`
+4. systemd 失败根因：`EADDRINUSE: address already in use 0.0.0.0:8000`。
+5. 处理：
+   - `kill -TERM 622361`
+   - 确认 8000 端口释放
+   - `systemctl reset-failed news-api.service`
+   - `systemctl restart news-api.service`
+
+### 部署验证
+
+- `systemctl is-active news-api.service`：`active`
+- `systemctl status news-api.service`：`active (running)`，`ExecStartPre=/usr/bin/npx drizzle-kit migrate` 成功
+- systemd MainPID：`629597`
+- 8000 端口实际 Node 子进程：`629636`
+- `curl -sf http://127.0.0.1:8000/health`：`{"status":"ok"}`
+- `curl -sf https://news.huiyiyou.cloud/v1/alerts/unread-count`：200，返回 `{"count":86}`
+- 日志：
+  - `X RULE SYNC done: +0 ~4 -0 ↻0 (remote=4 local=4)`
+  - `X STREAM connected`
+
+### 部署后发现
+
+只读查询 X Source 状态：
+
+| identity | lifecycle_status | compensation_interval_sec | enabled_positions |
+|----------|------------------|---------------------------|-------------------|
+| anthropicai | normal | 86400 | 0 |
+| jiamigou | normal | 86400 | 0 |
+| openai | normal | 86400 | 0 |
+| solanamobile | normal | 86400 | 0 |
+
+结论：
+
+- 后端 Bugfix 已上线，X Stream 已恢复连接。
+- 4 个 X Source 目前都没有启用展示位置，因此补偿抓取不会调度，处理后的新闻也不会出现在任何空间/频道列表里。
+- 如果 Owner 期望这些账号内容在前端可见，需要先把对应 X Source 添加到空间/频道展示位置。
+- 公网 `https://news.huiyiyou.cloud/v1/health` 返回 404；当前有效后端健康检查路径是本机 `/health`，公网关键 API `/v1/alerts/unread-count` 已验证可用。nginx 是否需要额外代理 `/health` 可后续由 DevOps 评估。
