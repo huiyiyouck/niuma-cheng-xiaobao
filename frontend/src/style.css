@@ -62,9 +62,10 @@ a { color: var(--accent); text-decoration: none; }
 a:hover { color: var(--accent); }
 
 .container {
-  max-width: 1120px;
-  margin: 0 auto;
-  padding: 20px 24px 80px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 32px 80px;
 }
 
 /* =================================================================

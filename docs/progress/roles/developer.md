@@ -1,5 +1,61 @@
 # 全栈开发工作日志
 
+## 2026-06-08 — 大屏展示区域宽度限制修复
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix / 视觉对齐
+- 触发：Owner 反馈电脑端可用空间很多，但页面显示区域被固定宽度限制；字号变大后造成挤压
+
+### 修改
+
+- `frontend/src/App.vue`：
+  - `.topbar-inner` 取消 `max-width: 1120px` 和居中限制，改为 `width: 100%; max-width: none`
+  - `.main-content` 取消 `max-width: 1120px` 和居中限制，使用整屏宽度
+  - 桌面左右 padding 改为 32px，窄屏继续按 media query 收紧
+- `frontend/src/style.css`：
+  - 全局 `.container` 同步取消 1120px 固定宽度，避免其他页面仍被限制
+
+### 验证与部署
+
+- `cd frontend && npm run build`：通过，`vue-tsc` 0 错误，Vite 138 modules
+- 软链接部署模式下 `frontend/dist` build 即上线
+- 新产物：`index-DCeR9mJf.js` / `index-DgcnnkhM.css`
+
+---
+
+## 2026-06-08 — 信息源库搜索 500 修复
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix / 生产修复
+- 触发：Owner 提供日志 `HTTP GET /v1/sources?search=Claude+code官方账号&page_size=20 → 500`
+
+### 根因
+
+- `/v1/sources` 搜索会同时匹配 `display_name`、`identity`、`notes`、`content_topics`
+- 代码使用 `jsonb_array_elements_text(s.content_topics) AS t WHERE t ILIKE ...`
+  - `t` 是表别名，不是文本列
+  - 生产 X 同步源的 `content_topics` 当前为 `{}` 对象，`jsonb_array_elements_text` 只能展开数组
+- 因此带 `search` 的请求触发 Postgres 异常：`cannot extract elements from an object`
+
+### 修复
+
+- `server/src/api/routes/sources.ts`：
+  - 搜索 `content_topics` 时改为显式列别名 `AS topic(value)`
+  - 仅当 `jsonb_typeof(content_topics) = 'array'` 时展开，否则按空数组处理
+  - `total` 计数改为复用相同筛选条件，避免搜索分页总数不准
+
+### 验证与部署
+
+- `cd server && npm run build`：通过，`tsc` 0 错误
+- `systemctl restart news-api.service`：已重启
+- 本机 `/health`：200
+- 本机和公网均验证：
+  - `/v1/sources?search=Claude+code官方账号&page_size=20` → 200，返回 1 条 `Claude code官方账号`
+  - `/v1/sources?page_size=20` → 200，返回 4 条
+- `news-api.service` active
+
+---
+
 ## 2026-06-08 — 生产前端字号与管理页视觉校准
 
 - 本次角色：全栈开发（Developer）

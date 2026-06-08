@@ -49,6 +49,8 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-08 | Developer | 大屏展示区域宽度限制修复 | ✅ 已完成 — Owner 反馈电脑端可用空间很多，但页面被 1120px 宽度限制，字号放大后产生挤压。已取消 `App.vue` 中顶栏和主内容区 `max-width:1120px` 限制，改为使用整屏宽度；全局 `.container` 同步取消固定宽度。前端 build 通过，软链接部署已上线 | Owner 在电脑端刷新 `/admin` 验证表格和管理区是否充分利用屏幕 |
+| 2026-06-08 | Developer | 信息源库搜索 500 修复 | ✅ 已完成 — `/v1/sources?search=...` 触发 500 的根因是搜索逻辑展开 `content_topics` 时假设其为 JSON 数组，但生产 X 同步源当前为 `{}` 对象；同时 SQL 使用表别名参与 `ILIKE`。已改为 `jsonb_typeof(content_topics)='array'` 时才展开，并使用显式列别名；搜索 total 同步按筛选条件计算。后端 build 通过、服务已重启，本机和公网搜索 `Claude code官方账号` 均返回 200 且 total=1 | Owner 在信息源库搜索框复测 |
 | 2026-06-08 | Developer | 生产前端字号与管理页视觉校准 | ✅ 已完成 — 针对 Owner 反馈“生产字体偏小、与运行图存在视觉差异”，统一上调全局基础字号、按钮/筛选/徽章/表单/分页，并重点校准管理页空间卡片、频道栏、信息源卡片、信息源库表格和状态徽章。`cd frontend && npm run build` 通过，软链接部署已上线，`nginx` 与 `news-api.service` 均 active | Owner 刷新生产页面验证视觉大小；若仍偏小，再按具体页面做二次微调 |
 | 2026-06-08 | Developer | 前端动态 import 旧 chunk 兼容修复 | ✅ 已完成 — Owner 浏览器仍加载旧入口 `index-DWBXrqru.js`，但旧懒加载 chunk 已被新 build 清空，导致 `NewsPage-CjeHC2FU.js` 动态 import 失败。已补回旧 chunk 兼容副本；nginx `/assets/` 改为缺失直接 404、HTML 入口禁缓存；`frontend/vite.config.ts` 设置 `build.emptyOutDir=false`，后续 build 保留旧 hash 资源。`nginx -t`、`systemctl reload nginx`、`npm run build` 均通过 | Owner 刷新页面验证；后续部署无需手工清旧 chunk，若需清理资产需另做保留周期策略 |
 | 2026-06-08 | Developer | 管理页原型对齐：信息源库表格 + 空间显示修复 + 频道补回 | ✅ 已完成 — 修复 `SpaceManagementTab.vue` 漏导入 `SpacePills` 导致空间区渲染异常；信息源库从卡片列表切回既有 `SourceTable/SourceTableRow`，按原型拆成 9 列并复用现有 Badge/Button/Filter/Pagination 组件；`GET /v1/sources` 补返回 `display_positions` 明细，修复信息源使用位置不展示；生产库补回 AI/财经原型频道，保留现有 `财经/Web3`。前后端 build 均通过，`news-api.service` active，本机 API 验证通过 | Owner 浏览器验证 `/admin` 空间管理与信息源库；如外网仍打不开，交 DevOps 查反代/TLS 链路 |

@@ -29,7 +29,16 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
         `(s.display_name ILIKE '%' || $${searchIdx} || '%'
           OR s.identity ILIKE '%' || $${searchIdx} || '%'
           OR s.notes ILIKE '%' || $${searchIdx} || '%'
-          OR EXISTS(SELECT 1 FROM jsonb_array_elements_text(s.content_topics) AS t WHERE t ILIKE '%' || $${searchIdx} || '%'))`,
+          OR EXISTS(
+            SELECT 1
+            FROM jsonb_array_elements_text(
+              CASE
+                WHEN jsonb_typeof(s.content_topics) = 'array' THEN s.content_topics
+                ELSE '[]'::jsonb
+              END
+            ) AS topic(value)
+            WHERE topic.value ILIKE '%' || $${searchIdx} || '%'
+          ))`,
       );
     }
 
@@ -63,6 +72,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     const page = q.page;
     const pageSize = q.page_size;
     const pageOffset = (page - 1) * pageSize;
+    const countParams = [...params];
 
     // 使用简单的子查询替代 CTE
     const sql = `SELECT s.*, ss.last_success_at, ss.consecutive_failures, ss.last_fetch_count, ss.last_error,
@@ -104,7 +114,13 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
       }, new Map<string, any[]>());
     }
 
-    const { rows: [totalRow] } = await pool.query(`SELECT COUNT(*)::int AS count FROM sources`);
+    const { rows: [totalRow] } = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM sources s
+       LEFT JOIN source_states ss ON ss.source_id = s.id
+       ${whereClause}`,
+      countParams,
+    );
     const total = totalRow?.count ?? 0;
 
     return reply.send({

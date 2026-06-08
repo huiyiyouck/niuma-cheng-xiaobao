@@ -59,9 +59,11 @@ onMounted(() => {
   border-bottom: 1px solid var(--border);
 }
 .topbar-inner {
-  max-width: 1120px; margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
   display: flex; gap: 16px; align-items: center;
-  justify-content: space-between; padding: 0 24px; height: 52px;
+  justify-content: space-between; padding: 0 32px; height: 52px;
 }
 .brand-link {
   font-weight: 800; font-size: 16px; letter-spacing: -0.3px;
@@ -96,11 +98,17 @@ onMounted(() => {
   line-height: 1;
 }
 
-.main-content { max-width: 1120px; margin: 0 auto; padding: 20px 24px 80px; }
+.main-content {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 32px 80px;
+}
 
 /* v0.5: 响应式 */
 @media (max-width: 1120px) {
-  .main-content { padding: 16px 16px 80px; }
+  .topbar-inner { padding: 0 20px; }
+  .main-content { padding: 16px 20px 80px; }
 }
 @media (max-width: 480px) {
   .topbar-inner { padding: 0 12px; }
