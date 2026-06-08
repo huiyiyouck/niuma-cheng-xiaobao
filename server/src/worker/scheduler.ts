@@ -12,6 +12,13 @@ export function policyMaxItems(source: any): number {
 }
 
 export function policyEverySeconds(source: any): number {
+  if (
+    source.type === "x_twitter" &&
+    typeof source.compensation_interval_sec === "number" &&
+    source.compensation_interval_sec > 0
+  ) {
+    return source.compensation_interval_sec;
+  }
   if (typeof source.fetch_interval_sec === "number" && source.fetch_interval_sec > 0) {
     return source.fetch_interval_sec;
   }
@@ -31,7 +38,6 @@ export async function schedulerTick(conn: PoolClient): Promise<void> {
      FROM sources s
      LEFT JOIN source_states ss ON ss.source_id = s.id
      WHERE s.lifecycle_status = 'normal'
-       AND s.type != 'x_twitter'
        AND EXISTS(
          SELECT 1 FROM display_positions dp
          WHERE dp.source_id = s.id AND dp.enabled = true AND dp.deleted_at IS NULL

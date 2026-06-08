@@ -29,7 +29,7 @@
 
 | 日期 | 模式 | 记录 | 状态 | 下一步 |
 |------|------|------|------|--------|
-| 2026-06-08 | Bugfix | [X Stream fetch failed 误告警](ad-hoc/2026-06-08-bugfix-x-stream-fetch-failed-alert.md) | ✅ 已完成 — `x-stream-manager.ts` 将 `fetch failed` / socket reset / timeout / undici transient errors 归类为长连接常规重连路径；`npm run build` 通过 | DevOps 部署后观察生产日志，不应再生成 `x_stream_disconnected` 误告警 |
+| 2026-06-08 | Bugfix | [X Stream fetch failed 误告警 + 断流漏收补偿](ad-hoc/2026-06-08-bugfix-x-stream-fetch-failed-alert.md) | ✅ 已完成 — `x-stream-manager.ts` 将 `fetch failed` / socket reset / timeout / undici transient errors 归类为长连接常规重连路径；追加确认 `scheduler.ts` 误排除 `x_twitter`，已接回 timeline 补偿调度；`npm run build` 通过 | DevOps 部署后观察生产日志，不应再生成 `x_stream_disconnected` 误告警；启用展示位置的 X Source 应出现周期性补偿 fetch |
 | 2026-06-07 | Delete Request | [Developer 删除请求：5 个孤儿前端组件](ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md) | ✅ 全线完成 — Architect ✅通过（b02cbd4）→ Developer 执行 `git rm` + commit（a79acfb）→ `npm run build` 通过 0 错误 | 待 DevOps 部署 dist |
 | 2026-05-31 | Proposal | [DevOps 提案：数据库迁移机制规范化](ad-hoc/2026-05-31-devops-proposal-db-migration-mechanism.md) | ✅ 全线完成 — Step 1（Architect R1）+ Step 2（Developer）+ R2（Architect 复审）+ Step 3（DevOps 部署侧）+ #B2（Architect 独立评估）；ADR-001 落 [`docs/baseline/architecture.md`](../baseline/architecture.md)；操作手册落 [`docs/knowledge/devops/db-migration-handbook.md`](../knowledge/devops/db-migration-handbook.md) | — |
 | 2026-05-31 | Ops Task | [清理 v0.3 Python 遗留 systemd unit + Node 后端 systemd 化](ad-hoc/2026-05-31-ops-cleanup-legacy-systemd-units.md) | ✅已完成（旧 unit 全清 + Node 后端已切换为 systemd 管理，崩溃重启已验证） | — |
@@ -49,7 +49,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
-| 2026-06-08 | Developer | v0.5 Bugfix：X Stream `fetch failed` 误告警 | ✅ 已完成 — 根因是建连/代理 socket 层 `fetch failed` 未纳入上一轮 `terminated` 正常断流分类，仍累计 `consecutiveDisconnects` 并创建 `x_stream_disconnected`。已新增瞬时断流识别，`fetch failed` / socket reset / timeout / undici transient errors 仅快速重连不告警；`cd server && npm run build` 通过 | DevOps 部署后观察生产日志 |
+| 2026-06-08 | Developer | v0.5 Bugfix：X Stream `fetch failed` 误告警 + 断流漏收补偿 | ✅ 已完成 — 根因是建连/代理 socket 层 `fetch failed` 未纳入上一轮 `terminated` 正常断流分类，仍累计 `consecutiveDisconnects` 并创建 `x_stream_disconnected`；进一步确认断流期间会漏收，因 `scheduler.ts` 排除了 `x_twitter`，设计中的 timeline 补偿抓取未运行。已新增瞬时断流识别 + 接回 X 补偿调度；`cd server && npm run build` 通过 | DevOps 部署后观察生产日志；必要时检查 X Source 是否已有启用展示位置 |
 | 2026-06-07 | DevOps | v0.5.1 前端部署上线 + 软链接架构发现 | ✅ 公网 https://news.huiyiyou.cloud/ 全栈 v0.5/v0.5.1 已上线。`npm run build` 0 TS 错误 / 135 modules / 17 bundles。12 项 verify 全过（HTML 引用 `index-hZzDm_iU.js`、bundle 字节 sha256 与本地 dist 一致、API 反代 200）。**架构发现**：`/var/www/news.huiyiyou.cloud` 是软链接 → `frontend/dist/`，build 即上线无需 rsync——已增补 [`full-stack-deploy-handbook.md`](../knowledge/devops/full-stack-deploy-handbook.md)「软链接部署模式」适配章节 | Owner 浏览器验证前端 UI |
 | 2026-06-07 | Developer | 死代码扫尾 — ChannelPills.vue 第 6 个孤儿（Owner 直接同意路径） | ✅ 已完成 — 申请 `f5baf99` → Owner 在会话明确「项目负责人 + 零引用 = 直接同意，跳过 Architect Review」（依据 conventions §例外条款第 3 条）→ 执行 `git rm` + 撤回申请文档（commit `e35bcf1`，244 + 81 行净删）。`npm run build` 仍 0 错误。本次会话内 6 个孤儿全部清算完毕。日志同步登记 [基线修正提案]「前端组件替代时需对称约束」 | WM 启动时扫到本提醒处理 |
 | 2026-06-07 | Developer | v0.5.1 前端 TS 错误 P0 阻塞解除（删除门禁后半段） | ✅ 已完成 — Architect ✅通过后，执行 `git rm` 5 个孤儿组件（commit `a79acfb`，按规范独立 commit + body 含删除清单 + Review 留痕）；`npm run build` 通过 0 错误，dist 已生成（135 modules / 114k js / 11k css gzip）。前端代码侧完全就绪 | Owner 切换到 DevOps 角色 → 部署 `frontend/dist/` 到 `/var/www/news.huiyiyou.cloud/` → Owner 浏览器验证 |

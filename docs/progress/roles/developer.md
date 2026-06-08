@@ -29,6 +29,22 @@
 
 - 待 DevOps 部署后观察生产日志：`fetch failed` 应只写 `X STREAM transient network failure, reconnecting without alert`，不再生成 `x_stream_disconnected`
 
+### 追加诊断与修复：断流期间漏收
+
+进一步检查日志和代码后确认：断流确实会导致收不到信息。
+
+- 日志显示 2026-06-08 `03:01:02Z` 到至少 `03:14:40Z` 持续 `fetch failed`，无 `X STREAM connected`
+- 同时 `X RULE SYNC initial failed: fetch failed`，说明到 X API/代理链路实际不可达
+- `scheduler.ts` 此前排除了 `x_twitter`，设计中的 timeline 补偿抓取没有运行
+
+已追加修复：
+
+- `scheduler.ts` 移除 `s.type != 'x_twitter'`
+- `policyEverySeconds()` 对 `x_twitter` 优先使用 `compensation_interval_sec`，默认 24h
+- 后续启用展示位置的 X Source 会周期性创建 fetch task，通过 user timeline API 补抓断流窗口内容，并用 `source_item_id` 去重
+
+验证：`cd server && npm run build` 通过。
+
 ---
 
 ## 2026-06-08 — 生产事故：npm test 清空数据库 + 紧急止血
