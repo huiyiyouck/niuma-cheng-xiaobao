@@ -4,6 +4,38 @@ import { workerLogger } from "../shared/logger.ts";
 
 const log = workerLogger;
 
+function collectErrorMessages(err: any): string {
+  const parts: string[] = [];
+  let current = err;
+
+  while (current) {
+    if (current.message) parts.push(String(current.message));
+    if (current.code) parts.push(String(current.code));
+    current = current.cause;
+  }
+
+  return parts.join(" ").toLowerCase();
+}
+
+function isTransientStreamDisconnect(err: any): boolean {
+  const text = collectErrorMessages(err);
+
+  return [
+    "terminated",
+    "fetch failed",
+    "econnreset",
+    "econnrefused",
+    "etimedout",
+    "epipe",
+    "socket",
+    "other side closed",
+    "und_err_socket",
+    "und_err_connect_timeout",
+    "und_err_headers_timeout",
+    "und_err_body_timeout",
+  ].some((pattern) => text.includes(pattern));
+}
+
 /**
  * X Filtered Stream 长连接管理器（v0.5.1 反向同步版）
  *
@@ -136,10 +168,10 @@ export class XStreamManager {
         log.info("X STREAM connection aborted");
         return;
       }
-      // 服务器/代理层主动关闭流连接（如 TCP 连接轮转）属于正常行为，
-      // 不应计入连续断连计数器。直接 return 让 connectLoop 快速重连（1s 延迟）。
-      if (err.message?.toLowerCase().includes("terminated")) {
-        log.info("X STREAM connection closed by server, reconnecting...");
+      // 服务器/代理层主动关闭流连接（如 TCP 连接轮转、代理 socket reset）
+      // 属于长连接的常规重连路径，不应计入连续断连告警。
+      if (isTransientStreamDisconnect(err)) {
+        log.info("X STREAM transient connection closed, reconnecting: %s", err.message);
         return;
       }
       throw err;
@@ -165,6 +197,14 @@ export class XStreamManager {
         this.reconnectDelay = 1000;
         this.consecutiveDisconnects = 0;
       } catch (err: any) {
+        if (isTransientStreamDisconnect(err)) {
+          this.consecutiveDisconnects = 0;
+          this.reconnectDelay = 1000;
+          log.warn("X STREAM transient network failure, reconnecting without alert: %s", err.message);
+          await this.sleep(this.reconnectDelay);
+          continue;
+        }
+
         this.consecutiveDisconnects++;
         const is429 = err.message?.includes("429") || String(err).includes("429");
         log.error("X STREAM disconnected (consecutive=%d): %s", this.consecutiveDisconnects, err.message);

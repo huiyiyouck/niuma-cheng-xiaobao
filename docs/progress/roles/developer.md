@@ -1,5 +1,36 @@
 # 全栈开发工作日志
 
+## 2026-06-08 — v0.5 Bugfix：X Stream fetch failed 误告警
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix（非迭代，v0.5 生产运行中发现问题）
+- 触发：告警 `x_stream_disconnected` — X Stream 连续断开 7 次 `"fetch failed"`
+- 记录：[2026-06-08-bugfix-x-stream-fetch-failed-alert.md](../ad-hoc/2026-06-08-bugfix-x-stream-fetch-failed-alert.md)
+
+### 根因
+
+上一轮只把 `reader.read()` 阶段的 `"terminated"` 识别为服务器/代理层长连接轮转；生产中 `fetch()` 建连阶段或代理 socket 层抛出的 `"fetch failed"` 仍进入通用异常分支，连续 3 次后生成 `x_stream_disconnected` 告警。
+
+### 修复
+
+`server/src/worker/x-stream-manager.ts` 新增瞬时断流分类：
+
+- 递归收集 `err.message` / `err.code` / `err.cause`
+- 将 `terminated`、`fetch failed`、`ECONNRESET`、`ETIMEDOUT`、`EPIPE`、`UND_ERR_SOCKET`、undici connect/header/body timeout 等识别为长连接常规重连路径
+- 对上述错误清零 `consecutiveDisconnects`，1s 快速重连，不创建 `x_stream_disconnected` 告警
+- 保留 HTTP 401/403、429 和非瞬时异常的原告警路径
+
+### 验证
+
+- `cd server && npm run build`：通过，`tsc` 0 错误
+- 未执行 `npm test` 作为有效验证：当前项目因 2026-06-08 生产库误删事故已禁用 vitest 集成测试，恢复测试前必须先建立独立 test DB
+
+### 后续
+
+- 待 DevOps 部署后观察生产日志：`fetch failed` 应只写 `X STREAM transient network failure, reconnecting without alert`，不再生成 `x_stream_disconnected`
+
+---
+
 ## 2026-06-08 — 生产事故：npm test 清空数据库 + 紧急止血
 
 - 本次角色：全栈开发（Developer）
