@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue";
 import type { Channel, SourceWithPositions, UUID, Space } from "@/lib/types";
 import { listSpaces, listChannels, listSpaceSources, removeDisplayPosition } from "@/lib/api";
 import { createChannel, updateChannel, deleteChannel, getChannelDeletePreview, reorderChannels } from "@/lib/api";
+import SpacePills from "@/components/SpacePills.vue";
 import SourceCard from "@/components/SourceCard.vue";
 import SourceCreateForm from "@/components/SourceCreateForm.vue";
 import SlidePanel from "@/components/base/SlidePanel.vue";

@@ -2,7 +2,7 @@
 import { onMounted, ref } from "vue";
 import type { SourceWithPositions, SourceListParams, Space } from "@/lib/types";
 import { listSources, listSpaces, deleteSource, getSourceDeleteImpact, syncXRules } from "@/lib/api";
-import SourceLibraryCard from "@/components/SourceLibraryCard.vue";
+import SourceTable from "@/components/SourceTable.vue";
 import SourceCreateForm from "@/components/SourceCreateForm.vue";
 import SlidePanel from "@/components/base/SlidePanel.vue";
 import Pagination from "@/components/Pagination.vue";
@@ -146,9 +146,9 @@ const TYPE_OPTS = [
 const AVAIL_OPTS = [
   { value: "", label: "可用性：全部" },
   { value: "normal", label: "正常" },
-  { value: "needs_fix", label: "待修复" },
+  { value: "awaiting_repair", label: "待修复" },
   { value: "source_error", label: "来源异常" },
-  { value: "removed", label: "已移除" },
+  { value: "source_removed", label: "已移除" },
 ];
 const OP_OPTS = [
   { value: "", label: "运行状态：全部" },
@@ -191,6 +191,7 @@ const LEVEL_OPTS = [
         <input class="lib-search-input" v-model="searchQuery" placeholder="搜索信息源名称、身份、主题、备注…" @keydown.enter="loadSources()" />
       </div>
       <BaseButton variant="primary" @click="showCreateForm = true">新建信息源</BaseButton>
+      <BaseButton @click="loadSources">刷新</BaseButton>
       <BaseButton :disabled="xSyncing" @click="onSyncXRules">{{ xSyncing ? '同步中…' : '同步 X 规则' }}</BaseButton>
     </div>
 
@@ -223,21 +224,15 @@ const LEVEL_OPTS = [
       <span class="filter-hint">多个筛选为「且」关系，同类多选为「或」</span>
     </div>
 
-    <!-- 加载/卡片网格 -->
+    <!-- 加载/表格 -->
     <LoadingState v-if="loading" />
-    <div v-else-if="sources.length === 0" class="lib-empty">
-      <span class="muted">暂无匹配的信息源，试试调整筛选条件或点击「新建信息源」</span>
-    </div>
-    <div v-else class="lib-card-grid">
-      <SourceLibraryCard
-        v-for="s in sources"
-        :key="s.id"
-        :source="s"
-        @view="viewSource"
-        @edit="editSource"
-        @delete="prepareDelete"
-      />
-    </div>
+    <SourceTable
+      v-else
+      :sources="sources"
+      @view="viewSource"
+      @edit="editSource"
+      @delete="prepareDelete"
+    />
 
     <!-- 分页 -->
     <Pagination
@@ -283,13 +278,4 @@ const LEVEL_OPTS = [
 .filter-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .filter-hint { font-size: 10px; color: var(--text-muted); margin-left: auto; white-space: nowrap; }
 
-.lib-card-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.lib-empty {
-  padding: 40px 0;
-  text-align: center;
-}
 </style>

@@ -78,7 +78,15 @@ export async function listSources(params?: SourceListParams): Promise<SourceList
   const qs = new URLSearchParams();
   if (params?.search) qs.set("search", params.search);
   if (params?.type) qs.set("type", params.type);
-  if (params?.availability_status) qs.set("availability_status", params.availability_status);
+  if (params?.availability_status) {
+    const lifecycleMap: Record<string, string> = {
+      normal: "normal",
+      awaiting_repair: "needs_fix",
+      source_error: "source_error",
+      source_removed: "removed",
+    };
+    qs.set("lifecycle_status", lifecycleMap[params.availability_status] || params.availability_status);
+  }
   if (params?.operational_status) qs.set("operational_status", params.operational_status);
   if (params?.domain_tag) qs.set("domain_tag", params.domain_tag);
   if (params?.source_role) qs.set("source_role", params.source_role);

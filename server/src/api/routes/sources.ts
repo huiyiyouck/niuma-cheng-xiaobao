@@ -83,12 +83,32 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     params.push(pageSize, pageOffset);
 
     const { rows } = await pool.query(sql, params);
+    const sourceIds = rows.map((r: any) => r.id);
+    let positionsBySource = new Map<string, any[]>();
+    if (sourceIds.length > 0) {
+      const { rows: positionRows } = await pool.query(
+        `SELECT dp.id, dp.source_id, dp.channel_space_id, dp.channel_id, dp.enabled, dp.created_at,
+                cs.name AS space_name, ch.name AS channel_name
+         FROM display_positions dp
+         JOIN channel_spaces cs ON cs.id = dp.channel_space_id
+         LEFT JOIN channels ch ON ch.id = dp.channel_id
+         WHERE dp.source_id = ANY($1::uuid[]) AND dp.deleted_at IS NULL
+         ORDER BY cs.sort_order ASC, ch.sort_order ASC NULLS FIRST, dp.created_at DESC`,
+        [sourceIds],
+      );
+      positionsBySource = positionRows.reduce((acc: Map<string, any[]>, p: any) => {
+        const items = acc.get(p.source_id) ?? [];
+        items.push(p);
+        acc.set(p.source_id, items);
+        return acc;
+      }, new Map<string, any[]>());
+    }
 
     const { rows: [totalRow] } = await pool.query(`SELECT COUNT(*)::int AS count FROM sources`);
     const total = totalRow?.count ?? 0;
 
     return reply.send({
-      sources: rows.map(sourceCardToOut),
+      sources: rows.map((r: any) => sourceCardToOut({ ...r, display_positions: positionsBySource.get(r.id) ?? [] })),
       total,
       page,
       page_size: pageSize,
@@ -213,7 +233,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
 
     // 查询展示位置
     const { rows: positions } = await pool.query(
-      `SELECT dp.id, dp.enabled, dp.created_at,
+      `SELECT dp.id, dp.source_id, dp.channel_space_id, dp.channel_id, dp.enabled, dp.created_at,
               cs.name AS space_name, ch.name AS channel_name
        FROM display_positions dp
        JOIN channel_spaces cs ON cs.id = dp.channel_space_id
@@ -667,6 +687,7 @@ function sourceToOut(r: any) {
 }
 
 function sourceCardToOut(r: any) {
+  const displayPositions = Array.isArray(r.display_positions) ? r.display_positions : [];
   return {
     id: r.id,
     type: r.type,
@@ -679,6 +700,16 @@ function sourceCardToOut(r: any) {
     attention_level: r.attention_level,
     position_count: r.position_count ?? 0,
     enabled_position_count: r.enabled_position_count ?? 0,
+    display_positions: displayPositions.map((p: any) => ({
+      id: p.id,
+      source_id: p.source_id ?? r.id,
+      space_id: p.channel_space_id,
+      space_name: p.space_name,
+      channel_id: p.channel_id ?? null,
+      channel_name: p.channel_name ?? null,
+      enabled: p.enabled,
+      created_at: toISO(p.created_at),
+    })),
     fetch_config: {
       rss_interval_seconds: r.fetch_interval_sec,
       x_compensation_interval_seconds: r.compensation_interval_sec,

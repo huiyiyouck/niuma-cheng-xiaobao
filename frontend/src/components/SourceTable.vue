@@ -24,7 +24,8 @@ const emit = defineEmits<{
           <th class="col-name">信息源</th>
           <th class="col-type">类型</th>
           <th class="col-tags">标签</th>
-          <th class="col-status">状态</th>
+          <th class="col-availability">可用性</th>
+          <th class="col-operational">运行</th>
           <th class="col-positions">使用位置</th>
           <th class="col-fetch">最近抓取</th>
           <th class="col-news">历史新闻</th>
@@ -54,7 +55,7 @@ const emit = defineEmits<{
 <style scoped>
 .source-table-wrapper {
   border: 1px solid var(--border-light);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--card);
   overflow: hidden;
 }

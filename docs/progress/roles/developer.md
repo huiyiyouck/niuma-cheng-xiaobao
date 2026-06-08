@@ -1,5 +1,47 @@
 # 全栈开发工作日志
 
+## 2026-06-08 — 管理页原型对齐：信息源库表格与空间显示修复
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix / 原型对齐（非迭代）
+- 触发：Owner 反馈“空间管理中的空间怎么更新没了”“信息源库也要跟原型图保持一致”“信息源没有展示上去”
+
+### 修改
+
+- `SpaceManagementTab.vue`：
+  - 补回 `SpacePills` 组件导入，修复空间管理页空间选择区渲染异常
+- `SourceLibraryTab.vue`：
+  - 信息源库从卡片列表切回既有 `SourceTable` 组件，避免卡片/表格两套主渲染路径重复
+  - 保留并复用 `BaseButton`、`FilterSelect`、`Pagination`、`SlidePanel`
+  - 修复可用性筛选参数映射：前端 `awaiting_repair/source_removed` 转成后端 `needs_fix/removed`
+- `SourceTable.vue` / `SourceTableRow.vue`：
+  - 表格列按 v0.5 原型拆为“信息源 / 类型 / 标签 / 可用性 / 运行 / 使用位置 / 最近抓取 / 历史新闻 / 操作”
+  - 复用 `StatusBadge`、`TypeBadge`、`MiniTag`、`BaseButton`
+  - 使用位置显示“ N 个位置（M 启用）”，hover 展示空间、频道、启用状态明细
+- `server/src/api/routes/sources.ts`：
+  - `GET /v1/sources` 列表补返回 `display_positions` 明细，支撑信息源库表格“使用位置”列
+  - 补齐 Source 详情 positions SQL 的 `channel_space_id/channel_id`
+
+### 生产数据修复
+
+- API 确认空间仍存在：`AI`、`财经`
+- 发现频道被更新后只剩 `AI/模型动态` 和 `财经/Web3`
+- 已补回原型频道：
+  - AI：行业资讯、开源项目、学术前沿（保留模型动态）
+  - 财经：宏观政策、市场动态、行业资讯、公司资讯（保留现有 Web3，不覆盖 Owner 现有分配）
+
+### 验证与部署
+
+- `cd frontend && npm run build`：通过，`vue-tsc` 0 错误，Vite 138 modules
+- `cd server && npm run build`：通过，`tsc` 0 错误
+- `systemctl restart news-api.service`：已重启
+- `systemctl is-active news-api.service`：`active`
+- 本机 `/v1/sources?limit=4`：已返回 4 个信息源，且每条带 `display_positions`
+- 本机 `/v1/spaces`：`AI channel_count=4`，`财经 channel_count=5`
+- 说明：本机访问 `https://news.aivc.xiaobao.me` 当前连接失败，但本机后端 API 与服务进程正常；需后续观察外部反代/TLS 链路
+
+---
+
 ## 2026-06-08 — 管理页原型对齐：空间卡片与分栏细节
 
 - 本次角色：全栈开发（Developer）
