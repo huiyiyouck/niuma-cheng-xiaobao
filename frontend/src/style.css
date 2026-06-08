@@ -20,8 +20,8 @@
   --danger: #e74c3c;
   --danger-light: #FDEDEC;
   --text: #1a1a2e;
-  --text-secondary: #5F6B7A;
-  --text-muted: #94A3B8;
+  --text-secondary: #1a1a2e;  /* Owner 要求：所有文字统一深色，不要灰色 */
+  --text-muted: #1a1a2e;      /* Owner 要求：所有文字统一深色，不要灰色 */
   --border: #E6E7EB;
   --border-light: #F0F1F3;
   --hover-bg: #F8FAFB;
