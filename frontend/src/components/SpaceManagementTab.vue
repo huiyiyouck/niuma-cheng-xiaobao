@@ -3,7 +3,6 @@ import { onMounted, ref, watch } from "vue";
 import type { Channel, SourceWithPositions, UUID, Space } from "@/lib/types";
 import { listSpaces, listChannels, listSpaceSources, removeDisplayPosition } from "@/lib/api";
 import { createChannel, updateChannel, deleteChannel, getChannelDeletePreview, reorderChannels } from "@/lib/api";
-import SpacePills from "@/components/SpacePills.vue";
 import SourceCard from "@/components/SourceCard.vue";
 import SourceCreateForm from "@/components/SourceCreateForm.vue";
 import SlidePanel from "@/components/base/SlidePanel.vue";
@@ -135,14 +134,19 @@ watch(selectedChannelId, () => refreshSources());
 <template>
   <div class="space-mgmt">
     <ErrorBar :message="errorText" />
-    <SpacePills :spaces="spaces" :selectedId="selectedSpaceId" mode="full" @select="onSpaceSelect" @changed="refreshSpaces()" />
+    <div class="pill-section">
+      <SpacePills :spaces="spaces" :selectedId="selectedSpaceId" mode="full" @select="onSpaceSelect" @changed="refreshSpaces()" />
+    </div>
 
     <div v-if="!selectedSpaceId" class="empty-wrap"><EmptyState icon="📁" title="暂无空间" description="点击上方「+ 新建空间」创建第一个空间" /></div>
 
     <div v-else class="split-layout">
       <!-- 左栏：频道列表 -->
       <div class="split-left">
-        <div class="split-left-header"><span class="side-label">频道</span></div>
+        <div class="split-left-header">
+          <span class="side-label">频道</span>
+          <button class="act-icon sort" title="管理频道排序">☰</button>
+        </div>
         <div class="channel-list">
           <div class="channel-item all" :class="{ selected: selectedChannelId === null }" @click="onChannelSelect(null)">
             <span class="ch-name">全部</span><span class="ch-badge">聚合</span>
@@ -238,20 +242,21 @@ watch(selectedChannelId, () => refreshSources());
 </template>
 
 <style scoped>
-.space-mgmt { display: flex; flex-direction: column; gap: 12px; }
+.space-mgmt { display: flex; flex-direction: column; gap: 14px; }
 .empty-wrap { margin: 12px 0; }
+.pill-section { display: flex; flex-direction: column; gap: 8px; }
 
-.split-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
+.split-layout { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 768px) { .split-layout { grid-template-columns: 1fr; } }
 
-.split-left { background: var(--card); border: 1px solid var(--border-light); border-radius: 14px; overflow: hidden; align-self: start; }
-.split-left-header { display: flex; align-items: center; padding: 14px 18px 10px; }
+.split-left { background: var(--card); border: 1px solid var(--border-light); border-radius: 8px; overflow: hidden; align-self: start; }
+.split-left-header { display: flex; align-items: center; gap: 8px; padding: 14px 16px 10px; }
 .side-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
 
-.channel-item { display: flex; align-items: center; gap: 10px; padding: 10px 18px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid var(--border-light); }
+.channel-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px; cursor: pointer; transition: background 0.12s; border-bottom: 1px solid var(--border-light); min-height: 43px; }
 .channel-item:last-child { border-bottom: none; }
 .channel-item:hover { background: var(--hover-bg); }
-.channel-item.selected { background: var(--accent-light); border-left: 3px solid var(--accent); padding-left: 15px; }
+.channel-item.selected { background: var(--accent-light); border-left: 3px solid var(--accent); padding-left: 13px; }
 .channel-item.all { font-weight: 600; }
 .ch-name { font-size: 13px; font-weight: 600; flex: 1; }
 .ch-count { font-size: 11px; color: var(--text-muted); margin-left: auto; }
@@ -262,6 +267,7 @@ watch(selectedChannelId, () => refreshSources());
 .channel-add-btn:hover { background: var(--accent-light); }
 
 .act-icon { width: 24px; height: 24px; border-radius: 6px; border: 1px solid transparent; background: transparent; cursor: pointer; font-size: 11px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); transition: all 0.15s; flex-shrink: 0; }
+.act-icon.sort { margin-left: auto; }
 .act-icon:hover:not(:disabled) { background: #F4F5F7; border-color: var(--border); color: var(--text); }
 .act-icon:disabled { opacity: 0.25; cursor: not-allowed; }
 .act-icon.danger:hover:not(:disabled) { background: var(--danger-light); border-color: var(--danger); color: var(--danger); }

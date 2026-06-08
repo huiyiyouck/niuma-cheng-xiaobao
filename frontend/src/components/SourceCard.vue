@@ -174,19 +174,6 @@ const levelLabel = computed(() =>
       </div>
     </div>
 
-    <!-- 多位置展开（保留兼容） -->
-    <div v-if="!isRemoved && relevantPositions.length > 1" class="positions-info">
-      <div v-for="pos in relevantPositions" :key="pos.id" class="position-item">
-        <span class="pos-target">
-          {{ pos.channel_name ? `频道「${pos.channel_name}」` : '空间根节点' }}
-        </span>
-        <BaseButton size="xs" :variant="pos.enabled ? 'warn' : 'success'" :disabled="toggling.has(pos.id)" @click="onTogglePosition(pos)">
-          {{ pos.enabled ? '暂停' : '恢复' }}
-        </BaseButton>
-        <BaseButton size="xs" variant="danger" @click="onRemovePosition(pos)">移除</BaseButton>
-      </div>
-    </div>
-
     <!-- 多位置展开 -->
     <div v-if="!isRemoved && relevantPositions.length > 1" class="positions-info">
       <div v-for="pos in relevantPositions" :key="pos.id" class="position-item">

@@ -49,6 +49,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-08 | Developer | 管理页原型对齐：空间卡片与分栏细节 | ✅ 已完成 — `SpacePills.vue` 空间区改为更接近原型的卡片式样式并补描述字段；`SpaceManagementTab.vue` 收紧左右分栏、频道栏和排序图标外观；`SourceCard.vue` 删除重复多位置操作块。`cd frontend && npm run build` 通过，公网首页已引用新 bundle `index-Cn1YU1yc.js` | Owner 浏览器验证管理页视觉 |
 | 2026-06-08 | Developer | v0.5 Bugfix：X Stream `fetch failed` 误告警 + 断流漏收补偿 + 临时部署 + 空间初始化 | ✅ 已完成 — 根因是建连/代理 socket 层 `fetch failed` 未纳入上一轮 `terminated` 正常断流分类，仍累计 `consecutiveDisconnects` 并创建 `x_stream_disconnected`；进一步确认断流期间会漏收，因 `scheduler.ts` 排除了 `x_twitter`，设计中的 timeline 补偿抓取未运行。已新增瞬时断流识别 + 接回 X 补偿调度；Owner 授权 Developer 临时部署，已恢复 systemd active，日志确认 `X STREAM connected`；生产库已创建 AI/财经空间和展示位置，新闻已生成 | Owner 浏览器验证空间新闻展示；后续常规部署仍交 DevOps |
 | 2026-06-07 | DevOps | v0.5.1 前端部署上线 + 软链接架构发现 | ✅ 公网 https://news.huiyiyou.cloud/ 全栈 v0.5/v0.5.1 已上线。`npm run build` 0 TS 错误 / 135 modules / 17 bundles。12 项 verify 全过（HTML 引用 `index-hZzDm_iU.js`、bundle 字节 sha256 与本地 dist 一致、API 反代 200）。**架构发现**：`/var/www/news.huiyiyou.cloud` 是软链接 → `frontend/dist/`，build 即上线无需 rsync——已增补 [`full-stack-deploy-handbook.md`](../knowledge/devops/full-stack-deploy-handbook.md)「软链接部署模式」适配章节 | Owner 浏览器验证前端 UI |
 | 2026-06-07 | Developer | 死代码扫尾 — ChannelPills.vue 第 6 个孤儿（Owner 直接同意路径） | ✅ 已完成 — 申请 `f5baf99` → Owner 在会话明确「项目负责人 + 零引用 = 直接同意，跳过 Architect Review」（依据 conventions §例外条款第 3 条）→ 执行 `git rm` + 撤回申请文档（commit `e35bcf1`，244 + 81 行净删）。`npm run build` 仍 0 错误。本次会话内 6 个孤儿全部清算完毕。日志同步登记 [基线修正提案]「前端组件替代时需对称约束」 | WM 启动时扫到本提醒处理 |

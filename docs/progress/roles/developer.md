@@ -1,5 +1,32 @@
 # 全栈开发工作日志
 
+## 2026-06-08 — 管理页原型对齐：空间卡片与分栏细节
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix / 原型对齐（非迭代）
+- 触发：Owner 要求“管理里面需要根据原型图进行修改，尽量跟原型图保持一致”
+
+### 修改
+
+- `SpacePills.vue`：
+  - 空间选择区改成更接近原型的卡片式样式，补“空间排序”图标按钮外观
+  - 新建/编辑空间弹窗支持描述字段
+  - 卡片圆角、间距、图标框和操作按钮收紧到原型风格
+- `SpaceManagementTab.vue`：
+  - 空间卡片区包裹为原型里的 `pill-section`
+  - 左右分栏改为固定 240px 频道栏 + 自适应信息源列表
+  - 频道栏增加排序图标按钮外观，整体边框/圆角/行高对齐原型
+- `SourceCard.vue`：
+  - 删除重复渲染的多展示位置操作块，避免管理页出现两组相同操作
+
+### 验证与部署
+
+- `cd frontend && npm run build`：通过，`vue-tsc` 0 错误，Vite 132 modules
+- 软链接部署模式下 `frontend/dist` 构建即上线
+- 公网首页已引用新 bundle：`/assets/index-Cn1YU1yc.js`
+
+---
+
 ## 2026-06-08 — v0.5 Bugfix：X Stream fetch failed 误告警
 
 - 本次角色：全栈开发（Developer）
