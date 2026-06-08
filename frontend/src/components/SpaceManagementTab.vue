@@ -275,11 +275,11 @@ watch(selectedChannelId, () => refreshSources());
 
 .split-right { min-width: 0; }
 .split-right-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; gap: 12px; }
-.ctx-info { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.ctx-label { font-size: 13px; color: var(--text); }
-.ctx-value { font-size: 15px; font-weight: 700; color: var(--accent); }
-.ctx-sep { color: var(--text); margin: 0 6px; }
-.ctx-count { font-size: 12px; color: var(--text); margin-left: 10px; }
+.ctx-info { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ctx-label { font-size: var(--text-md); color: var(--text); }
+.ctx-value { font-size: var(--text-md); font-weight: var(--weight-xbold); color: var(--accent); }
+.ctx-sep { color: var(--text); margin: 0 6px; font-size: var(--text-md); }
+.ctx-count { font-size: var(--text-md); color: var(--text); margin-left: 10px; }
 .source-list { display: flex; flex-direction: column; gap: 10px; }
 
 .add-source-wrap { position: relative; flex-shrink: 0; }
