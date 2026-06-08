@@ -16,7 +16,9 @@ const log = workerLogger;
 // 全局代理：所有 fetch 调用（包括 RSS fetcher）都走代理
 const proxyUrl = config.xProxyUrl || config.httpsProxy;
 if (proxyUrl) {
-  setGlobalDispatcher(new ProxyAgent(proxyUrl));
+  // bodyTimeout: 0 禁用响应体超时，兼容 X Stream 等长寿命流式连接
+  //（Twitter 每 20s 发 keep-alive，但代理层可能不转发，依赖 TCP 层面超时）
+  setGlobalDispatcher(new ProxyAgent({ uri: proxyUrl, bodyTimeout: 0 }));
   log.info("Worker 全局代理: %s", proxyUrl);
 } else {
   setGlobalDispatcher(new EnvHttpProxyAgent());

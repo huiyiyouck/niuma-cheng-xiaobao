@@ -136,6 +136,12 @@ export class XStreamManager {
         log.info("X STREAM connection aborted");
         return;
       }
+      // 服务器/代理层主动关闭流连接（如 TCP 连接轮转）属于正常行为，
+      // 不应计入连续断连计数器。直接 return 让 connectLoop 快速重连（1s 延迟）。
+      if (err.message?.toLowerCase().includes("terminated")) {
+        log.info("X STREAM connection closed by server, reconnecting...");
+        return;
+      }
       throw err;
     }
   }

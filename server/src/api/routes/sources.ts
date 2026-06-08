@@ -109,9 +109,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
 
     // 标准化 identity
     let identity = body.identity.trim();
-    if (body.type === "x_twitter") {
-      identity = identity.replace(/^@/, "").toLowerCase();
-    } else if (body.type === "rss") {
+    if (body.type === "rss") {
       identity = identity.replace(/\/+$/, "");
     }
 
@@ -520,9 +518,7 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
     }
 
     let identity = body.identity.trim();
-    if (body.type === "x_twitter") {
-      identity = identity.replace(/^@/, "").toLowerCase();
-    } else if (body.type === "rss") {
+    if (body.type === "rss") {
       identity = identity.replace(/\/+$/, "");
     }
 
