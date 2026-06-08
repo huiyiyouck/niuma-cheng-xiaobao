@@ -1,5 +1,43 @@
 # 全栈开发工作日志
 
+## 2026-06-08 — 前端动态 import 旧 chunk 兼容修复
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix / 临时部署修复
+- 触发：Owner 浏览器报错 `TypeError: Failed to fetch dynamically imported module: https://news.huiyiyou.cloud/assets/NewsPage-CjeHC2FU.js`
+
+### 根因
+
+- 线上 HTML 已更新到 `/assets/index-BgpYEGiZ.js`，但浏览器仍缓存旧入口 `/assets/index-DWBXrqru.js`
+- Vite 默认 build 会清空 `dist/assets`，旧入口引用的懒加载 chunk（如 `NewsPage-CjeHC2FU.js`）被删除
+- nginx 原配置对不存在的 `/assets/*.js` 也会 SPA fallback 到 `index.html`，动态 import 会拿到 HTML 或失败
+
+### 修复
+
+- 生产 `frontend/dist/assets` 补回旧入口可能引用的 chunk 兼容副本：
+  - `NewsPage-CjeHC2FU.js`
+  - `AdminPage-DsflA_7q.js`
+  - `BaseButton-BC0alJHh.js`
+  - `EmptyState-CKMjG1m6.js`
+  - `LoadingState-BoFPC-Lf.js`
+  - `LogsPage-QNntuyJf.js`
+  - `AlertsPage-YHRnXhjU.js`
+  - `SourceDetailPage-BDZtCarT.js`
+- nginx `news.huiyiyou.cloud` 配置：
+  - `/assets/` 不存在直接 404，不再 fallback 到 `index.html`
+  - `/index.html` 和 SPA fallback 增加 `Cache-Control: no-cache, no-store, must-revalidate`
+  - hash 静态资源保留长期缓存
+- `frontend/vite.config.ts` 设置 `build.emptyOutDir = false`，后续 build 保留旧 hash 资源，避免缓存旧入口时 chunk 丢失
+
+### 验证
+
+- `nginx -t`：通过
+- `systemctl reload nginx`：完成，`nginx` active
+- `cd frontend && npm run build`：通过，旧兼容 chunk 未被删除
+- `news-api.service` active
+
+---
+
 ## 2026-06-08 — 管理页原型对齐：信息源库表格与空间显示修复
 
 - 本次角色：全栈开发（Developer）
