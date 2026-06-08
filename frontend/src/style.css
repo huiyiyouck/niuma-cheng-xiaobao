@@ -8,8 +8,9 @@
 
 :root {
   /* ── 颜色 ───────────────────────────────────────── */
-  --bg: #FAFAFA;
-  --card: #FFF;
+  --bg-page: #ECEEF1;  /* 屏幕底色（深一档，与工作区形成对比）*/
+  --bg: #FAFAFA;       /* 工作区底色（含内容区背景）*/
+  --card: #FFF;        /* 卡片底色 */
   --accent: #3498db;
   --accent-light: #EBF5FB;
   --success: #27ae60;
@@ -28,7 +29,6 @@
   /* ── 旧别名（兼容渐进迁移）──────────────────────── */
   --primary: var(--accent);
   --primary-2: var(--accent-light);
-  --bg-page: var(--bg);
   --muted: var(--text-muted);
   --shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -66,7 +66,7 @@
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  background: var(--bg);
+  background: var(--bg-page);
   color: var(--text);
   min-width: 360px;
   font-size: var(--text-md);

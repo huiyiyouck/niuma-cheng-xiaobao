@@ -50,7 +50,7 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.shell { min-height: 100vh; background: var(--bg); }
+.shell { min-height: 100vh; background: var(--bg-page); }
 .topbar {
   position: sticky; top: 0; z-index: 20;
   background: rgba(255,255,255,0.92);
@@ -103,6 +103,11 @@ onMounted(() => {
   max-width: 1280px;
   margin: 0 auto;
   padding: 20px 32px 80px;
+  background: var(--bg);
+  border-radius: 0 0 12px 12px;
+  border: 1px solid var(--border-light);
+  border-top: none;
+  min-height: calc(100vh - 52px);
 }
 
 /* v0.5: 响应式 */
@@ -112,7 +117,7 @@ onMounted(() => {
 }
 @media (max-width: 480px) {
   .topbar-inner { padding: 0 12px; }
-  .main-content { padding: 12px 12px 80px; }
+  .main-content { padding: 12px 12px 80px; border-radius: 0; border: none; }
   .nav-link { padding: 5px 8px; font-size: 11px; }
   .brand-link { font-size: 14px; }
 }
