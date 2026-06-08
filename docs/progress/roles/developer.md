@@ -63,6 +63,28 @@ Owner 明确表示本次属于 Bugfix 阶段并授予 Developer 临时部署权�
 
 追加发现：4 个 X Source 当前 `enabled_positions=0`，所以即使后端 Stream 已恢复，前端空间/频道列表仍不会展示这些账号内容；需要 Owner 在 UI 里把 X Source 添加到空间/频道展示位置。
 
+### 生产空间初始化
+
+Owner 要求“根据原型图把空间创建好”。已在生产库创建：
+
+- 空间：AI、财经
+- AI 频道：模型动态、行业资讯、开源项目、学术前沿
+- 财经频道：宏观政策、市场动态、行业资讯、公司资讯
+- 展示位置：
+  - OpenAI官方账号 → AI / 模型动态
+  - Claude code官方账号 → AI / 模型动态
+  - 加密狗 → 财经 / 市场动态
+  - Solanamobile官方账号 → 财经 / 公司资讯
+
+验证：
+
+- 公网 `/v1/spaces` 返回 AI、财经，均 `channel_count=4`、`source_count=2`
+- X 补偿抓取已触发：openai 20、anthropicai 20、solanamobile 19、jiamigou 15
+- 新闻已生成并 fan-out：AI / 模型动态 40 条，财经 / 公司资讯 19 条，财经 / 市场动态 15 条
+- `process` 队列清零
+
+注意：当前 DB 唯一索引仍限制同一 Source 在同一空间只有一个活跃展示位置，本次未绕过约束。
+
 ---
 
 ## 2026-06-08 — 生产事故：npm test 清空数据库 + 紧急止血

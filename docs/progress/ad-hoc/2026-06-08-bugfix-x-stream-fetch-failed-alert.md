@@ -133,3 +133,55 @@
 - 4 个 X Source 目前都没有启用展示位置，因此补偿抓取不会调度，处理后的新闻也不会出现在任何空间/频道列表里。
 - 如果 Owner 期望这些账号内容在前端可见，需要先把对应 X Source 添加到空间/频道展示位置。
 - 公网 `https://news.huiyiyou.cloud/v1/health` 返回 404；当前有效后端健康检查路径是本机 `/health`，公网关键 API `/v1/alerts/unread-count` 已验证可用。nginx 是否需要额外代理 `/health` 可后续由 DevOps 评估。
+
+## 生产空间初始化
+
+- 时间：2026-06-08
+- 触发：Owner 要求“根据原型图把空间创建好”
+- 执行角色：Developer（生产数据初始化，延续本次 Bugfix 恢复链路）
+
+### 创建内容
+
+空间：
+
+| 空间 | 描述 | 图标 | 排序 |
+|------|------|------|------|
+| AI | AI 领域新闻追踪 | 🤖 | 10 |
+| 财经 | 财经市场动态追踪 | 📈 | 20 |
+
+频道：
+
+| 空间 | 频道 |
+|------|------|
+| AI | 模型动态 / 行业资讯 / 开源项目 / 学术前沿 |
+| 财经 | 宏观政策 / 市场动态 / 行业资讯 / 公司资讯 |
+
+展示位置：
+
+| Source | 位置 |
+|--------|------|
+| OpenAI官方账号 (`openai`) | AI / 模型动态 |
+| Claude code官方账号 (`anthropicai`) | AI / 模型动态 |
+| 加密狗 (`jiamigou`) | 财经 / 市场动态 |
+| Solanamobile官方账号 (`solanamobile`) | 财经 / 公司资讯 |
+
+### 验证
+
+- `GET /v1/spaces`：公网返回 AI、财经两个空间；各 `channel_count=4`、`source_count=2`。
+- X 补偿调度立即触发：
+  - `openai`：`last_fetch_count=20`
+  - `anthropicai`：`last_fetch_count=20`
+  - `solanamobile`：`last_fetch_count=19`
+  - `jiamigou`：`last_fetch_count=15`
+- 新闻生成与分发：
+  - AI / 模型动态：40 条
+  - 财经 / 公司资讯：19 条
+  - 财经 / 市场动态：15 条
+- `process` 队列：0 条排队。
+- 公网新闻接口：
+  - `GET /v1/news?space_id=<AI>&limit=5`：返回 AI 新闻。
+  - `GET /v1/news?space_id=<财经>&limit=5`：返回财经新闻。
+
+### 注意
+
+当前 `display_positions` 数据库唯一索引是 `(source_id, channel_space_id) WHERE deleted_at IS NULL`，同一 Source 在同一空间内只能有一个活跃展示位置。这与 v0.5 PRD 中“同一 Source 可同时投放到空间根节点和多个频道”的目标仍不一致。此次按每个 Source 每个空间一个频道执行，未强行绕过数据库约束。
