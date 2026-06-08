@@ -172,9 +172,9 @@ export async function channelSpacesRoutes(app: FastifyInstance): Promise<void> {
 
     return reply.send({
       space_name: space.name,
-      channels_count: channelsCount.rows[0]?.c ?? 0,
-      positions_count: positionsCount.rows[0]?.c ?? 0,
-      affected_news_count: newsCount.rows[0]?.c ?? 0,
+      channel_count: channelsCount.rows[0]?.c ?? 0,
+      position_count: positionsCount.rows[0]?.c ?? 0,
+      news_count: newsCount.rows[0]?.c ?? 0,
     });
   });
 
