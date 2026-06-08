@@ -49,6 +49,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-08 | Developer | 前端规范统一 — 字体层级 / 弹窗抽屉 / 死代码清理 + 1280px 居中回调 | ✅ 已完成 — 新增 `--text-xs/sm/base/md/h1-h4` 字号变量 + `--weight-bold/xbold/black` 字重变量；`ModalContainer` 改用全局 `.modal-dialog` 消除三套弹窗差异；`SlidePanel` 背景统一为 `var(--card)`，遮罩与弹窗一致；删除 4 个零引用死组件（`PageTitle/CreateSpaceModal/SourceLibraryCard/TagSelector`，Owner 直接授权跳过 Architect Review）；修复 `AlertsPage .page-title` 900/800 冲突 + `SourceDetailPage` 硬编码 `monospace`。同日先将 1280px 宽度限制取消改为铺满，Owner 反馈"太散"后回调为 `max-width: 1280px; margin: 0 auto`。`npm run build` 通过 0 错误，commit `7969e08`+`ddfb8e5`，软链接部署已上线 | Owner 刷新生产页面验证弹窗/抽屉/字号视觉 |
 | 2026-06-08 | Developer | 大屏展示区域宽度限制修复 | ✅ 已完成 — Owner 反馈电脑端可用空间很多，但页面被 1120px 宽度限制，字号放大后产生挤压。已取消 `App.vue` 中顶栏和主内容区 `max-width:1120px` 限制，改为使用整屏宽度；全局 `.container` 同步取消固定宽度。前端 build 通过，软链接部署已上线 | Owner 在电脑端刷新 `/admin` 验证表格和管理区是否充分利用屏幕 |
 | 2026-06-08 | Developer | 信息源库搜索 500 修复 | ✅ 已完成 — `/v1/sources?search=...` 触发 500 的根因是搜索逻辑展开 `content_topics` 时假设其为 JSON 数组，但生产 X 同步源当前为 `{}` 对象；同时 SQL 使用表别名参与 `ILIKE`。已改为 `jsonb_typeof(content_topics)='array'` 时才展开，并使用显式列别名；搜索 total 同步按筛选条件计算。后端 build 通过、服务已重启，本机和公网搜索 `Claude code官方账号` 均返回 200 且 total=1 | Owner 在信息源库搜索框复测 |
 | 2026-06-08 | Developer | 生产前端字号与管理页视觉校准 | ✅ 已完成 — 针对 Owner 反馈“生产字体偏小、与运行图存在视觉差异”，统一上调全局基础字号、按钮/筛选/徽章/表单/分页，并重点校准管理页空间卡片、频道栏、信息源卡片、信息源库表格和状态徽章。`cd frontend && npm run build` 通过，软链接部署已上线，`nginx` 与 `news-api.service` 均 active | Owner 刷新生产页面验证视觉大小；若仍偏小，再按具体页面做二次微调 |
