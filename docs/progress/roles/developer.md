@@ -1,5 +1,41 @@
 # 全栈开发工作日志
 
+## 2026-06-08 — 生产事故：npm test 清空数据库 + 紧急止血
+
+- 本次角色：全栈开发（Developer）
+- 模式：Incident（生产数据丢失）
+- 触发：用户反馈浏览页面只剩"统计空间"，无频道、无 Source、无新闻
+- commit：`64d052b`
+
+### 事故根因
+
+`vitest` 直连生产数据库 `localhost:5432/news`（`server/.env` 的 `DATABASE_URL`），测试 helpers `cleanTestData()` 在 `beforeAll` 中 `DELETE FROM` 全部 11 张表。2026-06-08 09:26 跑 `npm test` 验证 X Stream 修复时触发。
+
+### 数据损失
+
+| 表 | 状态 |
+|----|------|
+| channel_spaces | 全部丢失（只剩测试创建的"统计空间"） |
+| channels | 全部丢失 |
+| sources（手动创建） | 全部丢失 |
+| display_positions | 全部丢失 |
+| processed_news / raw_items / tasks / alerts 等 | 全部丢失 |
+| sources（X 同步） | XRuleSyncer 启动后从 X Portal 恢复（09:44） |
+
+无备份、无 WAL 归档，数据不可恢复。
+
+### 止血措施
+
+`vitest.config.ts`：`include` 指向不存在的 `__tests_disabled__/` + `passWithNoTests: true`，`npm test` 现在 exit 0 不执行任何测试。恢复需：独立 test DB + `.env.test` + 改回 include。
+
+### 遗留
+
+- 需重建空间/频道/非 X Source 数据（用户手动操作）
+- 4 个已有测试失败（v0.5.1 后未同步），与本次无关
+- 建议长期方案：`vitest` 用独立 test DB + 事务回滚代替 DELETE
+
+---
+
 ## 2026-06-08 — v0.5 Bugfix：X Stream terminated 误告警 + sources.ts TS2367 死代码
 
 - 本次角色：全栈开发（Developer）
