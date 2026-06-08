@@ -60,8 +60,8 @@ onMounted(() => {
 }
 .topbar-inner {
   width: 100%;
-  max-width: none;
-  margin: 0;
+  max-width: 1280px;
+  margin: 0 auto;
   display: flex; gap: 16px; align-items: center;
   justify-content: space-between; padding: 0 32px; height: 52px;
 }
@@ -100,13 +100,13 @@ onMounted(() => {
 
 .main-content {
   width: 100%;
-  max-width: none;
-  margin: 0;
+  max-width: 1280px;
+  margin: 0 auto;
   padding: 20px 32px 80px;
 }
 
 /* v0.5: 响应式 */
-@media (max-width: 1120px) {
+@media (max-width: 1280px) {
   .topbar-inner { padding: 0 20px; }
   .main-content { padding: 16px 20px 80px; }
 }
