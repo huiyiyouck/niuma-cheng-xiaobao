@@ -1,5 +1,36 @@
 # 全栈开发工作日志
 
+## 2026-06-08 — v0.5 Bugfix：X Stream terminated 误告警 + sources.ts TS2367 死代码
+
+- 本次角色：全栈开发（Developer）
+- 模式：Bugfix（非迭代，v0.5 生产运行中发现问题）
+- 触发：告警 `x_stream_disconnected` — X Stream 连续断开 4 次 "terminated"
+- commit：`3f6454a`
+
+### 根因
+
+X Filtered Stream 长连接，Twitter 服务器/代理层周期性轮转 TCP 连接，`reader.read()` 抛 `"terminated"` 是正常行为。代码把所有非 AbortError 异常都计入 `consecutiveDisconnects`，连续 3 次触发误告警。
+
+### 修复
+
+| 文件 | 改动 |
+|------|------|
+| `x-stream-manager.ts` | `"terminated"` 错误直接 return（不计入计数器），connectLoop 快速重连（1s） |
+| `worker/index.ts` | `ProxyAgent` 加 `bodyTimeout: 0`，禁用 undici body 超时 |
+| `sources.ts` | 删除 POST/POST verify 中 2 处 `x_twitter` 死代码分支（v0.5.1 已在上方 return 400 拦截），修复 TS2367 |
+
+### 验证
+
+- `tsc --noEmit`：0 错误 ✅（修复前 2 个 TS2367）
+- `npm test`：53 tests, 49 passed / 4 failed（4 个失败全部已有问题，stash 验证确认）
+- push：已推送 origin/main
+
+### 遗留
+
+- 4 个已有测试失败（`channel-spaces migrate_to_root 409` + `sources RSS 创建` + `X Twitter 创建` + `Source 详情`），推测 v0.5.1 后测试数据/逻辑未同步更新，不阻塞本次修复，下次 Developer 出场可顺带修复
+
+---
+
 ## 2026-06-07 — v0.5.1 前端 TS 错误 P0 全部解除（删除门禁后半段）
 
 - 本次角色：全栈开发（Developer）
