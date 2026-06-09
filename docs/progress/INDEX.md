@@ -122,7 +122,7 @@
 | PM（产品经理） | [roles/pm-current.md](roles/pm-current.md) / [roles/pm-summary.md](roles/pm-summary.md) | [roles/pm-corrections.md](roles/pm-corrections.md) |
 | UI（界面设计师） | [roles/ui.md](roles/ui.md) | — |
 | Architect（架构师） | [roles/architect-current.md](roles/architect-current.md) / [roles/architect-summary.md](roles/architect-summary.md) | [roles/architect-corrections.md](roles/architect-corrections.md) |
-| Developer（开发工程师） | [roles/developer.md](roles/developer.md) | [roles/developer-corrections.md](roles/developer-corrections.md) |
+| Developer（开发工程师） | [roles/developer-current.md](roles/developer-current.md) / [roles/developer-summary.md](roles/developer-summary.md) | [roles/developer-corrections.md](roles/developer-corrections.md) |
 | DevOps（运维/部署工程师） | [roles/devops.md](roles/devops.md) | [roles/devops-corrections.md](roles/devops-corrections.md) |
 | Tester（测试工程师） | [roles/tester.md](roles/tester.md) | — |
 | WM（工作流管理者） | [roles/wm.md](roles/wm.md) | [roles/wm-corrections.md](roles/wm-corrections.md) |
