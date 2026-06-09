@@ -317,3 +317,45 @@
   - 生产数据清理不可逆，后续必须保留 Architect Review、DevOps 表级统计和 Owner 确认门禁。
   - X API 套餐和计费策略需在上线前核验。
 - 下一步：以 UI、Architect、Developer、Tester、DevOps 角色分别 Review `docs/progress/iterations/v0.5-prd.md`。
+
+## 2026-06-09 — v0.5 迭代关闭检查 + Summary 归档 + 知识库沉淀
+
+- 本次角色：产品架构师(PM)
+- 动作：迭代关闭检查 + 归档摘要 + 统一 commit
+- 涉及文档：
+  - `docs/progress/iterations/v0.5.md`
+  - `docs/progress/iterations/v0.5-summary.md`（新建）
+  - `docs/progress/INDEX.md`
+  - `docs/knowledge/engineering/external-portal-as-truth-source.md`（新建）
+  - `docs/knowledge/INDEX.md`
+  - `docs/progress/roles/pm-current.md`
+
+- 关闭检查（按 mechanisms.md §3 的 8 项）：
+  1. ✅ v0.5.md 各阶段状态一致（PRD R2 定稿 → UI R2 定稿 → 设计 R2 定稿 → 实现 R2 定稿 → 测试 R1 定稿 → 部署通过）
+  2. ✅ 各阶段 Review 结论完整（PRD 5/5 / UI 2/2 / 设计 3/3 / 实现 3/3 / 测试 2/2 / 部署 DevOps 全栈 12 项 verify）
+  3. ✅ 阻塞全清（前端 31 TS 错误 P0 解除、6 孤儿组件清理、X Stream 误告警修复 + 断流补偿）
+  4. ✅ INDEX 已更新
+  5. ✅ 角色日志无关键阻塞（Developer 最新日志明确"无遗留代码任务"）
+  6. ✅ Change Note 不适用
+  7. ✅ Summary 已创建；知识库已沉淀 1 条（外部 Portal 真理源反向同步模式）
+  8. ✅ 后端废弃能力前端引用清零（5 + 1 孤儿组件已全部 git rm）
+
+- 关闭结论：**✅ 可关闭（有条件关闭）**
+  - 条件 A：v0.5.1 X 反向同步未走标准 R1/R2 流程——Owner 拍板的架构反转，后端 10 项 API 端到端验证全过，前端 Owner 浏览器验证通过；必要时代补 Tester 完整 AC 复审
+  - 条件 B：Owner 试用 7 commits 视觉细化不升 Tester R2——Owner 逐条手动验证通过
+  - 条件 C：评分方法论本迭代只交付文档，不落地代码
+
+- 产出：
+  - `v0.5-summary.md`（16 项关键决策 / Review 质量结论 / 遗留问题 / 知识库 (1条) / 4 项 v0.6+ 候选机会 / Git 节点）
+  - `external-portal-as-truth-source.md`（反向同步模式知识沉淀到 engineering/）
+  - `v0.5.md`：关闭结论和 summary 链接写入
+  - `INDEX.md`：当前迭代 →「无」，模式 →「未选择」，v0.5 行 Summary 列补链接 + 状态更新；最近收尾摘要新增 PM 行
+  - `knowledge/INDEX.md`：新增 external-portal-as-truth-source 索引
+
+- 工作区清理：统一 commit 含 Developer 日志（视觉收口 44 行）+ INDEX Developer 状态推进 + 本次 PM 关闭检查全部产出
+
+- 关联迭代：v0.5（已关闭）
+- 遗留问题/风险：
+  - 4 项 P1/P2 候选待办（MCP UI / 标签管理 / 空间图标 / 源代理）登记在 INDEX，待 PM 纳入 v0.6 规划评估
+  - 重计算模块架构预研（时间线聚类 / 实体关联）作为 v0.6 启动输入材料
+- 下一步：Owner 决定下一步（启动 v0.6 / 其他非迭代任务 / 暂停）

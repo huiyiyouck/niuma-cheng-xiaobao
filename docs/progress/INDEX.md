@@ -4,11 +4,11 @@
 
 ## 当前项目状态
 
-- 当前迭代：v0.5（含 v0.5.1 X 反向同步子任务，已实施完成）
-- 当前模式：标准迭代
-- 当前阶段：v0.5.1 **后端 + 前端全部部署通过** — 公网 `https://news.huiyiyou.cloud/` 已上线 v0.5/v0.5.1 全部前端改动（17 bundles，sha256 字节级验证一致）；后端 systemd active running、X RULE SYNC 5min 同步稳定
+- 当前迭代：无（v0.5 已于 2026-06-09 有条件关闭）
+- 当前模式：未选择（v0.5 已关闭，待 Owner 决定下一步）
+- 当前阶段：v0.5 标准迭代已关闭，工作台空闲
 - 阻塞项：—
-- 下一步入口：Owner 浏览器验证 v0.5/v0.5.1 前端 UI → 通过则 PM 执行 v0.5 迭代关闭检查
+- 下一步入口：Owner 决定下一步（启动 v0.6 / 其他非迭代任务 / 暂停）
 
 ## 版本列表
 
@@ -18,7 +18,7 @@
 | v0.2 | [iterations/v0.2.md](iterations/v0.2.md) | [iterations/v0.2-prd.md](iterations/v0.2-prd.md) | [iterations/v0.2-ui-spec.md](iterations/v0.2-ui-spec.md) | [iterations/v0.2-design.md](iterations/v0.2-design.md) | — | 已完成 |
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
-| v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | — | 实现阶段已完成 ✅ |
+| v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
 
 ## 当前 Change Notes
 
@@ -49,6 +49,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-09 | PM | v0.5 迭代关闭检查 + Summary 归档 + 知识库沉淀 | ✅ **可关闭（有条件关闭）** — 8 项检查 7 通过 1 已补齐（Summary 已创建）；条件 A：v0.5.1 X 反向同步未走标准 R1/R2 流程，必要时后续追加 Tester 复审；条件 B：Owner 试用 7 commits 视觉细化不升 R2；条件 C：评分方法论本迭代只交付文档。产出 `v0.5-summary.md`（16 项关键决策 / Review 质量结论 / 遗留 / 4 项 v0.6+ 候选机会 / Git 节点）+ `external-portal-as-truth-source.md` 知识库条目 + v0.5.md 关闭归档节 + INDEX 当前状态推进到「无 / 未选择 / 工作台空闲」；同 commit 合并 Developer 视觉收口遗留脏改动（last-out-unified-commit）| Owner 决定下一步（启动 v0.6 / 其他非迭代任务 / 暂停）|
 | 2026-06-08 | Developer | 前端规范统一 — 字体层级 / 弹窗抽屉 / 死代码清理 + 1280px 居中回调 | ✅ 已完成 — 新增 `--text-xs/sm/base/md/h1-h4` 字号变量 + `--weight-bold/xbold/black` 字重变量；`ModalContainer` 改用全局 `.modal-dialog` 消除三套弹窗差异；`SlidePanel` 背景统一为 `var(--card)`，遮罩与弹窗一致；删除 4 个零引用死组件（`PageTitle/CreateSpaceModal/SourceLibraryCard/TagSelector`，Owner 直接授权跳过 Architect Review）；修复 `AlertsPage .page-title` 900/800 冲突 + `SourceDetailPage` 硬编码 `monospace`。同日先将 1280px 宽度限制取消改为铺满，Owner 反馈"太散"后回调为 `max-width: 1280px; margin: 0 auto`。`npm run build` 通过 0 错误，commit `7969e08`+`ddfb8e5`，软链接部署已上线 | Owner 刷新生产页面验证弹窗/抽屉/字号视觉 |
 | 2026-06-08 | Developer | 大屏展示区域宽度限制修复 | ✅ 已完成 — Owner 反馈电脑端可用空间很多，但页面被 1120px 宽度限制，字号放大后产生挤压。已取消 `App.vue` 中顶栏和主内容区 `max-width:1120px` 限制，改为使用整屏宽度；全局 `.container` 同步取消固定宽度。前端 build 通过，软链接部署已上线 | Owner 在电脑端刷新 `/admin` 验证表格和管理区是否充分利用屏幕 |
 | 2026-06-08 | Developer | 信息源库搜索 500 修复 | ✅ 已完成 — `/v1/sources?search=...` 触发 500 的根因是搜索逻辑展开 `content_topics` 时假设其为 JSON 数组，但生产 X 同步源当前为 `{}` 对象；同时 SQL 使用表别名参与 `ILIKE`。已改为 `jsonb_typeof(content_topics)='array'` 时才展开，并使用显式列别名；搜索 total 同步按筛选条件计算。后端 build 通过、服务已重启，本机和公网搜索 `Claude code官方账号` 均返回 200 且 total=1 | Owner 在信息源库搜索框复测 |
