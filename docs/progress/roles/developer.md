@@ -1,5 +1,58 @@
 # 全栈开发工作日志
 
+## 2026-06-09 — v0.6 PRD R1 Review
+
+- 本次角色：全栈开发（Developer）
+- 模式：Review（标准迭代 v0.6 PRD 阶段 R1）
+- 涉及文档：`docs/progress/iterations/v0.6-prd.md`、`docs/progress/iterations/v0.6.md`
+- 结论：❌需修改。共 13 条意见（4 高 / 6 中 / 3 低）
+
+### 高严重度（4 条）
+
+- **#D1 AC-25 mock 数据"一刀切"禁止与 v0.6 渐进式迁移矛盾**：缺少"接口未就绪 → 前端如何渲染"的工程规则；建议 AC-25 拆为 a/b 两条（生产构建禁 mock + 开发期允许 fixture），并在 §4.1 明确实施顺序（后端契约骨架 → 前端 mock fixture 并行 → 切换真实数据）。
+- **#D2 前后端契约清单 PRD 全程缺失**：v0.5 PRD R2 §10 的"6 组 20+ endpoint"是当时实施顺利的关键基础，v0.6 PRD 没有任何 API 路径/字段名；建议追加 §3.7 草案列出本期新增/变更端点（含新闻列表新字段、详情端点是否新增、空间图标上传接口、Source 详情 L0/L1 统计字段等）。
+- **#D3 AC-08 退避策略与现有 `dispatcher.ts requeueTask` 冲突**：现有线性 `min(300, 10*(n+1))` vs PRD `[60, 300, 900]` 指数；如果改 dispatcher 不限定 type，会污染 v0.5 已稳定的 X Stream 补偿抓取。建议 PRD §3.2 明确"L0/L1 复用 tasks 表 + 按 type 走可配置退避策略"，AC-08 只对 L0/L1 type 生效。
+- **#D4 空间图标上传缺关键工程约束**：上传字段名、存储路径、URL 拼接、并发覆盖语义未定；Fastify 项目当前没装 `@fastify/multipart` 需要新依赖；emoji 与图片同字段还是新增列影响数据迁移。建议 PRD §3.6 加段"上传工程契约"明确接口、字段、清理策略。
+
+### 中严重度（6 条）
+
+- **#D5 AI 单次 JSON 输出体量未评估**：从 5 个 top-level key（1-2KB）膨胀到 11+ 个（5-10KB），LLM 解析失败率会上升；PRD 应给单次输出上限约束 + 部分成功是否进入新闻流的产品决策。
+- **#D6 五类标签数据结构骨架未定**：前端组件 props 无法预先建好；建议给标签数据结构草案（即使开闭集还没定）。
+- **#D7 §2.6 重构 10 个页面工程量没估**：Vue 组件保留/重写/删除清单缺失；建议按 P0/P1/P2 标出 NewsPage / AdminPage / SourceDetailPage 优先级。
+- **#D8 AC-15 置信度区分前端载体未定**：纯文本 / 分句结构 / 段落分类三种数据载体差异巨大，影响前端组件结构。
+- **#D9 库内检索同步/异步策略未定**：影响 L1 平均处理时间（可能 5s → 30s）；建议明确异步 + 上限 5 条 + 召回失败不阻塞。
+- **#D10 开发联调环境依赖未列**：本地是否需要全套 LLM/搜索 key、Tester 联调样例数据如何造、CI 如何 mock LLM。
+
+### 低严重度（3 条）
+
+- **#D11 AC-23/24/25 "不应"措辞过于绝对**：建议加"v0.6 用户可见路径"修饰，与 UI #U11 同向。
+- **#D12 §5 前置依赖未列已知 npm 依赖增量**：`@fastify/multipart` / 搜索 SDK / link reader 库；DevOps R1 难以评估部署变更。
+- **#D13 "四维分理由"字段长度上限未给**：影响抽屉布局（行内 vs 折叠卡片）；建议每维理由 ≤ 80 字。
+
+### 不阻塞的观察
+
+- `dispatcher.ts:62-76` `requeueTask` 加 type 维度后可平滑承载 L0/L1，schema 不用大改
+- `processed_news.tags/entities/source_refs` 三个 jsonb 能装下 5 类标签 + 4 维分 + 5 来源，但建议评估拆 `processed_news_l1_meta` 单表
+- `NewsDetailPanel.vue` 已是抽屉形态，UI #U1 推荐方案 A（沿用抽屉）Developer 视角改造量最小
+- 路由 `/alerts`+`/logs` → `/monitoring` 合并约 1 天工作量
+- 原型设计 token（primary/secondary/accent/muted）需 UI 阶段做映射表，不需要重搭样式系统
+- **v0.5 测试当前禁用**（生产 DB 误删事故），本期实施前必须恢复独立 test DB + `.env.test`，否则 AC-08 退避、AC-05 LLM 契约都无法单测覆盖——前置工作
+
+### 与已提交 Review 的关系
+
+- Architect #A1-#A8 覆盖架构/数据/外部依赖侧
+- UI #U1-#U9 覆盖视觉/交互侧
+- Developer #D1-#D4 覆盖工程契约/实施路径侧
+- 三方 R1 一致 ❌需修改：本轮 PRD 把太多产品决策甩给设计阶段，需 PM 在 R2 大幅收敛
+
+### 关联
+
+- 关联迭代：v0.6
+- 关联文档：`docs/progress/iterations/v0.6-prd.md`（Review 记录 § Developer R1）
+- 下一步：等待 Tester / DevOps 完成 R1 Review；PM 汇总后产出 R2；届时 Developer 复审
+
+---
+
 ## 2026-06-08 — 视觉细化收口（背景分层 / 文字纯黑 / 管理页右栏可见性）
 
 - 本次角色：全栈开发(Developer)
