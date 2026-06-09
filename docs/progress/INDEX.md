@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：PRD 阶段 R1 Review中（Architect 已完成 ❌需修改）
+- 当前阶段：PRD 阶段 R1 Review中（Architect 已完成 ❌需修改；UI 已完成 ❌需修改）
 - 阻塞项：—
-- 下一步入口：UI / Developer / Tester / DevOps 分别 Review `iterations/v0.6-prd.md`
+- 下一步入口：Developer / Tester / DevOps 分别 Review `iterations/v0.6-prd.md`
 
 ## 版本列表
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-09 | UI | v0.6 PRD R1 UI Review | ❌ 需修改 — 12 条意见（4高/5中/3低）：高严重度集中在原型核心交付物缺画（#U1 抽屉 vs 常驻面板冲突 + 四段式在原型完全没画 / #U3 空间图标上传 UI 在原型完全没画）、路由结构不一致（#U2 现有 5 路由 vs 原型 4 路由合并 alerts+logs 到 monitoring，PRD 没决策）、4 维评分+5 类标签视觉密度未收敛（#U4）；中严重度 5 条覆盖来源标签视觉、mock 数据过渡形态、L0/L1 处理状态前台可见性、信息源新增入口路径、统计卡片口径；低 3 条为措辞与边界澄清。整体判断：PRD 把 Figma 原型当成"已成型 UI 答案"是误判——核心交付物在原型直接缺画，PM 不能默认 UI 阶段照抄就行 | Developer / Tester / DevOps 完成 R1 Review；PM 汇总后产出 R2，UI 复审 |
 | 2026-06-09 | Architect | v0.6 PRD R1 Review + 架构师日志分页归档 | ❌ 需修改 — 11 条意见（3高/5中/3低）：高严重度集中在状态机未定稿（#A1）、可重试/不可重试错误未划清（#A2）、4 类外部依赖（LLM/X 搜索/Web 搜索/链接读取）"具体用什么"全甩给设计阶段（#A3）；中严重度 5 条覆盖评分公式、五类标签定义、补全来源标签粒度、库内检索算法、图标存储；低严重度 3 条为措辞完善。三条主线技术可行性 OK 无架构红线，v0.5 schema 可作良好基线，但 #A1-#A3 必须 PM 在 PRD 收敛不能甩给设计阶段。同 commit 完成架构师日志分页归档（原 559 行 → current 154 行 + summary 87 行 + archive 451 行）| UI / Developer / Tester / DevOps 完成 R1 Review；PM 汇总后产出 R2，Architect 复审 |
 | 2026-06-09 | PM | v0.5 迭代关闭检查 + Summary 归档 + 知识库沉淀 | ✅ **可关闭（有条件关闭）** — 8 项检查 7 通过 1 已补齐（Summary 已创建）；条件 A：v0.5.1 X 反向同步未走标准 R1/R2 流程，必要时后续追加 Tester 复审；条件 B：Owner 试用 7 commits 视觉细化不升 R2；条件 C：评分方法论本迭代只交付文档。产出 `v0.5-summary.md`（16 项关键决策 / Review 质量结论 / 遗留 / 4 项 v0.6+ 候选机会 / Git 节点）+ `external-portal-as-truth-source.md` 知识库条目 + v0.5.md 关闭归档节 + INDEX 当前状态推进到「无 / 未选择 / 工作台空闲」；同 commit 合并 Developer 视觉收口遗留脏改动（last-out-unified-commit）| Owner 决定下一步（启动 v0.6 / 其他非迭代任务 / 暂停）|
 | 2026-06-09 | PM | v0.6 需求讨论 + 标准迭代启动 + PRD R1 | ✅ 已创建 v0.6 标准迭代和 PRD R1 — 范围锁定为 `/root/news-aggregation-platform` Figma 原型前端重构、X 信息 L0/L1 分层处理、空间图标上传；明确 L2/反馈/详情页/前端策略配置/Source 代理前端配置不进本期；L1 采用库内检索、链接读取、按需 X/Web 搜索、四维评分和来源标签展示 | UI / Architect / Developer / Tester / DevOps 分别 Review `iterations/v0.6-prd.md` |
