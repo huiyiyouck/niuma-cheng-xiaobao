@@ -4,11 +4,11 @@
 
 ## 当前项目状态
 
-- 当前迭代：无（v0.5 已于 2026-06-09 有条件关闭）
-- 当前模式：未选择（v0.5 已关闭，待 Owner 决定下一步）
-- 当前阶段：v0.5 标准迭代已关闭，工作台空闲
+- 当前迭代：v0.6
+- 当前模式：标准迭代
+- 当前阶段：PRD 阶段 R1 Review中
 - 阻塞项：—
-- 下一步入口：Owner 决定下一步（启动 v0.6 / 其他非迭代任务 / 暂停）
+- 下一步入口：UI / Architect / Developer / Tester / DevOps 分别 Review `iterations/v0.6-prd.md`
 
 ## 版本列表
 
@@ -19,6 +19,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | — | — | — | PRD 阶段 R1 Review中 |
 
 ## 当前 Change Notes
 
@@ -50,6 +51,8 @@
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
 | 2026-06-09 | PM | v0.5 迭代关闭检查 + Summary 归档 + 知识库沉淀 | ✅ **可关闭（有条件关闭）** — 8 项检查 7 通过 1 已补齐（Summary 已创建）；条件 A：v0.5.1 X 反向同步未走标准 R1/R2 流程，必要时后续追加 Tester 复审；条件 B：Owner 试用 7 commits 视觉细化不升 R2；条件 C：评分方法论本迭代只交付文档。产出 `v0.5-summary.md`（16 项关键决策 / Review 质量结论 / 遗留 / 4 项 v0.6+ 候选机会 / Git 节点）+ `external-portal-as-truth-source.md` 知识库条目 + v0.5.md 关闭归档节 + INDEX 当前状态推进到「无 / 未选择 / 工作台空闲」；同 commit 合并 Developer 视觉收口遗留脏改动（last-out-unified-commit）| Owner 决定下一步（启动 v0.6 / 其他非迭代任务 / 暂停）|
+| 2026-06-09 | PM | v0.6 需求讨论 + 标准迭代启动 + PRD R1 | ✅ 已创建 v0.6 标准迭代和 PRD R1 — 范围锁定为 `/root/news-aggregation-platform` Figma 原型前端重构、X 信息 L0/L1 分层处理、空间图标上传；明确 L2/反馈/详情页/前端策略配置/Source 代理前端配置不进本期；L1 采用库内检索、链接读取、按需 X/Web 搜索、四维评分和来源标签展示 | UI / Architect / Developer / Tester / DevOps 分别 Review `iterations/v0.6-prd.md` |
+| 2026-06-09 | PM | v0.6 PRD R1 会话收尾 + PM 日志分页沉淀 | ✅ 已完成 — PM current 层收尾前 396 行，超过 `context-policy.md` 300 行阈值；已将较旧 PM 记录移入 `pm-archive.md`，更新 `pm-summary.md` 到 v0.6 当前状态，并追加本次收尾记录。v0.6 仍处于 PRD R1 Review中 | UI / Architect / Developer / Tester / DevOps 分别 Review `iterations/v0.6-prd.md` |
 | 2026-06-08 | Developer | 前端规范统一 — 字体层级 / 弹窗抽屉 / 死代码清理 + 1280px 居中回调 | ✅ 已完成 — 新增 `--text-xs/sm/base/md/h1-h4` 字号变量 + `--weight-bold/xbold/black` 字重变量；`ModalContainer` 改用全局 `.modal-dialog` 消除三套弹窗差异；`SlidePanel` 背景统一为 `var(--card)`，遮罩与弹窗一致；删除 4 个零引用死组件（`PageTitle/CreateSpaceModal/SourceLibraryCard/TagSelector`，Owner 直接授权跳过 Architect Review）；修复 `AlertsPage .page-title` 900/800 冲突 + `SourceDetailPage` 硬编码 `monospace`。同日先将 1280px 宽度限制取消改为铺满，Owner 反馈"太散"后回调为 `max-width: 1280px; margin: 0 auto`。`npm run build` 通过 0 错误，commit `7969e08`+`ddfb8e5`，软链接部署已上线 | Owner 刷新生产页面验证弹窗/抽屉/字号视觉 |
 | 2026-06-08 | Developer | 大屏展示区域宽度限制修复 | ✅ 已完成 — Owner 反馈电脑端可用空间很多，但页面被 1120px 宽度限制，字号放大后产生挤压。已取消 `App.vue` 中顶栏和主内容区 `max-width:1120px` 限制，改为使用整屏宽度；全局 `.container` 同步取消固定宽度。前端 build 通过，软链接部署已上线 | Owner 在电脑端刷新 `/admin` 验证表格和管理区是否充分利用屏幕 |
 | 2026-06-08 | Developer | 信息源库搜索 500 修复 | ✅ 已完成 — `/v1/sources?search=...` 触发 500 的根因是搜索逻辑展开 `content_topics` 时假设其为 JSON 数组，但生产 X 同步源当前为 `{}` 对象；同时 SQL 使用表别名参与 `ILIKE`。已改为 `jsonb_typeof(content_topics)='array'` 时才展开，并使用显式列别名；搜索 total 同步按筛选条件计算。后端 build 通过、服务已重启，本机和公网搜索 `Claude code官方账号` 均返回 200 且 total=1 | Owner 在信息源库搜索框复测 |
@@ -98,9 +101,9 @@
 | P1 | 完成 v0.5 PRD 规划：确认三条主线范围（X/Twitter 实时监听、信息源管理重构、评分体系方法论） | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：三条主线已收编进 v0.5 PRD R1，标准迭代已启动 |
 | P1 | 展开并确认「信息源管理重构」产品方案：信息源 Tab、频道空间/子频道树、绑定规则、删除预览、验收边界 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认 |
 | P2 | 确认并产出「评分体系方法论」文档范围：维度、评分锚点、综合分、状态草稿、LLM 输出结构、版本化；本轮不落地代码 | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：Product Brief 已确认；不讨论评分后分流 |
-| P2 | 领域标签管理：支持自定义增删改标签选项（当前为固定硬编码 AI/财经/开源/科技/其他），非 v0.5 范围 | PM | 2026-06-06 UI 方案讨论 — UI 侧提出标签管理需求 | 待 PM 评估，纳入后续迭代规划 |
-| P2 | 空间图标支持上传图片（当前仅支持 emoji 文本输入） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 空间管理页图标编辑 | 待 PM 评估，纳入后续迭代规划 |
-| P2 | 信息源级别代理配置：每个 Source 可独立控制是否走代理抓取（当前为全局代理） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 部分 RSS 源可能不需要代理 | 待 PM 评估，纳入后续迭代规划 |
+| P2 | 领域标签管理：支持自定义增删改标签选项（当前为固定硬编码 AI/财经/开源/科技/其他），非 v0.5 范围 | PM | 2026-06-06 UI 方案讨论 — UI 侧提出标签管理需求 | ✅ 已评估（2026-06-09）— v0.6 不做完整领域标签管理后台；本期采用 L1 AI 标签结构（领域/实体/事件/内容类型/处理标签）承载展示 |
+| P2 | 空间图标支持上传图片（当前仅支持 emoji 文本输入） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 空间管理页图标编辑 | ✅ 已收编进 v0.6 PRD R1 — 支持图片上传、替换、移除，同时保留 emoji / 文本图标能力 |
+| P2 | 信息源级别代理配置：每个 Source 可独立控制是否走代理抓取（当前为全局代理） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 部分 RSS 源可能不需要代理 | ✅ 已评估（2026-06-09）— 不作为前端管理能力；如需 Source 级代理，作为后端内部抓取策略由设计阶段按需处理 |
 | P1 | MCP 协议信息源完整支持：新建/编辑/删除 MCP 源的 UI、工具选择、配置管理（当前仅后台 API 临时创建） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 金十数据 MCP 接入为临时后台方案 | 待 PM 评估，纳入后续迭代规划 |
 
 ## Bootstrap 记录

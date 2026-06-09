@@ -1,126 +1,3 @@
-## 2026-06-06 — PM 当日工作收尾：v0.5 全阶段 Review 闭环
-
-- 本次角色：产品架构师(PM)
-- 动作：会话收尾归档
-- 今日 PM 工作总计：
-
-| 阶段 | 轮次 | 动作 | 意见数 | 结论 |
-|------|------|------|--------|------|
-| PRD | R2 | 汇总+定稿 | 5 方 20+ 条 | 已定稿 ✅ |
-| UI 原型 | 非正式 | 审 admin.html | 5 条（1 CSS bug + 4 建议） | 转述 UI |
-| 设计 | R1→R2 | Review | 3 条（2中+1低）→全部关闭 | 通过 ✅ |
-| 实现 | R1→R2 | Review | 覆盖核验 → Bug 修复核验 | 通过 ✅ |
-| 测试 | R1 | Review 测试计划+报告 | 57/57 AC 全覆盖 | 通过 ✅ |
-
-- 当前迭代状态：测试阶段已定稿，等待部署就绪检查
-- v0.5 全链路：PRD ✅ → UI ✅ → 设计 ✅ → 实现 ✅ → 测试 ✅ → 部署（待执行）
-- 遗留：用户手动验证本地页面；DevOps 部署就绪检查
-- 关联迭代：v0.5
-- 下一步：用户手动验证页面 + DevOps 部署 → 迭代关闭
-
-## 2026-06-06 — v0.5 PRD R2 定稿
-
-- 本次角色：产品架构师(PM)
-- 动作：确认 R2 全票通过 → PRD 定稿
-- R2 Review 汇总：UI ✅ / Architect ✅ / Developer ✅（附 1 中观察，不阻塞）/ Tester ✅ / DevOps ✅ — 5/5 通过
-- 定稿条件检查：5/5 全部通过 ✅ / 无未处理高严重度阻塞 ✅
-- 已更新：PRD 文档状态 → 已定稿；INDEX 当前阶段 → PRD 已定稿，下一阶段 UI 方案
-- 关联迭代：v0.5
-- 遗留：Developer 指出的 §4.6 失败计数口径与异常处理表矛盾（中严重度观察），设计阶段由 Architect 确认后消除
-- 下一步：切换到 UI（界面设计师）进入 UI 方案阶段
-
-## 2026-06-06 — v0.5 PRD R1→R2 汇总修改
-
-- 本次角色：产品架构师(PM)
-- 动作：汇总 5 方 R1 Review → 修改 PRD → 提交 R2
-- 涉及文档：
-  - `docs/progress/iterations/v0.5-prd.md`
-  - `docs/progress/iterations/v0.5.md`
-  - `docs/progress/INDEX.md`
-- R1 Review 汇总：UI（1高3中1低）、Architect（3高4中2低）、Developer（2阻断1高4中3低）、Tester（2高5中4低）、DevOps（1高2中1低）
-- 核心同源问题：Source 状态模型混用（5/5 角色指出）
-- R2 主要修改：
-  - 4.6 Source 状态：重写为可用性状态 + 运行状态双正交维度，定义组合约束、失败计数口径和告警去重窗口
-  - 4.2 信息源库：补充分页、搜索筛选 AND/OR 语义、可用性状态筛选项
-  - 4.4 创建流程：明确从空间管理页发起新建的回流逻辑
-  - 4.8 告警：补充状态流转、管理员动作、角标口径和去重窗口
-  - 4.9 删除：补充频道删除迁移冲突规则、迁移粒度、快照内容
-  - 4.10 数据重置：补充 pg_dump 备份、事务回滚
-  - §5 验收标准：新增 14 条 AC（空间CRUD/空状态/外部API失败/告警去重/并发/非回归/清理回滚），更新状态相关 AC
-  - §6 范围边界：明确空间 CRUD 范围
-  - §7 前置依赖：新增 X API 核验阻塞规则、环境变量、Architect 设计阶段待确认项
-  - §8 风险：新增并发竞争和外部 API 不稳定
-  - Architect 数据模型问题（#A2-#A9）纳入产品需求和前置依赖，具体技术方案交由设计阶段决定
-- 关联迭代：v0.5
-- 遗留问题/风险：
-  - R2 待 UI/Architect/Developer/Tester/DevOps 五方复审
-  - 数据模型层面的技术决策（唯一约束、m:n 表、表重命名、软删除 vs 快照）在设计阶段解决
-- 下一步：切换到 UI、Architect、Developer、Tester、DevOps 角色分别复审 R2
-
-## 2026-05-30 — 会话收尾
-
-- 本次角色：产品架构师(PM)
-- 动作：收尾归档
-- 今日 PM 工作总计：
-
-| 阶段 | 轮次 | 动作 | 意见数 | 结论 |
-|------|------|------|--------|------|
-| PRD | R1→R2 | 产出 + 修订 | 19条 | 已定稿 ✅ |
-| PRD | R2终 | 定稿 | — | 架构师✅ + 全栈✅ |
-| UI 规范 | R1 产出 | 产出 | — | 10节完整规范 |
-| UI 规范 | R1→R2 | 修订 | 8条 | 已定稿 ✅ |
-| UI 规范 | R2终 | 定稿 | — | 架构师✅ + 全栈✅ |
-| 设计文档 | R1 | Review | 4条 | ❌需修改 |
-| 设计文档 | R2 | Review | — | ✅通过 |
-| 实现 | R1 | Review | 3条 | ❌需修改 |
-| 实现 | R2 | 复审+修正 | 3条全关 | ✅通过（AdminPage 补 import） |
-
-- 当前迭代状态：实现阶段已定稿 → 部署阶段（DevOps 已部署）
-- 下一步：用户浏览器视觉验证 → 迭代关闭
-- 关联迭代：v0.4
-- 遗留问题/风险：无
-
-## 2026-05-31 — v0.4 测试报告 R1 PM Review
-
-- 本次角色：产品架构师(PM)
-- 动作：Review（测试报告 R1）
-- 涉及文档：`docs/progress/iterations/v0.4-test-report.md`
-- 结论：✅通过 R1
-- Review 视角：PRD 22 项验收标准覆盖完整性
-- 核对结果：
-  - 5.1 UI 重构 6 项：4 项代码验证 ✅ + 2 项用户浏览器视觉验证 ✅
-  - 5.2 功能闭环 8 项：7 项实测 ✅ + 1 项 ⏸（RSS 实机抓取，用户已决策延后至生产环境验证）
-  - 5.3 功能增强 5 项：实测 + 代码验证 ✅
-  - 5.4 向后兼容 4 项：API/Schema/路由/环境变量逐项确认 ✅
-- 缺陷闭环：#B1（alerts.status 列缺失）+ #B2（FOR UPDATE 与 LEFT JOIN 冲突）+ #B3（source_url 未合并入 Fetcher config）全部修复回归通过
-- 未发现 PM 视角阻断问题：PRD 范围未漂移，无遗漏验收标准
-- 已更新 `v0.4-test-report.md`：Review 状态 PM ✅通过 + R1 Review 结论；已更新 `v0.4.md`：测试阶段追加 PM Review 节
-- 关联迭代：v0.4
-- 遗留问题/风险：
-  - 全栈开发 R1 Review 尚未进行（测试报告 Review 计划另一指定方）
-  - RSS Fetcher 生产环境上线后需补实机抓取验证（用户已决策，不阻塞 v0.4 关闭）
-  - 测试报告中提到的「迁移机制规范化」属技术债，由架构师评估是否进入后续迭代
-- 下一步：等全栈开发 R1 Review → 全部通过后测试报告定稿 → 迭代关闭检查
-
-## 2026-05-31 — v0.4 测试报告 R1 PM 对 Developer Review 3 项收口的答复（纠错性补充）
-
-- 本次角色：产品架构师(PM)
-- 动作：补救纠错 + Review 收口决定
-- 触发：用户提醒「重新读一下 INDEX」 → 发现 Developer 实际已于 2026-05-31 完成 R1 Review（✅有条件通过），提了 3 项需 PM/Tester 收口事项。我刚才的 R1 PM Review 是基于过时的 test-report.md「Review 状态」表做的，没先核对 INDEX 真相
-- 纠错动作：
-  1. 修正 test-report.md「整体状态」「下一步」字段，反映 PM ✅ + Developer ✅有条件通过的真实状态
-  2. 修正 v0.4.md「PM Review 测试报告 R1」的下一步（不再是"等 Developer Review"）
-  3. 修正 INDEX「当前阶段」（不再是"等全栈开发 Review"），改为"待 Tester 翻牌定稿"
-- PM 对 3 项收口的决定：
-  - **事项 1（7 项 Bugfix 升 R2？）→ 不升**。UI 细节不影响 PRD 验收，用户已手动验证通过，升 R2 拉长闭环但不改变结论
-  - **事项 2（正式修复建议归属）→ 登记 INDEX 跨任务待办 P2，DevOps 主 + Architect 评估**。已落档
-  - **事项 3（条件未列清）→ 已闭环**。Tester 已在结论补 A/B 条件
-- 关联迭代：v0.4
-- 遗留问题/风险：
-  - 「先看测试报告再看 INDEX」是错的工作顺序，已记入 pm-corrections.md
-  - INDEX 是项目级当前状态唯一真源，文档内的状态字段可能滞后；启动后第一动作必须是「以 INDEX 为准」
-- 下一步：Tester 翻牌定稿测试报告 R1 → 迭代关闭检查
-
 ## 2026-05-31 — v0.4 迭代关闭检查 + 归档摘要
 
 - 本次角色：产品架构师(PM)
@@ -359,3 +236,63 @@
   - 4 项 P1/P2 候选待办（MCP UI / 标签管理 / 空间图标 / 源代理）登记在 INDEX，待 PM 纳入 v0.6 规划评估
   - 重计算模块架构预研（时间线聚类 / 实体关联）作为 v0.6 启动输入材料
 - 下一步：Owner 决定下一步（启动 v0.6 / 其他非迭代任务 / 暂停）
+
+## 2026-06-09 — v0.6 需求讨论 + 标准迭代启动 + PRD R1
+
+- 本次角色：产品架构师(PM)
+- 动作：需求讨论收敛 → 创建标准迭代记录和 PRD R1
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.md`（新建）
+  - `docs/progress/iterations/v0.6-prd.md`（新建）
+  - `docs/progress/INDEX.md`
+  - `docs/progress/roles/pm-current.md`
+- 结论：v0.6 正式启动，停留在 PRD 阶段 R1 Review中。
+- 范围锁定：
+  1. `/root/news-aggregation-platform` Figma 导出原型作为本期前端重构目标；不迁入 React，基于现有 Vue3 前端落地并接真实 API。
+  2. X 信息 L0/L1 分层处理：所有原始信息先入库；L0 只过滤明显无效内容；通过 L0 的 X 信息进入 L1；L1 完成后进入新闻流展示。
+  3. 空间图标上传：支持图片上传、替换、移除，同时保留 emoji / 文本图标能力。
+- L1 关键决策：
+  - 评论读取本期不做。
+  - 每条 L1 都做库内相关新闻检索。
+  - 有链接就尝试读取链接内容。
+  - X 搜索 / Web 搜索按 `needs_context=true` 触发，不是每条都搜。
+  - 抽屉展示四段内容：原文中文翻译、相关背景与补全、AI 分析与评价、AI 标签。
+  - 四维评分：时效性 25%、影响力 35%、置信度 25%、可理解度 15%；AI 输出维度分和理由，系统计算综合分。
+  - 标签类型：领域标签、实体标签、事件标签、内容类型、处理标签。
+- 明确不做：
+  - L2 事件追踪、时间线、深度搜索、深度分析、公众号/系列文章生成。
+  - 独立全屏详情页。
+  - 反馈按钮和反馈记录。
+  - 前端展示分流策略或处理工作流配置。
+  - Source 级代理前端配置。
+- Review 计划：UI / Architect / Developer / Tester / DevOps 五方 R1 Review。
+- 关联迭代：v0.6
+- 遗留问题/风险：
+  - 搜索服务、库内相关新闻检索算法、L0/L1 数据模型、图片存储方案需设计阶段确认。
+  - LLM / 搜索 / 链接读取带来成本、超时和失败重试风险。
+- 下一步：切换到 UI、Architect、Developer、Tester、DevOps 角色分别 Review `docs/progress/iterations/v0.6-prd.md`。
+
+## 2026-06-09 — PM 会话收尾：v0.6 PRD R1 已提交 Review
+
+- 本次角色：产品架构师(PM)
+- 动作：收尾归档 + PM 日志分页沉淀
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.md`
+  - `docs/progress/iterations/v0.6-prd.md`
+  - `docs/progress/INDEX.md`
+  - `docs/progress/roles/pm-current.md`
+  - `docs/progress/roles/pm-summary.md`
+  - `docs/progress/roles/pm-archive.md`
+- 收尾结论：暂停待续。v0.6 已正式启动，停留在 PRD 阶段 R1 Review中。
+- 本次完成：
+  - 完成 v0.6 需求讨论并创建标准迭代记录。
+  - 创建 `v0.6-prd.md` R1，Review 方为 UI / Architect / Developer / Tester / DevOps。
+  - 将 PM current 层超过阈值的旧记录移入 archive，并更新 summary 当前状态为 v0.6。
+- 验证证据：
+  - 已检查 `pm-current.md`：收尾前 396 行，超过 `context-policy.md` 300 行阈值；已触发分页沉淀。
+  - 已执行 Markdown 空白检查，需在本次收尾后复跑确认。
+  - 未运行代码测试：本次只修改规划、索引和角色日志文档。
+- 遗留问题/风险：
+  - v0.6 PRD R1 等待 UI、Architect、Developer、Tester、DevOps 五方 Review。
+  - 搜索服务、库内相关新闻检索算法、L0/L1 数据模型、图片存储方案需设计阶段确认。
+- 下一步：切换到 UI、Architect、Developer、Tester、DevOps 角色分别 Review `docs/progress/iterations/v0.6-prd.md`。
