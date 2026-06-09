@@ -1,116 +1,8 @@
-# 架构师工作日志
+# 架构师工作日志 — 归档
 
-## 2026-06-07 — 受保护路径删除 Review：Developer 5 个孤儿前端组件 ✅通过
-
-**本次角色**：架构师
-- 动作：受保护路径删除 Review（依据 `docs/baseline/conventions.md §受保护路径删除 Review 门禁`）
-- 涉及文档：`docs/progress/ad-hoc/2026-06-07-developer-delete-request-orphan-frontend-components.md`
-- 触发：v0.5.1 前端部署阻塞 — Developer 已修复 9 个正用文件的 TS 错误，剩余 17 个错误集中在 5 个孤儿组件（v0.5 重构遗孤，零引用），按门禁规则请求架构师 Review 后由 Developer 执行删除
-- 复核方法：
-  1. 复核零引用：`src/`、`index.html`、`vite.config.*` + 全 `frontend/` 子串扫描（剔除 node_modules/dist）— 通过
-  2. 核查依赖已删 API/类型/字段事实：`lib/api.ts` 已无 `listSubChannels/createSubChannel/updateSubChannel/deleteSubChannel/markVerified`；`lib/types.ts` 已无 `SubChannel/ChannelSpace`；Source 已无 `source_url` — 5 个旧组件 4 个明确引用上述已删导出，第 5 个（SearchFilterBar）整体零挂载属死代码
-  3. 核查替代关系一览中的新组件存在 + 真在被引用：4 条全部成立
-  4. 本地单分支单 worktree，无编外 PR 风险
-- 结论：✅通过。同意 Developer 执行 `git rm` 5 个文件，分独立 commit 提交（与 9 个正用文件修复 commit 拆开），commit message 必须含「删除」字样和删除清单 + Review 留痕（具体格式已在 ad-hoc 文件「执行条件」段落写明）
-- 附 1 项观察（不阻塞本次）：`ChannelPills.vue` 实际全仓零引用（NewsPage 中频道筛选已完全内联 `.cc-pill`），与本次待删的 `ChannelFilter.vue` 同属孤儿；但不在本次清单内，建议 Developer 另起一次受保护路径删除 Review 处理，保持本次删除原子可追溯
-- 关联事件：v0.5.1 前端部署阻塞解除路径上的关键门禁；INDEX P0 待办状态推进
-- 遗留问题/风险：架构师名下无后续动作；下一步 Developer 执行删除并验证 `npm run build` 通过，移交 DevOps 部署
-
-## 2026-06-06 — 会话收尾（v0.5 全流程完成）
-
-**本次角色**：架构师
-- 动作：收尾（v0.5 架构师全部工作闭环）
-- 今日出场汇总（6 次，覆盖全部 3 个阶段）：
-
-| 时序 | 出场 | 产出 |
-|------|------|------|
-| 1 | v0.5 PRD R1 Review | 9 条意见（3高/4中/2低）— 状态模型、UNIQUE 约束、m:n 关联 |
-| 2 | v0.5 PRD R2 Review | ✅通过 — 9 条全部核验 |
-| 3 | v0.5 UI 方案 R1 Review | 5 条意见（1高/2中/2低）— API 契约缺失最大缺口 |
-| 4 | v0.5 UI 方案 R2 Review | ✅通过 — 5 条全部核验 + API 契约补全 |
-| 5 | v0.5 设计文档 R1 产出 + R2 修订 | 13 表 DDL + 6 组 20+ 端点 + 12 条 R1 意见关闭 → 已定稿 |
-| 6 | v0.5 实现 R1/R2 Review | #I1 lifecycleStatus bug 发现 + 修复核验 → ✅通过 |
-
-- v0.5 全部门禁：PRD ✅ → UI 方案 ✅ → 设计 ✅ → 实现 ✅ → 测试 ✅
-- 架构师名下无未完成事项
-- 下一步：DevOps 本地部署 + Owner 手工验证页面
-
-## 2026-06-06 — v0.5 实现 R2 复审 通过
-
-**本次角色**：架构师
-- 动作：Review（审 Developer 的 v0.5 实现 R2）
-- 涉及文档：`server/src/api/routes/sources.ts`、`server/src/__tests__/`
-- 结论：通过。R1 全部 2 条意见核验通过：#I1 lifecycleStatus bug 已修复、#I2 路径 B 测试已补充（alert 流转 5 条 + channel migrate 2 条 + identity 修改 2 条）
-- 53/53 测试通过。实现与设计文档一致，架构边界保持良好。
-- 关联迭代：v0.5
-
-## 2026-06-06 — v0.5 实现 R1 Review
-
-**本次角色**：架构师
-- 动作：Review（审 v0.5 全栈实现 R1，base=c70a5c8 head=9b83263）
-- 涉及文档：`server/src/db/schema.ts`、`server/src/api/routes/`、`server/src/worker/`、`server/src/__tests__/`
-- 结论：需修改。共 2 条意见（1 中 + 1 低）。
-  - #I1：sources.ts:152 `lifecycleStatus` 未定义，路径 B auto-add 阻塞
-  - #I2：路径 B auto-add 无测试覆盖
-- 设计符合度：Schema/API/Worker 与设计文档完全一致。X Stream Manager 完整、channel 迁移事务正确、processor fan-out 到位。
-- 关联迭代：v0.5
-
-## 2026-06-06 — v0.5 设计文档 已定稿
-
-**本次角色**：架构师
-- 动作：定稿（PM/Developer/DevOps 三方 R2 全部通过）
-- 涉及文档：`docs/progress/iterations/v0.5-design.md`
-- 12 条 R1 意见全部在 R2 中关闭，3/3 Review 通过。设计阶段完成。
-- v0.5 当前进度：PRD ✅ → UI 方案 ✅ → 设计 ✅，下一步进入实现阶段
-- 关联迭代：v0.5
-
-## 2026-06-06 — v0.5 设计文档 R2 修订
-
-**本次角色**：架构师
-- 动作：修改（响应 PM 3 条 + Developer 5 条 + DevOps 4 条 R1 Review）
-- 涉及文档：`docs/progress/iterations/v0.5-design.md`、`docs/progress/iterations/v0.5.md`
-- 修订覆盖（12 条全部关闭）：
-  - 数据模型：#D1 部分唯一索引（阻断）
-  - API 合约：DELETE channels action 参数、GET positions channel_id 语义、DELETE→PATCH positions、operational_status CTE、PUT identity 补偿
-  - 核心流程：§4.6 频道删除迁移逻辑（新增）、§4.2 失败计数对齐 PRD、§4.3 Stream/systemd 区分
-  - 迁移：§6.2 清理脚本改旧表名、§6.3 环境变量汇总（新增）
-- 下一步：PM、Developer、DevOps 复审 R2
-
-## 2026-06-06 — v0.5 设计文档 R1 产出
-
-**本次角色**：架构师
-- 动作：产出（基于定稿 PRD + UI 方案，创建 v0.5 技术设计文档）
-- 涉及文档：`docs/progress/iterations/v0.5-design.md`（新建）、`docs/progress/iterations/v0.5.md`
-- 产出覆盖：
-  - 数据模型：10 表变更 + 3 新表。sub_channels→channels 重命名、sources 大幅扩展（双维度状态 + 10+ 新字段）、display_positions 替代 channel_sources、news_positions m:n 关联、alerts scope 解耦、source_identity_history
-  - 5 项设计决策：operational_status 动态计算、软删除快照、dedup_key 告警去重、debounced 规则同步、事务包裹 DELETE 清理
-  - API 合约：6 组 20+ 端点重写，3 个关键响应 Shape
-  - 核心流程：Worker per-source 调度、X Stream Manager、告警生命周期、自动启停
-  - 数据清理脚本：FK 依赖顺序 + 事务回滚 + pg_dump 前置
-- Review 方：PM、Developer、DevOps
-- 关联迭代：v0.5
-
-## 2026-06-06 — v0.5 UI 方案 R2 Review
-
-**本次角色**：架构师
-- 动作：Review（审 UI 的 v0.5 UI 方案 R2）
-- 涉及文档：`docs/progress/iterations/v0.5-ui-spec.md`、`docs/progress/iterations/v0.5.md`
-- 结论：通过。R1 全部 5 条意见核验通过：#A1 API 契约已补充（§10，6 组 20+ endpoint）、#A2 身份编辑约束已定义、#A3 约束归属已标注、#A4 mini 模式已定义、#A5 由 API 契约覆盖。
-- R2 全部 8 条意见（Architect 4 + Developer 4）正确关闭。UI 方案达到设计阶段准入标准。
-- 关联迭代：v0.5
-
-## 2026-06-06 — v0.5 UI 方案 R1 Review
-
-**本次角色**：架构师
-- 动作：Review（审 UI 产出的 v0.5 UI 方案 R1）
-- 涉及文档：`docs/progress/iterations/v0.5-ui-spec.md`、`docs/progress/iterations/v0.5.md`
-- 结论：需修改。共 5 条意见（1 高 + 2 中 + 2 低）。
-  - 高：#A1 缺少 API 契约清单，设计阶段无法接续
-  - 中：#A2 Source 身份修改 UI 未体现 PRD 状态约束、#A3 删除最后空间约束 PRD 未定义
-  - 低：#A4 浏览页 mini Pill 交互未展开、#A5 SourceCard 抓取条数数据来源不明
-- PRD 覆盖：9 个功能章节全部核验通过。路由设计合理。
-- 关联迭代：v0.5
-- 遗留问题/风险：等待 UI 汇总 Architect/Developer R1 反馈后提交 R2。
+> 分层策略见 `docs/baseline/context-policy.md`。
+> 本文件是按需查询归档。启动默认 **不读**本文件；只在排查历史决策、追溯某次 Review 结论时按需 grep。
+> 最近 10 条日志在 `architect-current.md`，长期摘要在 `architect-summary.md`。
 
 ## 2026-06-06 — v0.5 PRD R2 Review
 
@@ -192,7 +84,7 @@
 - 五维对比：
   - 正确性：X/Y 等价
   - TOCTOU 防护：X/Y 等价（Y Step 1 锁定 + Step 2 同事务读）
-  - SQL 清晰度：Y 略胜（自明），X 需注释（PG 方言）
+  - SQL 清晰度：Y 略胜(自明），X 需注释（PG 方言）
   - 网络往返：X 1 次 / Y 2 次
   - 可移植性：Y 略胜，但 **ADR-001 已锁定 PG + Drizzle 栈，此论点失效**
 - 决策理由：
@@ -270,7 +162,7 @@
 
 **本次角色**：架构师
 - 动作：收尾（设计阶段全部定稿）
-- 涉及文档：docs/progress/iterations/v0.4-design.md、docs/progress/iterations/v0.4.md、docs/progress/INDEX.md
+- 涉及文档:docs/progress/iterations/v0.4-design.md、docs/progress/iterations/v0.4.md、docs/progress/INDEX.md
 - 结论：✅ v0.4 设计阶段已全部完成。三个阶段全部定稿：
   - PRD：R1→R2，架构师 8 条 + 全栈开发 11 条，全部关闭
   - UI 规范：R1→R2，架构师 3 条 + 全栈开发 5 条，全部关闭
@@ -334,8 +226,8 @@
 - 结论：⏸️ 暂缓。PRD 已定稿 ✅，但 UI 阶段状态为"待产出"（既无定稿也无跳过标记），不能直接进入技术设计。
   - v0.4 PRD 已包含原型 HTML + 设计语言规范，但缺少独立的 UI 规范文档
   - 参考 v0.2 流程：PM → UI 规范文档 → 架构师+开发 Review → 设计阶段
-  - 用户确认需要独立 UI 规范文档，不跳过
-- 关联迭代：v0.4
+  - 用户确认需要独立 UI 规范文档,不跳过
+- 关联迭代:v0.4
 - 遗留问题/风险：等待 PM 产出 `docs/progress/iterations/v0.4-ui-spec.md`，UI 规范定稿后架构师继续技术设计
 
 ## 2026-05-30 — v0.4 PRD R2 Review
