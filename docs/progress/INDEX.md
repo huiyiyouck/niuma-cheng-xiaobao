@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-10 | Tester | v0.6 PRD R1 Review 会话收尾 + Tester 日志分页归档 | ✅ 已完成 — Tester 日志超 300 行阈值（359 行），按 `context-policy.md` 拆为 tester-current.md（v0.6 + v0.5 共 6 条，本次会话收尾在内）/ tester-archive.md（v0.4 共 3 条）/ tester-summary.md（长期摘要 + 当前关注点 + 8 类常见风险）三层；INDEX 角色日志表同步更新。v0.6 仍处于 PRD R1 Review中（4/5 已完成） | DevOps 完成 R1 Review；PM 汇总后产出 R2 |
 | 2026-06-10 | Tester | v0.6 PRD R1 Tester Review | ❌ 需修改 — 12 条意见（4 高 / 5 中 / 3 低）：高严重度集中在 L0/L1 状态机未定义导致 AC-04/AC-09/AC-10/AC-20 测试断言无落点（#T1，与 #A1 同源）、外部依赖三件套（LLM/搜索/链接读取）mock 策略 PRD 全程缺失致 §3.2~§3.4 在 CI 零条可测（#T2）、外部依赖失败后的"系统可观测行为"验收覆盖不全只要求"记录"不足（#T3）、不回归边界**完全缺失**——v0.5 53 个测试和 5 条功能线均无守住 AC（#T4）；中严重度 5 条覆盖 AI 输出验证分层（自动化/人工/冒烟）、前端展示类 AC 验收手段、AC-11/AC-12/AC-13 可观测载体、AC-03 L0 跳过条件 5/8 不可枚举、空间上传异常 4 类常见场景；低 3 条为同秒排序、AC-25 验证手段、L1 手动重试入口。判断：v0.6 在 28 条 AC 正常路径上覆盖充分，但**测试可达性**层面与 #A1/#A2/#A3/#D1/#D2/#U4 一致缺收敛，PM R2 必须修齐前 4 项才能落到测试阶段 | DevOps 完成 R1 Review；PM 汇总后产出 R2，Tester 复审 |
 | 2026-06-09 | Developer | v0.6 PRD R1 Developer Review | ❌ 需修改 — 13 条意见（4 高 / 6 中 / 3 低）：高严重度集中在 mock 数据"一刀切"与渐进式迁移矛盾（#D1）、前后端契约清单全程缺失（#D2，v0.5 R2 §10 经验值反证关键性）、AC-08 退避策略与现有 `dispatcher.ts requeueTask` 冲突会污染 v0.5 X Stream 抓取（#D3）、空间图标上传缺工程契约且 Fastify 未装 multipart（#D4）；中严重度 6 条覆盖 AI 单次 JSON 输出体量、五类标签结构骨架、Vue 组件迁移工程量、置信度数据载体、库内检索同步策略、开发联调环境；低 3 条为措辞、依赖增量列表、字段长度上限。整体判断：v0.6 三条主线落到现有 Node.js+Vue 栈技术可行（schema/dispatcher/SlidePanel 可复用），但 PRD 在"能不能让开发拆任务"层面有结构性缺口；与 Architect #A1-#A8 / UI #U1-#U9 一致判断，本轮 PRD 把太多产品决策甩给设计阶段 | Tester / DevOps 完成 R1 Review；PM 汇总后产出 R2，Developer 复审 |
 | 2026-06-09 | UI | v0.6 PRD R1 UI Review | ❌ 需修改 — 12 条意见（4高/5中/3低）：高严重度集中在原型核心交付物缺画（#U1 抽屉 vs 常驻面板冲突 + 四段式在原型完全没画 / #U3 空间图标上传 UI 在原型完全没画）、路由结构不一致（#U2 现有 5 路由 vs 原型 4 路由合并 alerts+logs 到 monitoring，PRD 没决策）、4 维评分+5 类标签视觉密度未收敛（#U4）；中严重度 5 条覆盖来源标签视觉、mock 数据过渡形态、L0/L1 处理状态前台可见性、信息源新增入口路径、统计卡片口径；低 3 条为措辞与边界澄清。整体判断：PRD 把 Figma 原型当成"已成型 UI 答案"是误判——核心交付物在原型直接缺画，PM 不能默认 UI 阶段照抄就行 | Developer / Tester / DevOps 完成 R1 Review；PM 汇总后产出 R2，UI 复审 |
@@ -125,5 +126,5 @@
 | Architect（架构师） | [roles/architect-current.md](roles/architect-current.md) / [roles/architect-summary.md](roles/architect-summary.md) | [roles/architect-corrections.md](roles/architect-corrections.md) |
 | Developer（开发工程师） | [roles/developer-current.md](roles/developer-current.md) / [roles/developer-summary.md](roles/developer-summary.md) | [roles/developer-corrections.md](roles/developer-corrections.md) |
 | DevOps（运维/部署工程师） | [roles/devops.md](roles/devops.md) | [roles/devops-corrections.md](roles/devops-corrections.md) |
-| Tester（测试工程师） | [roles/tester.md](roles/tester.md) | — |
+| Tester（测试工程师） | [roles/tester-current.md](roles/tester-current.md) / [roles/tester-summary.md](roles/tester-summary.md) | — |
 | WM（工作流管理者） | [roles/wm.md](roles/wm.md) | [roles/wm-corrections.md](roles/wm-corrections.md) |
