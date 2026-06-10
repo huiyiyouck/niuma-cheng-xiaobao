@@ -1,48 +1,3 @@
-## 2026-05-31 — v0.4 迭代关闭检查 + 归档摘要
-
-- 本次角色：产品架构师(PM)
-- 动作：迭代关闭检查 + 创建归档摘要 + 收尾归档
-- 触发：用户问「今天是否可以做一下收尾工作了？」+ INDEX 明确「下一步入口：PM 或 WM 执行 v0.4 迭代关闭检查」
-- 关闭检查（按 `mechanisms.md §3` 8 项）：
-  1. ✅ v0.4.md 各阶段状态一致
-  2. ✅ 各阶段 Review 结论完整
-  3. ✅ 阻塞全清（#B1/#B2/#B3 修复；RSS 实机延后经用户决策）
-  4. ✅ INDEX 已更新
-  5. ✅ 角色日志无关键阻塞
-  6. ✅ 无 Change Note
-  7. ✅ Summary 已创建；Engineering 已沉淀 2 条
-  8. ✅ 前端 WS 残留已在 Bugfix `e736980` 清零
-- 关闭结论：**✅ 可关闭（有条件关闭）**
-  - 条件 A：RSS Fetcher 实机抓取延后至后续迭代上线验证（用户决策）
-  - 条件 B：commit `e736980` 7 项视觉 Bugfix 不升 R2（PM 决策，已落档）
-- 产出：
-  - `docs/progress/iterations/v0.4-summary.md`（新建，含 8 项关键决策 / Review 质量结论 / 遗留问题 / 知识库 / 后续机会 / Git 关键节点）
-  - `v0.4.md`：头部「最终状态」改为「✅ 已完成（有条件关闭）」+ 末尾追加「迭代关闭检查」节
-  - INDEX：当前迭代改为「无」+ v0.4 行 Summary 列补 link + 状态改为「✅ 已完成」+ 最近收尾摘要新增 PM 行
-- 关联迭代：v0.4
-- 遗留问题/风险：
-  - RSS 实机抓取（已纳入后续迭代关注）
-  - 数据库迁移机制规范化（Architect ADR-001 + DevOps Step 3 计划，跨任务 P2）
-- 下一步：用户决定是否启动 v0.5（候选材料：X/Twitter Filtered Stream Product Brief + 技术规划）或其他工作；PM 当日收尾完成
-
-## 2026-06-01 — 信息平台演进方向 Product Brief
-
-- 本次角色：产品架构师(PM)
-- 动作：产出
-- 涉及文档：`docs/progress/ad-hoc/2026-06-01-product-brief-information-platform-evolution.md`
-- 结论：与用户讨论产品衍化方向，达成以下方向级共识：
-  - 产品定位：有价值的结构化信息平台，不是信息堆砌
-  - 演进路线：自用打磨 → 订阅号推送+公众号引流 → 确认用户画像 → 商业化迭代
-  - 频道空间：AI + 财经，两个独立空间，信息源（X + RSS）逐步积累
-  - 信息评测体系：3 维度（时效/影响力/置信度）+ 2 预留（行动性/稀缺性），1-5 评分，等权综合分
-  - 全自动化：代码分流 → LLM 处理 → 代码判状态，人工不参与
-  - 状态体系：草稿（立即推送/日报收录/仅入库/待确认），后续讨论确认
-  - v1.0 里程碑：自用跑通 + 可以开始对外推送
-  - 阈值/权重：占位，待自用数据积累后校准
-- 关联迭代：v0.5+ 候选输入材料
-- 遗留问题/风险：财经空间信息源未确认；评分锚点待细化；阈值/权重待校准
-- 下一步：用户决定下一步工作（启动 v0.5 / 其他）
-
 ## 2026-06-01 — v0.5 迭代规划讨论（阶段性收尾）
 
 - 本次角色：产品架构师(PM)
@@ -296,3 +251,32 @@
   - v0.6 PRD R1 等待 UI、Architect、Developer、Tester、DevOps 五方 Review。
   - 搜索服务、库内相关新闻检索算法、L0/L1 数据模型、图片存储方案需设计阶段确认。
 - 下一步：切换到 UI、Architect、Developer、Tester、DevOps 角色分别 Review `docs/progress/iterations/v0.6-prd.md`。
+
+## 2026-06-10 — v0.6 PRD R2 汇总改稿
+
+- 本次角色：产品架构师(PM)
+- 动作：汇总五方 R1 Review + Owner 决策 → 修改 PRD R2
+- 涉及文档：
+  - `docs/progress/iterations/v0.6-prd.md`
+  - `docs/progress/iterations/v0.6.md`
+  - `docs/progress/INDEX.md`
+  - `docs/progress/roles/pm-current.md`
+  - `docs/progress/roles/pm-summary.md`
+  - `docs/progress/roles/pm-archive.md`
+- 结论：v0.6 PRD 已从 R1 Review 完成推进到 R2 Review中。
+- R2 收敛事项：
+  - 新闻详情形态：定为右侧抽屉，补充桌面/移动布局、顶部摘要区、四段式内容、评分区和标签区，供 Owner 重新生成 Figma 原型。
+  - 路由结构：告警和日志本期合并为统一监控页，旧 `/admin/alerts` 和 `/admin/logs` 需兼容跳转。
+  - L0/L1 状态机：补充 L0 `pending/processing/skipped/passed/failed` 与 L1 `not_started/queued/processing/retryable_failed/final_failed/completed`，明确合法转移和新闻流可见性。
+  - 外部依赖：LLM 必需；库内检索每条 L1 必做；链接读取有链接就尝试；X/Web 搜索仅 `needs_context=true` 触发，失败降级。
+  - Owner 决策：不设置成本上限或预算熔断；不做原始数据管理后台、归档/清理策略、保留周期配置或历史数据批处理。
+  - 空间图标：禁止存入前端构建目录，建议后端持久目录；图片优先于 emoji/文本，移除图片后回退。
+  - Mock 边界：开发/测试可用 fixture，生产构建不得引用 mock。
+- 同步状态：
+  - `v0.6.md` PRD 阶段新增 R2 行，五方待复审。
+  - `INDEX.md` 当前阶段更新为 PRD R2 Review中，下一步入口为五方复审。
+  - PM current 超过上下文阈值前主动归档最旧两条记录到 archive，并更新 summary。
+- 遗留问题/风险：
+  - R2 仍需 UI / Architect / Developer / Tester / DevOps 分别复审通过后才能定稿。
+  - 原始数据治理能力已明确不做，后续信息源规模增长时需另起迭代评估。
+- 下一步：切换到 UI、Architect、Developer、Tester、DevOps 角色复审 `docs/progress/iterations/v0.6-prd.md`。

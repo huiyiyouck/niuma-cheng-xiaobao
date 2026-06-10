@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：PRD 阶段 R1 Review 完成（5 方一致 ❌需修改：Architect 11 条 / UI 12 条 / Developer 13 条 / Tester 12 条 / DevOps 12 条），等待 PM 汇总产出 R2
+- 当前阶段：PRD 阶段 R2 Review中（PM 已汇总 R1 五方意见并按 Owner 决策提交 R2，等待 UI / Architect / Developer / Tester / DevOps 复审）
 - 阻塞项：—
-- 下一步入口：PM 汇总 R1 五方意见，产出 PRD R2
+- 下一步入口：UI / Architect / Developer / Tester / DevOps 复审 `iterations/v0.6-prd.md`
 
 ## 版本列表
 
@@ -19,7 +19,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
-| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | — | — | — | PRD 阶段 R1 Review 完成（5/5 已 Review，全部 ❌需修改），等待 PM 汇总 R2 |
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | — | — | — | PRD 阶段 R2 Review中（5 方待复审） |
 
 ## 当前 Change Notes
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-10 | PM | v0.6 PRD R2 汇总改稿 | ✅ 已完成 — 汇总 Architect / UI / Developer / Tester / DevOps 五方 R1 Review，并按 Owner 决策提交 R2：新闻详情定为右侧抽屉并补齐 Figma 重生成布局描述；告警/日志本期合并为统一监控页；补充 L0/L1 产品层状态机、错误分类和重试语义；外部依赖按必需/条件/可选增强分层且失败降级；Owner 明确不设成本上限、不做原始数据治理能力；空间图标上传禁止进入前端构建目录，转为后端持久目录约束；生产 mock 边界和不回归验收补齐 | UI / Architect / Developer / Tester / DevOps 复审 `iterations/v0.6-prd.md` |
 | 2026-06-10 | DevOps | v0.6 PRD R1 DevOps Review | ❌ 需修改 — 12 条意见（4 高 / 5 中 / 3 低）：高严重度集中在 4 类外部依赖（LLM / 链接读取 / Web 搜索 / X 搜索）的网络出口/超时/成本/速率未收敛致部署侧无 dry-check 与熔断基准（#O1，与 #A3 同源但补运维约束三表）、"原始信息先入库"+ L1 重试堆积无数据保留策略致 6 个月内磁盘告警（#O2，独立视角，当前 16GB 可用、年增 5-40GB）、软链接部署模式 × 空间图标上传未定硬约束致用户上传文件每次 build 丢失风险（#O3，与 #A8/#D4 同源但补部署架构约束）、L0/L1 任务卡死/外部依赖宕机/月费突破等运维告警载体未在 PRD 收敛（#O4，独立视角）；中严重度 5 条覆盖 npm 依赖增量审计（含 sharp/playwright 系统依赖）、env 增量清单与 `.env.example` 同步流程、AC-25 mock 部署门禁、systemd 日志轮转策略、回滚路径定义（含 DB 字段绑定用户数据后的无回头路边界）；低 3 条为密钥轮换 SOP、浏览器缓存与文件 hash 命名、上线前 dry-check 命令清单。整体判断：本期落到现有 systemd + nginx + drizzle migrate + 软链接部署架构无红线，v0.5 部署基线可承载；但 PRD 在"上线后能不能扛住 + 出问题能不能回得来"两个维度有结构性缺口，与 Architect #A1-#A8 / UI #U1-#U9 / Developer #D1-#D13 / Tester #T1-#T12 一致判断 — 本轮 PRD 把太多产品/工程/运维决策甩给设计阶段，5 方一致 ❌需修改，R1 五方完结 | PM 汇总 R1 五方意见产出 PRD R2，DevOps 复审 |
 | 2026-06-10 | Tester | v0.6 PRD R1 Review 会话收尾 + Tester 日志分页归档 | ✅ 已完成 — Tester 日志超 300 行阈值（359 行），按 `context-policy.md` 拆为 tester-current.md（v0.6 + v0.5 共 6 条，本次会话收尾在内）/ tester-archive.md（v0.4 共 3 条）/ tester-summary.md（长期摘要 + 当前关注点 + 8 类常见风险）三层；INDEX 角色日志表同步更新。v0.6 仍处于 PRD R1 Review中（4/5 已完成） | DevOps 完成 R1 Review；PM 汇总后产出 R2 |
 | 2026-06-10 | Tester | v0.6 PRD R1 Tester Review | ❌ 需修改 — 12 条意见（4 高 / 5 中 / 3 低）：高严重度集中在 L0/L1 状态机未定义导致 AC-04/AC-09/AC-10/AC-20 测试断言无落点（#T1，与 #A1 同源）、外部依赖三件套（LLM/搜索/链接读取）mock 策略 PRD 全程缺失致 §3.2~§3.4 在 CI 零条可测（#T2）、外部依赖失败后的"系统可观测行为"验收覆盖不全只要求"记录"不足（#T3）、不回归边界**完全缺失**——v0.5 53 个测试和 5 条功能线均无守住 AC（#T4）；中严重度 5 条覆盖 AI 输出验证分层（自动化/人工/冒烟）、前端展示类 AC 验收手段、AC-11/AC-12/AC-13 可观测载体、AC-03 L0 跳过条件 5/8 不可枚举、空间上传异常 4 类常见场景；低 3 条为同秒排序、AC-25 验证手段、L1 手动重试入口。判断：v0.6 在 28 条 AC 正常路径上覆盖充分，但**测试可达性**层面与 #A1/#A2/#A3/#D1/#D2/#U4 一致缺收敛，PM R2 必须修齐前 4 项才能落到测试阶段 | DevOps 完成 R1 Review；PM 汇总后产出 R2，Tester 复审 |
