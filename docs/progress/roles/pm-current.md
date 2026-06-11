@@ -1,30 +1,3 @@
-## 2026-06-01 — v0.5 迭代规划讨论（阶段性收尾）
-
-- 本次角色：产品架构师(PM)
-- 动作：规划讨论（未创建 PRD）+ 收尾归档
-- 涉及文档：
-  - `docs/progress/ad-hoc/2026-05-30-product-brief-x-filtered-stream.md`
-  - `docs/progress/ad-hoc/2026-05-30-tech-plan-x-filtered-stream.md`
-  - `docs/progress/ad-hoc/2026-06-01-product-brief-information-platform-evolution.md`
-  - `docs/progress/INDEX.md`
-- 结论：用户明确 v0.5 计划包含三条主线：
-  1. **X/Twitter 实时监听**：作为正式功能落地。
-  2. **信息源管理 / 管理页重构**：PM 定义产品结构和业务规则；本次迭代开始由正式 UI（界面设计师）产出页面方案，PM 不再直接画 UI 或细化视觉方案。
-  3. **评分体系方法论**：v0.5 只给出具体方法和细节方案，作为文档产出；不改代码、不做页面、不做推送落地。
-- 已阶段性提出评分体系方案方向：
-  - 评分对象是单条信息，不是 Source 或频道。
-  - 当前 3 维度：时效性、影响力、置信度；预留行动性、稀缺性。
-  - 采用 1-5 分、评分锚点、加权综合分、单维度突出、置信度保护、状态草稿、LLM 结构化输出和评分版本化。
-  - 建议 v0.5 交付 `v0.5-scoring-method.md`，Review 方建议 Architect / Developer / Tester。
-- 未完成：
-  - 尚未正式确认 v0.5 范围方案。
-  - 尚未展开并确认「信息源管理重构」产品方案。
-  - 尚未创建 `v0.5-prd.md` 或 `v0.5.md`。
-- 关联迭代：v0.5（规划中，未正式启动 PRD）
-- 遗留问题/风险：v0.5 范围较大，需下次先确认是否拆分阶段；UI 职责边界已调整，后续 PRD 只定义信息架构和验收，不替 UI 出图。
-- 下一步：PM 继续从「信息源管理重构方案」和「评分方法论文档范围确认」开始，完成 v0.5 PRD 规划。
-- 追加记录：用户要求登记待办，已在 `docs/progress/INDEX.md` 跨任务待办中登记 3 项 PM 待办（v0.5 PRD 规划、信息源管理重构方案、评分体系方法论文档范围）。
-
 ## 2026-06-02 — v0.5 信息源管理重构讨论：事件时间线与影响链机会登记
 
 - 本次角色：产品架构师(PM)
@@ -280,3 +253,25 @@
   - R2 仍需 UI / Architect / Developer / Tester / DevOps 分别复审通过后才能定稿。
   - 原始数据治理能力已明确不做，后续信息源规模增长时需另起迭代评估。
 - 下一步：切换到 UI、Architect、Developer、Tester、DevOps 角色复审 `docs/progress/iterations/v0.6-prd.md`。
+
+## 2026-06-11 — v0.6 PRD R2 定稿裁定
+
+- 本次角色：产品架构师(PM)
+- 动作：核查五方 R2 复审结果 + PRD 定稿裁定 + 阶段推进
+- 涉及文档：
+  - `docs/progress/iterations/v0.6-prd.md`
+  - `docs/progress/iterations/v0.6.md`
+  - `docs/progress/INDEX.md`
+  - `docs/progress/roles/pm-current.md`
+  - `docs/progress/roles/pm-summary.md`
+- 结论：v0.6 PRD R2 已定稿，迭代推进到 UI 方案阶段。
+- 判断依据：
+  - UI / Architect / Developer / Tester / DevOps 五方 R2 均为有条件通过。
+  - R1 高严重度阻断项均已达到可接受门槛。
+  - R2 剩余项主要是 UI 方案、接口契约、测试计划、部署手册和日志轮转等后续阶段细化事项，不需要继续拉长 PRD 轮次。
+- PM 裁定：
+  - 不进入 R3。
+  - PRD R2 标记为已定稿。
+  - 剩余条件按阶段承接：UI 方案承接信息源入口/统计口径/上传交互；设计阶段承接 API 契约、AI 调用策略、错误分类和告警阈值；测试阶段承接验收分层、样本集和 v0.5 回归基线恢复；DevOps 承接日志轮转和 handbook。
+  - 修正 PRD R2 旧路由前缀：统一监控页目标 `/monitoring`，旧 `/alerts` 和 `/logs` 兼容跳转。
+- 下一步：切换到 UI 角色，基于 `docs/progress/iterations/v0.6-prd.md` 产出 `docs/progress/iterations/v0.6-ui-spec.md`。

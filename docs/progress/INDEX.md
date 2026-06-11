@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：PRD 阶段 R2 — DevOps 已复审（5/5 方已分别完成 R2 复审）
+- 当前阶段：UI 方案阶段待产出（PRD R2 已定稿；五方 R2 均有条件通过，PM 裁定不进入 R3）
 - 阻塞项：—
-- 下一步入口：PM 介入 v0.6 PRD R2
+- 下一步入口：UI 基于 `iterations/v0.6-prd.md` 产出 `iterations/v0.6-ui-spec.md`
 
 ## 版本列表
 
@@ -19,7 +19,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
-| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | — | — | — | PRD 阶段 R2（5/5 方已分别完成复审，等待 PM 介入）|
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | — | — | — | UI 方案阶段待产出（PRD R2 已定稿）|
 
 ## 当前 Change Notes
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-11 | PM | v0.6 PRD R2 定稿裁定 | ✅ 已定稿 — 五方 R2 复审均为有条件通过，R1 高严重度阻断项均到达可接受门槛；PM 裁定不进入 R3，剩余条件由后续阶段承接：UI 方案承接信息源新增三路径、统计卡片口径、Source 详情和上传交互；设计阶段承接前后端契约清单、AI 调用策略、错误分类和告警阈值；测试阶段承接 AI/前端验收分层、L0 样本集和 v0.5 回归基线恢复；DevOps 阶段承接 systemd 日志轮转和 handbook 项。同步修正 PRD R2 旧路由前缀：统一监控页目标 `/monitoring`，旧 `/alerts` `/logs` 兼容跳转 | UI 基于 `iterations/v0.6-prd.md` 产出 `iterations/v0.6-ui-spec.md` |
 | 2026-06-11 | DevOps | v0.6 PRD R2 DevOps 复审 + 会话收尾 | ⚠️ **有条件通过** — R1 12 条意见 5 完关（#O3 软链接×图标硬约束 / #O6 env 三处同步 / #O7 mock 部署门禁 / #O11 浏览器缓存方向 / #O12 dry-check）+ 4 基本关（#O1 外部依赖边界四列 / #O4 监控告警边界 / #O5 依赖增量 / #O9 回滚路径硬约束）+ 2 合理分流（#O2 不做原始数据治理 Owner 接受风险 / #O10 密钥轮换 SOP 由 handbook 承接）+ 1 未关闭（#O8 systemd 日志轮转，R2 0 字未回应）。**4 阻断项（#O1~#O4）全部到达可接受门槛**。R2 §5 外部依赖边界表 + §2.7 上传硬约束 + AC-35 部署前 mock 检查是对 DevOps 价值最大的三段，与 v0.5.1 部署经验完整闭环。R2 引入 2 条新意见：#O13（中）LLM 供应商切换后 final_failed 爆增告警语义（与 #D14/#A20 同源）/ #O14（低）生产 .env 真实性验证清单（部署侧自治承接）。建议 PM 在后续阶段把 #O8 1 句日志轮转方向收口；如不补由部署侧在 v0.6 部署就绪前自治承接方案 A（logrotate daily/14天/压缩）。当前磁盘 16GB 可用 + 540K 日志（2 天 +112K），L0/L1 上线后 10-50MB/天必须在上线前落实轮转 | PM 介入 v0.6 PRD R2 |
 | 2026-06-11 | Tester | v0.6 PRD R2 复审 | ⚠️ 有条件通过 — R1 12 条 2 完关 + 4 基本关 + 4 未关闭（#T5 AI 输出验证分层 / #T6 前端展示类 AC 验收手段 / #T8 L0 跳过条件判定方式 / #T10 同秒排序）+ 2 低基本关。**4 个阻断项（#T1~#T4）全部到达可接受门槛**：#T1 完关（§2.3 状态机 10 态 + 转移图 + 可见性矩阵让测试断言可写）、#T3 完关（§3.2 错误分类三档 + AC-10a 单条失败不阻塞同 Source）、#T2/#T4 基本关（§5 测试基础设施 mock 允许 + §3.8 AC-33~AC-35 不回归验收）。R2 新增 #T13 中（mock 数据模板 + L0/L1 样本测试数据集由谁产出未定）/ #T14 低（AC-33 缺测试基线不回归一句）。R2 测试可达性从 R1 ❌→✅ 提升幅度大，与 Architect / UI / Developer R2 一致达成 ⚠️ 有条件通过共识门槛 | DevOps 完成 R2 复审；PM 决定是否开 R3 或直接进 UI 方案阶段 |
 | 2026-06-11 | Developer | v0.6 PRD R2 Developer 复审 | ⚠️ **有条件通过** — R1 13 条意见 4 完全关闭（#D3/#D11/#D12/#D13）+ 5 基本关闭 + 1 合理分流 + 3 未关闭（**#D2 前后端契约清单 0 字未补**关键缺口 / #D5 AI 单次 JSON 输出策略 / #D7 §2.6 重构工程量+组件迁移）；R2 新增内容工程实施路径清晰，引入 2 条新意见 #D14（中）AC-07「JSON 格式错误算可重试」与 §3.2「AI 输出不合法→不可重试」语义冲突需澄清 / #D15（低）AC-32 阈值方向。建议 R3 补 2 句（#D2 §3.9 契约清单草案 1 句 + #D14 错误分类语义澄清 1 句）；如不开 R3，Developer 在设计阶段第一道工作主动产出 v0.6 前后端契约草案文档（参考 v0.5 R2 §10 体例）。v0.5 测试当前禁用，本期实施前必须先恢复独立 test DB + .env.test 否则 AC-34 不回归验收无法验证 | Tester / DevOps 完成 R2 复审；PM 决定是否走 R3 或直接进 UI 方案阶段 |

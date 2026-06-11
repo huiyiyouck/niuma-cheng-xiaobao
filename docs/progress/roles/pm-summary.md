@@ -3,9 +3,9 @@
 ## 当前状态
 
 - 当前迭代：v0.6
-- 当前阶段：PRD 阶段 R2 Review中
-- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`
-- 下一步入口：切换到 UI、Architect、Developer、Tester、DevOps 角色分别复审 v0.6 PRD R2。
+- 当前阶段：UI 方案阶段待产出
+- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）
+- 下一步入口：切换到 UI 角色，基于 v0.6 PRD R2 产出 `docs/progress/iterations/v0.6-ui-spec.md`。
 
 ## v0.6 关键上下文
 
@@ -49,6 +49,13 @@ R1 五方均已完成且一致需修改。PM 已按 Owner 决策提交 R2，关�
 - Owner 决策：不设置成本上限或预算熔断；不做原始数据治理能力。
 - 空间图标上传不得使用前端构建目录，改以后端持久目录为设计方向。
 - 开发/测试 mock 允许，生产构建禁止引用 mock。
+
+R2 五方复审均为有条件通过。PM 于 2026-06-11 裁定不进入 R3，PRD R2 定稿，剩余条件分流到后续阶段承接：
+
+- UI 方案：信息源新增三路径、统计卡片口径、Source 详情、上传交互、监控页顶导与角标。
+- 设计阶段：前后端契约清单、L0/L1 数据模型、AI 调用策略、错误分类、告警阈值。
+- 测试阶段：AI/前端验收分层、L0 样本集、v0.5 回归基线恢复。
+- DevOps：systemd 日志轮转和部署 handbook 项。
 
 ## 重要风险
 
