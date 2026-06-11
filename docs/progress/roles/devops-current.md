@@ -8,7 +8,7 @@
 
 ### 触发
 
-v0.6 PRD R2 前 4 方（Architect / UI / Developer / Tester）已完成复审全部 ⚠️ 有条件通过，Owner 切到 DevOps 完成第 5 方复审闭环。Architect 上一会话已 R2 追审为有条件通过，五方共识门槛是否达成取决于本次复审。
+v0.6 PRD R2 前 4 方（Architect / UI / Developer / Tester）已完成复审，Owner 切到 DevOps 完成第 5 方复审。
 
 ### 执行
 
@@ -53,15 +53,14 @@ v0.6 PRD R2 前 4 方（Architect / UI / Developer / Tester）已完成复审全
 ### 同步动作
 
 - 更新 `v0.6-prd.md` Review 记录区域追加 DevOps R2 段（约 130 行）+ Review 状态表 DevOps 待复审 → ⚠️ 有条件通过。
-- 更新 `v0.6.md` PRD R2 行：5 方齐 → R2 完成，五方一致 ⚠️ 有条件通过，等待 PM 决定 R3 vs UI 方案阶段。
-- 更新 `INDEX.md` 当前状态：阶段 → R2 复审完成（5/5 完成，全部 ⚠️ 有条件通过）/ 下一步入口 → PM 决定 R3 vs UI 方案阶段；最近收尾摘要表追加本次记录。
+- 更新 `v0.6.md` PRD R2 行：DevOps 复审状态填入 ⚠️ 有条件通过 + 12 条逐条结论；阶段状态列改为机械事实「5/5 方已完成 R2 复审，等待 PM 介入」。
+- 更新 `INDEX.md` 当前状态：阶段 → "PRD 阶段 R2 — DevOps 已复审（5/5 方已分别完成 R2 复审）" / 下一步入口 → "PM 介入 v0.6 PRD R2"（不预判 R3 vs UI 方案阶段，不预判共识/通过）；版本列表 v0.6 状态改为机械事实；最近收尾摘要表追加本次记录。
+- 本次会话已纠错：上一轮 R1 收尾和本轮 R2 初版均越界写了"5 方一致 / 共识门槛达成 / 等待 PM 决定 R3 vs UI" 等项目级聚合判断，已按 Owner 反馈全部回滚为中性表述。聚合是否通过、是否进下一阶段属 PM/Owner 决策域，DevOps 不预设。
 - DevOps 日志 current 层追加本次会话条目（current 当前 9 条，本次后 10 条恰好到分层阈值边缘；下次会话产生新条目时需评估是否将最旧 2026-06-06 PRD R1 Review 移入 archive 层）。
 
 ### 下一步入口
 
-PM 决定 R3 vs UI 方案阶段：
-- **若开 R3**：建议合并 5 方建议的 R3 修订项（#O8 日志轮转 + #A12-#A15 + #D2/#D14 + #T8/#T13 + #U13/#U9）一次性收口；
-- **若直接进 UI 方案阶段**：DevOps 在设计阶段 Review 时把 4 条部署侧硬约束作为设计文档前置（详见 v0.6-prd.md DevOps R2 段条件 B）。
+PM 介入 v0.6 PRD R2。后续任何阶段推进（R3 / UI 方案 / 其他）由 PM/Owner 决定，DevOps 不预判。设计阶段被 Review 时配套带入 4 条部署侧硬约束（详见 v0.6-prd.md DevOps R2 段条件 B）。
 
 ---
 
