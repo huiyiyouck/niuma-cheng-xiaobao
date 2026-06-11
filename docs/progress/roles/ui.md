@@ -1,5 +1,54 @@
 # UI（界面设计师）角色日志
 
+## 2026-06-11 — v0.6 UI 方案阶段 R1 产出
+- 本次角色：UI（界面设计师）
+- 动作：产出 UI 方案
+- 涉及文档：`docs/progress/iterations/v0.6-ui-spec.md`（新建 1044 行）、`docs/progress/iterations/v0.6.md`、`docs/progress/INDEX.md`
+- 结论：UI 方案 R1 已提交，等待 Architect / Developer / Tester / PM Review
+- 关联迭代：v0.6
+- 关联 PRD：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）
+- 关联原型：`/root/news-aggregation-platform`（React + Tailwind + shadcn）
+- 与 Owner 对齐的 16 项决策（**原型优先原则**：原型 > PRD 留白处推荐 > UI 自创）：
+  - D1 信息源新增入口：三路径全保留（原型）
+  - D2 统计卡片布局：4 卡照原型；D2b 口径切到 L1 completed
+  - D3 浏览页 Pill / 管理页卡片：两套并存不复用（原型）
+  - D4 Source 详情：时间轴样式（原型）
+  - D5 图标编辑表单：emoji + 上传并存（PRD 必需，原型未画）
+  - D6 图标 4 视觉态：默认降级（UI 新设）
+  - D7 监控页顶导：3 项 + 监控角标（原型）
+  - D8 全局布局：全屏铺满（原型）
+  - D9 综合分徽章颜色：≥8 绿 / ≥6 蓝 / 其余灰（原型）
+  - D10 5 类标签颜色：**全部中性色**（原型严格 — Owner 裁定）
+  - D11 来源 + 可信度标签：段落末来源胶囊 + 首行可信度徽章（UI 新设）
+  - D12 抽屉宽度：480px 桌面 + 100% 移动
+  - D13 抽屉评分区：综合分主表达 + 4 维折叠
+  - D14 抽屉关闭：蒙层 + × + ESC 三启
+  - D15 L0/L1 状态徽章：4 色映射（绿/橙/红/灰）
+  - D16 错误提示：行内 + Toast + 弹窗 三档分用
+- 内容概要：
+  - **用户流程**：4 条关键任务流程（浏览高价值新闻 / 创建空间+上传图标 / 查看 L0/L1 处理状况 / 三路径新增信息源）+ 页面导航图 + 旧路由兼容跳转表（v0.5 实际是 `/alerts` `/logs` 非 `/admin/alerts` `/admin/logs`）
+  - **页面架构**：6 路由（含 2 重定向）+ 完整组件树
+  - **组件迁移矩阵**：22 个 v0.5 组件分类处理（改造 1 / 微调 6 / 重构 2 / 迁移 2 / 废弃 2 / 扩展 1 / 保留 8）+ 新建 12 个组件清单
+  - **关键交互状态**：每页面 4 态矩阵 + 抽屉 6 段降级规则 + 图标 4 视觉态 + 上传 6 交互态 + 错误提示三档分用
+  - **视觉约束**：Tailwind token → v0.5 CSS 变量映射表（11 条）+ 状态色映射 + 综合分徽章阈值 + L0/L1 10 状态徽章映射 + 5 类标签全中性色规范 + 来源/可信度段落视觉
+  - **页面详细设计**：6 个页面 + 抽屉布局（ASCII 草图）
+  - **组件详细设计**：5 个核心新组件（NewsDetailDrawer/IconUploader/SpaceIcon/SourceLevelStatusCounts/StatusBadge 扩展）含 TS 数据契约
+  - **API 契约清单**：6 个新 endpoint
+  - **验收标准映射**：28 条 PRD AC 在 UI 层的可见性、可测点和断言条件
+- 关键产出特点：
+  - 抽屉 6 段顺序固定 + 字段缺失隐藏（与 AC-25c 闭环）
+  - 图标上传失败静默回退（不弹 Toast，理由：图标只是辅助识别）
+  - 监控页继承 v0.5 AlertsPage + LogsPage 大部分逻辑，迁移成本低
+  - AC-30 采纳 Architect #A14 修订建议：监控页 + Source 详情页**两处都做**计数（双表达替代「或」字）
+  - 5 类标签全部 secondary 中性色，靠"类别标题"区分类别（严格照原型 Owner 决策）
+- 遗留问题/风险：
+  - R1（中）原型颜色 token 与 v0.5 CSS 变量映射准确性，Developer 实现时需对照表
+  - R2（中）12 个新组件 + 6 个新 API endpoint 约 v0.5 70% 体量
+  - R3（低）监控角标数据源沿用 v0.5 alerts.count；如设计阶段决定告警包含 L0/L1 final_failed 自动告警（AC-32），口径需更新
+  - R4（低）抽屉移动端 100% 全宽 768px 断点；如 Owner 主要桌面使用可推后适配
+- 下一步入口：等待 Architect / Developer / Tester / PM 完成 R1 Review
+- 收尾状态：—
+
 ## 2026-06-10 — v0.6 PRD R2 复审 + 代提 Architect R2 追审遗留
 - 本次角色：UI（界面设计师）
 - 动作：Review（R2 复审）+ Architect 遗留改动代提
