@@ -2,6 +2,75 @@
 
 > 本文件保留最近的工作日志（最近 10 条以内）。更早的日志见 `tester-archive.md`；长期摘要见 `tester-summary.md`。
 
+## 2026-06-11 — v0.6 UI 方案 R1 Tester Review
+
+- 本次角色：Tester（测试工程师）
+- 动作：Review v0.6 UI 方案 R1 → 核验 28+ AC 在 UI 层验收点 + 4 维状态覆盖 + 测试可观测性 + mock fixture 需求
+- 涉及文档：v0.6-ui-spec.md、v0.6.md、INDEX.md、tester-current.md
+- 结论：**⚠️ 有条件通过** — 11 条意见（3 高 / 5 中 / 3 低）
+- 关联迭代：v0.6
+
+### 高严重度（3 条）
+
+1. **#T1**：前端零自动化测试栈下 12 条 UI 类 AC 验收手段未定（人工 vs Playwright vs Storybook）。已 grep 复核 `frontend/package.json` 无任何测试 dev dependency。影响测试阶段工时估算。建议方案：沿用 v0.5 人工模式 + Owner 浏览器手测
+2. **#T2**：§3.2 抽屉 6 段降级规则区分"字段缺失"vs"字段为空"，但 §6.1 NewsDetail 数据契约未定义 5 种 JSON 值（`undefined / null / '' / [] / {}`）对应哪档。Tester 无法预制 mock fixture
+3. **#T3**：§3.3 SpaceIcon 第 4 视觉态"图片加载失败 → 静默回退"+ "不弹 Toast"让 Tester 无法区分"真的回退了"vs"onerror 没触发"vs"原本就没生成"。建议加 `console.warn` 或 `data-fallback` 属性
+
+### 中严重度（5 条）
+
+4. **#T4**：§3.4 上传交互态 5 种但缺超时 / 并发覆盖 / 断网 3 种 AC-28a 失败场景细分
+5. **#T5**：§5.5 监控页 Tab 切换实现路径与旧路由 redirect 决策未定（与 Developer #D9 同源，建议合并修订）
+6. **#T6**：§3.1 每页面状态矩阵缺 v0.5 历史数据展示降级（与 Architect #A1 同源）。AC-33 测试需要这条规则
+7. **#T7**：§8.7 AC-30 "MonitoringPage **和** SourceDetailPage 都展示 L0/L1 计数"但 §5.5/§6/§7 全局聚合完全缺画/缺组件/缺 API
+8. **#T8**：§9.1 R2 风险段未承接 Tester R2 PRD 复审 #T13 提的 "mock fixtures 由谁产出"。建议落到 Tester 或 Developer 实施第一道工作
+9. **#T9**：§5.6 D4 "圆点 + 竖线时间轴最近新闻"缺空数据 / 单条 / 多条 / 数据过多 4 边界态
+
+### 低严重度（3 条）
+
+10. **#T10**：§8 "UI 不验收"标注口径不统一
+11. **#T11**：§6.1 NewsDetail 接口未定义错误响应结构
+12. **#T12**：§6.3 SpaceIcon 测试触发方式 mock 路径未明示（与 #T3 同源）
+
+### AC 覆盖四维评估（UI 方案视角）
+
+| 维度 | 结论 | 主要缺口 |
+|------|------|----------|
+| 正常路径 | ✅ 充分 | §8 28+ AC 全部映射 + §1.3 关键任务流程齐 |
+| 边界值 | 🟡 基本充分 | §3.4 上传缺超时/并发/断网（#T4）；§5.6 时间轴缺 4 边界态（#T9） |
+| 异常路径 | 🟡 基本充分 | §3.5 错误三档清晰；§3.2 缺失 vs 空未定（#T2）；§3.3 静默回退缺可观测（#T3） |
+| 状态转换 | ✅ 充分 | §6.5 LevelStatus 11 项完整对应 PRD §2.3 |
+| 不回归 | 🟡 基本充分 | §1.2 旧路由表 + §2.3 迁移矩阵；缺 v0.5 历史数据降级（#T6） |
+| 可测试性 | 🟡 基本充分 | §8 验收点结构优秀；缺验收手段（#T1）+ mock 产出归属（#T8） |
+
+### 5 条修订条件
+
+- **条件 A**：UI 在 R2 修订 3 高 + 5 中（多数 1-2 行修订）
+- **条件 B**：如不开 R2 直接进设计阶段，Tester 在 `v0.6-test-plan.md` 承接 5 条工程假设：
+  1. 前端 UI 类 AC 沿用 v0.5 人工验证模式（#T1）
+  2. 字段缺失/为空统一按「`undefined / null / '' / [] / {}` 都算缺失」处理（#T2）
+  3. SpaceIcon 静默回退加 `console.warn` 作测试观察点（#T3）
+  4. AC-30 监控页全局计数本期暂在 Source 详情页验收（#T7）
+  5. mock fixture 由 Tester 在测试计划阶段产出，归档 `frontend/__fixtures__/v0.6/`（#T8）
+- **条件 C**：v0.5 测试当前禁用，本期实施前必须先恢复独立 test DB + `.env.test`（与 Developer R2 / Tester R2 PRD 复审条件 D 一致）
+
+### Tester 边界守住记录
+
+- 严格控制在"AC 可测性 / 4 维覆盖 / mock fixture 需求 / 不回归基线 / 测试执行可行性"范围内
+- 11 条意见全部基于"我作为 Tester 如何写测试用例和断言"视角，已 grep 复核 frontend 测试栈现状 + SlidePanel ESC 监听 + CSS 媒体断点
+- 不复审 UI 决策清单 16 项产品合理性（PM 域）、数据契约 schema 字段对齐（Architect 域）、组件迁移成本/CSS 变量映射事实偏移（Developer 域）
+- 11 条意见独立于其他 Review 方已提（#T5 与 #D9 / #T6 与 #A1 / #T8 与 PRD #T13 闭环 / #T1/#T2/#T3 完全独立）
+- 4 方 R1 一致达成 ⚠️ 有条件通过共识门槛
+
+### 知识沉淀判断
+
+- 本轮**不沉淀**到 `docs/knowledge/testing/`。
+- 「前端零测试栈下 UI 类 AC 验收手段未定」「mock fixture 产出归属未定」属本项目特定 UI 重构场景，未达到通用沉淀阈值。
+- 如下一轮（v0.7+ UI 类迭代）仍出现同类问题，再考虑沉淀"UI spec Review 检查表"。
+
+- 收尾状态：已收尾
+
+---
+
 ## 2026-06-11 — v0.6 PRD R2 Tester 复审
 
 - 本次角色：Tester（测试工程师）

@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：UI 方案阶段 R1 Review中（PM ⚠️有条件通过；Architect ⚠️有条件通过；Developer ⚠️有条件通过；等待 Tester 复审）
+- 当前阶段：UI 方案阶段 R1 Review完成（PM ⚠️有条件通过；Architect ⚠️有条件通过；Developer ⚠️有条件通过；Tester ⚠️有条件通过）
 - 阻塞项：—
-- 下一步入口：Tester Review `iterations/v0.6-ui-spec.md`
+- 下一步入口：UI 汇总 4 方意见整体修订到 R2 或推进到设计阶段
 
 ## 版本列表
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-11 | Tester | v0.6 UI 方案 R1 Tester Review | ⚠️ 有条件通过 — 11 条意见（3 高 / 5 中 / 3 低）：高严重度集中在前端零自动化测试栈下 12 条 UI 类 AC 验收手段未定（#T1，工时估算依赖）、§3.2 抽屉降级规则"字段缺失 vs 字段为空"二分法在 §6.1 NewsDetail 契约层未对齐（#T2，mock fixture 造数依赖）、§3.3 SpaceIcon 第 4 视觉态"静默回退"缺可观测证据 Tester 无法精确断言（#T3）；中严重度 5 条覆盖 §3.4 上传缺超时/并发/断网 3 种 AC-28a 场景、§5.5 监控页 Tab 切换实现路径与旧路由 redirect 决策（与 #D9 同源）、§3.1 缺 v0.5 历史数据展示降级（与 #A1 同源）、§8.7 AC-30 "两处都做" 但监控页全局聚合完全缺画/缺组件/缺 API、§9.1 R2 未承接 PRD #T13 提的 mock fixtures 产出归属、§5.6 时间轴缺 4 边界态；低 3 条为措辞与描述完善。**§8 验收点表 + §3 关键交互状态 + §6 组件 TS 类型**给 Tester 测试阶段提供了 70% 接力基础。4 方 R1 一致达成 ⚠️ 有条件通过共识 | UI 汇总 4 方意见整体修订到 R2 或推进到设计阶段 |
 | 2026-06-11 | Developer | v0.6 UI 方案 R1 Developer Review + 代提 Architect R1 遗留 | ⚠️ **有条件通过** — 12 条意见（3 高 / 6 中 / 3 低）。高严重度均为 spec 与 v0.5 真实代码事实性偏移：#D1 §2.2/§2.3 把 v0.5.1 已删的 ChannelPills/ChannelFilter 当成"现有"列入组件树和迁移矩阵（实际 NewsPage 完全内联 .cc-pill / .cc-search）；#D2 §7 API 契约 `/v1/alerts/count` 路径错（真实路径 `/v1/alerts/unread-count`）；#D3 §4.1 映射表里的 `var(--secondary)` `var(--text-primary)` 在 style.css 不存在 + D10「中性 secondary 色」与 §2.3 TagChip「保留 不改」直接矛盾。中严重度 6 条覆盖 SlidePanel props 工程量未计 / ESC 键监听缺规 / Tailwind 映射用途不清 / §7 全表与代码对照未做 / IconUploader error 分类未明 / 监控页 Tab 切换实现路径未定。低 3 条与 PM/Architect 同源。整体方向 OK 无产品级阻塞，建议 UI R2 1-2 行修订高严重度即可关闭。同 commit 代提 Architect R1（上一会话遗留）依据 last-out-unified-commit | Tester R1；UI 汇总 4 方意见后整体修订或直接进设计阶段 |
 | 2026-06-11 | PM | v0.6 UI 方案 R1 PM Review | ⚠️ 有条件通过 — UI 方案整体覆盖 PRD R2 核心范围，右侧抽屉、统一监控页、空间图标上传、L0/L1 状态可视化和 AC 映射均已成型；无高严重度阻断项。原提出 5 条意见，Owner 已确认 #P1：v0.6 全部按 Owner 提供的 UI 原型为主，D8 全屏铺满成立，本条关闭；剩余 4 条（1 中 / 3 低）：#P2 监控角标口径需明确是否包含 L0/L1 自动告警；#P3 「28 条 AC」表述过期；#P4 新建组件数量口径不一致；#P5 路径 C 应表述为添加展示位置而非新增信息源 | Architect / Developer / Tester 继续 Review `iterations/v0.6-ui-spec.md`；UI 后续汇总 R1 |
 | 2026-06-11 | UI | v0.6 UI 方案阶段 R1 产出 | ✅ 已产出 `iterations/v0.6-ui-spec.md`（1044 行）：基于 PRD R2 定稿版 + Owner 对齐 16 项决策清单（原型优先原则），覆盖 5 个核心页面（NewsPage / AdminPage 双 Tab / MonitoringPage / SourceDetailPage / 旧路由兼容跳转）+ 抽屉四段式 6 段布局 + 空间图标上传 4 视觉态 + L0/L1 状态徽章 4 色 + 来源/可信度标签视觉载体；组件清单：新建 12 个 + 22 个 v0.5 组件迁移矩阵（改造 1 / 微调 6 / 重构 2 / 迁移 2 / 废弃 2 / 扩展 1 / 保留 8）；API 契约清单 6 个新 endpoint；28 条 PRD AC 在 UI 层的可见性映射；Tailwind token → v0.5 CSS 变量映射表。指定 Review 方：Architect（数据流/契约/props）/ Developer（迁移成本/token 映射/旧路由）/ Tester（28 AC 可测性/4 视觉态/状态徽章）/ PM（16 决策是否对齐 R2 PRD） | Architect / Developer / Tester / PM 分别 Review `iterations/v0.6-ui-spec.md` |
