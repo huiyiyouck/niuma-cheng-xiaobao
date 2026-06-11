@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：PRD 阶段 R2 Review中（Architect ⚠️ 有条件通过；UI ⚠️ 有条件通过；Developer ⚠️ 有条件通过；Tester / DevOps 待复审）
+- 当前阶段：PRD 阶段 R2 Review中（Architect ⚠️ 有条件通过；UI ⚠️ 有条件通过；Developer ⚠️ 有条件通过；Tester ⚠️ 有条件通过；DevOps 待复审）
 - 阻塞项：—
-- 下一步入口：Tester / DevOps 复审 `iterations/v0.6-prd.md`
+- 下一步入口：DevOps 复审 `iterations/v0.6-prd.md`
 
 ## 版本列表
 
@@ -19,7 +19,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
-| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | — | — | — | PRD 阶段 R2 Review中（3/5 已复审） |
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | — | — | — | PRD 阶段 R2 Review中（4/5 已复审）|
 
 ## 当前 Change Notes
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-11 | Tester | v0.6 PRD R2 复审 | ⚠️ 有条件通过 — R1 12 条 2 完关 + 4 基本关 + 4 未关闭（#T5 AI 输出验证分层 / #T6 前端展示类 AC 验收手段 / #T8 L0 跳过条件判定方式 / #T10 同秒排序）+ 2 低基本关。**4 个阻断项（#T1~#T4）全部到达可接受门槛**：#T1 完关（§2.3 状态机 10 态 + 转移图 + 可见性矩阵让测试断言可写）、#T3 完关（§3.2 错误分类三档 + AC-10a 单条失败不阻塞同 Source）、#T2/#T4 基本关（§5 测试基础设施 mock 允许 + §3.8 AC-33~AC-35 不回归验收）。R2 新增 #T13 中（mock 数据模板 + L0/L1 样本测试数据集由谁产出未定）/ #T14 低（AC-33 缺测试基线不回归一句）。R2 测试可达性从 R1 ❌→✅ 提升幅度大，与 Architect / UI / Developer R2 一致达成 ⚠️ 有条件通过共识门槛 | DevOps 完成 R2 复审；PM 决定是否开 R3 或直接进 UI 方案阶段 |
 | 2026-06-11 | Developer | v0.6 PRD R2 Developer 复审 | ⚠️ **有条件通过** — R1 13 条意见 4 完全关闭（#D3/#D11/#D12/#D13）+ 5 基本关闭 + 1 合理分流 + 3 未关闭（**#D2 前后端契约清单 0 字未补**关键缺口 / #D5 AI 单次 JSON 输出策略 / #D7 §2.6 重构工程量+组件迁移）；R2 新增内容工程实施路径清晰，引入 2 条新意见 #D14（中）AC-07「JSON 格式错误算可重试」与 §3.2「AI 输出不合法→不可重试」语义冲突需澄清 / #D15（低）AC-32 阈值方向。建议 R3 补 2 句（#D2 §3.9 契约清单草案 1 句 + #D14 错误分类语义澄清 1 句）；如不开 R3，Developer 在设计阶段第一道工作主动产出 v0.6 前后端契约草案文档（参考 v0.5 R2 §10 体例）。v0.5 测试当前禁用，本期实施前必须先恢复独立 test DB + .env.test 否则 AC-34 不回归验收无法验证 | Tester / DevOps 完成 R2 复审；PM 决定是否走 R3 或直接进 UI 方案阶段 |
 | 2026-06-10 | UI | v0.6 PRD R2 复审 + 代提 Architect R2 追审遗留 | ⚠️ **有条件通过** — R1 12 条意见 3 完全关闭 + 4 基本关闭 + 1 引入 R2 措辞问题（#U2→#U13）+ 4 未回应（#U8/#U9/#U10/#U12）；R2 新增内容方向正确，引入 2 条新意见 #U13（中）路由对接 3 个工程细节缺失（旧路径前缀写错 + 顶导项数 + 监控角标）/ #U14（低）上传交互形态。建议 R3 至少补 4 句（#U13 三条 + #U9 字段口径）；如不开 R3，UI spec 阶段带条件假设承接 #U8/#U10/#U12/#U14。同 commit 代提 Architect 上一会话遗留 R2 追审脏改动（依据 last-out-unified-commit） | Developer / Tester / DevOps 完成 R2 复审；PM 决定是否走 R3 |
 | 2026-06-10 | PM | v0.6 PRD R2 汇总改稿 | ✅ 已完成 — 汇总 Architect / UI / Developer / Tester / DevOps 五方 R1 Review，并按 Owner 决策提交 R2：新闻详情定为右侧抽屉并补齐 Figma 重生成布局描述；告警/日志本期合并为统一监控页；补充 L0/L1 产品层状态机、错误分类和重试语义；外部依赖按必需/条件/可选增强分层且失败降级；Owner 明确不设成本上限、不做原始数据治理能力；空间图标上传禁止进入前端构建目录，转为后端持久目录约束；生产 mock 边界和不回归验收补齐 | UI / Architect / Developer / Tester / DevOps 复审 `iterations/v0.6-prd.md` |
