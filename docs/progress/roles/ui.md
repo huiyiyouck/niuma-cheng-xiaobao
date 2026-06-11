@@ -1,5 +1,39 @@
 # UI（界面设计师）角色日志
 
+## 2026-06-10 — v0.6 PRD R2 复审 + 代提 Architect R2 追审遗留
+- 本次角色：UI（界面设计师）
+- 动作：Review（R2 复审）+ Architect 遗留改动代提
+- 涉及文档：`docs/progress/iterations/v0.6-prd.md`、`docs/progress/iterations/v0.6.md`、`docs/progress/INDEX.md`
+- 结论：⚠️ **有条件通过**。R1 12 条意见 3 完全关闭 + 4 基本关闭 + 1 含 R2 措辞问题 + 4 未回应。
+- 关联迭代：v0.6
+- 关联非迭代工作：无
+- 关联 Change Note：无
+- R1 12 条核验：
+  - ✅ 完全关闭 3 条：#U1（抽屉 6 段顺序 + 桌面 420-520px + 移动全宽 + §2.6 不再画常驻右栏）/ #U6（AC-25 拆 3 档 + AC-35 部署检查）/ #U11（AC-23 加「新闻」+ Source 详情豁免）
+  - 🟡 基本关闭 4 条：#U3（§2.7 优先级 + 1MB + 持久目录 + AC-28a/28b）/ #U4（综合分 1 位小数 + 80 字理由 + 卡片 2-4 标签 + §2.6 标签优先级）/ #U5（§2.2 段落级 + AC-15a 共存）/ #U7（AC-30 + AC-31，「或」字问题与 Architect #A14 同向）
+  - 🟡 基本关闭但 R2 引入新问题 1 条：#U2（合并方向 OK，但 R2 §2.6 把现有路由 `/alerts /logs` 错写成 `/admin/alerts /admin/logs`；顶导项数和监控角标未提）→ 新提 #U13
+  - ❌ 未回应 4 条：#U8 信息源入口三路径 / #U9 统计卡片口径 / #U10 浏览页 Pill vs 管理页卡片 / #U12 Source 详情时间轴
+- R2 新增内容 UI 侧评估：
+  - §2.3 状态机：清晰，UI spec 可直接做 10 状态徽章色板（推荐绿/灰/橙/红四色系）
+  - §3.2 错误分类：retryable_failed 显示重试按钮 / final_failed 显示终态，与 AC-31 配合
+  - AC-30 「监控页或 Source 详情页」二选一应改为「都做」（与 Architect #A14 同向赞同）
+  - AC-31 重试入口只在管理/监控侧，措辞精准避免新闻流卡片重试按钮的视角混乱
+- R2 引入的新意见：
+  - **#U13（中）** §2.6 路由调整 3 个工程细节缺失：
+    1. 旧路径前缀错（R2 写 `/admin/alerts`，现有是 `/alerts`）— 会让 Developer 兼容跳转按错的旧路径写，旧书签依然 404，与 AC-33 不回归冲突
+    2. 顶部导航最终项数未定
+    3. 监控菜单项是否带未处理告警角标（原型 RootLayout 有，PRD 未提）
+  - **#U14（低）** §2.7 上传交互形态留给 UI spec：编辑表单（emoji + 上传并存还是 Tab）/ 上传中态 / 4 视觉态 / 错误提示位置 — 不阻塞但缺方向句会让 UI spec 反复一轮
+- R1 未关闭项复审判断：
+  - **建议 R3 补**：#U9（涉及前后端字段口径，留到 UI spec 才发现会让 Developer 反复）
+  - **可由 UI spec 阶段承接**：#U8（按三路径全保留默认方案 + spec 中标注假设）/ #U10（按两套并存且不复用同一组件处理）/ #U12（A/B 视觉提案给 Owner 选）
+- 遗留问题/风险：
+  - 建议 R3 至少补 4 句（#U13 三条 + #U9 字段口径一句）
+  - 如不开 R3 直接进 UI 方案阶段，UI 在 UI spec 中显式列出"PM 未在 R2 回应的 UI 决策假设"清单，让 Owner / 其他角色 Review 时确认
+- 同时：将 Architect 上一会话遗留的 R2 追审脏改动（v0.6-prd.md +205 行 + v0.6.md +1 行，完整追审段 + 状态修订）单独 commit 提出（依据 last-out-unified-commit），署名 Architect + UI 代提；该会话 Architect 角色日志的追审记录未更新，留待 Architect 下次上班补登
+- 下一步入口：等待 Developer / Tester / DevOps 完成 R2 复审；PM 决定是否走 R3
+- 收尾状态：—
+
 ## 2026-06-09 — v0.6 PRD R1 UI Review
 - 本次角色：UI（界面设计师）
 - 动作：Review

@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：PRD 阶段 R2 Review中（PM 已汇总 R1 五方意见并按 Owner 决策提交 R2，等待 UI / Architect / Developer / Tester / DevOps 复审）
+- 当前阶段：PRD 阶段 R2 Review中（Architect ⚠️ 有条件通过；UI ⚠️ 有条件通过；Developer / Tester / DevOps 待复审）
 - 阻塞项：—
-- 下一步入口：UI / Architect / Developer / Tester / DevOps 复审 `iterations/v0.6-prd.md`
+- 下一步入口：Developer / Tester / DevOps 复审 `iterations/v0.6-prd.md`
 
 ## 版本列表
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-10 | UI | v0.6 PRD R2 复审 + 代提 Architect R2 追审遗留 | ⚠️ **有条件通过** — R1 12 条意见 3 完全关闭 + 4 基本关闭 + 1 引入 R2 措辞问题（#U2→#U13）+ 4 未回应（#U8/#U9/#U10/#U12）；R2 新增内容方向正确，引入 2 条新意见 #U13（中）路由对接 3 个工程细节缺失（旧路径前缀写错 + 顶导项数 + 监控角标）/ #U14（低）上传交互形态。建议 R3 至少补 4 句（#U13 三条 + #U9 字段口径）；如不开 R3，UI spec 阶段带条件假设承接 #U8/#U10/#U12/#U14。同 commit 代提 Architect 上一会话遗留 R2 追审脏改动（依据 last-out-unified-commit） | Developer / Tester / DevOps 完成 R2 复审；PM 决定是否走 R3 |
 | 2026-06-10 | PM | v0.6 PRD R2 汇总改稿 | ✅ 已完成 — 汇总 Architect / UI / Developer / Tester / DevOps 五方 R1 Review，并按 Owner 决策提交 R2：新闻详情定为右侧抽屉并补齐 Figma 重生成布局描述；告警/日志本期合并为统一监控页；补充 L0/L1 产品层状态机、错误分类和重试语义；外部依赖按必需/条件/可选增强分层且失败降级；Owner 明确不设成本上限、不做原始数据治理能力；空间图标上传禁止进入前端构建目录，转为后端持久目录约束；生产 mock 边界和不回归验收补齐 | UI / Architect / Developer / Tester / DevOps 复审 `iterations/v0.6-prd.md` |
 | 2026-06-10 | DevOps | v0.6 PRD R1 DevOps Review | ❌ 需修改 — 12 条意见（4 高 / 5 中 / 3 低）：高严重度集中在 4 类外部依赖（LLM / 链接读取 / Web 搜索 / X 搜索）的网络出口/超时/成本/速率未收敛致部署侧无 dry-check 与熔断基准（#O1，与 #A3 同源但补运维约束三表）、"原始信息先入库"+ L1 重试堆积无数据保留策略致 6 个月内磁盘告警（#O2，独立视角，当前 16GB 可用、年增 5-40GB）、软链接部署模式 × 空间图标上传未定硬约束致用户上传文件每次 build 丢失风险（#O3，与 #A8/#D4 同源但补部署架构约束）、L0/L1 任务卡死/外部依赖宕机/月费突破等运维告警载体未在 PRD 收敛（#O4，独立视角）；中严重度 5 条覆盖 npm 依赖增量审计（含 sharp/playwright 系统依赖）、env 增量清单与 `.env.example` 同步流程、AC-25 mock 部署门禁、systemd 日志轮转策略、回滚路径定义（含 DB 字段绑定用户数据后的无回头路边界）；低 3 条为密钥轮换 SOP、浏览器缓存与文件 hash 命名、上线前 dry-check 命令清单。整体判断：本期落到现有 systemd + nginx + drizzle migrate + 软链接部署架构无红线，v0.5 部署基线可承载；但 PRD 在"上线后能不能扛住 + 出问题能不能回得来"两个维度有结构性缺口，与 Architect #A1-#A8 / UI #U1-#U9 / Developer #D1-#D13 / Tester #T1-#T12 一致判断 — 本轮 PRD 把太多产品/工程/运维决策甩给设计阶段，5 方一致 ❌需修改，R1 五方完结 | PM 汇总 R1 五方意见产出 PRD R2，DevOps 复审 |
 | 2026-06-10 | Tester | v0.6 PRD R1 Review 会话收尾 + Tester 日志分页归档 | ✅ 已完成 — Tester 日志超 300 行阈值（359 行），按 `context-policy.md` 拆为 tester-current.md（v0.6 + v0.5 共 6 条，本次会话收尾在内）/ tester-archive.md（v0.4 共 3 条）/ tester-summary.md（长期摘要 + 当前关注点 + 8 类常见风险）三层；INDEX 角色日志表同步更新。v0.6 仍处于 PRD R1 Review中（4/5 已完成） | DevOps 完成 R1 Review；PM 汇总后产出 R2 |
