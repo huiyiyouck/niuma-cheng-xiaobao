@@ -22,11 +22,16 @@
 
 ## 当前关注点
 
-- **v0.6 PRD R1 Review**：本次 ❌需修改 12 条意见（4 高 / 5 中 / 3 低），五方一致 ❌，等 PM 汇总产出 R2 后复审。
-- **磁盘容量预警**：v0.6 落地 L0/L1 后年增 5-40GB（raw_items 永久保留 + tasks 重试堆积 + 日志放大），16GB 可用 + 当前 22GB 已用 = **6-12 个月必触发扩容**。这条已在 #O2 列入 PRD 修订项。
+- **v0.6 PRD R2 复审完成**：本次 ⚠️ **有条件通过**，12 条意见 5 完关 + 4 基本关 + 2 合理分流 + 1 未关闭（#O8 日志轮转）；R2 新引入 #O13（LLM 供应商切换告警）+ #O14（生产 .env 真实性验证）。R2 五方一致 ⚠️ 有条件通过共识门槛已达成，PM 决定 R3 vs UI 方案阶段。
+- **v0.6 部署侧前置硬约束**（设计阶段 / 部署就绪检查前必须落实）：
+  1. **systemd 日志轮转方案 v0.6 上线前必须落实**（#O8，推荐 logrotate daily/14天/压缩 = 方案 A，systemd unit 0 改动）；
+  2. 图标上传 nginx 配置变更必须随代码同步上线（#O3 / AC-28b）；
+  3. AC-32 告警类型枚举值 + 初版触发阈值由设计阶段产出 + 部署侧 Review（#O4 / Architect #A17 / Developer #D15 同源）；
+  4. 新增依赖系统侧预审（sharp / playwright 类 native binding）在设计阶段依赖清单确定后由 DevOps dry-check（#O5 残留）；
+  5. v0.5 测试当前禁用，本期实施前必须先恢复独立 test DB + `.env.test`（与 Developer R2 条件 D / Tester R2 条件 D 同向）。
+- **磁盘容量预警**：当前 16GB 可用 + 540K 日志（2 天 +112K = 56K/天）。L0/L1 上线后 raw_items 年增 5-40GB + 日志 10-50MB/天，**6-12 个月必触发扩容**（Owner R2 已明确接受本期不建治理能力 + §6.1 风险登记）。
 - **密钥泄漏风险**：v0.5.1 部署期 `X_BEARER_TOKEN` / `OPENAI_API_KEY` / `JIN10_MCP_TOKEN` 在 Owner 对话历史中明文出现，强烈建议 Owner 在各服务控制台轮换。
 - **drizzle journal 漂移**：v0.5.1 部署期已自动修复，但要求所有迁移 SQL 严格 `IF [NOT] EXISTS`。v0.6 schema 变更必须走 `db:generate` 增量，不能再人工 psql。
-- **CI 测试当前禁用**：v0.5 测试因生产 DB 误删事故禁用（developer.md 2026-06-08），v0.6 实施前必须恢复独立 test DB + `.env.test`，否则 AC-08 退避/AC-05 LLM 输出契约无法用单测覆盖（与 Tester #T2 同源）。
 - **前端构建是部署独立步骤**：v0.5.1 教训已沉淀到 `full-stack-deploy-handbook.md`，DevOps 部署清单不再允许"后端 active = 部署通过"的翻牌（memory `devops-full-stack-deploy-not-just-backend`）。
 
 ## DevOps 知识库
