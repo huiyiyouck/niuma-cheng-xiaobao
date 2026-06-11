@@ -6,6 +6,56 @@
 
 ---
 
+## 2026-06-11 — v0.6 UI 方案 R1 Review + 代提 Architect R1 遗留
+
+- 本次角色：全栈开发（Developer）
+- 模式：Review（标准迭代 v0.6 UI 方案阶段 R1）+ 代提 Architect 遗留
+- 涉及文档：`docs/progress/iterations/v0.6-ui-spec.md`、`docs/progress/iterations/v0.6.md`
+- 结论：⚠️ **有条件通过**
+
+### 入场代提（依据 last-out-unified-commit）
+
+入场 `git status` 发现工作区有 Architect 上一会话未提交的脏改动（UI spec Architect R1 完整 Review 段 + Review 状态表 + v0.6.md 阶段门禁 + INDEX 状态翻牌），独立 commit `21936f8` 代提，模式同 2026-06-10 UI 代提 Architect R2 追审。Architect 角色日志的本次 Review 记录由 Architect 下次上班补登。
+
+### Developer 视角 12 条意见（3 高 / 6 中 / 3 低）
+
+**高严重度（事实性偏移，建议 UI R2 1-2 行修订即可关闭）**：
+
+- **#D1 §2.2/§2.3 把 v0.5.1 已删的 `ChannelPills.vue` `ChannelFilter.vue` 当成"现有"列入组件树和迁移矩阵**：实际 v0.5 `NewsPage.vue:140-220` 是完全内联 `.cc-pill` / `.cc-search` 实现，不依赖这俩组件
+- **#D2 §7 API 契约 `GET /v1/alerts/count` 路径错**：v0.5 真实路径是 `/v1/alerts/unread-count`（`frontend/src/lib/api.ts:325-326`）
+- **#D3 §4.1 映射表里的 `var(--secondary)` `var(--text-primary)` 在 style.css 不存在；D10「中性 secondary 色」与 §2.3 TagChip「保留 不改」直接矛盾**：TagChip 当前是 4 色 hash 轮转，要"全中性"必须改
+
+**中严重度（工程实施细节缺失）**：
+
+- #D4 SlidePanel「props 改默认 480px」工程量未计，当前没有 width prop，宽度 CSS 写死 460px
+- #D5 D14 ESC 键关闭抽屉需新增键盘监听，§2.3/§6 未体现工程量
+- #D6 §4.1「不引入 Tailwind」但马上给映射表，映射用途（参考 vs 规范）未明
+- #D7 §7 13 项 endpoint 与真实代码未全表对照复核（已知 #D2 错，其余 5 项"沿用 v0.5"也需核）
+- #D8 IconUploader emit error 缺 kind 区分（validation 走行内 / network 走 Toast）
+- #D9 §5.5 监控页 Tab 切换+URL 同步实现路径未定（query param vs ref state）
+
+**低严重度（口径/命名/计数微调）**：
+
+- #D10 §6.5 LevelStatus 11 项与 PRD §2.3 状态机 5+6 态命名前缀关系未明
+- #D11 §9.2 角标轮询 60s 与 App.vue 一致；与 Architect #A11 同源赞同保持
+- #D12 §2.4 数量口径与 §2.2 / 表行数不一致；与 PM #P4 / Architect #A8 同源
+
+### 与已提交 Review 的关系
+
+- PM ⚠️ 有条件通过（5 条，#P1 Owner 已关闭）
+- Architect ⚠️ 有条件通过（10 条：2 高 / 5 中 / 3 低）
+- **Developer ⚠️ 有条件通过（12 条：3 高 / 6 中 / 3 低）**
+- 3 方累计达成「⚠️ 有条件通过」共识门槛
+- 等待 Tester R1 完成
+
+### 关联
+
+- 关联迭代：v0.6（UI 方案 R1 Review中）
+- 关联文档：`v0.6-ui-spec.md` Review 记录 § Developer R1
+- 下一步：Tester R1 → UI 汇总 4 方意见后整体修订或直接进设计阶段
+
+---
+
 ## 2026-06-11 — v0.6 PRD R2 Developer 复审
 
 - 本次角色：全栈开发（Developer）

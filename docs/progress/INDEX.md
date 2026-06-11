@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：UI 方案阶段 R1 Review中（PM ⚠️有条件通过；Architect ⚠️有条件通过；等待 Developer / Tester 复审）
+- 当前阶段：UI 方案阶段 R1 Review中（PM ⚠️有条件通过；Architect ⚠️有条件通过；Developer ⚠️有条件通过；等待 Tester 复审）
 - 阻塞项：—
-- 下一步入口：Developer / Tester 分别 Review `iterations/v0.6-ui-spec.md`
+- 下一步入口：Tester Review `iterations/v0.6-ui-spec.md`
 
 ## 版本列表
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-11 | Developer | v0.6 UI 方案 R1 Developer Review + 代提 Architect R1 遗留 | ⚠️ **有条件通过** — 12 条意见（3 高 / 6 中 / 3 低）。高严重度均为 spec 与 v0.5 真实代码事实性偏移：#D1 §2.2/§2.3 把 v0.5.1 已删的 ChannelPills/ChannelFilter 当成"现有"列入组件树和迁移矩阵（实际 NewsPage 完全内联 .cc-pill / .cc-search）；#D2 §7 API 契约 `/v1/alerts/count` 路径错（真实路径 `/v1/alerts/unread-count`）；#D3 §4.1 映射表里的 `var(--secondary)` `var(--text-primary)` 在 style.css 不存在 + D10「中性 secondary 色」与 §2.3 TagChip「保留 不改」直接矛盾。中严重度 6 条覆盖 SlidePanel props 工程量未计 / ESC 键监听缺规 / Tailwind 映射用途不清 / §7 全表与代码对照未做 / IconUploader error 分类未明 / 监控页 Tab 切换实现路径未定。低 3 条与 PM/Architect 同源。整体方向 OK 无产品级阻塞，建议 UI R2 1-2 行修订高严重度即可关闭。同 commit 代提 Architect R1（上一会话遗留）依据 last-out-unified-commit | Tester R1；UI 汇总 4 方意见后整体修订或直接进设计阶段 |
 | 2026-06-11 | PM | v0.6 UI 方案 R1 PM Review | ⚠️ 有条件通过 — UI 方案整体覆盖 PRD R2 核心范围，右侧抽屉、统一监控页、空间图标上传、L0/L1 状态可视化和 AC 映射均已成型；无高严重度阻断项。原提出 5 条意见，Owner 已确认 #P1：v0.6 全部按 Owner 提供的 UI 原型为主，D8 全屏铺满成立，本条关闭；剩余 4 条（1 中 / 3 低）：#P2 监控角标口径需明确是否包含 L0/L1 自动告警；#P3 「28 条 AC」表述过期；#P4 新建组件数量口径不一致；#P5 路径 C 应表述为添加展示位置而非新增信息源 | Architect / Developer / Tester 继续 Review `iterations/v0.6-ui-spec.md`；UI 后续汇总 R1 |
 | 2026-06-11 | UI | v0.6 UI 方案阶段 R1 产出 | ✅ 已产出 `iterations/v0.6-ui-spec.md`（1044 行）：基于 PRD R2 定稿版 + Owner 对齐 16 项决策清单（原型优先原则），覆盖 5 个核心页面（NewsPage / AdminPage 双 Tab / MonitoringPage / SourceDetailPage / 旧路由兼容跳转）+ 抽屉四段式 6 段布局 + 空间图标上传 4 视觉态 + L0/L1 状态徽章 4 色 + 来源/可信度标签视觉载体；组件清单：新建 12 个 + 22 个 v0.5 组件迁移矩阵（改造 1 / 微调 6 / 重构 2 / 迁移 2 / 废弃 2 / 扩展 1 / 保留 8）；API 契约清单 6 个新 endpoint；28 条 PRD AC 在 UI 层的可见性映射；Tailwind token → v0.5 CSS 变量映射表。指定 Review 方：Architect（数据流/契约/props）/ Developer（迁移成本/token 映射/旧路由）/ Tester（28 AC 可测性/4 视觉态/状态徽章）/ PM（16 决策是否对齐 R2 PRD） | Architect / Developer / Tester / PM 分别 Review `iterations/v0.6-ui-spec.md` |
 | 2026-06-11 | PM | v0.6 PRD R2 定稿裁定 | ✅ 已定稿 — 五方 R2 复审均为有条件通过，R1 高严重度阻断项均到达可接受门槛；PM 裁定不进入 R3，剩余条件由后续阶段承接：UI 方案承接信息源新增三路径、统计卡片口径、Source 详情和上传交互；设计阶段承接前后端契约清单、AI 调用策略、错误分类和告警阈值；测试阶段承接 AI/前端验收分层、L0 样本集和 v0.5 回归基线恢复；DevOps 阶段承接 systemd 日志轮转和 handbook 项。同步修正 PRD R2 旧路由前缀：统一监控页目标 `/monitoring`，旧 `/alerts` `/logs` 兼容跳转 | UI 基于 `iterations/v0.6-prd.md` 产出 `iterations/v0.6-ui-spec.md` |
