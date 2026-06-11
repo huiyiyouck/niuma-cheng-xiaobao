@@ -275,3 +275,26 @@
   - 剩余条件按阶段承接：UI 方案承接信息源入口/统计口径/上传交互；设计阶段承接 API 契约、AI 调用策略、错误分类和告警阈值；测试阶段承接验收分层、样本集和 v0.5 回归基线恢复；DevOps 承接日志轮转和 handbook。
   - 修正 PRD R2 旧路由前缀：统一监控页目标 `/monitoring`，旧 `/alerts` 和 `/logs` 兼容跳转。
 - 下一步：切换到 UI 角色，基于 `docs/progress/iterations/v0.6-prd.md` 产出 `docs/progress/iterations/v0.6-ui-spec.md`。
+
+## 2026-06-11 — v0.6 UI 方案 R1 PM Review
+
+- 本次角色：产品架构师(PM)
+- 动作：Review UI 方案
+- 涉及文档：
+  - `docs/progress/iterations/v0.6-ui-spec.md`
+  - `docs/progress/iterations/v0.6.md`
+  - `docs/progress/INDEX.md`
+  - `docs/progress/roles/pm-current.md`
+  - `docs/progress/roles/pm-summary.md`
+- 结论：⚠️ 有条件通过。UI 方案整体覆盖 PRD R2 核心范围，右侧抽屉、统一监控页、空间图标上传、L0/L1 状态可视化和 AC 映射均已成型；未发现高严重度阻断项。
+- Review 意见：
+  - #P1（中）：D8 全屏铺满可能重踩 v0.5 Owner 宽屏过散回调，需按页面给内容宽度策略或确认 Owner 新决策。
+  - #P2（中）：监控角标口径需明确是否包含 L0/L1 自动告警。
+  - #P3（低）：`28 条 AC` 表述已过期，应改为 PRD R2 AC / AC-01~AC-35。
+  - #P4（低）：新增组件数量口径不一致。
+  - #P5（低）：路径 C 应表述为添加展示位置，而非新增信息源。
+- 状态同步：
+  - `v0.6-ui-spec.md` PM Review 状态改为有条件通过，并追加 PM R1 Review 记录。
+  - `v0.6.md` UI 方案 R1 Review 结果补充 PM 结论，Architect / Developer / Tester 仍待 Review。
+  - `INDEX.md` 当前阶段更新为 PM 已 Review，下一步入口为 Architect / Developer / Tester Review。
+- 下一步：Architect / Developer / Tester 分别 Review `docs/progress/iterations/v0.6-ui-spec.md`，随后 UI 汇总 R1。

@@ -3,9 +3,9 @@
 ## 当前状态
 
 - 当前迭代：v0.6
-- 当前阶段：UI 方案阶段待产出
-- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）
-- 下一步入口：切换到 UI 角色，基于 v0.6 PRD R2 产出 `docs/progress/iterations/v0.6-ui-spec.md`。
+- 当前阶段：UI 方案阶段 R1 Review中
+- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `docs/progress/iterations/v0.6-ui-spec.md`
+- 下一步入口：Architect / Developer / Tester 分别 Review v0.6 UI 方案；UI 汇总 R1。
 
 ## v0.6 关键上下文
 
@@ -56,6 +56,8 @@ R2 五方复审均为有条件通过。PM 于 2026-06-11 裁定不进入 R3，PR
 - 设计阶段：前后端契约清单、L0/L1 数据模型、AI 调用策略、错误分类、告警阈值。
 - 测试阶段：AI/前端验收分层、L0 样本集、v0.5 回归基线恢复。
 - DevOps：systemd 日志轮转和部署 handbook 项。
+
+UI 已产出 `v0.6-ui-spec.md` R1。PM Review 结论为有条件通过，无高严重度阻断；重点要求 UI 后续收口 D8 宽屏内容宽度策略、监控角标是否纳入 L0/L1 自动告警，以及 AC 数量 / 组件数量 / 路径 C 文案三项口径问题。
 
 ## 重要风险
 
