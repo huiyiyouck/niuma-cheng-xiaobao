@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：UI 方案阶段 R1 Review中（PM 已完成 ⚠️有条件通过；等待 Architect / Developer / Tester 复审）
+- 当前阶段：UI 方案阶段 R1 Review中（PM ⚠️有条件通过；Architect ⚠️有条件通过；等待 Developer / Tester 复审）
 - 阻塞项：—
-- 下一步入口：Architect / Developer / Tester 分别 Review `iterations/v0.6-ui-spec.md`
+- 下一步入口：Developer / Tester 分别 Review `iterations/v0.6-ui-spec.md`
 
 ## 版本列表
 
