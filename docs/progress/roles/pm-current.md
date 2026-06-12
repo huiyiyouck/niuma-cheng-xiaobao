@@ -292,3 +292,19 @@
 - 结论：⚠️ 有条件通过。设计整体承接 PRD R2 + UI spec R2，未发现重新引入 L2、评论/反馈、独立详情页、原始数据治理、生产 mock 或成本熔断等已排除范围。
 - 条件项：L0 `retryable` 仅作为设计层内部态；`level-status-counts` 24h 窗口 SQL 与全量语义需澄清；raw_items/ADR/AC 数量口径需统一；开放问题数量口径需同步。
 - 下一步：Developer / DevOps / Tester 分别 Review `docs/progress/iterations/v0.6-design.md`。
+
+## 2026-06-12 — v0.6 设计文档 R2 PM 复审
+
+- 本次角色：产品架构师(PM)
+- 动作：R2 复审 Architect 设计文档
+- 涉及文档：`docs/progress/iterations/v0.6-design.md`、`docs/progress/iterations/v0.6.md`、`docs/progress/INDEX.md`、`docs/progress/roles/pm-current.md`
+- 结论：⚠️ 有条件通过（R2）
+- R2 对 PM R1 条件项的响应：
+  - #P1 L0 retryable 不作前台态：✅ 基本关闭 — LevelStatus 枚举不含 l0_retryable，前端不展示此状态
+  - #P2 SQL 24h 窗口：✅ 已关闭 — §3.2 SQL 已修正
+  - #P3 数量口径：⚠️ 未关闭 — 正文仍有不一致（§6.1 "7 列" vs DDL 9 列；§1.3 ADR 表 4 项 vs 正文 5 项；Review 计划 "28 AC"）
+  - #P4 开放问题数量：✅ 已关闭 — v0.6.md 已对齐为 4 项
+- R2 新增条件项：
+  - #P5（低）：R2 修改摘要声称已关闭的 #O1/#T8/#O8/#O2/#P3 共 5 项在正文中未落实修订（§4.7.1 部署前置工作不存在、§7.2 仍写"node 用户"、§4.7 无失败兜底段、nginx 配置无 client_max_body_size、§4.7 末尾仍写 deploy/nginx 路径），建议 Architect 补齐或改标注为"承接到实施阶段"
+- 产品范围底线检查：全部守住，未重新引入已排除范围
+- 下一步：Developer / DevOps / Tester 分别复审 `docs/progress/iterations/v0.6-design.md` R2

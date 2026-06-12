@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：设计阶段 R2 — Architect 已汇总 R1 共 41 条意见，关闭全部 8 高 + 5 关键中，24 条中/低承接到实施阶段；待 PM / Developer / DevOps / Tester 4 方 R2 复审
+- 当前阶段：设计阶段 R2 — PM 已 R2 复审（有条件通过）；待 Developer / DevOps / Tester 3 方 R2 复审
 - 阻塞项：—
-- 下一步入口：4 方 R2 复审 → 全部通过则设计定稿进实施阶段
+- 下一步入口：3 方 R2 复审 → 全部通过则设计定稿进实施阶段
 
 ## 版本列表
 
@@ -50,7 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
-| 2026-06-12 | Architect | v0.6 设计文档 R2 汇总修订 | ⚠️ **R2 已产出，待 4 方复审** — 汇总 5 方 R1 共 41 条意见（8 高 / 17 中 / 16 低），R2 关闭全部 8 高（#T1 错误分类归档对照表 / #T2 L1 失败传播段 / #T3 告警检测 SQL + tasks.last_error_kind / #O1 部署前置工作 / #O2 nginx 选项 A / #O3 npm 依赖增量清单 + native binding 红线 / #D1 workerLoop 完整改造 / #D2 callLLM<T> 抽象 helper）+ 5 关键中（#P2/#T5 SQL bug / #T8 上传兜底 / #O8 client_max_body_size / #D4 retry task type / #D6 score_dimensions 统一）；24 条中/低承接到实施阶段（4 方一致条件 D：实施前恢复 test DB + .env.test） | PM / Developer / DevOps / Tester 分别复审 `iterations/v0.6-design.md` R2 |
+| 2026-06-12 | PM | v0.6 设计文档 R2 PM 复审 | ⚠️ **有条件通过（R2）** — PM R1 条件 #P1（L0 retryable 不作前台态）基本关闭（LevelStatus 不含 l0_retryable），#P2（SQL 24h 窗口）已关闭，#P4（开放问题数量）已关闭，#P3（文案口径）未关闭；R2 新增 #P5（低）：R2 修改摘要声称已关闭的 #O1/#T8/#O8/#O2/#P3 共 5 项在正文中未落实修订，建议 Architect 补齐或改标注为"承接到实施阶段"；产品范围底线全部守住，未重新引入已排除范围 | Developer / DevOps / Tester 分别复审 `iterations/v0.6-design.md` R2 |
 | 2026-06-12 | Developer | v0.6 设计文档 R1 Developer Review | ⚠️ **有条件通过** — 10 条意见（2 高 / 5 中 / 3 低）。设计文档是 v0.6 至今 4 份阶段产出物中对 Developer 域覆盖**质量最高**的（85% 接力基础）；真实代码偏移量明显少于 UI spec R1。高严重度集中在**工程量遗漏**：#D1 §4.4/§6.3 只列了 `requeueTask` 改造但遗漏 `workerLoop` 主循环改造（现有 `dispatcher.ts:162-219` 只支持 `fetch`/`process` 2 个 type 分支，v0.6 需要新增 `l0_classify`/`l1_process`/`l1_retry` 3 个分支 + 对应 semaphore + 分发 routing，影响工时估算偏 30-40%）；#D2 `llm.ts` 当前仅支持单一模型 endpoint，新增 `processL1LLM()` 需要支持 `L0_LLM_MODEL`/`L1_LLM_MODEL` 双模型切换 + 抽象通用 `callLLM` helper，但 §6.3 只写了「扩展」无实现路径。中严重度 5 条覆盖 space_id UUID 暴露 / retry 新 task type 未定 / GlobalLevelStatusCounts 前端无落点 / prompt scores vs score_dimensions key 名不一致 / source_refs 扩展结构未定义。低 3 条覆盖非 X 源旧 processor 改不改 / 旧路由文件删不删 / 模型 env 兜底关系。已代码事实核查：`dispatcher.ts:162-219` `llm.ts:91-98` `config.ts:30-33` `processor.ts:38-65`。**5 方设计 R1 Review 全部收齐，全部 ⚠️ 有条件通过，共识门槛已到** | Architect 汇总 4 方意见后产出 R2 或直接进实施阶段 |
 | 2026-06-12 | PM | v0.6 设计文档 R1 PM Review | ⚠️ 有条件通过 — 设计整体承接 PRD R2 + UI spec R2，未发现重新引入 L2、评论/反馈、独立详情页、原始数据治理、生产 mock 或成本熔断等已排除范围；三条主线在 schema/API/worker/前端路由/部署约束上均有落点。PM 条件项 4 条：#P1 L0 `retryable` 仅作为设计层内部态，不得未对齐即作为前台用户态；#P2 `level-status-counts` 的 24h 窗口 SQL 示例与全量语义冲突需澄清；#P3 raw_items/ADR/AC 数量口径需统一；#P4 开放问题数量口径需同步。无产品范围高阻断。 | Developer / DevOps / Tester 分别 Review `iterations/v0.6-design.md` |
 | 2026-06-12 | Architect | v0.6 多阶段连续出场（PRD R2 复审 + 追审 / UI R1 Review / 设计 R1 产出） + 会话收尾 | ✅ 设计 R1 已产出（1064 行 7 章 + 4 ADR + 3 项开放问题）—— 同一会话完成 4 次出场：①PRD R2 复审 ✅通过（R1 11 条已 5 完关 / 3 基本关 / 2 合理分流 / 1 降级）→ ②追审 ⚠️修订为有条件通过（R2 新增内容深审发现 9 条：4 中 / 5 低，建议 R3 微调否则设计阶段承接）→ ③UI R1 Review ⚠️有条件通过（10 条：2 高 NewsDetail 字段冲突 + 角标口径覆盖盲区 / 5 中 / 3 低）→ ④设计文档 R1 产出：覆盖 raw_items × 7 列 / processed_news × 6 列 / channel_spaces × 2 列 / tasks × 3 type / alerts × 4 type 全部 schema 变更 + 6 个新 endpoint + L0 classifier + L1 processor 5 子阶段 + dispatcher type 分支退避 + ILIKE 库内检索 + 图标上传持久目录 + nginx 配置变更 + 4 个 ADR 决策（raw_items 双字段 / jsonb 增量 / tasks 复用 / 持久目录 / ILIKE 不向量）；UI R1 #A1/#A2 字段迁移+角标口径已在设计文档 §6.2/§4.6 闭环；PRD R2 追审 #A13 通过引入 `retryable` 状态对称化解决 / #A12 在错误分类表统一为可重试/降级 | PM / Developer / DevOps / Tester 分别 Review `iterations/v0.6-design.md` |

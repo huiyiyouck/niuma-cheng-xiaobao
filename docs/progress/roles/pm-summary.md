@@ -3,9 +3,9 @@
 ## 当前状态
 
 - 当前迭代：v0.6
-- 当前阶段：设计阶段 R1 Review中
-- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `docs/progress/iterations/v0.6-ui-spec.md` 与 `docs/progress/iterations/v0.6-design.md`
-- 下一步入口：Developer / DevOps / Tester 分别 Review v0.6 设计文档。
+- 当前阶段：设计阶段 R2 复审中
+- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `iterations/v0.6-ui-spec.md`（R1 有条件通过）与 `iterations/v0.6-design.md`（R1 + R2 均有条件通过）
+- 下一步入口：Developer / DevOps / Tester 3 方 R2 复审 → 全部通过则设计定稿进实施阶段
 
 ## v0.6 关键上下文
 
