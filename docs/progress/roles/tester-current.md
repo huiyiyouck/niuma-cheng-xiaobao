@@ -2,6 +2,71 @@
 
 > 本文件保留最近的工作日志（最近 10 条以内）。更早的日志见 `tester-archive.md`；长期摘要见 `tester-summary.md`。
 
+## 2026-06-12 — v0.6 设计文档 R1 Tester Review
+
+- 本次角色：Tester（测试工程师）
+- 动作：Review v0.6 设计文档 R1 → 核验 28+ AC 在设计层的可测性 + 状态机/错误分类/可观测/不回归 4 维落点
+- 涉及文档：v0.6-design.md、v0.6.md、INDEX.md、tester-current.md
+- 结论：**⚠️ 有条件通过** — 11 条意见（3 高 / 5 中 / 3 低）
+- 关联迭代：v0.6
+
+### 高严重度（3 条）
+
+1. **#T1**：§4.5 错误类型 → 代码层档位映射未给。LLM 401/429/5xx/超时/解析失败各归哪档没定 → Tester mock 测试无法精确触发。与 Tester R2 PRD #T13 / Architect R2 追审 #A12 形成闭环
+2. **#T2**：§4.3 L1 5 阶段串行执行，但失败传播语义不清。AC-09/AC-10/AC-10a 测试需要明确"阶段 1-3 失败是否进入 retryable_failed / 重试时从哪个阶段开始 / 并发隔离粒度"
+3. **#T3**：§4.6 4 种 AC-32 告警 type 中 `external_dep_down` `task_backlog` 检测 SQL 不完整。Tester 无法预制触发条件 mock
+
+### 中严重度（5 条）
+
+4. **#T4**：§6.2 v0.5 历史 tags 兼容路径前端实现方式未明（NewsListItem 内 fallback vs API 层映射）
+5. **#T5**：§3.2 level-status-counts SQL `OR l1_processed_at IS NOT NULL` 让 24h 窗口失效（与 PM #P2 完全同源）
+6. **#T6**：§4.3 阶段 1 库内检索无关键词命中无降级保护，背景补全可能引入无关上下文
+7. **#T7**：§4.3 阶段 5 v0.5 历史 raw_items 重跑保护缺失。AC-33 需在迁移脚本加 DML `UPDATE raw_items SET l0_status='passed', l1_status='completed' WHERE id IN (SELECT raw_item_id FROM processed_news)`
+8. **#T8**：§4.7 上传 3 类异常兜底缺失（并发上传 / 部分写入失败 / 旧文件清理失败）
+9. **#T9**：§4.4 BACKOFF_CONFIG `l1_retry: { maxAttempts: 1 }` 与 PRD AC-08「3 次重试」描述冲突。手动重试失败一次即 final_failed Owner 体验差
+
+### 低严重度（3 条）
+
+10. **#T10**：§2.1 索引 `ix_raw_items_l0_queue` 名误导（实际 WHERE 是 L0→L1 过渡候选）
+11. **#T11**：`POST /v1/l1-tasks/:task_id/retry` 入参语义模糊
+12. **#T12**：§4.3 阶段 4 N=2 与 §4.4 maxAttempts=3 文档不一致
+
+### AC 覆盖四维评估（设计阶段后）
+
+| 维度 | PRD R2 后 | UI R2 后 | 设计 R1 后 | 主要剩余缺口 |
+|------|----------|----------|-----------|--------------|
+| 正常路径 | ✅ | ✅ | ✅ | — |
+| 边界值 | 🟡 | 🟡 | ✅ | #T6 |
+| 异常路径 | ✅ | 🟡 | 🟡 | #T2 / #T3 |
+| 状态转换 | ✅ | ✅ | ✅ | L0 retryable 对称化 |
+| 不回归 | ✅ | 🟡 | 🟡 | #T7 v0.5 历史 raw_items 重跑保护 |
+| 可测试性 | 🟡 | 🟡 | 🟡 | #T1 错误分类映射 + #T3 告警 SQL |
+
+设计层贡献：80% 接力基础（v0.5 测试模式可直接沿用 + TS 类型可直接 mock + ER 图清晰）。
+
+### 3 项条件
+
+- **条件 A**：Architect R2 一次性修订 3 高 + 5 中
+- **条件 B**：如不开 R2 直接进实施阶段，Tester 在 `v0.6-test-plan.md` 主动按 5 项工程假设承接（错误类型清单 / 失败传播 / 告警 SQL 模板 / v0.5 历史 raw_items 不重跑迁移 DML / 上传异常兜底）
+- **条件 C**：与 PRD R2 / UI 方案 R2 复审条件 D 一致——v0.5 测试当前禁用，本期实施前必须先恢复独立 test DB + `.env.test`
+
+### Tester 边界守住记录
+
+- 严格控制在"状态机断言可写性 / mock 触发可精确性 / 不回归测试基线可对齐 / 监控告警可触发性 / AC 覆盖完整性"范围内
+- 11 条意见全部基于"我作为 Tester 如何写测试用例和断言"视角，已代码 grep 复核 schema 字段名 + worker 函数名 + 测试 helpers FK 顺序
+- 不复审 schema DDL（Developer 域）、ADR 选型（Architect 自审）、nginx/timeout（DevOps 域）
+- #T5 与 PM #P2 完全同源（SQL 24h 窗口失效），标注共识但 Tester 补工程视角；PM #P1（L0 retryable 不作前台态）Tester 视角接受设计层引入不重复审
+
+### 知识沉淀判断
+
+- 本轮**不沉淀**到 `docs/knowledge/testing/`。
+- 「设计文档错误分类未到代码层档位」「监控 SQL 不完整」「v0.5 历史数据重跑保护」三条都是 v0.6 特定问题。
+- 如下一轮（v0.7+ 含 worker 链路扩展）仍出现"错误分类未到代码层"和"v0.5 历史数据迁移保护缺失"，再考虑沉淀"设计文档 Review 检查表"。
+
+- 收尾状态：已收尾
+
+---
+
 ## 2026-06-11 — v0.6 UI 方案 R1 Tester Review
 
 - 本次角色：Tester（测试工程师）

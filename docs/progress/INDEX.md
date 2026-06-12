@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：设计阶段 R1 Review中（Architect 完成 R1 草稿 1064 行；PM 已有条件通过；待 Developer / DevOps / Tester 复审）
+- 当前阶段：设计阶段 R1 Review中（Architect 完成 R1 草稿 1064 行；PM ⚠️ 有条件通过；Tester ⚠️ 有条件通过；待 Developer / DevOps 复审）
 - 阻塞项：—
-- 下一步入口：Developer / DevOps / Tester 分别 Review `iterations/v0.6-design.md`
+- 下一步入口：Developer / DevOps 分别 Review `iterations/v0.6-design.md`
 
 ## 版本列表
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-12 | Tester | v0.6 设计文档 R1 Tester Review | ⚠️ 有条件通过 — 11 条意见（3 高 / 5 中 / 3 低）：高严重度集中在 §4.5 错误类型 → 代码层档位映射未给（#T1，影响 mock 设计与 Tester R2 PRD #T13 闭环）、§4.3 L1 5 阶段失败传播规则不清致 AC-09/10/10a 无法精确断言（#T2）、§4.6 4 种 AC-32 告警 type 中 `external_dep_down` / `task_backlog` 检测 SQL 不完整 Tester 无法 mock 触发（#T3）；中严重度 5 条覆盖 §6.2 v0.5 历史 tags 兼容路径前端实现方式未明、§3.2 level-status-counts SQL 24h 窗口因 OR 条件失效（与 PM #P2 同源）、§4.3 阶段 1 库内检索无关键词命中无降级保护、§4.3 阶段 5 v0.5 历史 raw_items 重跑保护缺失（AC-33 闭环）、§4.7 上传 3 类异常兜底缺失、§4.4 BACKOFF_CONFIG `l1_retry` maxAttempts=1 与 AC-08 描述冲突；低 3 条为索引命名误导/重试入参语义/N=2 vs N=3 文档不一致。**§2 数据模型 + §3 API 契约 + §4 核心流程 + §6 迁移给 Tester 测试阶段提供 80% 接力基础**（比 UI 方案的 70% 又提升一档）。L0 `retryable` 设计层引入对称化合理。已代码事实核查：`server/src/db/schema.ts` `worker/llm.ts` `__tests__/helpers.ts` | Developer / DevOps 完成 R1 Review；Architect 汇总后修订 R2 或推进到实施阶段 |
 | 2026-06-12 | PM | v0.6 设计文档 R1 PM Review | ⚠️ 有条件通过 — 设计整体承接 PRD R2 + UI spec R2，未发现重新引入 L2、评论/反馈、独立详情页、原始数据治理、生产 mock 或成本熔断等已排除范围；三条主线在 schema/API/worker/前端路由/部署约束上均有落点。PM 条件项 4 条：#P1 L0 `retryable` 仅作为设计层内部态，不得未对齐即作为前台用户态；#P2 `level-status-counts` 的 24h 窗口 SQL 示例与全量语义冲突需澄清；#P3 raw_items/ADR/AC 数量口径需统一；#P4 开放问题数量口径需同步。无产品范围高阻断。 | Developer / DevOps / Tester 分别 Review `iterations/v0.6-design.md` |
 | 2026-06-12 | Architect | v0.6 多阶段连续出场（PRD R2 复审 + 追审 / UI R1 Review / 设计 R1 产出） + 会话收尾 | ✅ 设计 R1 已产出（1064 行 7 章 + 4 ADR + 3 项开放问题）—— 同一会话完成 4 次出场：①PRD R2 复审 ✅通过（R1 11 条已 5 完关 / 3 基本关 / 2 合理分流 / 1 降级）→ ②追审 ⚠️修订为有条件通过（R2 新增内容深审发现 9 条：4 中 / 5 低，建议 R3 微调否则设计阶段承接）→ ③UI R1 Review ⚠️有条件通过（10 条：2 高 NewsDetail 字段冲突 + 角标口径覆盖盲区 / 5 中 / 3 低）→ ④设计文档 R1 产出：覆盖 raw_items × 7 列 / processed_news × 6 列 / channel_spaces × 2 列 / tasks × 3 type / alerts × 4 type 全部 schema 变更 + 6 个新 endpoint + L0 classifier + L1 processor 5 子阶段 + dispatcher type 分支退避 + ILIKE 库内检索 + 图标上传持久目录 + nginx 配置变更 + 4 个 ADR 决策（raw_items 双字段 / jsonb 增量 / tasks 复用 / 持久目录 / ILIKE 不向量）；UI R1 #A1/#A2 字段迁移+角标口径已在设计文档 §6.2/§4.6 闭环；PRD R2 追审 #A13 通过引入 `retryable` 状态对称化解决 / #A12 在错误分类表统一为可重试/降级 | PM / Developer / DevOps / Tester 分别 Review `iterations/v0.6-design.md` |
 | 2026-06-12 | UI | v0.6 UI 方案 R2 精简修订 + 已定稿 | ✅ **已定稿** — 4 方 R1 共 38 条意见 0 高阻断，UI 自裁定走精简 R2：spec 内修订 Developer #D1-#D3 三处事实错误（已删组件 ChannelPills/ChannelFilter / API 路径 `/v1/alerts/unread-count` / CSS 变量 `--card/--text/--text-muted`）+ #D4/#D5 SlidePanel 改造范围明确化（width prop + 768px 断点 + ESC 监听）+ PM #P3「28 条 AC」措辞统一为 AC-01~AC-35 + PM #P4/Architect #A8 新建组件数口径统一（12-16 个 .vue + 拆分粒度说明 + GlobalLevelStatusCounts 对接 AC-30 双表达）；§9 风险段从 4 条扩到 9 条吸收 Architect/Tester 中低意见；§9.2 设计阶段事项从 5 项扩到 12 项；新增 §9.3 测试阶段承接 + §9.4 实施阶段建议。剩余条件全部承接到 §9 系列段落，不开 R3。**UI 方案阶段关闭，v0.6 进入设计阶段** | Architect 基于 `iterations/v0.6-prd.md` + `iterations/v0.6-ui-spec.md` 产出 `iterations/v0.6-design.md` |
