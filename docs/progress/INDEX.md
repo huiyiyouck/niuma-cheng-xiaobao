@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：设计阶段 R2 — PM + Developer 已 R2 复审（均有条件通过）；待 DevOps / Tester 2 方 R2 复审
+- 当前阶段：设计阶段 R2 — PM + Developer + Tester 已 R2 复审（均有条件通过）；待 DevOps R2 复审
 - 阻塞项：—
-- 下一步入口：2 方 R2 复审 → 全部通过则设计定稿进实施阶段
+- 下一步入口：DevOps R2 复审 → 通过则设计定稿进实施阶段
 
 ## 版本列表
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-12 | Tester | v0.6 设计文档 R2 Tester 复审 | ⚠️ **有条件通过（R2）** — R1 高严重度 3 条全部关闭/基本关闭（#T1 错误归档对照表完关 / #T2 L1 失败传播完关 / #T3 告警 SQL 基本 关——tasks.last_error_kind 已加但 §4.6 表未扩展检测 SQL 列且 task_backlog SQL 仍缺）；R1 中严重度 6 条 2 完关（#T5 SQL 修正 / #T9 maxAttempts 修正）+ 2 基本关闭（#T4/#T7 意图有但落地缺）+ 2 未关闭（#T6 库内检索降级 / #T8 上传失败兜底）；R1 低严重度 3 条 2 完关 1 未关闭；R2 新增 #T13（中）R2 修改摘要声称 #T8/#O1/#O8 等已在正文关闭但正文未修订（与 PM R2 #P5 和 Developer R2 #D12 独立发现一致），直接影响 Tester 按 正文拆用例的信心；测试可达性从 R1 的 3 高硬伤提升到 0 高硬伤 + 90% 接力基础 | DevOps R2 复审 → 通过则设计定稿进实施阶段 |
 | 2026-06-12 | Developer | v0.6 设计文档 R2 Developer 复审 | ⚠️ **有条件通过（R2）** — R1 高严重度 2 条（#D1 workerLoop 改造 / #D2 callLLM\<T\> 双模型）全部关闭；R1 中严重度 #D4/#D6 关闭，#D3/#D5/#D7 承接到实施阶段；R1 低严重度 #D8/#D10 可接受/关闭，#D9 承接到实施阶段；R2 新增 #D11（中）l1_retry task type 存在但无明确创建来源 + #D12（低）§4.3.6 交叉引用"§6.2 迁移 DML"但 §6.2 无对应 DML；确认 PM R2 #P5 中 §6.1 "7 新增列"实际应为 9 列影响 Developer 迁移清单；工程接力基础从 R1 的 85% 提升到 R2 的 92% | DevOps / Tester 分别复审 `iterations/v0.6-design.md` R2 |
 | 2026-06-12 | PM | v0.6 设计文档 R2 PM 复审 | ⚠️ **有条件通过（R2）** — PM R1 条件 #P1（L0 retryable 不作前台态）基本关闭（LevelStatus 不含 l0_retryable），#P2（SQL 24h 窗口）已关闭，#P4（开放问题数量）已关闭，#P3（文案口径）未关闭；R2 新增 #P5（低）：R2 修改摘要声称已关闭的 #O1/#T8/#O8/#O2/#P3 共 5 项在正文中未落实修订，建议 Architect 补齐或改标注为"承接到实施阶段"；产品范围底线全部守住，未重新引入已排除范围 | Developer / DevOps / Tester 分别复审 `iterations/v0.6-design.md` R2 |
 | 2026-06-12 | Developer | v0.6 设计文档 R1 Developer Review | ⚠️ **有条件通过** — 10 条意见（2 高 / 5 中 / 3 低）。设计文档是 v0.6 至今 4 份阶段产出物中对 Developer 域覆盖**质量最高**的（85% 接力基础）；真实代码偏移量明显少于 UI spec R1。高严重度集中在**工程量遗漏**：#D1 §4.4/§6.3 只列了 `requeueTask` 改造但遗漏 `workerLoop` 主循环改造（现有 `dispatcher.ts:162-219` 只支持 `fetch`/`process` 2 个 type 分支，v0.6 需要新增 `l0_classify`/`l1_process`/`l1_retry` 3 个分支 + 对应 semaphore + 分发 routing，影响工时估算偏 30-40%）；#D2 `llm.ts` 当前仅支持单一模型 endpoint，新增 `processL1LLM()` 需要支持 `L0_LLM_MODEL`/`L1_LLM_MODEL` 双模型切换 + 抽象通用 `callLLM` helper，但 §6.3 只写了「扩展」无实现路径。中严重度 5 条覆盖 space_id UUID 暴露 / retry 新 task type 未定 / GlobalLevelStatusCounts 前端无落点 / prompt scores vs score_dimensions key 名不一致 / source_refs 扩展结构未定义。低 3 条覆盖非 X 源旧 processor 改不改 / 旧路由文件删不删 / 模型 env 兜底关系。已代码事实核查：`dispatcher.ts:162-219` `llm.ts:91-98` `config.ts:30-33` `processor.ts:38-65`。**5 方设计 R1 Review 全部收齐，全部 ⚠️ 有条件通过，共识门槛已到** | Architect 汇总 4 方意见后产出 R2 或直接进实施阶段 |
