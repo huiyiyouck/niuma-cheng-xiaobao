@@ -4,6 +4,51 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-06-12 — v0.6 设计文档 R2 汇总修订 + 会话收尾
+
+**本次角色**：架构师
+- 动作：汇总修订 + 收尾
+- 涉及文档：
+  - `docs/progress/iterations/v0.6-design.md`（R2 修订：关闭全部 8 高 + 5 关键中，24 条中/低承接到实施阶段）
+  - `docs/progress/iterations/v0.6.md`（设计阶段 R2 行追加）
+  - `docs/progress/INDEX.md`（当前状态推进 + 版本列表 + 最近收尾摘要追加）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### R2 汇总修订
+
+5 方 R1 共 41 条意见（8 高 / 17 中 / 16 低），全部 ⚠️ 有条件通过，共识门槛已到。R2 修订策略：**高严重度全部关闭 + 关键中严重度关闭 + 其余中/低承接到实施阶段**。
+
+**关闭的 8 条高严重度**：
+1. #T1/#D6/#A12 错误分类映射 → §4.5 新增「外部依赖错误归档对照表」（9 行映射表 + tasks.last_error_kind 归一化）
+2. #T2 L1 五阶段失败传播 → §4.3.6 新增「L1 失败传播 + 重试粒度」段（5 阶段传播表 + 重试粒度声明 + 并发隔离声明）
+3. #T3 AC-32 告警 SQL 不完整 → §4.6 表扩展为「检测 SQL + 语义映射」+ 新增 tasks.last_error_kind 字段（§2.4）
+4. #O1 上传目录可执行清单 → §4.7.1 新增「部署前置工作」（mkdir/chown/chmod/健康检查 4 条）+ 修正 §7.2「root 用户可写」
+5. #O2 deploy/nginx 路径不存在 → §4.7 + §6.3 选定选项 A（最小变动：nginx 配置由 DevOps 部署时手工增补）
+6. #O3 npm 依赖增量 → §6.3 新增「已知 npm 依赖增量清单」+ 明确禁止 native binding 类依赖（sharp/playwright/canvas）
+7. #D1 workerLoop 主循环改造 → §4.4 扩展为完整 dispatcher 改造范围（3 个 sem + 5 个 claim 分支 + routing）
+8. #D2 llm.ts 双模型支持 → §4.5 + §6.3 明确 `callLLM<T>` 抽象 helper 实现路径
+
+**关闭的 5 条关键中严重度**：
+- #P2/#T5 SQL bug：§3.2 修复 `level-status-counts` SQL 移除多余 `OR ... IS NOT NULL`
+- #T8 上传 3 类异常兜底：§4.7 新增「失败兜底」段
+- #O8 nginx client_max_body_size：§4.7 补 `client_max_body_size 2m`
+- #D4 手动重试 task type：§3.2 明确 `POST /v1/l1-tasks/:task_id/retry` 创建新 task type=`l1_process`
+- #D6 LLM prompt scores 字段：§4.3 Stage 4 prompt 改用 `score_dimensions`
+
+**承接到实施阶段 24 条**：
+- PM #P3/#P4 口径统一（本次 R2 修订同步统一）
+- Tester #T4/#T6/#T7/#T9-#T12（中低）
+- DevOps #O4-#O7/#O9-#O11（中低）
+- Developer #D3/#D5/#D7-#D10（中低）
+- 4 方一致条件 D：实施前必须恢复独立 test DB + `.env.test`
+
+### 收尾
+- 关联迭代：v0.6
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - R2 待 PM / Developer / DevOps / Tester 4 方复审
+  - 3 项开放问题（外部搜索选型 / X 搜索实现 / 磁盘告警触发线）维持移交实施/DevOps
+
 ## 2026-06-12 — v0.6 多阶段连续出场（PRD R2 复审 + 追审 / UI R1 Review / 设计 R1 产出）+ 会话收尾
 
 **本次角色**：架构师
