@@ -2,6 +2,57 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-06-12 — v0.6 设计文档 R1 DevOps Review + 会话收尾
+
+> 角色：DevOps；模式：标准迭代 设计阶段 R1 Review。
+
+### 触发
+
+v0.6 设计文档 R1 前 2 方（PM / Tester）已完成 Review 分别 ⚠️ 有条件通过，Owner 切到 DevOps 完成第 3 方 Review。
+
+### 执行
+
+1.  读 `runtime.md` + `INDEX.md` + `role-devops.md` + DevOps 日志（确认 PRD R1/R2 意见全文）+ 8 项现场勘察（systemd / 磁盘 / 日志 / nginx 7 location / `/var/lib/niuma-news/` 不存在 / `deploy/` 目录 / dispatcher / config.ts）。
+2.  读 `v0.6-design.md` 全文 1064 行 + PM R1 Review / Tester R1 Review。
+3.  按 DevOps 视角逐段核验设计文档对 PRD R1/R2 12 条意见的承接情况 + 设计层新引入的部署侧硬约束 + 文档假设与仓库现状一致性。
+
+### 产出
+
+**结论**：⚠️ **有条件通过**。11 条意见（3 高 / 5 中 / 3 低）。详见 `iterations/v0.6-design.md` DevOps R1 段。
+
+| # | 严重度 | 主题 | 与其他角色关系 |
+|---|---|---|---|
+| #O1 | 高 | `/var/lib/niuma-news/uploads/` 目录创建/属主/权限可执行清单缺失 | 部分同源 Tester #T8（上传异常路径）|
+| #O2 | 高 | §4.7 / §6.3 写「同步到 deploy/nginx 和 deploy/scripts/deploy.sh」但两者在仓库均不存在 | 独立视角 |
+| #O3 | 高 | §6.3 未列 npm 依赖增量 + native binding 红线未划 | 同源 PRD R1 #O5（残留）|
+| #O4 | 中 | logrotate 配置文件产出来明确 | 同源 PRD R1 #O8（残留）|
+| #O5 | 中 | 磁盘容量预估缺图标上传 + 扩容触发线 | 同源 PRD R1 #O2（细化）|
+| #O6 | 中 | worker timeout 与 Fastify route timeout 对齐缺设计层定义 | 同源 PRD R1 #O1（细化）|
+| #O7 | 中 | 系统级磁盘告警与业务级 alerts 表分离方案未定 | 独立视角 |
+| #O8 | 中 | nginx `client_max_body_size` 缺失导致合法 1MB 上传被 413 拦截 | 部分同源 Tester #T8 |
+| #O9 | 低 | env 项 `UPLOAD_DIR` 命名与未来扩展关系 | 措辞口径 |
+| #O10 | 低 | 同 hash 重复上传的浏览器缓存反馈 | 措辞口径 |
+| #O11 | 低 | §7.3 第 3 条与 #O1 内容重复 | 措辞口径 |
+
+### 边界守住
+
+-   严格控制在"部署方式、环境变量、云服务、发布风险、回滚条件"五个边界。
+-   11 条意见全部基于"作为 DevOps 如何把这套设计上线"视角 + 现场 8 项勘察核验。
+-   不复审 schema DDL（Developer 域）、ADR 选型（Architect 自审 + PM 域）、测试断言（Tester 域）。
+-   不预设项目级聚合判断（是否定稿、是否进实施、是否开 R2）——由 Architect/PM 介入决定。
+
+### 同步动作
+
+-   更新 `v0.6-design.md` Review 状态表（DevOps 待 Review → ⚠️ 有条件通过）+ Review 记录区域追加 DevOps R1 段（约 230 行）。
+-   更新 `v0.6.md` 设计阶段 R1 行（DevOps 结论填入 ⚠️ 有条件通过 11 条摘要）。
+-   更新 `INDEX.md` 当前状态（阶段 → DevOps 已 Review / 等待 Developer；中性表述，不预判推进决策）。
+
+### 下一步入口
+
+Developer Review `iterations/v0.6-design.md`。
+
+---
+
 ## 2026-06-11 — v0.6 PRD R2 DevOps 复审 + 会话收尾
 
 > 角色：DevOps；模式：标准迭代 PRD 阶段 R2 复审。
