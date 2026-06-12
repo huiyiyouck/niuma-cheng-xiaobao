@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：UI 方案阶段 R1 Review完成（PM ⚠️有条件通过；Architect ⚠️有条件通过；Developer ⚠️有条件通过；Tester ⚠️有条件通过）
+- 当前阶段：UI 方案阶段 R2 已定稿（UI 完成精简修订，4 方 R1 共 38 条意见 0 高阻断；事实错误已在 spec 内修订，其余条件由 §9 风险段 / §9.2 设计阶段事项 / §9.3 测试阶段承接 / §9.4 实施阶段建议承接，不开 R3）
 - 阻塞项：—
-- 下一步入口：UI 汇总 4 方意见整体修订到 R2 或推进到设计阶段
+- 下一步入口：Architect 基于 `iterations/v0.6-prd.md` + `iterations/v0.6-ui-spec.md` 产出 `iterations/v0.6-design.md`
 
 ## 版本列表
 
@@ -19,7 +19,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
-| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | — | — | UI 方案阶段 R1 Review中 |
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | — | — | 设计阶段待启动（UI 方案 R2 已定稿） |
 
 ## 当前 Change Notes
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-12 | UI | v0.6 UI 方案 R2 精简修订 + 已定稿 | ✅ **已定稿** — 4 方 R1 共 38 条意见 0 高阻断，UI 自裁定走精简 R2：spec 内修订 Developer #D1-#D3 三处事实错误（已删组件 ChannelPills/ChannelFilter / API 路径 `/v1/alerts/unread-count` / CSS 变量 `--card/--text/--text-muted`）+ #D4/#D5 SlidePanel 改造范围明确化（width prop + 768px 断点 + ESC 监听）+ PM #P3「28 条 AC」措辞统一为 AC-01~AC-35 + PM #P4/Architect #A8 新建组件数口径统一（12-16 个 .vue + 拆分粒度说明 + GlobalLevelStatusCounts 对接 AC-30 双表达）；§9 风险段从 4 条扩到 9 条吸收 Architect/Tester 中低意见；§9.2 设计阶段事项从 5 项扩到 12 项；新增 §9.3 测试阶段承接 + §9.4 实施阶段建议。剩余条件全部承接到 §9 系列段落，不开 R3。**UI 方案阶段关闭，v0.6 进入设计阶段** | Architect 基于 `iterations/v0.6-prd.md` + `iterations/v0.6-ui-spec.md` 产出 `iterations/v0.6-design.md` |
 | 2026-06-11 | Tester | v0.6 UI 方案 R1 Tester Review | ⚠️ 有条件通过 — 11 条意见（3 高 / 5 中 / 3 低）：高严重度集中在前端零自动化测试栈下 12 条 UI 类 AC 验收手段未定（#T1，工时估算依赖）、§3.2 抽屉降级规则"字段缺失 vs 字段为空"二分法在 §6.1 NewsDetail 契约层未对齐（#T2，mock fixture 造数依赖）、§3.3 SpaceIcon 第 4 视觉态"静默回退"缺可观测证据 Tester 无法精确断言（#T3）；中严重度 5 条覆盖 §3.4 上传缺超时/并发/断网 3 种 AC-28a 场景、§5.5 监控页 Tab 切换实现路径与旧路由 redirect 决策（与 #D9 同源）、§3.1 缺 v0.5 历史数据展示降级（与 #A1 同源）、§8.7 AC-30 "两处都做" 但监控页全局聚合完全缺画/缺组件/缺 API、§9.1 R2 未承接 PRD #T13 提的 mock fixtures 产出归属、§5.6 时间轴缺 4 边界态；低 3 条为措辞与描述完善。**§8 验收点表 + §3 关键交互状态 + §6 组件 TS 类型**给 Tester 测试阶段提供了 70% 接力基础。4 方 R1 一致达成 ⚠️ 有条件通过共识 | UI 汇总 4 方意见整体修订到 R2 或推进到设计阶段 |
 | 2026-06-11 | Developer | v0.6 UI 方案 R1 Developer Review + 代提 Architect R1 遗留 | ⚠️ **有条件通过** — 12 条意见（3 高 / 6 中 / 3 低）。高严重度均为 spec 与 v0.5 真实代码事实性偏移：#D1 §2.2/§2.3 把 v0.5.1 已删的 ChannelPills/ChannelFilter 当成"现有"列入组件树和迁移矩阵（实际 NewsPage 完全内联 .cc-pill / .cc-search）；#D2 §7 API 契约 `/v1/alerts/count` 路径错（真实路径 `/v1/alerts/unread-count`）；#D3 §4.1 映射表里的 `var(--secondary)` `var(--text-primary)` 在 style.css 不存在 + D10「中性 secondary 色」与 §2.3 TagChip「保留 不改」直接矛盾。中严重度 6 条覆盖 SlidePanel props 工程量未计 / ESC 键监听缺规 / Tailwind 映射用途不清 / §7 全表与代码对照未做 / IconUploader error 分类未明 / 监控页 Tab 切换实现路径未定。低 3 条与 PM/Architect 同源。整体方向 OK 无产品级阻塞，建议 UI R2 1-2 行修订高严重度即可关闭。同 commit 代提 Architect R1（上一会话遗留）依据 last-out-unified-commit | Tester R1；UI 汇总 4 方意见后整体修订或直接进设计阶段 |
 | 2026-06-11 | PM | v0.6 UI 方案 R1 PM Review | ⚠️ 有条件通过 — UI 方案整体覆盖 PRD R2 核心范围，右侧抽屉、统一监控页、空间图标上传、L0/L1 状态可视化和 AC 映射均已成型；无高严重度阻断项。原提出 5 条意见，Owner 已确认 #P1：v0.6 全部按 Owner 提供的 UI 原型为主，D8 全屏铺满成立，本条关闭；剩余 4 条（1 中 / 3 低）：#P2 监控角标口径需明确是否包含 L0/L1 自动告警；#P3 「28 条 AC」表述过期；#P4 新建组件数量口径不一致；#P5 路径 C 应表述为添加展示位置而非新增信息源 | Architect / Developer / Tester 继续 Review `iterations/v0.6-ui-spec.md`；UI 后续汇总 R1 |

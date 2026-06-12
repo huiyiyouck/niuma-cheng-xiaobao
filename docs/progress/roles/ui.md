@@ -1,5 +1,31 @@
 # UI（界面设计师）角色日志
 
+## 2026-06-12 — v0.6 UI 方案 R2 精简修订 + 已定稿
+- 本次角色：UI（界面设计师）
+- 动作：R2 精简修订 + 定稿
+- 涉及文档：`docs/progress/iterations/v0.6-ui-spec.md`、`docs/progress/iterations/v0.6.md`、`docs/progress/INDEX.md`
+- 结论：✅ **已定稿**。4 方 R1 共 38 条意见 0 高阻断，UI 自裁定走精简 R2，不开 R3。
+- 修订路径（按"事实错误 spec 内改 / 其余条件入 §9 承接" 原则）：
+  - **spec 内修订**（事实错误 + 文档完整性）：
+    - §2.2 + §2.3 删除 v0.5.1 已 git rm 的 ChannelPills / ChannelFilter；TagChip 改"微调"；SlidePanel 改"微调"标注 width prop + 768px 断点 + ESC 监听
+    - §4.1 Tailwind→CSS 变量映射：把不存在的 `--secondary` `--text-primary` `--text-foreground` 改为实际存在的 `--card / --text / --text-muted`
+    - §4.6 5 类标签颜色：「底 `var(--card)` + 边 `var(--border)` + 文字 `var(--text)`」
+    - §4.8 + §7 API：`/v1/alerts/count` → `/v1/alerts/unread-count`；新增 GlobalLevelStatusCounts endpoint
+    - §2.4 新建组件清单：去数字 + 拆分粒度说明（12-16 个 .vue）+ 新增 GlobalLevelStatusCounts
+    - 全局："28 条 AC" → "AC-01~AC-35"
+  - **§9 承接修订**（其余 R1 意见入归档）：
+    - §9.1 风险段 4→9 条（吸收 Architect #A1/#A7 + Tester #T1-#T4 + #T6）
+    - §9.2 设计阶段事项 5→12 项（吸收 Architect #A2-#A11 + Developer #D9 + Tester #T7）
+    - 新增 §9.3 测试阶段承接（吸收 Tester #T8 mock fixture）
+    - 新增 §9.4 实施阶段建议（吸收 Developer #D8 + TagChip 联动删除 + SlidePanel 回归）
+- 主要发现：
+  - Developer #D1-#D3 是 spec 与代码事实性偏移，不修订实施一动手就撞墙；3 条单独编辑就关闭
+  - PM #P1 已由 Owner 当场关闭（D8 全屏铺满成立）
+  - 其余 30+ 中低意见多属"设计/实施阶段细化"性质，写 §9 系列让后续阶段承接比开 R3 更高效
+- 与 PRD R2 同款路径：PM 当时也是 5 方 R2 复审后裁定不开 R3 直接进 UI 方案，本期 UI 同结构问题同样处理
+- 下一步入口：Architect 基于 `iterations/v0.6-prd.md` + `iterations/v0.6-ui-spec.md` 产出 `iterations/v0.6-design.md`
+- 收尾状态：已收尾
+
 ## 2026-06-11 — v0.6 UI 方案阶段 R1 产出
 - 本次角色：UI（界面设计师）
 - 动作：产出 UI 方案
