@@ -3,9 +3,9 @@
 ## 当前状态
 
 - 当前迭代：v0.6
-- 当前阶段：UI 方案阶段 R1 Review中
-- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `docs/progress/iterations/v0.6-ui-spec.md`
-- 下一步入口：Architect / Developer / Tester 分别 Review v0.6 UI 方案；UI 汇总 R1。
+- 当前阶段：设计阶段 R1 Review中
+- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `docs/progress/iterations/v0.6-ui-spec.md` 与 `docs/progress/iterations/v0.6-design.md`
+- 下一步入口：Developer / DevOps / Tester 分别 Review v0.6 设计文档。
 
 ## v0.6 关键上下文
 
@@ -57,7 +57,9 @@ R2 五方复审均为有条件通过。PM 于 2026-06-11 裁定不进入 R3，PR
 - 测试阶段：AI/前端验收分层、L0 样本集、v0.5 回归基线恢复。
 - DevOps：systemd 日志轮转和部署 handbook 项。
 
-UI 已产出 `v0.6-ui-spec.md` R1。PM Review 结论为有条件通过，无高严重度阻断；Owner 已确认 #P1：v0.6 全部按 Owner 提供的 UI 原型为主，D8 全屏铺满成立，本条关闭。PM 剩余关注点为：监控角标是否纳入 L0/L1 自动告警，以及 AC 数量 / 组件数量 / 路径 C 文案三项口径问题。
+UI 已产出 `v0.6-ui-spec.md` R2 并定稿。PM Review R1 结论为有条件通过，无高严重度阻断；Owner 已确认 #P1：v0.6 全部按 Owner 提供的 UI 原型为主，D8 全屏铺满成立，本条关闭。
+
+设计文档 `v0.6-design.md` R1 已由 Architect 产出。PM Review 结论为有条件通过：设计整体承接 PRD R2 + UI spec R2，未发现重新引入已排除范围；PM 条件项为 L0 `retryable` 前台展示映射、level-status-counts 24h 窗口口径、raw_items/ADR/AC 数量口径和开放问题数量口径。
 
 ## 重要风险
 

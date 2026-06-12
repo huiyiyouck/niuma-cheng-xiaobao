@@ -283,3 +283,12 @@
 - Owner 明确：「全部按照我给你的 UI 为主」。
 - PM 解释：这是对 #P1 的直接裁定。v0.6 UI 方案 D8「顶导 + 主内容区全屏铺满，不设最大宽度限制」成立，不再要求 UI R2 补页面宽度策略。
 - 剩余 PM Review 条件：#P2 / #P3 / #P4 / #P5。
+
+## 2026-06-12 — v0.6 设计文档 R1 PM Review
+
+- 本次角色：产品架构师(PM)
+- 动作：Review Architect 设计文档 R1
+- 涉及文档：`docs/progress/iterations/v0.6-design.md`、`docs/progress/iterations/v0.6.md`、`docs/progress/INDEX.md`
+- 结论：⚠️ 有条件通过。设计整体承接 PRD R2 + UI spec R2，未发现重新引入 L2、评论/反馈、独立详情页、原始数据治理、生产 mock 或成本熔断等已排除范围。
+- 条件项：L0 `retryable` 仅作为设计层内部态；`level-status-counts` 24h 窗口 SQL 与全量语义需澄清；raw_items/ADR/AC 数量口径需统一；开放问题数量口径需同步。
+- 下一步：Developer / DevOps / Tester 分别 Review `docs/progress/iterations/v0.6-design.md`。
