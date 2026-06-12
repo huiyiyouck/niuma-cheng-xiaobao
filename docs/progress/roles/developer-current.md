@@ -6,6 +6,66 @@
 
 ---
 
+## 2026-06-12 — v0.6 设计文档 R1 Review + 代提 DevOps R1 遗留
+
+- 本次角色：全栈开发（Developer）
+- 模式：Review（标准迭代 v0.6 设计阶段 R1）+ 代提 DevOps 遗留
+- 涉及文档：`docs/progress/iterations/v0.6-design.md`、`docs/progress/iterations/v0.6.md`
+- 结论：⚠️ **有条件通过**（10 条意见：2 高 / 5 中 / 3 低）
+
+### 入场代提（依据 last-out-unified-commit）
+
+入场 `git status` 发现工作区有 DevOps 上一会话未提交的脏改动（v0.6-design.md DevOps R1 完整 Review 段 + Review 状态表 / v0.6.md 设计阶段门禁 / INDEX 翻牌 / devops-current.md 收尾记录 / devops-archive.md 早期补登 5 个文件改动）。按 last-out-unified-commit 规则代提：
+- commit `9a9b974` — DevOps: v0.6 设计文档 R1 Review + 会话收尾（4 个文件）
+- commit `8821641` — DevOps: devops-archive.md 补登 2026-06-06 会话收尾（1 个文件）
+
+模式同 2026-06-10 UI 代提 Architect R2 追审、2026-06-11 Developer 代提 Architect UI R1。DevOps 角色日志的 Review 记录已在 devops-current.md 中由 DevOps 自己写完。
+
+### Developer 视角 10 条意见（2 高 / 5 中 / 3 低）
+
+**高严重度（工程量遗漏 + LLM infra 路径缺失）**：
+
+- **#D1 §4.4 / §6.3 只列了 `requeueTask` 改造但遗漏 `workerLoop` 主循环改造**：现有 `dispatcher.ts:162-219` 只支持 `fetch` / `process` 2 个 type 分支轮询 claim；v0.6 需要新增 `l0_classify` / `l1_process` / `l1_retry` 3 个 type 分支 + 对应 semaphore（`l0_classify` 可复用 `processSem`，`l1_process` 是否需独立 sem 待评估）+ 对应分发 routing（调 `l0Classifier` / `l1Processor`），共约 100 行代码工程量遗漏，影响 Developer 工时估算 30-40%
+- **#D2 `llm.ts` 当前只支持单一模型 endpoint**（`config.openaiModel`），新增 `processL1LLM()` 需要支持 `L0_LLM_MODEL` / `L1_LLM_MODEL` 双模型切换 + 抽象通用 `callLLM<T>(prompt, opts: {model?, timeout?})` helper；§6.3 只写了「扩展」无实现路径，需要 Architect R2 明确
+
+**中严重度（工程细节/契约对齐）**：
+
+- #D3 §4.7 上传文件目录 `/var/lib/niuma-news/uploads/spaces/{space_id}/...` 把 DB 主键 UUID 暴露在静态路径，nginx 配置无 `internal` 指令，建议改为 API 透传或加访问限制
+- #D4 §3.2 `POST /v1/l1-tasks/:task_id/retry` 未指定新 task type（`l1_process` vs `l1_retry`）；推荐 `l1_process` + attempt=0 重置
+- #D5 §5.2 组件数据对接表遗漏 `GlobalLevelStatusCounts → GET /v1/global-level-status-counts` 映射（新增 6 个 endpoint 之一在前端无落点）
+- #D6 §4.3 Stage 4 LLM prompt 输出 key 名 `scores` 与 §3.2 API `score_dimensions` + §3.4 TS `ScoreDimensions` 不一致；统一为 `score_dimensions`
+- #D7 §4.3 Stage 5 `source_refs` 扩展结构 0 字定义；建议明确结构或声明本期不扩展
+
+**低严重度（决策说明）**：
+
+- #D8 v0.5 `processor.ts` 不会设置 `tags_v2` / `score_total`，建议不改旧 processor（避免回归）
+- #D9 §5.1 路由 diff 删除 import 后旧 `AlertsPage.vue` / `LogsPage.vue` 是否 `git rm` 未说，建议同 commit 删除（v0.5.1 6 个孤儿组件经验教训）
+- #D10 §4.5 `L0_LLM_MODEL` / `L1_LLM_MODEL` 与 v0.5 `OPENAI_MODEL` 兜底关系未说明
+
+### 关键事实摸底（已 grep 复核）
+
+- `dispatcher.ts:162-219` workerLoop 只有 fetch / process 2 个分支
+- `llm.ts:91-98` 使用 `config.openaiModel` 单模型 + `extractFirstJsonObject` 解析
+- `config.ts:30-33` `OPENAI_MODEL` 默认 `gpt-4o-mini` + `llmMaxRetries=3` + `llmRetryBaseSeconds=1.0`
+- `processor.ts:38-65` jin10 走直显模式，其余走 LLM——v0.6 设计文档保留 processor.ts 不改是合理的决策
+- `worker/index.ts:63-65` 当前只有 fetchSem + processSem 两个并发池
+
+### 与已提交 Review 的关系
+
+- PM R1 ⚠️ 有条件通过（4 条：1 中 #P1 L0 retryable / 1 中 #P2 SQL 24h 窗口 / 1 低 #P3 口径 / 1 低 #P4 开放问题数量）
+- Tester R1 ⚠️ 有条件通过（11 条：3 高 / 5 中 / 3 低）
+- DevOps R1 ⚠️ 有条件通过（11 条：3 高 / 5 中 / 3 低）
+- **Developer R1 ⚠️ 有条件通过（10 条：2 高 / 5 中 / 3 低）**
+- **5 方设计 R1 Review 全部收齐，全部 ⚠️ 有条件通过，共识门槛已到**
+
+### 关联
+
+- 关联迭代：v0.6（设计阶段 R1 已 5 方收齐）
+- 关联文档：`v0.6-design.md` Review 记录 § Developer R1 Review
+- 下一步：Architect 汇总 4 方意见后产出 R2 或直接进实施阶段；Developer 实施时第一道工作主动评估 dispatcher workerLoop 改造 + llm.ts 双模型抽象
+
+---
+
 ## 2026-06-11 — v0.6 UI 方案 R1 Review + 代提 Architect R1 遗留
 
 - 本次角色：全栈开发（Developer）
