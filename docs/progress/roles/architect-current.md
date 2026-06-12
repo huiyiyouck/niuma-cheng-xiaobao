@@ -4,6 +4,62 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-06-12 — v0.6 多阶段连续出场（PRD R2 复审 + 追审 / UI R1 Review / 设计 R1 产出）+ 会话收尾
+
+**本次角色**：架构师
+- 动作：复审 + 复审追审 + Review + 产出 + 收尾（同一会话内 4 次出场覆盖 PRD R2 → UI R1 → 设计 R1）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6-prd.md`（追加 Architect R2 段 + R2 追审段 + Review 状态表更新）
+  - `docs/progress/iterations/v0.6-ui-spec.md`（追加 Architect R1 Review 记录 + Review 状态表更新）
+  - `docs/progress/iterations/v0.6-design.md`（**新建** 1064 行 7 章 + 4 ADR）
+  - `docs/progress/iterations/v0.6.md`（PRD R2 / UI R1 / 设计 R1 阶段状态同步）
+  - `docs/progress/INDEX.md`（当前状态推进 + 版本列表 + 最近收尾摘要追加）
+  - `docs/progress/roles/architect-current.md`（本文）
+  - `docs/progress/roles/architect-archive.md`（移出最旧 1 条 2026-06-06 v0.5 UI 方案 R1 Review）
+
+### 1️⃣ v0.6 PRD R2 复审（✅通过）
+- 结论：✅ 通过（含 3 条观察建议，不阻塞定稿）
+- R1 11 条意见核验：5 完全关闭 / 3 基本关闭 / 2 合理分流 / 1 降级
+- R2 新增内容架构层评估 7 项全部 ✅（状态机 / 错误分类 / 监控段 / 不回归 / 不做项 / 外部依赖边界 / 上传硬约束）
+
+### 2️⃣ v0.6 PRD R2 追审（⚠️ 修订为有条件通过）
+- 触发原因：上一段复审专注 R1 关闭核验 + 新增内容高层评估，未对 R2 新增 13 项内容逐条深审
+- 结论修订：✅通过 → ⚠️ **有条件通过**
+- 新增 9 条意见（4 中 / 5 低）：
+  - 中：#A12 §3.2 链接读取超时分类冲突 / #A13 §2.3 L0 状态机不对称（无 retryable_failed）/ #A14 §3.7 AC-30 "或"字 / #A15 §5 库内检索失败行为措辞矛盾
+  - 低：#A16-#A20 标签判定规则 / 告警阈值无 placeholder / 并发覆盖在单 Owner 模型下过工程化 / 1MB 文件分辨率上限 / "连续不合法且达上限"放不可重试档逻辑奇怪
+- 条件：4 条中严重度建议 R3 修订；如不开 R3 由设计阶段架构师定向回流修订
+
+### 3️⃣ v0.6 UI 方案 R1 Review（⚠️ 有条件通过）
+- 结论：⚠️ 有条件通过，10 条意见（2 高 / 5 中 / 3 低）
+- 高严重度：
+  - #A1 NewsDetail 数据契约与 v0.5 processed_news schema 字段名冲突（importance_score → score_total，tags string[] → 分类对象），1000+ 行历史数据迁移路径未在 UI spec 标注
+  - #A2 §4.8 监控菜单角标数据源与 PRD AC-32 新增告警类型覆盖盲区（漏 L0/L1 告警）
+- 中严重度：#A3 ContextParagraph.sources 空数组未定 / #A4 SourceLevelStatusCounts 4 字段语义歧义 / #A5 §7 与 §9.2 工作重复 / #A6 "最近 24 小时"硬编码 / #A7 图标加载失败无 SpaceEditDialog 反馈 / #A8 §2.4 与 §2.2 新建组件清单不一致
+- 低严重度：#A9 l1-tasks 命名 / #A10 ConfidenceBadge emoji 可访问性 / #A11 §9.2 第 5 条角标轮询无倾向
+- 不阻塞观察 7 项：§2.3 22 组件迁移矩阵质量高 / §6.5 StatusBadge 扩展非破坏性 / §3.2 抽屉降级与 AC-25c 严格对齐 / §6.1 字段命名规范 / §9.2 主动列出 5 条设计阶段事项规范
+
+### 4️⃣ v0.6 设计文档 R1 产出（新建 1064 行）
+- 结构：7 章 + 4 ADR + 3 项开放问题
+  - §1 概述（范围 + 前提 + ADR 索引）
+  - §2 数据模型（raw_items × 7 列 / processed_news × 6 列 / channel_spaces × 2 列 / tasks × 3 type / alerts × 4 type / ER 图）
+  - §3 API 契约（6 个新 endpoint：`GET /v1/news/:id`、`POST/DELETE /v1/spaces/:id/icon`、`GET /v1/sources/:id/level-status-counts`、`POST /v1/l1-tasks/:task_id/retry`、`GET /v1/global-level-status-counts`；扩展 `/v1/news` `/v1/stats` `/v1/alerts`；TS 类型新增 7 个）
+  - §4 核心流程（L0 classifier / L1 processor 5 子阶段 / dispatcher type 分支退避 / 外部服务集成 / 监控告警 / 图标上传 + nginx 配置变更）
+  - §5 前端路由变更 + 组件清单
+  - §6 schema 迁移 / 零数据迁移 / 代码迁移
+  - §7 7 项已知风险 + 4 项 ADR 决策表
+- ADR 4 个：ADR-002 raw_items 双字段（拒绝 tasks 单字段 / 独立表）/ ADR-003 jsonb 增量不拆子表 / ADR-004 tasks 复用按 type 分支退避 / ADR-005 后端持久目录（拒绝 bytea / 对象存储）/ ADR-006 ILIKE 不上向量
+- 自审修订：删除 §7.1 ADR-007 残缺一行；§5.2 表格 `icon_emoji` → `icon`（与 schema 字段一致）
+- 关键决策回应 R1 Review 意见：UI #A1 字段迁移已在 §6.2 v0.5 历史数据兼容性表覆盖 / UI #A2 角标计数口径在 §4.6 已纳入新增告警类型 / UI #A4 已在 §3.2 列出每个 count 的 SQL 语义；PRD R2 追审 #A13 已在 §2.1 通过引入 `retryable` 状态对称化解决；#A12 在 §4.2/§4.3 错误分类表统一为可重试/降级语义
+
+### 收尾
+- 关联迭代：v0.6
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - 等待 PM / Developer / DevOps / Tester 4 方完成设计 R1 Review，PM 汇总后产出 R2，届时 Architect 复审
+  - 3 项开放问题移交：外部搜索候选选型 → Developer 实现阶段；文件目录权限方案 → DevOps 部署前；磁盘告警触发线 → DevOps 上线后
+  - 本次会话内一次性 commit（含 PRD R2 复审 + 追审 + UI R1 Review + 设计文档 R1 + 全部状态同步 + 日志归档）
+
 ## 2026-06-09 — v0.6 PRD R1 Review + 架构师日志分页归档 + 会话收尾
 
 **本次角色**：架构师
@@ -138,17 +194,3 @@
 - 结论：通过。R1 全部 5 条意见核验通过：#A1 API 契约已补充（§10，6 组 20+ endpoint）、#A2 身份编辑约束已定义、#A3 约束归属已标注、#A4 mini 模式已定义、#A5 由 API 契约覆盖。
 - R2 全部 8 条意见（Architect 4 + Developer 4）正确关闭。UI 方案达到设计阶段准入标准。
 - 关联迭代：v0.5
-
-## 2026-06-06 — v0.5 UI 方案 R1 Review
-
-**本次角色**：架构师
-- 动作：Review（审 UI 产出的 v0.5 UI 方案 R1）
-- 涉及文档：`docs/progress/iterations/v0.5-ui-spec.md`、`docs/progress/iterations/v0.5.md`
-- 结论：需修改。共 5 条意见（1 高 + 2 中 + 2 低）。
-  - 高：#A1 缺少 API 契约清单，设计阶段无法接续
-  - 中：#A2 Source 身份修改 UI 未体现 PRD 状态约束、#A3 删除最后空间约束 PRD 未定义
-  - 低：#A4 浏览页 mini Pill 交互未展开、#A5 SourceCard 抓取条数数据来源不明
-- PRD 覆盖：9 个功能章节全部核验通过。路由设计合理。
-- 关联迭代：v0.5
-- 遗留问题/风险：等待 UI 汇总 Architect/Developer R1 反馈后提交 R2。
-

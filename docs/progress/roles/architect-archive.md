@@ -4,6 +4,19 @@
 > 本文件是按需查询归档。启动默认 **不读**本文件；只在排查历史决策、追溯某次 Review 结论时按需 grep。
 > 最近 10 条日志在 `architect-current.md`，长期摘要在 `architect-summary.md`。
 
+## 2026-06-06 — v0.5 UI 方案 R1 Review
+
+**本次角色**：架构师
+- 动作：Review（审 UI 产出的 v0.5 UI 方案 R1）
+- 涉及文档：`docs/progress/iterations/v0.5-ui-spec.md`、`docs/progress/iterations/v0.5.md`
+- 结论：需修改。共 5 条意见（1 高 + 2 中 + 2 低）。
+  - 高：#A1 缺少 API 契约清单，设计阶段无法接续
+  - 中：#A2 Source 身份修改 UI 未体现 PRD 状态约束、#A3 删除最后空间约束 PRD 未定义
+  - 低：#A4 浏览页 mini Pill 交互未展开、#A5 SourceCard 抓取条数数据来源不明
+- PRD 覆盖：9 个功能章节全部核验通过。路由设计合理。
+- 关联迭代：v0.5
+- 遗留问题/风险：等待 UI 汇总 Architect/Developer R1 反馈后提交 R2。
+
 ## 2026-06-06 — v0.5 PRD R2 Review
 
 **本次角色**：架构师
