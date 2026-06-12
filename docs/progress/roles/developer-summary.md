@@ -2,16 +2,17 @@
 
 > 长期摘要、当前关注点和常见风险。启动时与 `developer-current.md` 一并读取。
 > 旧条目原文见 `developer-archive.md`。
-> 最近一次更新：2026-06-09（v0.6 PRD R1 Review 收尾分层归档）
+> 最近一次更新：2026-06-12（v0.6 设计文档 R2 Developer 复审收尾分层归档）
 
 ---
 
-## 当前状态（2026-06-09）
+## 当前状态（2026-06-12）
 
-- **当前迭代**：v0.6（PRD 阶段 R1 Review中）
-  - Developer R1 ✅已提交（13 条：4 高 / 6 中 / 3 低），结论 ❌需修改
-  - 与 Architect #A1-#A8、UI #U1-#U9 一致判断：本轮 PRD 把太多产品决策甩给设计阶段
-  - 下一步：等待 Tester / DevOps 完成 R1 → PM 汇总 R2 → Developer 复审
+- **当前迭代**：v0.6（设计阶段 R2 复审中）
+  - Developer R2 ⚠️有条件通过（R1 高严重度 2 条全部关闭，R2 新增 #D11 l1_retry 创建时机 + #D12 交叉引用断链）
+  - PM + Developer 已 R2 复审通过，待 DevOps / Tester 2 方 R2 复审
+  - 工程接力基础从 R1 的 85% 提升到 R2 的 92%
+  - 下一步：DevOps / Tester R2 复审 → 全部通过则设计定稿进实施阶段
 - **v0.5 状态**：已关闭（2026-06-09 PM 有条件关闭），无 Developer 遗留代码任务
 - **跨任务待办（Developer 归属）**：INDEX 跨任务待办表当前无 Developer 待办项
 
@@ -23,11 +24,14 @@
 
 ## 当前关注点
 
-### 1. v0.6 PRD R1 Review 已识别的关键工程缺口（等待 R2 收敛）
+### 1. v0.6 设计文档 R2 Review 后承接到实施阶段的 Developer 事项
 
-- **前后端契约缺失**：v0.5 R2 §10 的 20+ endpoint 是当时实施顺利的关键基础；v0.6 PRD 全程没出现 API 路径/字段名
-- **tasks 表退避策略冲突**：AC-08 `[60,300,900]` 指数 vs 现有 `dispatcher.ts:62-76` 线性 `min(300, 10*(n+1))`；必须按 `tasks.type` 分流避免污染 v0.5 X Stream 抓取
-- **AI JSON 输出体量风险**：从 v0.5 的 5 个 top-level key（1-2KB）膨胀到 v0.6 的 11+ 个（5-10KB），解析失败率会上升
+- **#D3 space_id UUID 暴露**：nginx /uploads/ 无 internal 指令，需评估加访问限制或改为 API 透传
+- **#D5 GlobalLevelStatusCounts 前端无落点**：§5.2 组件表缺该组件行，实施时从 §3.2 endpoint 表补建
+- **#D7 source_refs 扩展结构**：Stage 5 只说"扩展"无具体结构，需实施时定义或声明本期不扩展
+- **#D9 旧路由文件删除**：AlertsPage.vue / LogsPage.vue 需同 commit git rm，走受保护路径门禁
+- **#D11 l1_retry 创建时机**：Architect 需明确 l1_retry task 何时创建（推荐移除，仅保留 l1_process + metadata 标注）
+- **条件 D**：实施前恢复 test DB + .env.test
 - **空间图标上传**：Fastify 没装 `@fastify/multipart`，需要新依赖；emoji + 图片同字段还是新增列影响数据迁移
 - **mock 数据策略**：AC-25 一刀切禁止与渐进式迁移矛盾，需拆为生产构建禁 mock + 开发期允许 fixture
 
