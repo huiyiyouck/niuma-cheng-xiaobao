@@ -22,17 +22,19 @@
 
 ## 当前关注点
 
-- **v0.6 PRD R2 复审已提交**：DevOps R2 结论 ⚠️ **有条件通过**，12 条意见 5 完关 + 4 基本关 + 2 合理分流 + 1 未关闭（#O8 日志轮转）；R2 新引入 #O13（LLM 供应商切换告警）+ #O14（生产 .env 真实性验证）。PRD 是否定稿、阶段是否推进由 PM 介入决定。
-- **v0.6 部署侧前置硬约束**（设计阶段 / 部署就绪检查前必须落实）：
-  1. **systemd 日志轮转方案 v0.6 上线前必须落实**（#O8，推荐 logrotate daily/14天/压缩 = 方案 A，systemd unit 0 改动）；
-  2. 图标上传 nginx 配置变更必须随代码同步上线（#O3 / AC-28b）；
-  3. AC-32 告警类型枚举值 + 初版触发阈值由设计阶段产出 + 部署侧 Review（#O4 / Architect #A17 / Developer #D15 同源）；
-  4. 新增依赖系统侧预审（sharp / playwright 类 native binding）在设计阶段依赖清单确定后由 DevOps dry-check（#O5 残留）；
-  5. v0.5 测试当前禁用，本期实施前必须先恢复独立 test DB + `.env.test`（与 Developer R2 条件 D / Tester R2 条件 D 同向）。
-- **磁盘容量预警**：当前 16GB 可用 + 540K 日志（2 天 +112K = 56K/天）。L0/L1 上线后 raw_items 年增 5-40GB + 日志 10-50MB/天，**6-12 个月必触发扩容**（Owner R2 已明确接受本期不建治理能力 + §6.1 风险登记）。
+- **v0.6 设计文档 R2 复审已提交**：DevOps R2 结论 ⚠️ **有条件通过**，R1 11 条 — 1 完全关闭（#O6 间接关）+ 3 基本关闭（#O1/#O2/#O3 摘要方向对、正文未落）+ 6 合理分流 + 1 未关闭（#O8 client_max_body_size，1MB 边界 P0）；R2 新增 #O15 R2 摘要与正文 4 处不一致致部署侧执行依据缺失（与 PM #P5 / Tester #T13 同源）。4/4 方已完成 R2 复审，方向是否定稿、是否进实施由 PM/Owner 介入决定。
+- **v0.6 部署侧前置硬约束**（设计阶段 / 部署就绪检查前必须落实，与 R2 条件 B 自治承接对应）：
+  1. **systemd 日志轮转方案 v0.6 上线前必须落实**（#O8/#O4，推荐 logrotate daily/14天/压缩 + copytruncate）；
+  2. **图标上传前置**：mkdir `/var/lib/niuma-news/uploads` + chown root:root + chmod 0755 + Fastify 启动健康检查（#O1）；
+  3. **nginx 配置同步**：维持选项 A 手工维护，本期 v0.6 部署时增补 `/uploads/` location + **server level `client_max_body_size 2m;`**（#O2 + #O8）；
+  4. **AC-32 告警类型枚举值 + 初版触发阈值**由设计阶段产出 + 部署侧 Review（设计 R2 §4.6 框架 + tasks.last_error_kind 已落地，task_backlog SQL 仍待实施阶段）；
+  5. **依赖增量预审**：部署前 diff package.json，禁止 sharp/playwright/canvas 类 native binding（#O3）；
+  6. v0.5 测试当前禁用，本期实施前必须先恢复独立 test DB + `.env.test`（4 方 R2 一致条件 D）。
+- **磁盘容量预警**：当前 16GB 可用 + 682K 日志（5 天 +254K = 50K/天）。L0/L1 上线后 raw_items 年增 5-40GB + 日志 10-50MB/天，**6-12 个月必触发扩容**；扩容触发线建议 ≥80%（32GB）warning + ≥90%（36GB）critical。
 - **密钥泄漏风险**：v0.5.1 部署期 `X_BEARER_TOKEN` / `OPENAI_API_KEY` / `JIN10_MCP_TOKEN` 在 Owner 对话历史中明文出现，强烈建议 Owner 在各服务控制台轮换。
 - **drizzle journal 漂移**：v0.5.1 部署期已自动修复，但要求所有迁移 SQL 严格 `IF [NOT] EXISTS`。v0.6 schema 变更必须走 `db:generate` 增量，不能再人工 psql。
 - **前端构建是部署独立步骤**：v0.5.1 教训已沉淀到 `full-stack-deploy-handbook.md`，DevOps 部署清单不再允许"后端 active = 部署通过"的翻牌（memory `devops-full-stack-deploy-not-just-backend`）。
+- **R2 摘要 vs 正文不一致教训**（v0.6 新积累）：DevOps 部署侧拍命令是按**正文**而非按修改摘要 → 设计/PRD R2 后正文必须实际修订或显式标注"承接到实施阶段"，不能在摘要里关、正文里没改。本经验适用所有未来阶段产出物。
 
 ## DevOps 知识库
 

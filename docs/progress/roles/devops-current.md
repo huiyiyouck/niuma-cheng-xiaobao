@@ -2,6 +2,72 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-06-12 — v0.6 设计文档 R2 DevOps 复审 + 会话收尾（同日第 2 次出场）
+
+> 角色：DevOps；模式：标准迭代 设计阶段 R2 复审。
+
+### 触发
+
+v0.6 设计文档 R2 前 3 方（PM / Developer / Tester）已完成 R2 复审均 ⚠️ 有条件通过，Owner 切到 DevOps 完成第 4 方复审闭环。
+
+### 执行
+
+1. 读 `runtime.md` + `INDEX.md` + `role-devops.md` + `devops-current.md`（确认 R1 11 条意见全文）+ `v0.6-design.md` 全文 2192 行（重点 R2 修改摘要 + Review 状态表 + PM/Developer/Tester R2 复审段）。
+2. 按 R1 11 条逐条核验 R2 关闭情况，叠加 R2 新增内容部署层评估，叠加"R2 摘要 vs 正文不一致"在 DevOps 域的具体可执行性影响（与 PM R2 #P5 / Developer R2 #D12 / Tester R2 #T13 同源）。
+3. 现场快速核验部署侧基线 8 项：`df -h` = 16GB 可用（与 R1 时点 15GB 偏差小，与 PRD R2 时点一致）；`systemctl is-active` = active；`/var/log/niuma-news-api.log` = 682K（R1 时点 +10K，6 小时增量符合 v0.5 增速）；`/var/lib/niuma-news/` 仍不存在；`deploy/` 仅 `systemd/news-api.service` 一文件；nginx 7 location 无 `client_max_body_size` 无 `/uploads/`；`server/package.json` 仍未装 `@fastify/multipart`。
+4. 严守 DevOps 视角边界 + 与 PM/Developer/Tester R2 视角错开（R1 时段已踩过的"5 方一致 / 共识门槛达成"等聚合判断教训维持，本轮不预判 R3 vs 实施阶段）。
+
+### 产出
+
+**结论**：⚠️ **有条件通过（R2）**。R1 11 条 R2 关闭：1 完全关闭（#O6 由 §4.4/§4.5 间接关）+ 3 基本关闭（#O1/#O2/#O3 R2 摘要方向 100% 与 DevOps R1 推荐对齐——部署前置工作 / 选项 A / npm 增量 + native binding 红线，但**正文一字未动**）+ 6 合理分流（部署侧自治承接）+ 1 未关闭（#O8 client_max_body_size，1MB 边界 P0 风险，R2 摘要声称已关、正文未落）。R2 新增 1 条意见 #O15（中）：R2 摘要 vs 正文 4 处不一致致部署侧执行依据缺失，与 PM R2 #P5 / Developer R2 #D12 / Tester R2 #T13 同源——DevOps 视角强调"部署执行环节按正文拍 mkdir/nginx -t/apt install"，摘要方向不能直接落地。详见 `iterations/v0.6-design.md` DevOps R2 段（约 280 行）。
+
+| # | R1 严重度 | 主题 | R2 关闭状态 |
+|---|---|---|---|
+| #O1 | 高 | uploads 目录创建/属主/权限 | 🟡 基本关闭（§4.7.1 部署前置工作摘要点了，正文无该子节）|
+| #O2 | 高 | nginx 配置同步路径选 A/B/C | 🟡 基本关闭（DevOps 推荐选项 A 摘要采纳，但 §4.7 末尾仍写 deploy/nginx 矛盾）|
+| #O3 | 高 | npm 依赖增量 + native binding 红线 | 🟡 基本关闭（方向对、§6.3 正文未落）|
+| #O4 | 中 | logrotate 配置归属 | 🟡 合理分流（部署侧 handbook 自治承接）|
+| #O5 | 中 | 磁盘容量预估 + 扩容触发线 | 🟡 合理分流 |
+| #O6 | 中 | worker timeout 与并发对齐 | ✅ **完全关闭**（§4.4 3 sem 池 + §4.5 LLMCallOpts.timeout 间接关）|
+| #O7 | 中 | 系统级磁盘告警与业务 alerts 分离 | 🟡 合理分流 |
+| #O8 | 中 | nginx client_max_body_size | ❌ **未关闭**（R2 摘要声称关、正文未落，1MB 边界 P0）|
+| #O9-#O11 | 低 | UPLOAD_DIR 命名 / 浏览器缓存 / §7.3 重复 | 🟡 合理分流 |
+| **R2 新增** | | | |
+| #O15 | 中 | R2 摘要 vs 正文 4 处不一致致部署侧执行依据缺失 | 与 PM #P5 / Tester #T13 同源 |
+
+R2 间接贡献（schema/worker/llm 维度对部署侧友好）：`tasks.last_error_kind` 让 external_dep_down 告警可一行 SQL 实现 + `workerLoop` 5 sem 池策略（fetchSem/processSem/l1Sem）让 60s LLM 不阻塞 process_raw_item + `callLLM<T>` 双模型不破坏 v0.5 行为 + 错误归档对照表让运维侧可观测能力提升。**部署侧接力基础 75% → 82-85%**。
+
+### 边界守住
+
+- R2 复审严格控制在"R1 11 条逐条关闭核验 + R2 新增内容部署层评估 + 4 方一致 #P5 类问题在 DevOps 域影响"范围。
+- 不重复审 PM 域（产品范围底线 + #P5 中影响产品语义部分）/ Developer 域（#D11/#D12/#D5）/ Tester 域（#T13 中影响测试用例部分）。
+- 4 方一致的"R2 摘要 vs 正文不一致"问题中，DevOps 域是**最严重的一处**（PM/Developer/Tester 各 1-2 条不一致，DevOps 是 3 高 + 1 中共 4 条全部踩中）—— 把这点独立提出 #O15 是 DevOps 视角应有补充，与 PM #P5 / Tester #T13 同源不同视角。
+- 不预设项目级聚合判断（是否定稿、是否进实施阶段、是否开 R3）—— 由 PM/Owner 决定。
+
+### 同步动作
+
+- 更新 `v0.6-design.md` Review 状态表（DevOps 待复审 → ⚠️ 有条件通过 R2）+ Review 记录区域追加 DevOps R2 段（约 280 行）。
+- 更新 `v0.6.md` 设计阶段 R2 行：DevOps 复审状态 ⚠️ 有条件通过 + 11 条逐条结论摘要 + 阶段状态机械事实"4/4 方已完成 R2 复审"。
+- 更新 `INDEX.md` 当前状态：阶段 → "设计阶段 R2 — 4/4 方均已完成 R2 复审" / 下一步入口 → "PM 介入 v0.6 设计文档 R2，决定开 R3 微调或直接进实施阶段"（不预判方案 A vs B，不预判共识/通过）；版本列表 v0.6 状态改为机械事实；最近收尾摘要表追加本次记录。
+
+### 下一步入口
+
+PM 介入 v0.6 设计文档 R2。后续推进决策（方案 A 开 R3 微调 vs 方案 B 不开 R3 + 部署侧自治承接 + 摘要文案订正）由 PM/Owner 决定。如最终走方案 B，DevOps 在 v0.6 部署就绪检查前自治承接以下 4 类（已写入 `v0.6-design.md` DevOps R2 段条件 B + 待沉淀到 handbook）：①目录创建命令 + 健康检查 / ②nginx 选项 A 手工增补 + `client_max_body_size 2m` / ③依赖增量预审 + native binding 红线 / ④logrotate + 磁盘告警 cron + 扩容触发线。
+
+### 待办（自治承接）
+
+会话本次未做、需在 v0.6 部署期前完成的部署侧 handbook 沉淀（同时与 R2 #O15 / #O3 / #O4 / DevOps PRD R2 #O14 联动）：
+- `dependency-change-handbook.md` 增补"v0.6 依赖增量预审清单"小节
+- `full-stack-deploy-handbook.md` 增补"v0.6 上传目录前置 + nginx /uploads/ + client_max_body_size 调优"章节
+- `full-stack-deploy-handbook.md` 增补"logrotate 配置模板（copytruncate 关键性）"小节
+- `full-stack-deploy-handbook.md` 增补"上线前 .env 真实性验证清单"
+
+### DevOps 日志容量观察
+
+current 当前 7 条（追加本次后），约 420 行，超过 `context-policy.md` 300 行阈值。下次会话开始时优先评估将最旧 2026-06-07 X 反向同步条目移入 `devops-archive.md`。
+
+---
+
 ## 2026-06-12 — v0.6 设计文档 R1 DevOps Review + 会话收尾
 
 > 角色：DevOps；模式：标准迭代 设计阶段 R1 Review。
