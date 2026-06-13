@@ -4,14 +4,22 @@ import { Search, ChevronDown } from "lucide-vue-next";
 import { cn } from "@/lib/utils";
 import StatCard from "@/components/ui/StatCard.vue";
 import NewsCard from "@/components/news/NewsCard.vue";
-import { newsStats, spaces, channelsMap, mockNews } from "@/lib/mock";
+import NewsDetailDrawer from "@/components/news/NewsDetailDrawer.vue";
+import { newsStats, spaces, channelsMap, mockNews, type NewsItem } from "@/lib/mock";
 
 const selectedSpace = ref("ai");
 const selectedChannel = ref("all");
 const searchQuery = ref("");
 const minScore = ref(0);
 const sortBy = ref("time");
-const detailPanelOpen = ref(true);
+
+// 详情侧边抽屉（UI spec D12-D14）
+const selectedNews = ref<NewsItem | null>(null);
+const drawerOpen = ref(false);
+function openDetail(news: NewsItem) {
+  selectedNews.value = news;
+  drawerOpen.value = true;
+}
 
 const channels = computed(() => channelsMap[selectedSpace.value] || []);
 
@@ -25,7 +33,7 @@ function selectSpace(id: string) {
   <div class="h-full flex flex-col">
     <!-- Stats Cards -->
     <div class="p-6 border-b border-border">
-      <div class="grid grid-cols-4 gap-4">
+      <div class="grid grid-cols-4 gap-4 max-w-5xl mx-auto">
         <StatCard
           v-for="stat in newsStats"
           :key="stat.label"
@@ -38,7 +46,7 @@ function selectSpace(id: string) {
 
     <!-- Space Pills -->
     <div class="px-6 pt-4 pb-2 border-b border-border">
-      <div class="flex gap-2 flex-wrap">
+      <div class="flex gap-2 flex-wrap max-w-5xl mx-auto">
         <button
           v-for="space in spaces"
           :key="space.id"
@@ -57,7 +65,7 @@ function selectSpace(id: string) {
 
     <!-- Channel Pills -->
     <div class="px-6 py-2 border-b border-border">
-      <div class="flex gap-2 flex-wrap">
+      <div class="flex gap-2 flex-wrap max-w-5xl mx-auto">
         <button
           v-for="channel in channels"
           :key="channel.id"
@@ -76,7 +84,7 @@ function selectSpace(id: string) {
 
     <!-- Filters -->
     <div class="px-6 py-4 border-b border-border bg-muted/30">
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-4 max-w-5xl mx-auto">
         <div class="flex-1 relative">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
@@ -114,24 +122,20 @@ function selectSpace(id: string) {
       </div>
     </div>
 
-    <!-- News List with Detail Panel -->
-    <div class="flex-1 flex overflow-hidden">
-      <!-- News List -->
-      <div :class="cn('flex-1 overflow-auto p-6', detailPanelOpen && 'border-r border-border')">
-        <div class="space-y-4 max-w-4xl">
-          <NewsCard v-for="news in mockNews" :key="news.id" :news="news" />
-        </div>
-      </div>
-
-      <!-- Detail Panel -->
-      <div v-if="detailPanelOpen" class="w-96 overflow-auto p-6 bg-muted/20">
-        <div class="space-y-4">
-          <div>
-            <h2 class="font-medium mb-2">详情</h2>
-            <p class="text-sm text-muted-foreground">选择一条新闻查看详细信息</p>
-          </div>
-        </div>
+    <!-- News List（居中聚焦，两侧留白；详情走侧边抽屉） -->
+    <div class="flex-1 overflow-auto p-6">
+      <div class="space-y-4 max-w-3xl mx-auto">
+        <NewsCard
+          v-for="news in mockNews"
+          :key="news.id"
+          :news="news"
+          class="cursor-pointer"
+          @click="openDetail(news)"
+        />
       </div>
     </div>
+
+    <!-- 详情侧边抽屉 -->
+    <NewsDetailDrawer :news="selectedNews" :open="drawerOpen" @close="drawerOpen = false" />
   </div>
 </template>
