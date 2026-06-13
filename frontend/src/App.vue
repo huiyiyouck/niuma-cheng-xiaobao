@@ -1,124 +1,67 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
+import { Newspaper, Activity } from "lucide-vue-next";
+import { cn } from "@/lib/utils";
 import ToastContainer from "@/components/ToastContainer.vue";
 import ModalContainer from "@/components/ModalContainer.vue";
-import { getUnprocessedAlertCount } from "@/lib/api";
 
-// v0.5: 导航项从 3 项扩展为 4 项：浏览 | 管理 | 系统日志 | 告警
-// AlertNavBadge：显示未处理告警计数
+const route = useRoute();
 
-const unprocessedCount = ref(0);
+// 前端先行阶段：未处理告警数用 mock；接后端后改为 GET /v1/alerts/unread-count 轮询
+const unhandledAlertsCount = 3;
 
-async function loadAlertCount() {
-  try {
-    const res = await getUnprocessedAlertCount();
-    unprocessedCount.value = res.count;
-  } catch { /* 静默失败 */ }
-}
+const isActive = (path: string) => {
+  if (path === "/news") {
+    return route.path === "/" || route.path === "/news";
+  }
+  return route.path.startsWith(path);
+};
 
-onMounted(() => {
-  loadAlertCount();
-  // 每 60s 轮询更新告警计数
-  setInterval(loadAlertCount, 60000);
-});
+const navLinkClass = (path: string, extra = "") =>
+  cn(
+    "px-4 py-2 rounded-md transition-colors",
+    extra,
+    isActive(path)
+      ? "bg-secondary text-secondary-foreground"
+      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+  );
 </script>
 
 <template>
   <ToastContainer />
   <ModalContainer />
-  <div class="shell">
-    <header class="topbar">
-      <div class="topbar-inner">
-        <div class="brand">
-          <RouterLink to="/news" class="brand-link">🐂 牛马程小报</RouterLink>
+  <div class="flex h-screen flex-col bg-background">
+    <!-- Top Navigation -->
+    <header class="border-b border-border bg-card">
+      <div class="flex h-14 items-center px-6">
+        <div class="flex items-center gap-2 mr-8">
+          <Newspaper class="h-5 w-5" />
+          <span class="font-medium">牛马程小报</span>
         </div>
-        <nav class="nav">
-          <RouterLink to="/news" class="nav-link" activeClass="nav-link--active">浏览</RouterLink>
-          <RouterLink to="/admin" class="nav-link" activeClass="nav-link--active">管理</RouterLink>
-          <RouterLink to="/logs" class="nav-link" activeClass="nav-link--active">系统日志</RouterLink>
-          <RouterLink to="/alerts" class="nav-link nav-link--alert" activeClass="nav-link--active">
-            告警
-            <span v-if="unprocessedCount > 0" class="alert-badge">{{ unprocessedCount }}</span>
+
+        <nav class="flex gap-1">
+          <RouterLink to="/news" :class="navLinkClass('/news')">浏览</RouterLink>
+          <RouterLink to="/admin" :class="navLinkClass('/admin')">管理</RouterLink>
+          <RouterLink to="/monitoring" :class="navLinkClass('/monitoring', 'relative')">
+            <span class="flex items-center gap-2">
+              <Activity class="h-4 w-4" />
+              监控
+              <span
+                v-if="unhandledAlertsCount > 0"
+                class="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center"
+              >
+                {{ unhandledAlertsCount }}
+              </span>
+            </span>
           </RouterLink>
         </nav>
       </div>
     </header>
-    <main class="main-content">
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-auto">
       <RouterView />
     </main>
   </div>
 </template>
-
-<style scoped>
-.shell { min-height: 100vh; background: var(--bg-page); }
-.topbar {
-  position: sticky; top: 0; z-index: 20;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border);
-}
-.topbar-inner {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  display: flex; gap: 16px; align-items: center;
-  justify-content: space-between; padding: 0 32px; height: 52px;
-}
-.brand-link {
-  font-weight: 800; font-size: 16px; letter-spacing: -0.3px;
-  color: var(--text); text-decoration: none;
-}
-.nav { display: flex; gap: 4px; }
-.nav-link {
-  padding: 6px 12px; font-size: 13px; font-weight: 600;
-  color: var(--text-muted); text-decoration: none;
-  border-radius: 8px; transition: color 0.15s, background 0.15s;
-  display: flex; align-items: center; gap: 6px;
-  position: relative;
-}
-.nav-link:hover { color: var(--accent); }
-.nav-link--active {
-  color: var(--accent); background: var(--accent-light);
-}
-
-/* v0.5: 告警角标 */
-.alert-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 5px;
-  border-radius: 9px;
-  background: var(--danger);
-  color: #FFF;
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.main-content {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 20px 32px 80px;
-  background: var(--bg);
-  border-radius: 0 0 12px 12px;
-  border: 1px solid var(--border-light);
-  border-top: none;
-  min-height: calc(100vh - 52px);
-}
-
-/* v0.5: 响应式 */
-@media (max-width: 1280px) {
-  .topbar-inner { padding: 0 20px; }
-  .main-content { padding: 16px 20px 80px; }
-}
-@media (max-width: 480px) {
-  .topbar-inner { padding: 0 12px; }
-  .main-content { padding: 12px 12px 80px; border-radius: 0; border: none; }
-  .nav-link { padding: 5px 8px; font-size: 11px; }
-  .brand-link { font-size: 14px; }
-}
-</style>

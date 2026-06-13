@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-06-13 — v0.6 实现阶段 R1：前端先行（Owner 调整）+ test 环境部署
+
+- 本次角色：全栈开发（Developer）
+- 模式：标准迭代 v0.6 实现阶段 R1（入场时设计 R2 已有条件定稿；Owner 中途将推进顺序调整为**前端先行**，后端暂停）
+- Owner 前端规则（已落 memory `v0.6-frontend-rebuild-rules`）：**Vue + 1:1 还原原型 `/root/news-aggregation-platform` + 引入 Tailwind v4/shadcn 主题（显式偏离 UI spec §4.1，Owner 兼 PM 认可）+ 组件化可复用 + 4 页搭完一起 review**
+- 已完成（`vite build` 0 错误 + playwright 截图自查 1:1 通过）：
+  - Tailwind v4 底座 + 移植原型 shadcn 主题；路由/导航；`NewsPage` / `MonitoringPage` / `SourceDetailPage`(主体) 三页 1:1 还原；复用组件 `StatCard/ScoreBadge/Badge/NewsCard`；mock 层 `lib/mock.ts`
+- 部署：test 测试环境 **http://test.huiyiyou.cloud**（HTTP，独立目录 `/var/www/test.huiyiyou.cloud`，nginx `sites-available/test.huiyiyou.cloud`）；⚠️ 生产 `news.huiyiyou.cloud` 的 `frontend/dist` 已被本会话 `vite build` 覆盖为 v0.6 开发版，恢复 v0.5 需 DevOps
+- 剩余（交下一 5 小时周期新会话）：**AdminPage 双 Tab + 7 个子组件（2169 行）** + 源详情抽屉接入 + #D9 旧路由 `git rm`；完整交接见 `v0.6.md` 实现阶段「前端先行实施进展」段
+- 用量说明：本 5 小时周期剩余 <20%，不足以做完 AdminPage（其工作量大于已完成的底座+3 页），交下个周期接续
+- 跨角色提示：部署属 DevOps 域，本次 test 临时部署由 Owner 直接授权；生产 dist 被覆盖一事已在 `v0.6.md` 标注待 DevOps 决策
+- 下一步：新会话 Developer 按 `v0.6.md` 交接段继续 AdminPage
+
+---
+
 ## 2026-06-12 — v0.6 设计文档 R2 Developer 复审
 
 - 本次角色：全栈开发（Developer）

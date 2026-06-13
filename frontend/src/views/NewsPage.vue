@@ -1,259 +1,137 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { useDebounceFn } from "@vueuse/core";
-import { listNews, listSpaces, listChannels, getSpaceStats, getGlobalStats } from "@/lib/api";
-import type { Space, Channel, ProcessedNews, UUID, NewsSort, SpaceStats } from "@/lib/types";
-import StatsCards from "@/components/StatsCards.vue";
-import NewsListItem from "@/components/NewsListItem.vue";
-import NewsDetailPanel from "@/components/NewsDetailPanel.vue";
+import { ref, computed } from "vue";
+import { Search, ChevronDown } from "lucide-vue-next";
+import { cn } from "@/lib/utils";
+import StatCard from "@/components/ui/StatCard.vue";
+import NewsCard from "@/components/news/NewsCard.vue";
+import { newsStats, spaces, channelsMap, mockNews } from "@/lib/mock";
 
-const loading = ref(false);
-const errorText = ref<string | null>(null);
-const spaces = ref<Space[]>([]);
-const channels = ref<Channel[]>([]);
-const filterSpaceId = ref<UUID | null>(null);
-// v0.5: 频道使用两层 mini Pill，不再使用 sub_channel_ids
-const filterChannelId = ref<UUID | null>(null); // null = 全部
-const minScore = ref(0);
-const sortBy = ref<NewsSort>("published_desc");
+const selectedSpace = ref("ai");
+const selectedChannel = ref("all");
 const searchQuery = ref("");
+const minScore = ref(0);
+const sortBy = ref("time");
+const detailPanelOpen = ref(true);
 
-const items = ref<ProcessedNews[]>([]);
-const limit = 30;
-const offset = ref(0);
-const canLoadMore = ref(true);
+const channels = computed(() => channelsMap[selectedSpace.value] || []);
 
-const stats = ref<SpaceStats>({ total_news: -1, today_new: -1, active_sources: -1, channel_count: -1 });
-
-const detailItem = ref<ProcessedNews | null>(null);
-
-const filteredItems = computed(() => {
-  let result = items.value;
-  if (minScore.value > 0) {
-    result = result.filter(i => i.importance_score >= minScore.value);
-  }
-  return result;
-});
-
-async function refreshSpaces() {
-  try {
-    spaces.value = await listSpaces();
-  } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
-    return;
-  }
-  if (!filterSpaceId.value && spaces.value.length > 0) {
-    filterSpaceId.value = spaces.value[0].id;
-  }
+function selectSpace(id: string) {
+  selectedSpace.value = id;
+  selectedChannel.value = "all";
 }
-
-async function refreshStats() {
-  try {
-    if (filterSpaceId.value) {
-      stats.value = await getSpaceStats(filterSpaceId.value);
-    } else {
-      const g = await getGlobalStats();
-      stats.value = { total_news: 0, today_new: g.today_new, active_sources: g.active_sources, channel_count: g.active_spaces };
-    }
-  } catch { /* 统计加载失败不影响新闻列表 */ }
-}
-
-async function refreshChannels() {
-  if (!filterSpaceId.value) { channels.value = []; return; }
-  try {
-    channels.value = await listChannels(filterSpaceId.value);
-  } catch { channels.value = []; }
-}
-
-function buildNewsParams(offsetVal: number) {
-  return {
-    limit,
-    offset: offsetVal,
-    sort: sortBy.value,
-    channelId: filterChannelId.value || undefined,
-    q: searchQuery.value || undefined,
-  } as any;
-}
-
-async function refreshNews() {
-  if (!filterSpaceId.value) return;
-  loading.value = true; errorText.value = null; offset.value = 0;
-  try {
-    const page = await listNews(filterSpaceId.value, buildNewsParams(0));
-    items.value = page;
-    canLoadMore.value = page.length >= limit;
-  } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
-  } finally { loading.value = false; }
-}
-
-async function loadMore() {
-  if (!filterSpaceId.value || !canLoadMore.value) return;
-  loading.value = true;
-  const nextOffset = offset.value + limit;
-  try {
-    const page = await listNews(filterSpaceId.value, buildNewsParams(nextOffset));
-    items.value = items.value.concat(page);
-    offset.value = nextOffset;
-    canLoadMore.value = page.length >= limit;
-  } catch (e) {
-    errorText.value = e instanceof Error ? e.message : String(e);
-  } finally { loading.value = false; }
-}
-
-function openDetail(item: ProcessedNews) {
-  detailItem.value = item;
-}
-
-// 防抖处理频道切换和排序变更
-const debouncedRefreshNews = useDebounceFn(refreshNews, 300);
-
-watch(filterSpaceId, () => {
-  filterChannelId.value = null;
-  refreshNews();
-  refreshStats();
-  refreshChannels();
-});
-watch(sortBy, () => debouncedRefreshNews());
-watch(filterChannelId, () => debouncedRefreshNews());
-watch(searchQuery, () => refreshNews());
-
-async function onSpaceSelect(id: string) {
-  filterSpaceId.value = id;
-}
-
-async function onChannelSelect(id: string | null) {
-  filterChannelId.value = id;
-}
-
-onMounted(async () => {
-  await refreshSpaces();
-  await refreshNews();
-  await refreshStats();
-  await refreshChannels();
-});
 </script>
 
 <template>
-  <div class="page">
-    <StatsCards :stats="stats" />
+  <div class="h-full flex flex-col">
+    <!-- Stats Cards -->
+    <div class="p-6 border-b border-border">
+      <div class="grid grid-cols-4 gap-4">
+        <StatCard
+          v-for="stat in newsStats"
+          :key="stat.label"
+          :label="stat.label"
+          :value="stat.value"
+          :icon="stat.icon"
+        />
+      </div>
+    </div>
 
-    <!-- 原型对齐：统一 context-card 包裹空间/频道 Pill + 筛选 -->
-    <div class="context-card">
-      <div class="cc-row">
-        <span class="cc-label">空间</span>
-        <div class="cc-pills">
-          <button v-for="s in spaces" :key="s.id"
-            class="cc-pill" :class="{ on: filterSpaceId === s.id }"
-            @click="onSpaceSelect(s.id)">{{ s.name }}</button>
+    <!-- Space Pills -->
+    <div class="px-6 pt-4 pb-2 border-b border-border">
+      <div class="flex gap-2 flex-wrap">
+        <button
+          v-for="space in spaces"
+          :key="space.id"
+          @click="selectSpace(space.id)"
+          :class="cn(
+            'px-4 py-1.5 rounded-full transition-colors',
+            selectedSpace === space.id
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-secondary text-secondary-foreground hover:bg-accent',
+          )"
+        >
+          {{ space.name }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Channel Pills -->
+    <div class="px-6 py-2 border-b border-border">
+      <div class="flex gap-2 flex-wrap">
+        <button
+          v-for="channel in channels"
+          :key="channel.id"
+          @click="selectedChannel = channel.id"
+          :class="cn(
+            'px-3 py-1 rounded-full text-sm transition-colors',
+            selectedChannel === channel.id
+              ? 'bg-accent text-accent-foreground font-medium'
+              : 'text-muted-foreground hover:bg-accent/50',
+          )"
+        >
+          {{ channel.name }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="px-6 py-4 border-b border-border bg-muted/30">
+      <div class="flex items-center gap-4">
+        <div class="flex-1 relative">
+          <Search class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="搜索新闻..."
+            class="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+          />
+        </div>
+
+        <div class="flex items-center gap-2 min-w-[200px]">
+          <span class="text-sm text-muted-foreground whitespace-nowrap">最低评分:</span>
+          <input
+            v-model.number="minScore"
+            type="range"
+            min="0"
+            max="10"
+            step="0.5"
+            class="w-full h-1 accent-primary cursor-pointer"
+          />
+          <span class="text-sm font-medium min-w-[2rem] text-right">{{ minScore }}</span>
+        </div>
+
+        <div class="relative min-w-[140px]">
+          <select
+            v-model="sortBy"
+            class="w-full appearance-none inline-flex items-center justify-between gap-2 pl-4 pr-9 py-2 bg-background border border-border rounded-md hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <option value="time">按时间</option>
+            <option value="score">按评分</option>
+            <option value="source">按来源</option>
+          </select>
+          <ChevronDown class="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none" />
         </div>
       </div>
-      <hr class="cc-divider" v-if="channels.length > 0" />
-      <div class="cc-row" v-if="channels.length > 0">
-        <span class="cc-label">频道</span>
-        <div class="cc-pills">
-          <button class="cc-pill all" :class="{ on: filterChannelId === null }" @click="onChannelSelect(null)">全部</button>
-          <button v-for="ch in channels" :key="ch.id"
-            class="cc-pill" :class="{ on: filterChannelId === ch.id }"
-            @click="onChannelSelect(ch.id)">{{ ch.name }}</button>
+    </div>
+
+    <!-- News List with Detail Panel -->
+    <div class="flex-1 flex overflow-hidden">
+      <!-- News List -->
+      <div :class="cn('flex-1 overflow-auto p-6', detailPanelOpen && 'border-r border-border')">
+        <div class="space-y-4 max-w-4xl">
+          <NewsCard v-for="news in mockNews" :key="news.id" :news="news" />
         </div>
       </div>
-      <hr class="cc-divider" />
-      <div class="cc-filter-row">
-        <div class="cc-search">
-          <span class="cc-search-icon">🔍</span>
-          <input class="cc-search-input" v-model="searchQuery" placeholder="搜索新闻…" @keydown.enter="refreshNews()" />
+
+      <!-- Detail Panel -->
+      <div v-if="detailPanelOpen" class="w-96 overflow-auto p-6 bg-muted/20">
+        <div class="space-y-4">
+          <div>
+            <h2 class="font-medium mb-2">详情</h2>
+            <p class="text-sm text-muted-foreground">选择一条新闻查看详细信息</p>
+          </div>
         </div>
-        <select class="cc-select" :value="sortBy" @change="sortBy = ($event.target as HTMLSelectElement).value as NewsSort">
-          <option value="published_desc">最新优先</option>
-          <option value="score_desc">最高评分</option>
-        </select>
-        <div class="cc-divider-v"></div>
-        <label class="cc-range">
-          最低评分 <strong>{{ minScore.toFixed(1) }}</strong>
-          <input type="range" min="0" max="10" step="0.5" :value="minScore"
-            @input="minScore = parseFloat(($event.target as HTMLInputElement).value)" style="width:72px" />
-        </label>
       </div>
     </div>
-
-    <div v-if="errorText" class="error-bar"><span>&#9888;</span><span>{{ errorText }}</span></div>
-
-    <!-- 骨架屏 -->
-    <div v-if="loading && items.length === 0" class="skeleton-list">
-      <div v-for="i in 3" :key="i" class="skeleton-card">
-        <div class="sk-line sk-title"></div>
-        <div class="sk-line sk-body"></div>
-        <div class="sk-line sk-body sk-short"></div>
-        <div class="sk-tags"><span class="sk-tag"></span><span class="sk-tag"></span></div>
-      </div>
-    </div>
-
-    <div v-if="items.length === 0 && !loading" class="empty-state">暂无新闻<br><small>请先在管理页添加信息来源</small></div>
-    <div class="list" v-if="filteredItems.length > 0">
-      <NewsListItem v-for="item in filteredItems" :key="item.id" :item="item" @open="openDetail" />
-    </div>
-    <div v-if="items.length > 0 && filteredItems.length === 0" class="empty-state">筛选条件下无匹配新闻<br><small>试试调整最低评分或切换频道</small></div>
-    <div class="more" v-if="items.length > 0">
-      <button class="btn load-more" :disabled="loading || !canLoadMore" @click="loadMore">
-        {{ canLoadMore ? '加载更多' : '没有更多了' }}
-      </button>
-    </div>
-    <NewsDetailPanel :item="detailItem" @close="detailItem = null" />
   </div>
 </template>
-
-<style scoped>
-.page { display: flex; flex-direction: column; gap: 12px; }
-.list { display: flex; flex-direction: column; gap: 8px; }
-.more { display: flex; justify-content: center; padding-top: 12px; }
-.load-more { padding: 10px 28px; font-size: 13px; font-weight: 700; }
-
-/* 原型对齐：context card */
-.context-card { background: var(--card); border: 1px solid var(--border-light); border-radius: 14px; padding: 16px 20px; margin-bottom: 4px; }
-.cc-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.cc-label { font-size: 11px; font-weight: 700; color: var(--text-muted); flex-shrink: 0; min-width: 32px; }
-.cc-pills { display: flex; gap: 5px; flex-wrap: wrap; }
-.cc-pill { padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: .12s; border: 1px solid var(--border); background: var(--card); color: var(--text-secondary); white-space: nowrap; }
-.cc-pill:hover { border-color: var(--accent); color: var(--accent); }
-.cc-pill.on { background: var(--accent); color: #FFF; border-color: var(--accent); }
-.cc-pill.all { border-style: dashed; }
-.cc-divider { border: none; border-top: 1px solid var(--border-light); margin: 8px 0; }
-.cc-filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-.cc-search { display: flex; align-items: center; flex: 1; min-width: 160px; border: 1px solid var(--border); border-radius: 8px; padding: 0 12px; transition: .15s; background: #FAFAFA; }
-.cc-search:focus-within { border-color: var(--accent); background: var(--card); }
-.cc-search-icon { font-size: 13px; opacity: 0.4; margin-right: 6px; }
-.cc-search-input { border: none; padding: 7px 0; font-size: 13px; outline: none; background: transparent; flex: 1; }
-.cc-select { border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; background: var(--card); color: var(--text-secondary); cursor: pointer; }
-.cc-divider-v { width: 1px; height: 20px; background: var(--border); }
-.cc-range { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
-
-/* Skeleton */
-.skeleton-list { display: flex; flex-direction: column; gap: 8px; }
-.skeleton-card {
-  background: var(--card); border: 1px solid var(--border-light);
-  border-radius: 12px; padding: 18px 20px;
-}
-.sk-line { height: 14px; border-radius: 6px; margin-bottom: 10px;
-  background: linear-gradient(90deg, #f0f1f3 25%, #e6e7eb 50%, #f0f1f3 75%);
-  background-size: 200% 100%; animation: shimmer 1.5s infinite;
-}
-.sk-title { width: 65%; height: 16px; }
-.sk-body { width: 90%; }
-.sk-short { width: 75%; }
-.sk-tags { display: flex; gap: 8px; }
-.sk-tag { width: 48px; height: 22px; border-radius: 20px;
-  background: linear-gradient(90deg, #f0f1f3 25%, #e6e7eb 50%, #f0f1f3 75%);
-  background-size: 200% 100%; animation: shimmer 1.5s infinite;
-}
-@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-
-.empty-state { text-align: center; padding: 48px 24px; color: var(--text-muted); font-size: 14px; font-weight: 600; }
-.empty-state small { font-size: 12px; font-weight: 400; display: block; margin-top: 4px; }
-
-.error-bar {
-  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
-  border-radius: 8px; background: var(--danger-light);
-  border: 1px solid rgba(231,76,60,0.2); color: #991b1b; font-size: 12px;
-}
-</style>
