@@ -34,7 +34,7 @@ function createLogger(name: string, filename: string): winston.Logger {
       }),
       new winston.transports.Console({
         format: consoleFormat,
-        level: "info",
+        level: "debug",
       }),
     ],
   });

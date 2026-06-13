@@ -138,12 +138,23 @@ export function startWorker(stopSignal: AbortSignal): void {
     xRuleSyncer.stop();
   }, { once: true });
 
-  // 启动各循环
+  // 心跳：每 60s 输出系统状态
+  const heartbeat = async () => {
+    while (!stopSignal.aborted) {
+      await sleep(60_000, stopSignal);
+      if (!stopSignal.aborted) {
+        log.info("HEARTBEAT pid=%d uptime=%ds", process.pid, Math.floor(process.uptime()));
+      }
+    }
+  };
+
+  // 启动各循环 + 心跳
   Promise.all([
     schedulerLoop(stopSignal),
     workerLoopRunner(stopSignal),
     monitorLoop(stopSignal),
     reclaimLoop(stopSignal),
+    heartbeat(),
   ]).catch((err) => {
     log.error("Worker crashed: %s", err.stack || err.message);
   });
