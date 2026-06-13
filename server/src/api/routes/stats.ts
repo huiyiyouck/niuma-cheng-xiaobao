@@ -16,7 +16,8 @@ export async function statsRoutes(app: FastifyInstance): Promise<void> {
 
     // v0.6：统计口径切换为 l1_status = 'completed'
     const completedFilter = "ri.l1_status = 'completed'";
-    const todayCompletedFilter = `ri.l1_status = 'completed' AND ri.l1_processed_at >= $2`;
+    const todayCompletedFilterSpace = `ri.l1_status = 'completed' AND ri.l1_processed_at >= $2`;
+    const todayCompletedFilterGlobal = `ri.l1_status = 'completed' AND ri.l1_processed_at >= $1`;
 
     let totalNewsQuery: string;
     let todayNewQuery: string;
@@ -36,7 +37,7 @@ export async function statsRoutes(app: FastifyInstance): Promise<void> {
         JOIN news_positions np ON np.news_id = pn.id
         JOIN display_positions dp ON dp.id = np.position_id
         JOIN raw_items ri ON ri.id = pn.raw_item_id
-        WHERE dp.channel_space_id = $1 AND dp.deleted_at IS NULL AND ${todayCompletedFilter}`;
+        WHERE dp.channel_space_id = $1 AND dp.deleted_at IS NULL AND ${todayCompletedFilterSpace}`;
 
       activeSourcesQuery = `SELECT COUNT(DISTINCT dp.source_id)::int AS count
         FROM display_positions dp
@@ -69,7 +70,7 @@ export async function statsRoutes(app: FastifyInstance): Promise<void> {
       todayNewQuery = `SELECT COUNT(DISTINCT pn.id)::int AS count
         FROM processed_news pn
         JOIN raw_items ri ON ri.id = pn.raw_item_id
-        WHERE ${todayCompletedFilter}`;
+        WHERE ${todayCompletedFilterGlobal}`;
 
       activeSourcesQuery = `SELECT COUNT(DISTINCT s.id)::int AS count
         FROM sources s
