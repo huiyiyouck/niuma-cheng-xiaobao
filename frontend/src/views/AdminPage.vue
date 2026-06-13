@@ -1,55 +1,56 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from "vue";
+import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import AdminTabs from "@/components/AdminTabs.vue";
-import SpaceManagementTab from "@/components/SpaceManagementTab.vue";
-import SourceLibraryTab from "@/components/SourceLibraryTab.vue";
-
-type Tab = "space_management" | "source_library";
+import { cn } from "@/lib/utils";
+import SpacesManagement from "@/components/admin/SpacesManagement.vue";
+import SourceLibrary from "@/components/admin/SourceLibrary.vue";
 
 const route = useRoute();
 const router = useRouter();
 
-function tabFromHash(h: string): Tab {
-  const v = (h || "").replace(/^#/, "");
-  if (v === "library" || v === "source_library") return "source_library";
-  return "space_management";
+const activeTab = computed(() => (route.query.tab as string) || "spaces");
+
+function setActiveTab(tab: string) {
+  if (tab === "spaces") router.replace({ query: {} });
+  else router.replace({ query: { tab } });
 }
-function hashFromTab(t: Tab): string {
-  return t === "source_library" ? "library" : "space";
-}
-
-const activeTab = ref<Tab>(tabFromHash(route.hash));
-
-onMounted(() => {
-  if (!route.hash) router.replace({ hash: `#${hashFromTab(activeTab.value)}` });
-});
-
-watch(activeTab, (t) => {
-  router.replace({ hash: `#${hashFromTab(t)}` });
-});
-
-watch(() => route.hash, (h) => {
-  const t = tabFromHash(h);
-  if (t !== activeTab.value) activeTab.value = t;
-});
 </script>
 
 <template>
-  <div class="admin-page">
-    <!-- 双 Tab 切换 -->
-    <AdminTabs v-model:activeTab="activeTab" />
+  <div class="h-full flex flex-col">
+    <div class="border-b border-border bg-card">
+      <div class="px-6 py-4">
+        <h1 class="mb-4">管理</h1>
+        <div class="flex gap-1">
+          <button
+            @click="setActiveTab('spaces')"
+            :class="cn(
+              'px-4 py-2 rounded-md transition-colors',
+              activeTab === 'spaces'
+                ? 'bg-secondary text-secondary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+            )"
+          >
+            空间管理
+          </button>
+          <button
+            @click="setActiveTab('source-library')"
+            :class="cn(
+              'px-4 py-2 rounded-md transition-colors',
+              activeTab === 'source-library'
+                ? 'bg-secondary text-secondary-foreground'
+                : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+            )"
+          >
+            信息源库
+          </button>
+        </div>
+      </div>
+    </div>
 
-    <!-- 条件渲染 Tab 内容 -->
-    <SpaceManagementTab v-if="activeTab === 'space_management'" />
-    <SourceLibraryTab v-else />
+    <div class="flex-1 overflow-auto">
+      <SpacesManagement v-if="activeTab === 'spaces'" />
+      <SourceLibrary v-else />
+    </div>
   </div>
 </template>
-
-<style scoped>
-.admin-page {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-</style>
