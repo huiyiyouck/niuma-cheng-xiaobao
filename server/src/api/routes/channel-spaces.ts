@@ -1,4 +1,8 @@
+import { createHash } from "node:crypto";
+import { createWriteStream, unlink, mkdirSync, existsSync } from "node:fs";
+import { resolve, dirname } from "node:path";
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { pipeline } from "node:stream/promises";
 import { pool } from "../../db/pool.ts";
 import {
   ChannelSpaceCreate,
@@ -9,6 +13,11 @@ import {
   ChannelDeleteBody,
   ChannelsReorder,
 } from "../schemas/index.ts";
+
+// 图标上传持久目录（与 design §4.7 一致）
+const UPLOAD_BASE = process.env.UPLOAD_BASE_DIR || "/var/lib/niuma-news/uploads/spaces";
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export async function channelSpacesRoutes(app: FastifyInstance): Promise<void> {
   // ── 空间列表 ──────────────────────────────────────────
@@ -176,6 +185,114 @@ export async function channelSpacesRoutes(app: FastifyInstance): Promise<void> {
       position_count: positionsCount.rows[0]?.c ?? 0,
       news_count: newsCount.rows[0]?.c ?? 0,
     });
+  });
+
+  // ── 空间图标上传（v0.6，multipart）────────────────────────
+
+  app.post("/spaces/:id/icon", async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const { rows: [space] } = await pool.query(
+      "SELECT id, icon FROM channel_spaces WHERE id = $1", [id],
+    );
+    if (!space) return reply.status(404).send({ detail: "频道空间不存在" });
+
+    let file: any;
+    try {
+      file = await req.file();
+    } catch {
+      return reply.status(400).send({ error: "INVALID_FILE", detail: "文件上传请求解析失败" });
+    }
+    if (!file) return reply.status(400).send({ error: "INVALID_FILE", detail: "未提供文件" });
+
+    // 校验 MIME
+    if (!ALLOWED_MIME.has(file.mimetype)) {
+      // 丢弃剩余流
+      file.file.resume();
+      return reply.status(400).send({ error: "INVALID_FILE", detail: `不支持的文件类型：${file.mimetype}，允许 png/jpeg/webp` });
+    }
+
+    // 读取文件内容并计算 hash
+    const chunks: Buffer[] = [];
+    let totalSize = 0;
+    for await (const chunk of file.file) {
+      totalSize += chunk.length;
+      if (totalSize > MAX_FILE_SIZE) {
+        return reply.status(400).send({ error: "INVALID_FILE", detail: "文件大小超过 1MB 限制" });
+      }
+      chunks.push(chunk);
+    }
+    const buffer = Buffer.concat(chunks);
+    const hash = createHash("sha256").update(buffer).digest("hex").slice(0, 16);
+    const ext = file.mimetype === "image/png" ? "png" : file.mimetype === "image/webp" ? "webp" : "jpg";
+
+    // 磁盘持久目录
+    const spaceDir = resolve(UPLOAD_BASE, id);
+    if (!existsSync(spaceDir)) {
+      mkdirSync(spaceDir, { recursive: true });
+    }
+    const filename = `${hash}.${ext}`;
+    const filePath = resolve(spaceDir, filename);
+
+    // 检查是否替换已有图片，先删旧文件
+    if (space.icon_url) {
+      try {
+        const oldPath = resolve(spaceDir, space.icon_url.split("/").pop() || "");
+        if (existsSync(oldPath) && oldPath !== filePath) {
+          unlink(oldPath, () => {});
+        }
+      } catch { /* 旧文件不存在则忽略 */ }
+    }
+
+    // 写盘
+    await new Promise<void>((resolveWrite, reject) => {
+      const ws = createWriteStream(filePath);
+      ws.on("finish", resolveWrite);
+      ws.on("error", reject);
+      ws.end(buffer);
+    });
+
+    // 更新 DB
+    const iconUrl = `/uploads/spaces/${id}/${filename}`;
+    try {
+      await pool.query(
+        `UPDATE channel_spaces SET icon_url = $2, icon_type = 'image' WHERE id = $1`,
+        [id, iconUrl],
+      );
+    } catch (dbErr) {
+      // DB 失败回滚：删除已写盘文件
+      try { unlink(filePath, () => {}); } catch {}
+      throw dbErr;
+    }
+
+    return reply.send({ icon_url: iconUrl, icon_type: "image" });
+  });
+
+  // ── 空间图标删除（v0.6）───────────────────────────────────
+
+  app.delete("/spaces/:id/icon", async (req: FastifyRequest, reply: FastifyReply) => {
+    const { id } = req.params as { id: string };
+    const { rows: [space] } = await pool.query(
+      "SELECT id, icon, icon_url, icon_type FROM channel_spaces WHERE id = $1", [id],
+    );
+    if (!space) return reply.status(404).send({ detail: "频道空间不存在" });
+
+    // 物理删除磁盘文件
+    if (space.icon_url) {
+      try {
+        const filePath = resolve(UPLOAD_BASE, id, space.icon_url.split("/").pop() || "");
+        if (existsSync(filePath)) {
+          unlink(filePath, () => {});
+        }
+      } catch { /* 忽略删除失败 */ }
+    }
+
+    const fallbackType = space.icon ? "emoji" : "fallback";
+    await pool.query(
+      `UPDATE channel_spaces SET icon_url = NULL, icon_type = $2 WHERE id = $1`,
+      [id, fallbackType],
+    );
+
+    return reply.send({ success: true, icon_type: fallbackType, icon: space.icon || null });
   });
 
   // ── 频道列表 ──────────────────────────────────────────
@@ -408,6 +525,8 @@ function spaceToOut(r: any) {
     description: r.description,
     sort_order: r.sort_order,
     icon: r.icon,
+    icon_url: r.icon_url ?? null,
+    icon_type: r.icon_type ?? "emoji",
     channel_count: r.channel_count ?? 0,
     source_count: r.source_count ?? 0,
     created_at: toISO(r.created_at),

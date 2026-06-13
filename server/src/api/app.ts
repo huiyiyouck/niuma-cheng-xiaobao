@@ -1,5 +1,6 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
+import multipart from "@fastify/multipart";
 import { ZodError } from "zod";
 import { config } from "../shared/config.ts";
 import { apiLogger } from "../shared/logger.ts";
@@ -13,6 +14,8 @@ import { statsRoutes } from "./routes/stats.ts";
 import { adminLogsRoutes } from "./routes/admin-logs.ts";
 import { alertsRoutes } from "./routes/alerts.ts";
 import { xSyncRoutes } from "./routes/x-sync.ts";
+import { levelStatusRoutes } from "./routes/level-status.ts";
+import { l1TasksRoutes } from "./routes/l1-tasks.ts";
 
 export async function buildApp() {
   const app = Fastify({ logger: false });
@@ -50,6 +53,10 @@ export async function buildApp() {
     });
   });
 
+  await app.register(multipart, {
+    limits: { fileSize: 1 * 1024 * 1024 }, // 1MB（图标上传）
+  });
+
   // 管理员鉴权
   app.addHook("onRequest", adminGuard);
   // HTTP 请求日志
@@ -65,6 +72,8 @@ export async function buildApp() {
     await adminLogsRoutes(scope);
     await alertsRoutes(scope);
     await xSyncRoutes(scope);
+    await levelStatusRoutes(scope);
+    await l1TasksRoutes(scope);
   }, { prefix: "/v1" });
 
   // 根页面

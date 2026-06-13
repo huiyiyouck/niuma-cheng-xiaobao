@@ -13,7 +13,6 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(400).send({ detail: "space_id is required" });
     }
 
-    // 验证空间存在
     const { rows: [space] } = await pool.query(
       "SELECT id FROM channel_spaces WHERE id = $1", [q.space_id],
     );
@@ -21,7 +20,7 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
 
     let orderCol: string;
     if (q.sort === "score_desc") {
-      orderCol = "importance_score DESC NULLS LAST";
+      orderCol = "pn.score_total DESC NULLS LAST, pn.importance_score DESC NULLS LAST";
     } else {
       orderCol = "published_at DESC NULLS LAST";
     }
@@ -34,13 +33,11 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
     conditions.push("dp.deleted_at IS NULL");
     conditions.push("dp.enabled = true");
 
-    // 频道筛选
     if (q.channel_id) {
       conditions.push(`dp.channel_id = $${++idx}`);
       params.push(q.channel_id);
     }
 
-    // 搜索（同一参数值复用 $n 引用）
     if (q.search) {
       params.push(q.search);
       const searchIdx = ++idx;
@@ -49,26 +46,22 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
       );
     }
 
-    // 最低评分
     if (q.min_score !== undefined) {
-      conditions.push(`pn.importance_score >= $${++idx}`);
+      conditions.push(`COALESCE(pn.score_total, pn.importance_score) >= $${++idx}`);
       params.push(q.min_score);
     }
 
     const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
-    // 分页
     const pageSize = q.page_size;
     const offset = (q.page - 1) * pageSize;
     params.push(pageSize, offset);
     const limitIdx = ++idx;
     const offsetIdx = ++idx;
 
-    // DISTINCT ON 要求 pn.id 排在第一，外层子查询再按业务排序
-    // v0.5.1: JOIN sources 排除 paused=true 的来源（X 暂停后历史隐藏，恢复后重新可见）
     const { rows } = await pool.query(
       `SELECT * FROM (
-         SELECT DISTINCT ON (pn.id) pn.*
+         SELECT DISTINCT ON (pn.id) pn.*, s.display_name AS source_name, s.id AS source_id
          FROM processed_news pn
          JOIN news_positions np ON np.news_id = pn.id
          JOIN display_positions dp ON dp.id = np.position_id
@@ -85,31 +78,80 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
     return reply.send(rows.map(newsToOut));
   });
 
-  // ── 新闻详情 ──────────────────────────────────────────
+  // ── 新闻详情（v0.6 扩展：完整 NewsDetail 结构）─────────
 
   app.get("/news/:news_id", async (req: FastifyRequest, reply: FastifyReply) => {
     const { news_id } = req.params as { news_id: string };
     const { rows: [row] } = await pool.query(
-      "SELECT * FROM processed_news WHERE id = $1", [news_id],
+      `SELECT pn.*, s.display_name AS source_name, s.id AS source_id,
+              ri.l0_status, ri.l1_status
+       FROM processed_news pn
+       JOIN raw_items ri ON ri.id = pn.raw_item_id
+       JOIN sources s ON s.id = ri.source_id
+       WHERE pn.id = $1`,
+      [news_id],
     );
     if (!row) return reply.status(404).send({ detail: "news not found" });
-    return reply.send(newsToOut(row));
+    return reply.send(newsDetailToOut(row));
   });
 }
+
+// ── 列表项输出（v0.6 扩展：score_total、tags_v2、source）────
 
 function newsToOut(r: any) {
   return {
     id: r.id,
-    raw_item_id: r.raw_item_id,
     title: r.title,
     summary: r.summary,
+    published_at: toISO(r.published_at),
+    source: {
+      id: r.source_id,
+      name: r.source_name,
+    },
+    score_total: r.score_total != null ? Number(r.score_total) : null,
+    tags_v2: asDict(r.tags_v2) || null,
+    // v0.5 兼容字段
     language: r.language,
     source_refs: asDict(r.source_refs),
-    published_at: r.published_at instanceof Date ? r.published_at.toISOString() : r.published_at,
     bullets: r.bullets || [],
     tags: r.tags || [],
     entities: r.entities || [],
     importance_score: Number(r.importance_score || 0),
-    created_at: r.created_at instanceof Date ? r.created_at.toISOString() : r.created_at,
+    created_at: toISO(r.created_at),
   };
+}
+
+// ── 详情输出（完整 NewsDetail，§3.2 契约）────────────────────
+
+function newsDetailToOut(r: any) {
+  return {
+    id: r.id,
+    title: r.title,
+    source: { id: r.source_id, name: r.source_name },
+    published_at: toISO(r.published_at),
+    summary: r.summary,
+    score_total: r.score_total != null ? Number(r.score_total) : null,
+    score_dimensions: asDict(r.score_dimensions) || null,
+    translation: asDict(r.translation) || null,
+    context: r.context || [],
+    analysis: r.analysis || null,
+    tags_v2: asDict(r.tags_v2) || null,
+    // 处理状态
+    l0_status: r.l0_status || null,
+    l1_status: r.l1_status || null,
+    // v0.5 兼容
+    language: r.language,
+    source_refs: asDict(r.source_refs),
+    bullets: r.bullets || [],
+    tags: r.tags || [],
+    entities: r.entities || [],
+    importance_score: Number(r.importance_score || 0),
+    created_at: toISO(r.created_at),
+  };
+}
+
+export function toISO(v: unknown): string | null {
+  if (v instanceof Date) return v.toISOString();
+  if (typeof v === "string") return v;
+  return null;
 }
