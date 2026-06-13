@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-06-13 — v0.6 前端联调 + 独立测试环境 + systemd 持久化
+
+- 本次角色：全栈开发（Developer）；模式：实现阶段 前端联调 + 测试环境搭建（Owner 指定）
+- 前后端合并：`git pull` 合入后端会话 11 commit（批 A+B+C），线性无冲突
+- 独立测试环境（Owner 要求隔离联调）：`news_test` 库（5432，迁移 0000-0005 + 生产数据副本排除 tasks）+ `news-api-test.service`（:8001 / news_test / 关 scheduler / systemd 开机自启+崩溃自愈）+ test nginx `/v1`→8001 + certbot HTTPS；生产 8000 已停（Owner 同意）
+- 前端 4 页 mock→真实 /v1 API：News / Monitoring / SourceDetail / Admin(空间管理+信息源库)；v0.6 空字段(score_total/tags_v2)降级 v0.5(importance_score/tags/entities)；修 entities 对象数组显示成 JSON 的 bug
+- 主题色 bug：旧 `style.css` 的 `--primary(#3498db)` 覆盖原型 `#030213`，调 `main.ts` 引入顺序修复（AI 按钮 rgb(3,2,19) 验证）
+- NewsPage 按 Owner 更新后的原型重做：居中列表 `max-w-[800px]` + 挤压式滑入详情面板（NewsDetailPanel）
+- 写操作接真实 API：源详情 删除(deleteSource)/展示位置 暂停恢复移除(toggle/removeDisplayPosition)、信息源库 刷新/同步X规则(syncXRules)
+- Git 节点：a193458..4b95e8d（前端联调 + 测试环境 + 精修批1/2）
+- 剩余精修（交后续）：空间页写操作(源暂停移除、空间/频道 增删改)+ 对话框完整化(编辑空间/频道/添加源)+ NewsDetailPanel 小瑕疵
+- 下一步：Owner「先收口再继续」，收口后继续剩余精修
+
+---
+
 ## 2026-06-13 — v0.6 实现阶段 R1：后端全量实现（批次 A+B+C）+ OpenClaw 调研 + 收尾
 
 - 本次角色：全栈开发（Developer）
