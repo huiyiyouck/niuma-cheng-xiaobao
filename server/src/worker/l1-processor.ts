@@ -95,12 +95,17 @@ async function linkRead(rawItemUrl: string | null): Promise<string | null> {
   }
 }
 
-// ── 阶段 3：外部搜索（X/Web，P2 实现，当前留空壳）───────────
+// ── 阶段 3：外部搜索 ────────────────────────────────────────
+//
+// TODO v0.7：OpenClaw Agent 集成
+//   当前为 P2 空壳。v0.7 启动后，整个 L1 处理链路（Stage 1-5）将替换为
+//   调用本地 OpenClaw 服务的 Agentic tool-use 循环，由 Agent 自主调度
+//   KB 检索 / 链接读取 / Web 搜索 / X 搜索，不再由本文件串行编排。
+//   详见 INDEX.md 跨任务待办「L1 Agent 化：OpenClaw 集成」。
+// ─────────────────────────────────────────────────────────────
 
 async function externalSearch(rawItemId: string, _needsContext: boolean): Promise<string | null> {
-  // P2：X 搜索 + Web 搜索（Tavily/Serper 等）
-  // 本期先留空壳，失败不阻断 L1
-  log.debug("L1 EXTERNAL SEARCH skipped (P2) raw_item_id=%s", rawItemId);
+  log.debug("L1 EXTERNAL SEARCH skipped (deferred to v0.7 OpenClaw) raw_item_id=%s", rawItemId);
   return null;
 }
 
