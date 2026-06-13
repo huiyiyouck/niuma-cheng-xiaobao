@@ -1,4 +1,7 @@
 import { config } from "../shared/config.ts";
+import { workerLogger } from "../shared/logger.ts";
+
+const log = workerLogger;
 
 // ── v0.5 兼容类型 ───────────────────────────────────────────
 interface NewsCard {
@@ -95,9 +98,13 @@ export async function callLLM<T>(prompt: string, opts: LLMCallOpts = {}): Promis
   const model = opts.model || config.openaiModel;
   const timeoutMs = opts.timeout || config.llmTimeoutMs;
   const maxRetries = Math.max(1, config.llmMaxRetries);
+  const promptSize = prompt.length;
+
+  log.info("LLM CALL model=%s prompt_len=%d retries_max=%d timeout_ms=%d", model, promptSize, maxRetries, timeoutMs);
 
   let lastErr: Error | null = null;
   for (let i = 0; i < maxRetries; i++) {
+    const t0 = Date.now();
     try {
       const controller = new AbortController();
       const t = setTimeout(() => controller.abort(), timeoutMs);
@@ -126,33 +133,47 @@ export async function callLLM<T>(prompt: string, opts: LLMCallOpts = {}): Promis
 
       const data = await resp.json();
       const content = data.choices?.[0]?.message?.content || "";
+      const latency = Date.now() - t0;
+      const usage = data.usage;
+      const usageStr = usage
+        ? `tokens_in=${usage.prompt_tokens} tokens_out=${usage.completion_tokens} tokens_total=${usage.total_tokens}`
+        : "usage=n/a";
 
       let obj: Record<string, unknown>;
+      let parseMethod = "json.parse";
       try {
         obj = JSON.parse(content);
       } catch {
         const extracted = extractFirstJsonObject(content);
         if (!extracted) throw new Error(`LLM returned unparseable content: ${content.slice(0, 200)}`);
         obj = extracted;
+        parseMethod = "extractFirstJsonObject";
       }
 
       if (typeof obj === "string") {
         try {
           obj = JSON.parse(obj);
+          parseMethod = "double-parse";
         } catch {
           obj = { raw: obj } as Record<string, unknown>;
+          parseMethod = "raw-string";
         }
       }
 
+      log.info("LLM OK attempt=%d/%d latency_ms=%d parse=%s resp_len=%d %s",
+        i + 1, maxRetries, latency, parseMethod, content.length, usageStr);
       return obj as unknown as T;
     } catch (err: any) {
       lastErr = err;
+      const latency = Date.now() - t0;
+      log.warn("LLM RETRY attempt=%d/%d latency_ms=%d err=%s", i + 1, maxRetries, latency, err.message);
       if (i >= maxRetries - 1) break;
       const delay = config.llmRetryBaseSeconds * Math.pow(2, i);
       await new Promise((resolve) => setTimeout(resolve, delay * 1000));
     }
   }
 
+  log.error("LLM EXHAUSTED model=%s retries=%d last_err=%s", model, maxRetries, lastErr?.message);
   throw lastErr || new Error("LLM processing failed");
 }
 
@@ -206,8 +227,12 @@ source_url: ${sourceUrl || ""}
 content:
 ${text}`;
 
+  log.info("LLM v0.5 PROCESS source_url=%s content_len=%d", sourceUrl || "(none)", text.length);
   const result = await callLLM<Record<string, unknown>>(prompt, { model: config.openaiModel });
-  return validateLLMOutput(result);
+  const validated = validateLLMOutput(result);
+  log.info("LLM v0.5 RESULT title=%s score=%.1f tags=%d entities=%d",
+    validated.title.slice(0, 80), validated.importance_score, validated.tags.length, validated.entities.length);
+  return validated;
 }
 
 // ── v0.6 L0 classifier ──────────────────────────────────────
@@ -230,7 +255,10 @@ ${JSON.stringify(input.content, null, 2)}
 
 只输出严格 JSON：{"label":"normal_candidate"|"high_priority_candidate"|"needs_context_candidate"|"skip","skipReason":"仅 label=skip 时需要"}`;
 
+  log.info("LLM L0 CLASSIFY source=%s attention=%s tags=%s",
+    input.sourceIdentity, input.attentionLevel, input.domainTags.join(","));
   const result = await callLLM<L0Output>(prompt, { model: config.l0LlmModel });
+  log.info("LLM L0 RESULT label=%s skipReason=%s", result.label, result.skipReason || "(none)");
   return result;
 }
 
@@ -279,9 +307,19 @@ export async function processL1LLM(input: L1Input): Promise<L1Output> {
   "needs_context": true|false
 }`;
 
+  log.info("LLM L1 PROCESS source=%s raw_len=%d kb_count=%d has_link=%s has_search=%s",
+    input.sourceIdentity, input.rawText.length, input.kbResults.length,
+    input.linkContent ? "yes" : "no", input.searchSummary ? "yes" : "no");
   const result = await callLLM<L1Output>(prompt, {
     model: config.l1LlmModel,
     timeout: config.llmTimeoutMs,
   });
+  const dims = result.score_dimensions;
+  log.info("LLM L1 RESULT title=%s tags_count=%d scores=T%d I%d C%d X%d needs_context=%s",
+    (result.title || "").slice(0, 80),
+    (result.tags?.domain || []).length + (result.tags?.entity || []).length + (result.tags?.event || []).length + (result.tags?.content_type || []).length + (result.tags?.processing || []).length,
+    dims?.timeliness?.score || 0, dims?.impact?.score || 0,
+    dims?.confidence?.score || 0, dims?.clarity?.score || 0,
+    result.needs_context);
   return result;
 }

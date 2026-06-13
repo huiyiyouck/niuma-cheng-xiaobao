@@ -12,7 +12,12 @@ function calcScoreTotal(dims: L1Output["score_dimensions"]): number {
     + dims.impact.score * 0.35
     + dims.confidence.score * 0.25
     + dims.clarity.score * 0.15;
-  return Math.round(raw * 2 * 10) / 10;
+  const final = Math.round(raw * 2 * 10) / 10;
+  log.info("L1 SCORE raw=%.2f final=%.1f (T%d×0.25 + I%d×0.35 + C%d×0.25 + X%d×0.15)",
+    raw, final,
+    dims.timeliness.score, dims.impact.score,
+    dims.confidence.score, dims.clarity.score);
+  return final;
 }
 
 // ── 阶段 1：库内相关新闻检索（ILIKE）─────────────────────────
@@ -125,14 +130,20 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
     [rawItemId],
   );
 
+  log.info("L1 START raw_item_id=%s source=%s source_type=%s", rawItemId, row.identity, row.source_type);
+
   // ── 阶段 1：库内检索（失败不阻断）─────────────────────────
   const kbResults = await kbSearch(conn, rawItemId, row.source_id);
+  log.info("L1 STAGE1 kb_search raw_item_id=%s found=%d", rawItemId, kbResults.length);
 
   // ── 阶段 2：链接读取（失败不阻断）─────────────────────────
   const linkContent = await linkRead(row.source_item_url || null);
+  log.info("L1 STAGE2 link_read raw_item_id=%s fetched=%s len=%d",
+    rawItemId, linkContent ? "yes" : "no", linkContent?.length || 0);
 
   // ── 阶段 3：外部搜索（P2 空壳，失败不阻断）─────────────────
   const searchSummary = await externalSearch(rawItemId, false);
+  log.info("L1 STAGE3 external_search raw_item_id=%s fetched=%s", rawItemId, searchSummary ? "yes" : "no");
 
   // ── 阶段 4：LLM 主调用 ────────────────────────────────────
   const rawText = extractRawText(content);
