@@ -10,7 +10,7 @@ export interface NewsSource {
 }
 
 export interface NewsItem {
-  id: number;
+  id: string;
   title: string;
   score: number;
   source: NewsSource;
