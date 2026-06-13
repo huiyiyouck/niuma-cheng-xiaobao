@@ -1,22 +1,43 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { Plus, RefreshCw, ChevronUp, ChevronDown, Repeat } from "lucide-vue-next";
 import { cn } from "@/lib/utils";
 import DeleteConfirmDialog from "./DeleteConfirmDialog.vue";
 import Badge from "@/components/ui/Badge.vue";
 import PlacementTooltip from "@/components/ui/PlacementTooltip.vue";
+import { listSources } from "@/lib/api";
 
 type SortField = "name" | "type" | "availability" | "lastFetch" | "totalNews";
 type SortDirection = "asc" | "desc";
 
-const mockSources = [
-  { id: "1", name: "Claude code官方账号", identity: "anthropicai", type: "X/Twitter", tags: ["其他", "帖子"], availability: "normal", isRunning: true, placements: [{ space: "AI", channel: "行业资讯" }, { space: "科技", channel: "全部" }], lastFetch: "2小时前", totalNews: 21 },
-  { id: "2", name: "加密狗", identity: "jiamigou", type: "X/Twitter", tags: ["其他", "帖子"], availability: "normal", isRunning: true, placements: [{ space: "AI", channel: "行业资讯" }], lastFetch: "2小时前", totalNews: 19 },
-  { id: "3", name: "Solanamobile官方账号", identity: "solanamobile", type: "X/Twitter", tags: ["其他", "帖子"], availability: "normal", isRunning: true, placements: [{ space: "财经", channel: "市场动态" }, { space: "财经", channel: "全部" }], lastFetch: "2小时前", totalNews: 28 },
-  { id: "4", name: "OpenAI官方账号", identity: "openai", type: "X/Twitter", tags: ["AI", "其他", "帖子"], availability: "normal", isRunning: true, placements: [{ space: "AI", channel: "模型动态" }], lastFetch: "2小时前", totalNews: 21 },
-];
-
 const availabilityLabels: Record<string, string> = { normal: "正常", "needs-fix": "待修复", "source-error": "来源异常", removed: "已移除" };
+const typeLabels: Record<string, string> = { x_twitter: "X/Twitter", rss: "RSS" };
+
+function fmtAgo(iso?: string): string {
+  if (!iso) return "从未";
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 3600) return `${Math.max(1, Math.floor(diff / 60))}分钟前`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
+  return `${Math.floor(diff / 86400)}天前`;
+}
+function mapSource(s: any) {
+  return {
+    id: s.id,
+    name: s.display_name ?? s.source_identity ?? "未命名",
+    identity: s.source_identity ?? "",
+    type: typeLabels[s.type] ?? s.type,
+    rawType: s.type,
+    tags: Array.isArray(s.domain_tags) ? s.domain_tags : [],
+    availability: s.availability_status ?? "normal",
+    isRunning: !s.paused,
+    placements: (s.display_positions ?? []).map((p: any) => ({ space: p.space_name, channel: p.channel_name })),
+    lastFetch: fmtAgo(s.last_fetched_at),
+    totalNews: s.total_news_count ?? 0,
+  };
+}
+
+const allSources = ref<any[]>([]);
+const loading = ref(true);
 
 const searchQuery = ref("");
 const typeFilter = ref("all");
@@ -31,23 +52,16 @@ const deleteDialog = ref<{ open: boolean; data: any }>({ open: false, data: null
 const hasActiveFilters = computed(
   () => !!searchQuery.value || typeFilter.value !== "all" || availabilityFilter.value !== "all" || runningFilter.value !== "all",
 );
-
 function clearFilters() {
-  searchQuery.value = "";
-  typeFilter.value = "all";
-  availabilityFilter.value = "all";
-  runningFilter.value = "all";
+  searchQuery.value = ""; typeFilter.value = "all"; availabilityFilter.value = "all"; runningFilter.value = "all";
 }
 function handleSort(field: SortField) {
   if (sortField.value === field) sortDirection.value = sortDirection.value === "asc" ? "desc" : "asc";
-  else {
-    sortField.value = field;
-    sortDirection.value = "asc";
-  }
+  else { sortField.value = field; sortDirection.value = "asc"; }
 }
 
 const filteredSources = computed(() =>
-  mockSources.filter((s) => {
+  allSources.value.filter((s) => {
     if (searchQuery.value && !s.name.toLowerCase().includes(searchQuery.value.toLowerCase())) return false;
     if (typeFilter.value !== "all" && s.type !== typeFilter.value) return false;
     if (availabilityFilter.value !== "all" && s.availability !== availabilityFilter.value) return false;
@@ -59,21 +73,20 @@ const filteredSources = computed(() =>
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredSources.value.length / perPage.value)));
 const paginatedSources = computed(() => filteredSources.value.slice((currentPage.value - 1) * perPage.value, currentPage.value * perPage.value));
 
-function tagVariant(tag: string) {
-  return tag === "AI" ? "info" : tag === "帖子" ? "warning" : "default";
-}
-function availVariant(a: string) {
-  return a === "normal" ? "success" : a === "needs-fix" ? "warning" : a === "source-error" ? "error" : "default";
-}
-const columns: { field: SortField; label: string }[] = [
-  { field: "name", label: "信息源" },
-  { field: "type", label: "类型" },
-];
+function tagVariant(tag: string) { return tag === "AI" ? "info" : tag === "帖子" ? "warning" : "default"; }
+function availVariant(a: string) { return a === "normal" ? "success" : a === "needs-fix" ? "warning" : a === "source-error" ? "error" : "default"; }
+const columns: { field: SortField; label: string }[] = [{ field: "name", label: "信息源" }, { field: "type", label: "类型" }];
+
+onMounted(async () => {
+  try {
+    const r: any = await listSources({ page_size: 200 } as any);
+    allSources.value = (r.sources ?? []).map(mapSource);
+  } catch { allSources.value = []; } finally { loading.value = false; }
+});
 </script>
 
 <template>
   <div class="p-6">
-    <!-- Search and Actions -->
     <div class="flex items-center gap-3 mb-4">
       <div class="flex-1 relative">
         <input v-model="searchQuery" type="text" placeholder="搜索信息源名称、身份、主题、备注..." class="w-full pl-3 pr-4 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring" />
@@ -83,7 +96,6 @@ const columns: { field: SortField; label: string }[] = [
       <button class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"><Repeat class="h-4 w-4 inline mr-2" />同步 X 规则</button>
     </div>
 
-    <!-- Filters -->
     <div class="flex items-center justify-between mb-4">
       <div class="flex items-center gap-4">
         <div class="flex items-center gap-2">
@@ -111,7 +123,6 @@ const columns: { field: SortField; label: string }[] = [
       </div>
     </div>
 
-    <!-- Table -->
     <div class="bg-card border border-border rounded-lg overflow-hidden">
       <table class="w-full">
         <thead class="bg-muted/30 border-b border-border">
@@ -122,28 +133,17 @@ const columns: { field: SortField; label: string }[] = [
               <ChevronDown v-else-if="sortField === col.field" class="h-4 w-4 inline" />
             </th>
             <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">标签</th>
-            <th @click="handleSort('availability')" class="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">
-              可用性
-              <ChevronUp v-if="sortField === 'availability' && sortDirection === 'asc'" class="h-4 w-4 inline" />
-              <ChevronDown v-else-if="sortField === 'availability'" class="h-4 w-4 inline" />
-            </th>
+            <th @click="handleSort('availability')" class="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">可用性</th>
             <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">运行</th>
             <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">使用位置</th>
-            <th @click="handleSort('lastFetch')" class="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">
-              最近抓取
-              <ChevronUp v-if="sortField === 'lastFetch' && sortDirection === 'asc'" class="h-4 w-4 inline" />
-              <ChevronDown v-else-if="sortField === 'lastFetch'" class="h-4 w-4 inline" />
-            </th>
-            <th @click="handleSort('totalNews')" class="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">
-              历史新闻
-              <ChevronUp v-if="sortField === 'totalNews' && sortDirection === 'asc'" class="h-4 w-4 inline" />
-              <ChevronDown v-else-if="sortField === 'totalNews'" class="h-4 w-4 inline" />
-            </th>
+            <th @click="handleSort('lastFetch')" class="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">最近抓取</th>
+            <th @click="handleSort('totalNews')" class="text-left px-4 py-3 text-sm font-medium text-muted-foreground cursor-pointer hover:bg-muted/50">历史新闻</th>
             <th class="text-left px-4 py-3 text-sm font-medium text-muted-foreground">操作</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-if="paginatedSources.length === 0">
+          <tr v-if="loading"><td colspan="9" class="text-center py-12 text-sm text-muted-foreground">加载中...</td></tr>
+          <tr v-else-if="paginatedSources.length === 0">
             <td colspan="9" class="text-center py-12">
               <div class="text-muted-foreground">{{ hasActiveFilters ? "没有找到匹配的信息源" : "暂无信息源" }}</div>
               <button v-if="hasActiveFilters" @click="clearFilters" class="mt-2 text-sm text-primary hover:underline">清除筛选条件</button>
@@ -158,24 +158,13 @@ const columns: { field: SortField; label: string }[] = [
               <div class="text-xs text-muted-foreground mt-0.5">{{ source.identity }}</div>
             </td>
             <td class="px-4 py-3"><span class="text-sm text-primary">{{ source.type }}</span></td>
-            <td class="px-4 py-3">
-              <div class="flex gap-1 flex-wrap">
-                <Badge v-for="tag in source.tags" :key="tag" :variant="tagVariant(tag)">{{ tag }}</Badge>
-              </div>
-            </td>
+            <td class="px-4 py-3"><div class="flex gap-1 flex-wrap"><Badge v-for="tag in source.tags" :key="tag" :variant="tagVariant(tag)">{{ tag }}</Badge></div></td>
             <td class="px-4 py-3"><Badge :variant="availVariant(source.availability)">{{ availabilityLabels[source.availability] }}</Badge></td>
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-1.5">
-                <span :class="cn('h-2 w-2 rounded-full', source.isRunning ? 'bg-green-500' : 'bg-gray-400')" />
-                <span class="text-sm">{{ source.isRunning ? "抓取中" : "已停止" }}</span>
-              </div>
-            </td>
+            <td class="px-4 py-3"><div class="flex items-center gap-1.5"><span :class="cn('h-2 w-2 rounded-full', source.isRunning ? 'bg-green-500' : 'bg-gray-400')" /><span class="text-sm">{{ source.isRunning ? "抓取中" : "已停止" }}</span></div></td>
             <td class="px-4 py-3">
               <div class="text-sm">
                 <span v-if="source.placements.length === 0" class="text-muted-foreground">未使用</span>
-                <PlacementTooltip v-else :placements="source.placements">
-                  <span class="text-primary hover:underline cursor-pointer">{{ source.placements.length }} 个位置（{{ source.placements.length }} 启用）</span>
-                </PlacementTooltip>
+                <PlacementTooltip v-else :placements="source.placements"><span class="text-primary hover:underline cursor-pointer">{{ source.placements.length }} 个位置</span></PlacementTooltip>
               </div>
             </td>
             <td class="px-4 py-3 text-sm">{{ source.lastFetch }}</td>
@@ -186,7 +175,6 @@ const columns: { field: SortField; label: string }[] = [
       </table>
     </div>
 
-    <!-- Pagination -->
     <div class="flex items-center justify-between mt-4">
       <div class="flex items-center gap-2 text-sm text-muted-foreground">
         <span>共 {{ filteredSources.length }} 条</span>
