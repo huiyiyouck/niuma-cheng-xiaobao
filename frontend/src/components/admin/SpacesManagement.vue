@@ -196,9 +196,7 @@ onMounted(loadSpaces);
                 <div class="flex items-center gap-2 ml-4">
                   <button class="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm">详情</button>
                   <button class="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm">暂停</button>
-                  <select v-if="isInAllChannel" :value="currentChannelOf(source)" class="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm appearance-none cursor-pointer focus:outline-none">
-                    <option v-for="c in channels.filter((c) => !c.isAll)" :key="c.id" :value="c.name">{{ c.name }}</option>
-                  </select>
+                  <span v-if="isInAllChannel" class="px-3 py-1.5 bg-secondary text-secondary-foreground rounded text-sm">{{ currentChannelOf(source) }}</span>
                   <span v-else class="px-3 py-1.5 bg-muted text-muted-foreground rounded text-sm">当前频道: {{ currentChannel?.name }}</span>
                   <button @click="handleSourceRemove(source)" class="px-3 py-1.5 bg-destructive/10 text-destructive rounded hover:bg-destructive/20 text-sm">从此位置移除</button>
                 </div>

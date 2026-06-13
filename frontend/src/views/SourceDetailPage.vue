@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChevronRight, AlertTriangle, Trash2, Edit, Plus } from "lucide-vue-next";
-import { getSource } from "@/lib/api";
+import { getSource, deleteSource } from "@/lib/api";
+import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -70,7 +71,9 @@ onMounted(async () => {
       tags: Array.isArray(s.domain_tags) ? s.domain_tags : [],
       role: s.source_role ?? "-",
       priority: s.attention_level ?? "-",
-      topic: Array.isArray(s.content_topics) ? s.content_topics.join("、") : (s.content_topics ?? "-"),
+      topic: Array.isArray(s.content_topics) && s.content_topics.length
+        ? s.content_topics.join("、")
+        : (typeof s.content_topics === "string" && s.content_topics ? s.content_topics : "-"),
       notes: s.notes ?? "-",
     };
     placements.value = (s.display_positions ?? []).map((p: any) => ({
@@ -81,7 +84,11 @@ onMounted(async () => {
   }
 });
 
-function handleConfirmDelete() {
+async function handleConfirmDelete() {
+  try {
+    await deleteSource(id);
+  } catch { /* ignore */ }
+  deleteDialog.value = false;
   router.push("/admin?tab=source-library");
 }
 </script>
@@ -212,6 +219,12 @@ function handleConfirmDelete() {
       </div>
     </div>
 
-    <!-- TODO(前端待续): 编辑/删除/添加位置 抽屉与 AdminPage 共用，统一实现后接入 -->
+    <!-- 删除确认（接真实 deleteSource）；编辑/添加位置抽屉待精修 -->
+    <DeleteConfirmDialog
+      :open="deleteDialog"
+      :data="{ type: 'source', name: source.displayName, placementCount: placements.length, newsCount: source.totalNews }"
+      @close="deleteDialog = false"
+      @confirm="handleConfirmDelete"
+    />
   </div>
 </template>
