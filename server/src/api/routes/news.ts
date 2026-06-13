@@ -104,6 +104,11 @@ function newsToOut(r: any) {
     title: r.title,
     summary: r.summary,
     published_at: toISO(r.published_at),
+    // v0.5 兼容：扁平字段
+    raw_item_id: r.raw_item_id,
+    source_id: r.source_id,
+    source_display_name: r.source_name,
+    // v0.6：嵌套 source 对象（新前端用）
     source: {
       id: r.source_id,
       name: r.source_name,
@@ -127,16 +132,20 @@ function newsDetailToOut(r: any) {
   return {
     id: r.id,
     title: r.title,
-    source: { id: r.source_id, name: r.source_name },
     published_at: toISO(r.published_at),
     summary: r.summary,
+    // v0.5 兼容：扁平字段
+    raw_item_id: r.raw_item_id,
+    source_id: r.source_id,
+    source_display_name: r.source_name,
+    // v0.6 新字段
+    source: { id: r.source_id, name: r.source_name },
     score_total: r.score_total != null ? Number(r.score_total) : null,
     score_dimensions: asDict(r.score_dimensions) || null,
     translation: asDict(r.translation) || null,
     context: r.context || [],
     analysis: r.analysis || null,
     tags_v2: asDict(r.tags_v2) || null,
-    // 处理状态
     l0_status: r.l0_status || null,
     l1_status: r.l1_status || null,
     // v0.5 兼容
