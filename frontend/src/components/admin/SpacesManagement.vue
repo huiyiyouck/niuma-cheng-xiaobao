@@ -7,7 +7,7 @@ import AddSourceDrawer from "./AddSourceDrawer.vue";
 import SpaceEditDialog from "./SpaceEditDialog.vue";
 import ChannelEditDialog from "./ChannelEditDialog.vue";
 import PlacementTooltip from "@/components/ui/PlacementTooltip.vue";
-import { listSpaces, listChannels, listSpaceSources } from "@/lib/api";
+import { listSpaces, listChannels, listSpaceSources, pauseSource, resumeSource, deleteSpace, deleteChannel, createSpace, updateSpace, createChannel, updateChannel } from "@/lib/api";
 
 const typeLabels: Record<string, string> = { x_twitter: "X/Twitter", rss: "RSS" };
 function fmtAgo(iso?: string): string {
@@ -81,11 +81,39 @@ async function selectChannel(id: string) {
   await loadSources();
 }
 function handleSpaceEdit(space: any) { spaceEditDialog.value = { open: true, space }; }
-function handleSpaceDelete(space: any) { deleteDialog.value = { open: true, data: { type: "space", name: space.name, channelCount: space.channelCount, placementCount: space.sourceCount, newsCount: 0 } }; }
+function handleSpaceDelete(space: any) { deleteDialog.value = { open: true, data: { type: "space", id: space.id, name: space.name, channelCount: space.channelCount, placementCount: space.sourceCount, newsCount: 0 } }; }
 function handleChannelEdit(channel: any) { if (channel?.isAll) return; channelEditDialog.value = { open: true, channel: channel ? { id: channel.id, name: channel.name, description: "" } : null }; }
-function handleChannelDelete(channel: any) { deleteDialog.value = { open: true, data: { type: "channel", name: channel.name, spaceName: currentSpace.value?.name, placementCount: channel.sourceCount, sourceCount: channel.sourceCount, newsCount: 0 } }; }
+function handleChannelDelete(channel: any) { deleteDialog.value = { open: true, data: { type: "channel", id: channel.id, name: channel.name, spaceName: currentSpace.value?.name, placementCount: channel.sourceCount, sourceCount: channel.sourceCount, newsCount: 0 } }; }
 function handleSourceRemove(source: any) { deleteDialog.value = { open: true, data: { type: "remove-placement", sourceName: source.name, location: `${currentSpace.value?.name} / ${currentChannel.value?.name}` } }; }
 function currentChannelOf(source: any) { return source.placements.find((p: any) => p.space === currentSpace.value?.name)?.channel || "未分配"; }
+
+async function toggleSourcePause(source: any) {
+  try { source.isRunning ? await pauseSource(source.id) : await resumeSource(source.id); await loadSources(); } catch { /* ignore */ }
+}
+async function handleSpaceSave(data: any) {
+  try {
+    if (spaceEditDialog.value.space?.id) await updateSpace(spaceEditDialog.value.space.id, data);
+    else await createSpace(data);
+    await loadSpaces();
+  } catch { /* ignore */ }
+  spaceEditDialog.value = { open: false, space: null };
+}
+async function handleChannelSave(data: any) {
+  try {
+    if (channelEditDialog.value.channel?.id) await updateChannel(selectedSpace.value, channelEditDialog.value.channel.id, data);
+    else await createChannel(selectedSpace.value, data);
+    await loadChannels();
+  } catch { /* ignore */ }
+  channelEditDialog.value = { open: false, channel: null };
+}
+async function handleDeleteConfirm() {
+  const d = deleteDialog.value.data;
+  try {
+    if (d?.type === "space") { await deleteSpace(d.id); await loadSpaces(); }
+    else if (d?.type === "channel") { await deleteChannel(selectedSpace.value, d.id); await loadChannels(); await loadSources(); }
+  } catch { /* ignore */ }
+  deleteDialog.value = { open: false, data: null };
+}
 
 onMounted(loadSpaces);
 </script>
@@ -195,7 +223,7 @@ onMounted(loadSpaces);
                 </div>
                 <div class="flex items-center gap-2 ml-4">
                   <button class="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm">详情</button>
-                  <button class="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm">暂停</button>
+                  <button @click="toggleSourcePause(source)" class="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm">{{ source.isRunning ? "暂停" : "恢复" }}</button>
                   <span v-if="isInAllChannel" class="px-3 py-1.5 bg-secondary text-secondary-foreground rounded text-sm">{{ currentChannelOf(source) }}</span>
                   <span v-else class="px-3 py-1.5 bg-muted text-muted-foreground rounded text-sm">当前频道: {{ currentChannel?.name }}</span>
                   <button @click="handleSourceRemove(source)" class="px-3 py-1.5 bg-destructive/10 text-destructive rounded hover:bg-destructive/20 text-sm">从此位置移除</button>
@@ -207,9 +235,9 @@ onMounted(loadSpaces);
       </div>
     </div>
 
-    <SpaceEditDialog :open="spaceEditDialog.open" :space="spaceEditDialog.space" @close="spaceEditDialog.open = false" @save="spaceEditDialog.open = false" />
-    <ChannelEditDialog :open="channelEditDialog.open" :channel="channelEditDialog.channel" @close="channelEditDialog.open = false" @save="channelEditDialog.open = false" />
-    <DeleteConfirmDialog :open="deleteDialog.open" :data="deleteDialog.data" @close="deleteDialog.open = false" @confirm="deleteDialog.open = false" />
+    <SpaceEditDialog :open="spaceEditDialog.open" :space="spaceEditDialog.space" @close="spaceEditDialog.open = false" @save="handleSpaceSave" />
+    <ChannelEditDialog :open="channelEditDialog.open" :channel="channelEditDialog.channel" @close="channelEditDialog.open = false" @save="handleChannelSave" />
+    <DeleteConfirmDialog :open="deleteDialog.open" :data="deleteDialog.data" @close="deleteDialog.open = false" @confirm="handleDeleteConfirm" />
     <AddSourceDrawer :open="addSourceDrawer" :space-name="currentSpace?.name || ''" :channel-name="currentChannel?.name || ''" @close="addSourceDrawer = false" @add-source="addSourceDrawer = false" />
   </div>
 </template>
