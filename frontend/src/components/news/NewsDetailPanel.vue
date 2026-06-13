@@ -34,10 +34,10 @@ function scoreClass(score: number) {
       <div class="flex items-start justify-between p-5 border-b border-border shrink-0">
         <div class="flex-1 pr-4">
           <div v-if="news" class="flex items-center gap-2 mb-2">
-            <span :class="cn('px-2 py-0.5 rounded text-xs font-medium', scoreClass(news.score))">
+            <span v-if="news.score > 0" :class="cn('px-2 py-0.5 rounded text-xs font-medium', scoreClass(news.score))">
               评分 {{ news.score }}
             </span>
-            <span class="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{{ news.channel }}</span>
+            <span v-if="news.channel" class="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">{{ news.channel }}</span>
           </div>
           <h2 class="font-semibold leading-snug">{{ news?.title ?? "" }}</h2>
         </div>
@@ -54,7 +54,7 @@ function scoreClass(score: number) {
         <template v-if="news">
           <div class="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
             <span class="flex items-center gap-1.5"><Clock class="h-3.5 w-3.5" />{{ news.time }}</span>
-            <span class="flex items-center gap-1.5"><BarChart2 class="h-3.5 w-3.5" />评分 {{ news.score }}</span>
+            <span v-if="news.score > 0" class="flex items-center gap-1.5"><BarChart2 class="h-3.5 w-3.5" />评分 {{ news.score }}</span>
             <RouterLink
               v-if="!news.source.removed"
               :to="`/sources/${news.source.id}`"
