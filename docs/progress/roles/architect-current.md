@@ -4,6 +4,31 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-06-13 — v0.6 设计文档翻牌定稿
+
+**本次角色**：架构师
+- 动作：定稿翻牌（设计文档产出方的最终收口）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6-design.md`（文档状态：待Review → 已定稿（有条件），补 PM 裁定摘要和条件承接清单）
+  - `docs/progress/roles/architect-current.md`（本文）
+  - `docs/progress/roles/architect-summary.md`（当前关注点刷新）
+
+### 背景
+PM 已于 2026-06-13 裁定 R2 有条件定稿（commit 2831ef8），但设计文档头部状态仍为「待Review」——架构师作为产出方漏翻牌。本次补上。
+
+### 翻牌内容
+- 文档状态：待Review → **已定稿（有条件）**
+- 定稿时间：2026-06-13
+- 定稿裁定：PM 不开 R3，四方 R2 复审均 ⚠️ 有条件通过
+- 条件承接：Developer / Tester / DevOps / PM 四方各自承接项已在文档状态段显式列出
+
+### 收尾
+- 关联迭代：v0.6
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - v0.6 设计阶段架构师工作已闭环：PRD R1/R2 Review ✅ → UI R1 Review ✅ → 设计 R1 产出 + R2 汇总修订 ✅ → 翻牌定稿 ✅
+  - 下一步：切换到 Developer 启动 v0.6 实现阶段 R1
+
 ## 2026-06-12 — v0.6 设计文档 R2 汇总修订 + 会话收尾
 
 **本次角色**：架构师
