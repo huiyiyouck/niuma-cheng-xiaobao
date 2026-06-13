@@ -131,7 +131,7 @@
 | P2 | 空间图标支持上传图片（当前仅支持 emoji 文本输入） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 空间管理页图标编辑 | ✅ 已收编进 v0.6 PRD R1 — 支持图片上传、替换、移除，同时保留 emoji / 文本图标能力 |
 | P2 | 信息源级别代理配置：每个 Source 可独立控制是否走代理抓取（当前为全局代理） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 部分 RSS 源可能不需要代理 | ✅ 已评估（2026-06-09）— 不作为前端管理能力；如需 Source 级代理，作为后端内部抓取策略由设计阶段按需处理 |
 | P1 | MCP 协议信息源完整支持：新建/编辑/删除 MCP 源的 UI、工具选择、配置管理（当前仅后台 API 临时创建） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 金十数据 MCP 接入为临时后台方案 | 待 PM 评估，纳入后续迭代规划 |
-| P1 | **L1 Agent 化：OpenClaw 集成替换内建 LLM 调用** — L1 处理链路接入本地 OpenClaw 服务（Agentic tool-use），由 OpenClaw 自主驱动 KB 检索/链接读取/Web 搜索/X 搜索，替代当前 `l1-processor.ts` 中空壳 Stage 3 + 硬编码 5 阶段流水线；主 Server 只做 fetch raw_item → 调 OpenClaw Agent → 存结果 | Developer | 2026-06-13 v0.6 实现阶段讨论 — Owner 决定将 LLM 处理拆为独立 Agent 服务，OpenClaw 已本地部署 | 待 v0.7 迭代启动 |
+| P1 | **L1 Agent 化：OpenClaw 集成替换内建 LLM 调用** — L1 处理链路接入 OpenClaw 服务（Agentic tool-use），由 Agent 自主驱动 KB 检索/链接读取/Web 搜索/X 搜索，替代当前 `l1-processor.ts` 空壳 Stage 3 + 硬编码 5 阶段；主 Server 只做 fetch raw_item → 调 OpenClaw Agent → 存结果 | Developer | 2026-06-13 v0.6 实现阶段讨论 — Owner 决定 LLM 处理由外部 Agent 承担 | ⏳ 待切换到服务器上做 OpenClaw 集成验证：① 确认 Agent 配置和 Web Search 能力 ② 用 `openclaw agent --json` 拿结构化新闻输出 ③ 验证输出格式可对接 l1-processor.ts 写入契约 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）

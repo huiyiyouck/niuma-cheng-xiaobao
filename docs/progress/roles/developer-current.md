@@ -6,6 +6,80 @@
 
 ---
 
+## 2026-06-13 — v0.6 实现阶段 R1：后端全量实现（批次 A+B+C）+ OpenClaw 调研 + 收尾
+
+- 本次角色：全栈开发（Developer）
+- 模式：标准迭代 v0.6 实现阶段 R1（Owner 指定只做后端，不做前端）
+
+### 批次 A · 数据层 + 测试基建
+- drizzle schema 扩展：`raw_items` ×9 列（L0/L1 状态）+ 2 部分索引、`processed_news` ×6 列（jsonb 增量）、`channel_spaces` ×2 列（图标上传）、`tasks.last_error_kind`
+- 手写迁移 `0005_v0.6_l0_l1_schema.sql`（本地无 PostgreSQL，无法跑 `drizzle-kit generate`）
+- #D12 历史保护 DML：`UPDATE raw_items SET l1_status='completed'` 覆盖存量 processed_news
+- 恢复 vitest 配置（`include` → `src/__tests__/`）+ `.env.test` 独立测试库
+
+### 批次 B · 后端 Worker
+- `llm.ts`：`callLLM<T>` 通用 helper（双模型 + 重试 + token 用量日志）+ `processLLM` 重构为封装 + `classifyL0LLM` / `processL1LLM`
+- `dispatcher.ts`：BACKOFF_CONFIG type 分支退避 + `requeueTask` 终态处理（`setL0Failed` / `setL1FinalFailed`）+ workerLoop 5 claim 分支（fetch/process/l0_classify/l1_process，#D11 不含 l1_retry）+ X 源专属 L0 路由
+- `l0-classifier.ts`（新建）：规则引擎（5 条）+ LLM 语义判定 → L1 task 创建
+- `l1-processor.ts`（新建）：5 阶段串行（KB ILIKE → 链接 fetch → 外部搜索 P2 空壳 → LLM 主调用 → 写库+fan-out）+ 综合分加权计算（T×0.25+I×0.35+C×0.25+X×0.15）
+- `l1-monitor.ts`（新建）：AC-32 4 类告警
+- `config.ts`：+6 个 v0.6 env（L0/L1 model、timeout、L1_CONCURRENCY）
+- `index.ts`：`l1Sem` 独立并发池
+
+### 批次 C · 后端 API
+- 新增 6 endpoint：`GET /v1/news/:id` 完整详情、`POST/DELETE /v1/spaces/:id/icon`（multipart 上传/删除）、`GET /v1/sources/:id/level-status-counts`、`GET /v1/global-level-status-counts`（#D5 落点）、`POST /v1/l1-tasks/:task_id/retry`（#D11 手动重试 → l1_process）
+- 修改 3 endpoint：`GET /v1/news` 列表扩展 score_total/tags_v2/source + 扁平兼容字段、`GET /v1/stats` v0.6 口径（l1_status='completed'）+ 前端契约对齐（SpaceStats / StatsOverview）、alerts type 新增值兼容
+- 依赖：`@fastify/multipart`
+
+### 前端契约对齐修复
+- stats 字段名：从 `today_completed/total_completed/enabled_sources/channels` 改回前端期望的 `today_new/total_news/active_sources/channel_count` + 全局 `StatsOverview` 五字段
+- news 字段：保留 `source_id`/`source_display_name`/`raw_item_id` 扁平字段 + 新增 `source: {id,name}` 嵌套对象，双向兼容
+
+### LLM 日志增强
+- `callLLM`：每次调用记录 model/prompt_len/retries/timeout，成功后 latency/parse方法/token用量，重试 warn，耗尽 error
+- L0/L1：记录 source/attention/raw_len/kb_count/上下文来源 + 四维评分 + 综合分加权公式分解
+- logger.ts：Console 传输层 `info`→`debug`，所有级别终端可见
+- index.ts：Worker 60s 心跳日志
+
+### OpenClaw 调研
+- 已确认服务器部署 OpenClaw Gateway（18789 端口），WebSocket 协议 + CLI（`npx openclaw` v2026.6.6）
+- CLI 已验证：`agent` 子命令支持 `--json` 结构化输出
+- #D11 定案：v0.6 L1 Stage 3 保持空壳；L1 处理链路后续替换为 OpenClaw Agent 调用
+- SSH 隧道已配置（`ssh -L 18789:localhost:18789`），认证 token 在服务器本地，需在服务器侧直接运行 CLI
+- 待切换到服务器验证：Agent 配置、模型可用性、结构化输出格式是否符合 l1-processor 写入契约
+
+### 部署
+- 迁移已在服务器执行（`0005_v0.6_l0_l1_schema.sql`），`raw_items`/`processed_news`/`channel_spaces`/`tasks` 全部新列已就绪
+- 后端 API 全量端点验证通过（8/8 + stats 修复）
+- `tsc --noEmit` 0 错误
+- 未推送（本地领先 origin/main 8 commits）
+
+### Git 节点
+```
+8a26828 待办登记
+d5658de 日志增强
+26c568b LLM 日志
+d224093 契约对齐
+4f4cae6 stats 修复
+8b2f437 v0.6.md sync
+6e813ab 批次 C
+66e771a v0.6.md sync
+190ad77 批次 B
+d11fae8 批次 A
+```
+
+### 下一步
+- 切换到服务器 → OpenClaw Agent 集成验证 → v0.6 迭代关闭或 v0.7 规划
+- 前端（批次 D）：Owner 已指定 Developer 不做，由其他会话或其他角色承担
+
+### 关联
+- 关联迭代：v0.6（实现阶段 R1 后端完成，前端未启动，OpenClaw 待验证）
+- 关联文档：`v0.6.md` 实现阶段 R1 门禁 / `v0.6-design.md` Review 条件承接状态
+- 下一步入口：切换到服务器验证 OpenClaw → 决定 v0.6 关闭或继续
+
+
+---
+
 ## 2026-06-13 — v0.6 实现阶段 R1：前端先行（Owner 调整）+ test 环境部署
 
 - 本次角色：全栈开发（Developer）
