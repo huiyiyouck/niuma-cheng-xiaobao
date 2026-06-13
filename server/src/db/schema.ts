@@ -16,12 +16,15 @@ import { sql } from "drizzle-orm";
 
 // ── channel_spaces ────────────────────────────────────────
 // v0.5: 新增 sort_order、icon
+// v0.6: 新增 icon_url、icon_type 支持图片上传
 export const channelSpaces = pgTable("channel_spaces", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 200 }).notNull().unique(),
   description: text("description"),
   sortOrder: integer("sort_order").notNull().default(0),
   icon: text("icon").default("📁"),
+  iconUrl: text("icon_url"),
+  iconType: varchar("icon_type", { length: 20 }).notNull().default("emoji"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -146,6 +149,7 @@ export const sourceStates = pgTable(
 
 // ── raw_items ─────────────────────────────────────────────
 // v0.5: 移除 channel_space_id，新增 fetched_at
+// v0.6: 新增 L0/L1 状态字段（ADR-002 双字段独立）
 export const rawItems = pgTable(
   "raw_items",
   {
@@ -159,16 +163,31 @@ export const rawItems = pgTable(
     content: jsonb("content").notNull().default(sql`'{}'::jsonb`),
     contentHash: text("content_hash"),
     fetchedAt: timestamp("fetched_at", { withTimezone: true }).notNull().defaultNow(),
+    // v0.6 L0 状态字段
+    l0Status: varchar("l0_status", { length: 30 }).notNull().default("pending"),
+    l0Label: varchar("l0_label", { length: 50 }),
+    l0ProcessedAt: timestamp("l0_processed_at", { withTimezone: true }),
+    l0Error: text("l0_error"),
+    // v0.6 L1 状态字段
+    l1Status: varchar("l1_status", { length: 30 }).notNull().default("not_started"),
+    l1Error: text("l1_error"),
+    l1Attempt: integer("l1_attempt").notNull().default(0),
+    l1NextRetryAt: timestamp("l1_next_retry_at", { withTimezone: true }),
+    l1ProcessedAt: timestamp("l1_processed_at", { withTimezone: true }),
   },
   (table) => [
     unique("uq_raw_items_source_item").on(table.sourceId, table.sourceItemId),
     index("ix_raw_items_source_published").on(table.sourceId, table.publishedAt),
     sql`CREATE INDEX IF NOT EXISTS ix_raw_items_url ON raw_items(source_item_url) WHERE source_item_url IS NOT NULL`,
+    // v0.6 L0/L1 队列索引
+    sql`CREATE INDEX IF NOT EXISTS ix_raw_items_l0_queue ON raw_items(l0_status, l1_status, published_at) WHERE l0_status = 'passed' AND l1_status = 'not_started'`,
+    sql`CREATE INDEX IF NOT EXISTS ix_raw_items_l1_queue ON raw_items(l1_status, l1_next_retry_at, published_at) WHERE l1_status IN ('queued', 'retryable_failed')`,
   ],
 );
 
 // ── processed_news ────────────────────────────────────────
 // v0.5: 移除 channel_space_id 和 channel_id
+// v0.6: jsonb 增量扩展（ADR-003），新增 L1 输出字段
 export const processedNews = pgTable(
   "processed_news",
   {
@@ -186,6 +205,13 @@ export const processedNews = pgTable(
     tags: jsonb("tags").notNull().default(sql`'[]'::jsonb`),
     entities: jsonb("entities").notNull().default(sql`'[]'::jsonb`),
     importanceScore: numeric("importance_score").notNull().default("0"),
+    // v0.6 L1 输出字段
+    translation: jsonb("translation"),
+    context: jsonb("context"),
+    analysis: text("analysis"),
+    scoreTotal: numeric("score_total"),
+    scoreDimensions: jsonb("score_dimensions"),
+    tagsV2: jsonb("tags_v2"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("ix_processed_news_published").on(table.publishedAt)],
@@ -213,6 +239,7 @@ export const newsPositions = pgTable(
 
 // ── tasks ─────────────────────────────────────────────────
 // v0.5: 移除 channel_space_id、channel_source_id，新增 source_id
+// v0.6: 新增 l0_classify / l1_process / l1_retry type + last_error_kind
 export const tasks = pgTable(
   "tasks",
   {
@@ -232,6 +259,7 @@ export const tasks = pgTable(
     lockedBy: text("locked_by"),
     lockedAt: timestamp("locked_at", { withTimezone: true }),
     lastError: text("last_error"),
+    lastErrorKind: varchar("last_error_kind", { length: 30 }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

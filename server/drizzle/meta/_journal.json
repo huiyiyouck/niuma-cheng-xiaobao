@@ -15,6 +15,34 @@
       "when": 1749200000000,
       "tag": "0001_v0.5_restructure",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749200000001,
+      "tag": "0002_x_reverse_sync",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749200000002,
+      "tag": "0003_channels_description",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1749200000003,
+      "tag": "0004_sources_display_name_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1749800000000,
+      "tag": "0005_v0.6_l0_l1_schema",
+      "breakpoints": true
     }
   ]
 }
