@@ -3,9 +3,9 @@
 ## 当前状态
 
 - 当前迭代：v0.6
-- 当前阶段：设计阶段 R2 复审中
+- 当前阶段：实现阶段待启动
 - 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `iterations/v0.6-ui-spec.md`（R1 有条件通过）与 `iterations/v0.6-design.md`（R1 + R2 均有条件通过）
-- 下一步入口：Developer / DevOps / Tester 3 方 R2 复审 → 全部通过则设计定稿进实施阶段
+- 下一步入口：Developer（开发工程师）启动 v0.6 实现阶段 R1，首个实现记录需显式承接设计 R2 遗留条件
 
 ## v0.6 关键上下文
 
@@ -60,6 +60,8 @@ R2 五方复审均为有条件通过。PM 于 2026-06-11 裁定不进入 R3，PR
 UI 已产出 `v0.6-ui-spec.md` R2 并定稿。PM Review R1 结论为有条件通过，无高严重度阻断；Owner 已确认 #P1：v0.6 全部按 Owner 提供的 UI 原型为主，D8 全屏铺满成立，本条关闭。
 
 设计文档 `v0.6-design.md` R1 已由 Architect 产出。PM Review 结论为有条件通过：设计整体承接 PRD R2 + UI spec R2，未发现重新引入已排除范围；PM 条件项为 L0 `retryable` 前台展示映射、level-status-counts 24h 窗口口径、raw_items/ADR/AC 数量口径和开放问题数量口径。
+
+2026-06-13 PM 裁定设计 R2 不开 R3，按有条件定稿进入实现阶段。裁定依据：四方 R2 复审均为有条件通过，未出现新的产品范围高阻断；R1 高严重度工程/测试硬伤已在 R2 方向上关闭或基本关闭。剩余问题集中在 R2 修改摘要与正文不一致，作为实施/部署阶段显式承接条件：Developer 承接 #D11/#D12，Tester 承接 #T13，DevOps 承接 #O1/#O2/#O3/#O8/#O15，PM 接受 #P3/#P5 作为文档可信度遗留。
 
 ## 重要风险
 

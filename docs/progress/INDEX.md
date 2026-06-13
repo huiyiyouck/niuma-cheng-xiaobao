@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：设计阶段 R2 — 4/4 方均已完成 R2 复审（PM / Developer / Tester / DevOps 均 ⚠️ 有条件通过）
+- 当前阶段：实现阶段待启动 — 设计 R2 已由 PM 裁定有条件定稿，不开 R3
 - 阻塞项：—
-- 下一步入口：PM 介入 v0.6 设计文档 R2，决定开 R3 微调或直接进实施阶段
+- 下一步入口：切换到 Developer（开发工程师）启动 v0.6 实现阶段 R1；实施前显式承接设计 R2 遗留条件
 
 ## 版本列表
 
@@ -19,7 +19,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
-| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | — | 设计阶段 R2 — 4/4 方已完成 R2 复审 |
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | — | 设计 R2 已有条件定稿，进入实现阶段 |
 
 ## 当前 Change Notes
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-13 | PM | v0.6 设计 R2 定稿裁定 + 阶段推进 | ✅ **有条件定稿，进入实现阶段** — PM 裁定不开 R3：四方 R2 复审均已完成且均为有条件通过，无新的产品范围高阻断；R1 高严重度工程/测试硬伤已由 R2 在方向上关闭或基本关闭。剩余共性问题集中在 R2 修改摘要与正文不一致，不静默改 Architect 正文，转为实施/部署阶段显式承接：Developer 承接 #D11/#D12 与迁移 DML 断链；Tester 承接 #T13、上传兜底和告警 SQL 测试假设；DevOps 承接 #O1/#O2/#O3/#O8/#O15 的上传目录、nginx、依赖增量和 .env 检查；PM 接受 #P3/#P5 为文档可信度遗留，后续如影响范围或验收再走 Change Note / 回阶段 | 切换到 Developer 启动 v0.6 实现阶段 R1 |
 | 2026-06-12 | DevOps | v0.6 设计文档 R2 DevOps 复审 | ⚠️ **有条件通过（R2）** — R1 11 条：1 完全关闭 #O6（由 §4.4/§4.5 间接关）+ 3 基本关闭 #O1/#O2/#O3（R2 修改摘要方向 100% 与 DevOps R1 推荐对齐——部署前置工作 / 选项 A / npm 增量 + native binding 红线，但**正文一字未动**） + 6 合理分流（部署侧自治承接） + 1 未关闭 #O8 client_max_body_size（1MB 边界 P0 风险，R2 摘要声称已关、正文未落，与 Tester R2 #T13 独立发现一致）。R2 新增 #O15（中）：R2 摘要 vs 正文 4 处不一致致部署侧执行依据缺失，与 PM R2 #P5 / Developer R2 #D12 / Tester R2 #T13 同源——DevOps 视角强调"部署执行环节按正文拍 mkdir/nginx -t/apt install"，摘要方向不能直接落地。R2 间接贡献：tasks.last_error_kind / workerLoop 5 sem 池 / callLLM<T> 双模型 / 错误归档对照表对部署侧友好；接力基础 75%→82-85%。建议方案 B（不开 R3 + DevOps 部署侧自治承接 + 摘要文案订正） | PM 介入 v0.6 设计文档 R2，决定开 R3 微调或直接进实施阶段 |
 | 2026-06-12 | Tester | v0.6 设计文档 R2 Tester 复审 | ⚠️ **有条件通过（R2）** — R1 高严重度 3 条全部关闭/基本关闭（#T1 错误归档对照表完关 / #T2 L1 失败传播完关 / #T3 告警 SQL 基本 关——tasks.last_error_kind 已加但 §4.6 表未扩展检测 SQL 列且 task_backlog SQL 仍缺）；R1 中严重度 6 条 2 完关（#T5 SQL 修正 / #T9 maxAttempts 修正）+ 2 基本关闭（#T4/#T7 意图有但落地缺）+ 2 未关闭（#T6 库内检索降级 / #T8 上传失败兜底）；R1 低严重度 3 条 2 完关 1 未关闭；R2 新增 #T13（中）R2 修改摘要声称 #T8/#O1/#O8 等已在正文关闭但正文未修订（与 PM R2 #P5 和 Developer R2 #D12 独立发现一致），直接影响 Tester 按 正文拆用例的信心；测试可达性从 R1 的 3 高硬伤提升到 0 高硬伤 + 90% 接力基础 | DevOps R2 复审 → 通过则设计定稿进实施阶段 |
 | 2026-06-12 | Developer | v0.6 设计文档 R2 Developer 复审 | ⚠️ **有条件通过（R2）** — R1 高严重度 2 条（#D1 workerLoop 改造 / #D2 callLLM\<T\> 双模型）全部关闭；R1 中严重度 #D4/#D6 关闭，#D3/#D5/#D7 承接到实施阶段；R1 低严重度 #D8/#D10 可接受/关闭，#D9 承接到实施阶段；R2 新增 #D11（中）l1_retry task type 存在但无明确创建来源 + #D12（低）§4.3.6 交叉引用"§6.2 迁移 DML"但 §6.2 无对应 DML；确认 PM R2 #P5 中 §6.1 "7 新增列"实际应为 9 列影响 Developer 迁移清单；工程接力基础从 R1 的 85% 提升到 R2 的 92% | DevOps / Tester 分别复审 `iterations/v0.6-design.md` R2 |
