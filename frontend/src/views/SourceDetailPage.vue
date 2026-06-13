@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ChevronRight, AlertTriangle, Trash2, Edit, Plus } from "lucide-vue-next";
-import { getSource, deleteSource } from "@/lib/api";
+import { getSource, deleteSource, toggleDisplayPosition, removeDisplayPosition } from "@/lib/api";
 import DeleteConfirmDialog from "@/components/admin/DeleteConfirmDialog.vue";
 
 const route = useRoute();
@@ -54,7 +54,7 @@ function fmtAgo(iso?: string): string {
   return `${Math.floor(diff / 86400)}天前`;
 }
 
-onMounted(async () => {
+async function loadSource() {
   try {
     const s: any = await getSource(id);
     source.value = {
@@ -82,7 +82,15 @@ onMounted(async () => {
   } catch { /* 保持占位 */ } finally {
     loading.value = false;
   }
-});
+}
+onMounted(loadSource);
+
+async function togglePlacement(p: any) {
+  try { await toggleDisplayPosition(p.id, !p.enabled); await loadSource(); } catch { /* ignore */ }
+}
+async function removePlacement(p: any) {
+  try { await removeDisplayPosition(p.id); await loadSource(); } catch { /* ignore */ }
+}
 
 async function handleConfirmDelete() {
   try {
@@ -208,9 +216,9 @@ async function handleConfirmDelete() {
                   <span :class="['px-2 py-0.5 text-xs rounded', placement.enabled ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800']">{{ placement.enabled ? "启用" : "暂停" }}</span>
                 </div>
                 <div class="flex gap-2">
-                  <button class="text-xs text-muted-foreground hover:text-foreground">{{ placement.enabled ? "暂停" : "恢复" }}</button>
+                  <button @click="togglePlacement(placement)" class="text-xs text-muted-foreground hover:text-foreground">{{ placement.enabled ? "暂停" : "恢复" }}</button>
                   <span class="text-muted-foreground">·</span>
-                  <button class="text-xs text-destructive hover:underline">移除</button>
+                  <button @click="removePlacement(placement)" class="text-xs text-destructive hover:underline">移除</button>
                 </div>
               </div>
             </div>

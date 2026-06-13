@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import DeleteConfirmDialog from "./DeleteConfirmDialog.vue";
 import Badge from "@/components/ui/Badge.vue";
 import PlacementTooltip from "@/components/ui/PlacementTooltip.vue";
-import { listSources } from "@/lib/api";
+import { listSources, syncXRules } from "@/lib/api";
 
 type SortField = "name" | "type" | "availability" | "lastFetch" | "totalNews";
 type SortDirection = "asc" | "desc";
@@ -77,12 +77,18 @@ function tagVariant(tag: string) { return tag === "AI" ? "info" : tag === "帖�
 function availVariant(a: string) { return a === "normal" ? "success" : a === "needs-fix" ? "warning" : a === "source-error" ? "error" : "default"; }
 const columns: { field: SortField; label: string }[] = [{ field: "name", label: "信息源" }, { field: "type", label: "类型" }];
 
-onMounted(async () => {
+async function loadSources() {
+  loading.value = true;
   try {
     const r: any = await listSources({ page_size: 200 } as any);
     allSources.value = (r.sources ?? []).map(mapSource);
   } catch { allSources.value = []; } finally { loading.value = false; }
-});
+}
+async function handleSync() {
+  try { await syncXRules(); } catch { /* ignore */ }
+  await loadSources();
+}
+onMounted(loadSources);
 </script>
 
 <template>
@@ -92,8 +98,8 @@ onMounted(async () => {
         <input v-model="searchQuery" type="text" placeholder="搜索信息源名称、身份、主题、备注..." class="w-full pl-3 pr-4 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring" />
       </div>
       <button class="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90 whitespace-nowrap"><Plus class="h-4 w-4 inline mr-2" />新建信息源</button>
-      <button class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"><RefreshCw class="h-4 w-4 inline mr-2" />刷新</button>
-      <button class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"><Repeat class="h-4 w-4 inline mr-2" />同步 X 规则</button>
+      <button @click="loadSources" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"><RefreshCw class="h-4 w-4 inline mr-2" />刷新</button>
+      <button @click="handleSync" class="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"><Repeat class="h-4 w-4 inline mr-2" />同步 X 规则</button>
     </div>
 
     <div class="flex items-center justify-between mb-4">
