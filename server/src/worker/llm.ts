@@ -1,5 +1,6 @@
 import { config } from "../shared/config.ts";
 
+// ── v0.5 兼容类型 ───────────────────────────────────────────
 interface NewsCard {
   title: string;
   summary: string;
@@ -10,7 +11,57 @@ interface NewsCard {
   importance_score: number;
 }
 
-// 从 LLM 返回文本中提取第一个完整 JSON 对象
+// ── v0.6 L0/L1 类型 ─────────────────────────────────────────
+export interface L0Input {
+  content: Record<string, unknown>;
+  sourceIdentity: string;
+  domainTags: string[];
+  attentionLevel: string;
+}
+
+export interface L0Output {
+  label: "normal_candidate" | "high_priority_candidate" | "needs_context_candidate" | "skip";
+  skipReason?: string;
+}
+
+export interface L1Input {
+  sourceIdentity: string;
+  domainTags: string[];
+  rawContent: Record<string, unknown>;
+  rawText: string;
+  kbResults: Array<{ title: string; summary: string }>;
+  linkContent: string | null;
+  searchSummary: string | null;
+}
+
+export interface L1Output {
+  title: string;
+  summary: string;
+  translation: { zh: string; original?: string };
+  context: Array<{
+    text: string;
+    confidence: "fact" | "inference" | "uncertain";
+    sources: Array<"source" | "link" | "library" | "x_search" | "web_search">;
+  }>;
+  analysis: string;
+  score_dimensions: {
+    timeliness: { score: number; reason: string };
+    impact: { score: number; reason: string };
+    confidence: { score: number; reason: string };
+    clarity: { score: number; reason: string };
+  };
+  tags: {
+    domain: string[];
+    entity: string[];
+    event: string[];
+    content_type: string[];
+    processing: string[];
+  };
+  needs_context: boolean;
+}
+
+// ── 通用工具 ────────────────────────────────────────────────
+
 function extractFirstJsonObject(text: string): Record<string, unknown> | null {
   const start = text.indexOf("{");
   if (start < 0) return null;
@@ -30,6 +81,82 @@ function extractFirstJsonObject(text: string): Record<string, unknown> | null {
   }
   return null;
 }
+
+// ── callLLM<T> 通用 helper（v0.6 新增，向前兼容 v0.5）───────
+
+export interface LLMCallOpts {
+  model?: string;
+  timeout?: number;
+}
+
+export async function callLLM<T>(prompt: string, opts: LLMCallOpts = {}): Promise<T> {
+  if (!config.openaiApiKey) throw new Error("OPENAI_API_KEY is required");
+
+  const model = opts.model || config.openaiModel;
+  const timeoutMs = opts.timeout || config.llmTimeoutMs;
+  const maxRetries = Math.max(1, config.llmMaxRetries);
+
+  let lastErr: Error | null = null;
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const controller = new AbortController();
+      const t = setTimeout(() => controller.abort(), timeoutMs);
+
+      const resp = await fetch(`${config.openaiBaseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.openaiApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.2,
+        }),
+        signal: controller.signal,
+      });
+      clearTimeout(t);
+
+      if ([429, 500, 502, 503, 504].includes(resp.status)) {
+        throw new Error(`LLM retryable error: HTTP ${resp.status}`);
+      }
+      if (!resp.ok) {
+        throw new Error(`LLM error: HTTP ${resp.status} ${await resp.text()}`);
+      }
+
+      const data = await resp.json();
+      const content = data.choices?.[0]?.message?.content || "";
+
+      let obj: Record<string, unknown>;
+      try {
+        obj = JSON.parse(content);
+      } catch {
+        const extracted = extractFirstJsonObject(content);
+        if (!extracted) throw new Error(`LLM returned unparseable content: ${content.slice(0, 200)}`);
+        obj = extracted;
+      }
+
+      if (typeof obj === "string") {
+        try {
+          obj = JSON.parse(obj);
+        } catch {
+          obj = { raw: obj } as Record<string, unknown>;
+        }
+      }
+
+      return obj as unknown as T;
+    } catch (err: any) {
+      lastErr = err;
+      if (i >= maxRetries - 1) break;
+      const delay = config.llmRetryBaseSeconds * Math.pow(2, i);
+      await new Promise((resolve) => setTimeout(resolve, delay * 1000));
+    }
+  }
+
+  throw lastErr || new Error("LLM processing failed");
+}
+
+// ── v0.5 processLLM（重构为 callLLM 封装）───────────────────
 
 function validateLLMOutput(result: Record<string, unknown>): NewsCard {
   let title = typeof result.title === "string" && result.title.trim()
@@ -63,8 +190,6 @@ function validateLLMOutput(result: Record<string, unknown>): NewsCard {
 }
 
 export async function processLLM(text: string, sourceUrl?: string | null): Promise<NewsCard> {
-  if (!config.openaiApiKey) throw new Error("OPENAI_API_KEY is required");
-
   const prompt = `把下面内容处理成中文新闻卡片，做翻译与深度摘要。
 要求：
 1) 如果原文是英文，翻译成中文
@@ -81,64 +206,82 @@ source_url: ${sourceUrl || ""}
 content:
 ${text}`;
 
-  let lastErr: Error | null = null;
-  const maxRetries = Math.max(1, config.llmMaxRetries);
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), 60000);
+  const result = await callLLM<Record<string, unknown>>(prompt, { model: config.openaiModel });
+  return validateLLMOutput(result);
+}
 
-      const resp = await fetch(`${config.openaiBaseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${config.openaiApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: config.openaiModel,
-          messages: [{ role: "user", content: prompt }],
-          temperature: 0.2,
-        }),
-        signal: controller.signal,
-      });
-      clearTimeout(t);
+// ── v0.6 L0 classifier ──────────────────────────────────────
 
-      if ([429, 500, 502, 503, 504].includes(resp.status)) {
-        throw new Error(`LLM retryable error: HTTP ${resp.status}`);
-      }
-      if (!resp.ok) {
-        throw new Error(`LLM error: HTTP ${resp.status} ${await resp.text()}`);
-      }
+export async function classifyL0LLM(input: L0Input): Promise<L0Output> {
+  const prompt = `判断以下信息是否需要送入后续的 AI 分析处理流程。
 
-      const data = await resp.json();
-      const content = data.choices?.[0]?.message?.content || "";
-      lastErr = null;
+Source 身份：${input.sourceIdentity}
+Source 领域标签：${input.domainTags.join(", ")}
+Source 关注级别：${input.attentionLevel}
 
-      let obj: Record<string, unknown>;
-      try {
-        obj = JSON.parse(content);
-      } catch {
-        const extracted = extractFirstJsonObject(content);
-        if (!extracted) throw new Error(`LLM returned unparseable content: ${content.slice(0, 200)}`);
-        obj = extracted;
-      }
+原始信息内容：
+${JSON.stringify(input.content, null, 2)}
 
-      if (typeof obj === "string") {
-        try {
-          obj = JSON.parse(obj);
-        } catch {
-          obj = { title: "", summary: obj, language: "zh" };
-        }
-      }
+判断标准：
+- normal_candidate：正常信息，与 Source 领域相关，应送入分析
+- high_priority_candidate：高优先级（重大事件、突发新闻、官方公告）
+- needs_context_candidate：需要补充背景（含链接/项目代号/缩写，单独一条信息上下文不足）
+- skip：明显无关、纯广告、抽奖、纯转发无新增内容（给出 skipReason）
 
-      return validateLLMOutput(obj);
-    } catch (err: any) {
-      lastErr = err;
-      if (i >= maxRetries - 1) break;
-      const delay = config.llmRetryBaseSeconds * Math.pow(2, i);
-      await new Promise((resolve) => setTimeout(resolve, delay * 1000));
+只输出严格 JSON：{"label":"normal_candidate"|"high_priority_candidate"|"needs_context_candidate"|"skip","skipReason":"仅 label=skip 时需要"}`;
+
+  const result = await callLLM<L0Output>(prompt, { model: config.l0LlmModel });
+  return result;
+}
+
+// ── v0.6 L1 processor ───────────────────────────────────────
+
+export async function processL1LLM(input: L1Input): Promise<L1Output> {
+  const kbText = input.kbResults.length > 0
+    ? input.kbResults.map((r, i) => `${i + 1}. ${r.title} — ${r.summary}`).join("\n")
+    : "无";
+
+  const prompt = `你的角色：信息分析助手
+
+输入：
+- Source 身份：${input.sourceIdentity}（${input.domainTags.join(", ")}）
+- 原始信息：${input.rawText}
+- 库内相关新闻（最多 5 条）：${kbText}
+- 链接内容：${input.linkContent || "无"}
+- 搜索摘要：${input.searchSummary || "无"}
+
+请输出以下 JSON（只输出 JSON，不要多余文字）：
+{
+  "title": "中文标题",
+  "summary": "中文摘要（80-200字）",
+  "translation": { "zh": "中文翻译", "original": "原文" },
+  "context": [
+    {
+      "text": "一段背景补全文本",
+      "confidence": "fact|inference|uncertain",
+      "sources": ["source"|"link"|"library"|"x_search"|"web_search"]
     }
-  }
+  ],
+  "analysis": "AI 分析与评价",
+  "score_dimensions": {
+    "timeliness": { "score": 1-5 整数, "reason": "评分理由" },
+    "impact": { "score": 1-5 整数, "reason": "评分理由" },
+    "confidence": { "score": 1-5 整数, "reason": "评分理由" },
+    "clarity": { "score": 1-5 整数, "reason": "评分理由" }
+  },
+  "tags": {
+    "domain": ["标签"],
+    "entity": ["标签"],
+    "event": ["标签"],
+    "content_type": ["标签"],
+    "processing": ["标签"]
+  },
+  "needs_context": true|false
+}`;
 
-  throw lastErr || new Error("LLM processing failed");
+  const result = await callLLM<L1Output>(prompt, {
+    model: config.l1LlmModel,
+    timeout: config.llmTimeoutMs,
+  });
+  return result;
 }

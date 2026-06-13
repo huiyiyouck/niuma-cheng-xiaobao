@@ -81,11 +81,19 @@ export const config = {
   llmMaxRetries: getInt("LLM_MAX_RETRIES", 3),
   llmRetryBaseSeconds: getFloat("LLM_RETRY_BASE_SECONDS", 1.0),
 
+  // v0.6 L0/L1 LLM（fallback 到 openaiModel 由 callLLM 处理）
+  l0LlmModel: get("L0_LLM_MODEL", "gpt-4o-mini"),
+  l1LlmModel: get("L1_LLM_MODEL", "gpt-4o-mini"),
+  llmL0MaxRetries: getInt("LLM_L0_MAX_RETRIES", 3),
+  llmL1MaxRetries: getInt("LLM_L1_MAX_RETRIES", 3),
+  llmTimeoutMs: getInt("LLM_TIMEOUT_MS", 60000),
+
   // Worker
   workerId: get("WORKER_ID", "worker-1"),
   schedulerScanSeconds: getInt("SCHEDULER_SCAN_SECONDS", 5),
   fetchConcurrency: getInt("FETCH_CONCURRENCY", 2),
   processConcurrency: getInt("PROCESS_CONCURRENCY", 1),
+  l1Concurrency: getInt("L1_CONCURRENCY", 3),
 
   // 默认策略
   defaultFetchEverySeconds: getInt("DEFAULT_FETCH_EVERY_SECONDS", 600),

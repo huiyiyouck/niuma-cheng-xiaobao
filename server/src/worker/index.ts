@@ -62,13 +62,14 @@ async function schedulerLoop(stopSignal: AbortSignal): Promise<void> {
 async function workerLoopRunner(stopSignal: AbortSignal): Promise<void> {
   const fetchSem = new Semaphore(config.fetchConcurrency);
   const processSem = new Semaphore(config.processConcurrency);
-  const totalWorkers = config.fetchConcurrency + config.processConcurrency;
+  const l1Sem = new Semaphore(config.l1Concurrency);
+  const totalWorkers = config.fetchConcurrency + config.processConcurrency + config.l1Concurrency;
 
   // 启动多个并发 worker
   const workers = Array.from({ length: totalWorkers }, async () => {
     while (!stopSignal.aborted) {
       try {
-        await workerLoop(dbPool, config.workerId, fetchSem, processSem);
+        await workerLoop(dbPool, config.workerId, fetchSem, processSem, l1Sem);
       } catch (err: any) {
         log.error("WORKER LOOP ERROR: %s", err.message);
       }
