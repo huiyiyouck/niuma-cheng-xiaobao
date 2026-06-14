@@ -146,12 +146,13 @@ export async function listSpaceSources(spaceId: UUID, channelId?: UUID | null): 
 }
 
 // ── News 新闻 ─────────────────────────────────────────────
-export function listNews(spaceId: UUID, opts?: { page?: number; page_size?: number; channel_id?: string; sort?: string; search?: string }) {
+export function listNews(spaceId: UUID, opts?: { page?: number; page_size?: number; channel_id?: string; source_id?: string; sort?: string; search?: string }) {
   const qs = new URLSearchParams();
   qs.set("space_id", spaceId);
   if (opts?.page) qs.set("page", String(opts.page));
   if (opts?.page_size) qs.set("page_size", String(opts.page_size));
   if (opts?.channel_id) qs.set("channel_id", opts.channel_id);
+  if (opts?.source_id) qs.set("source_id", opts.source_id);
   if (opts?.sort) qs.set("sort", opts.sort);
   if (opts?.search) qs.set("search", opts.search);
   return requestJson(`/v1/news?${qs.toString()}`);
@@ -166,7 +167,19 @@ export const getGlobalStats = () => requestJson("/v1/global-stats");
 export const listAlerts = (opts?: { include_processed?: boolean }) =>
   requestJson(`/v1/alerts${opts?.include_processed ? "?include_processed=true" : ""}`);
 export const getUnreadAlertsCount = () => requestJson("/v1/alerts/unread-count");
-export const markAlertProcessed = (id: UUID) => requestJson(`/v1/alerts/${id}/process`, { method: "POST" });
+// 状态机：active → acknowledged|ignored；acknowledged → resolved|ignored；ignored → active
+export const updateAlertStatus = (id: UUID, status: "acknowledged" | "ignored" | "resolved" | "active") =>
+  requestJson(`/v1/alerts/${id}`, { method: "PATCH", body: { status } });
 
-// ── Logs 日志 ─────────────────────────────────────────────
-export const getLogsConfig = () => requestJson("/v1/logs/config");
+// ── Logs 日志（后端真实路径为 /v1/admin/logs）─────────────
+export const getLogsConfig = () => requestJson("/v1/admin/logs/config");
+export function listLogs(opts?: {
+  level?: string; source?: string; search?: string;
+  start?: string; end?: string;
+  page?: number; page_size?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (opts) for (const [k, v] of Object.entries(opts)) if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));
+  const query = qs.toString();
+  return requestJson(`/v1/admin/logs${query ? "?" + query : ""}`);
+}

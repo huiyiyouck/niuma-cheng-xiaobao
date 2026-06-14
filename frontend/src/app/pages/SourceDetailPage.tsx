@@ -1,9 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useParams, useNavigate } from "react-router";
 import { ChevronRight, AlertTriangle, Trash2, Edit, Plus } from "lucide-react";
 import { SourceEditDrawer } from "../components/admin/SourceEditDrawer";
 import { DeleteConfirmDialog } from "../components/admin/DeleteConfirmDialog";
 import { AddSourceDrawer } from "../components/admin/AddSourceDrawer";
+import {
+  getSource, updateSource, deleteSource,
+  toggleDisplayPosition, removeDisplayPosition, addDisplayPosition,
+  listNews,
+} from "../lib/api";
+
+function fmtAgo(iso?: string | null): string {
+  if (!iso) return "—";
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "刚刚";
+  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
+  return `${Math.floor(diff / 86400)}天前`;
+}
+function fmtDate(iso?: string | null): string {
+  if (!iso) return "";
+  return new Date(iso).toISOString().slice(0, 10);
+}
+function mapType(t: string): string {
+  return t === "x_twitter" ? "X/Twitter" : t === "rss" ? "RSS" : t;
+}
+function mapAvailability(s: string): "normal" | "needs-fix" | "source-error" | "removed" {
+  if (s === "needs_fix" || s === "awaiting_repair") return "needs-fix";
+  if (s === "source_error") return "source-error";
+  if (s === "source_removed" || s === "removed") return "removed";
+  return "normal";
+}
+const ATTENTION_LABEL: Record<string, string> = { core: "高", regular: "中", observe: "低" };
+const ATTENTION_REVERSE: Record<string, string> = { 高: "core", 中: "regular", 低: "observe" };
 
 export function SourceDetailPage() {
   const { id } = useParams();
@@ -12,65 +41,87 @@ export function SourceDetailPage() {
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [addPlacementDrawer, setAddPlacementDrawer] = useState(false);
 
-  // Mock data
-  const source = {
-    id,
-    displayName: "TechCrunch",
-    type: "RSS",
-    identity: "https://techcrunch.com/feed/",
-    createdAt: "2024-03-15",
-    availability: "normal" as const, // normal | needs-fix | source-error | removed
-    isRunning: true,
-    lastFetch: "10分钟前",
-    failureCount: 0,
-    totalNews: 1247,
-    strategy: "每30分钟",
-    tags: ["科技", "创业"],
-    role: "媒体",
-    priority: "高",
-    topic: "科技行业新闻与创业公司动态",
-    notes: "主要关注美国科技行业新闻",
-  };
+  const [raw, setRaw] = useState<any>(null);
+  const [recentNews, setRecentNews] = useState<any[]>([]);
 
-  const recentNews = [
-    {
-      id: "1",
-      title: "OpenAI 发布 GPT-5 预览版，性能提升显著",
-      publishedAt: "2天前",
-      score: 8.5,
-    },
-    {
-      id: "2",
-      title: "AI 安全研究新进展：对抗性攻击防御框架",
-      publishedAt: "3天前",
-      score: 7.8,
-    },
-    {
-      id: "3",
-      title: "Anthropic 发布 Claude 3.5 Sonnet 更新",
-      publishedAt: "5天前",
-      score: 8.2,
-    },
-    {
-      id: "4",
-      title: "Meta 开源新一代多模态模型",
-      publishedAt: "6天前",
-      score: 7.5,
-    },
-  ];
+  async function loadSource() {
+    if (!id) return;
+    try {
+      const r: any = await getSource(id);
+      setRaw(r);
+    } catch (e) { console.error(e); setRaw(null); }
+  }
+  useEffect(() => { loadSource(); }, [id]);
 
-  const placements = [
-    { id: "1", space: "科技", channel: "全部", enabled: true },
-    { id: "2", space: "科技", channel: "创业公司", enabled: true },
-    { id: "3", space: "AI", channel: "行业资讯", enabled: false },
-  ];
+  // 拉「最近新闻」：选用源所在的第一个空间作为 space_id（后端 /v1/news 强制要 space_id）
+  useEffect(() => {
+    if (!raw) { setRecentNews([]); return; }
+    const positions = Array.isArray(raw.display_positions) ? raw.display_positions : [];
+    const sp = positions[0];
+    if (!sp?.space_id || !raw.id) { setRecentNews([]); return; }
+    (async () => {
+      try {
+        const items: any[] = await listNews(sp.space_id, { source_id: raw.id, page_size: 4, sort: "time" });
+        setRecentNews((items ?? []).map((n: any) => ({
+          id: String(n.id),
+          title: n.title ?? "",
+          publishedAt: fmtAgo(n.published_at ?? n.created_at),
+          score: Number(n.score_total ?? n.importance_score ?? 0),
+        })));
+      } catch { setRecentNews([]); }
+    })();
+  }, [raw]);
+
+  // 视图态：raw → 原型 source shape
+  const source = raw ? {
+    id: raw.id,
+    displayName: raw.display_name ?? "",
+    type: mapType(raw.type),
+    identity: raw.source_identity ?? "",
+    createdAt: fmtDate(raw.created_at),
+    availability: mapAvailability(raw.availability_status ?? "normal"),
+    isRunning: raw.operational_status === "fetching",
+    lastFetch: fmtAgo(raw.last_fetched_at),
+    failureCount: raw.consecutive_failures ?? 0,
+    totalNews: raw.total_news_count ?? 0,
+    strategy: raw.type === "rss"
+      ? `每${Math.round((raw.fetch_config?.rss_interval_seconds ?? 1800) / 60)}分钟`
+      : raw.type === "x_twitter"
+      ? `补偿间隔 ${Math.round((raw.fetch_config?.x_compensation_interval_seconds ?? 86400) / 3600)}小时`
+      : "—",
+    tags: Array.isArray(raw.domain_tags) ? raw.domain_tags : [],
+    role: raw.source_role ?? "other",
+    priority: ATTENTION_LABEL[raw.attention_level ?? "regular"] ?? "中",
+    topic: Array.isArray(raw.content_topics) ? raw.content_topics.join("、") : "",
+    notes: raw.notes ?? "",
+  } : null;
+
+  const placements = raw && Array.isArray(raw.display_positions)
+    ? raw.display_positions.map((p: any) => ({
+        id: String(p.id),
+        space: p.space_name ?? "",
+        channel: p.channel_name ?? "全部",
+        enabled: !!p.enabled,
+      }))
+    : [];
 
   const placementStats = {
-    total: 3,
-    enabled: 2,
-    disabled: 1,
-    spaces: 2,
+    total: placements.length,
+    enabled: placements.filter((p: any) => p.enabled).length,
+    disabled: placements.filter((p: any) => !p.enabled).length,
+    spaces: new Set(placements.map((p: any) => p.space)).size,
   };
+
+  // 加载中或不存在
+  if (!source) {
+    return (
+      <div className="h-full overflow-auto">
+        <div className="max-w-7xl mx-auto p-6">
+          <div className="text-muted-foreground">加载中…</div>
+        </div>
+      </div>
+    );
+  }
 
   const isError = source.availability === "source-error";
   const needsFix = source.availability === "needs-fix";
@@ -83,15 +134,27 @@ export function SourceDetailPage() {
     setDeleteDialog(true);
   };
 
-  const handleSaveEdit = (data: any) => {
-    console.log("Save edit", data);
-    // Update source
+  const handleSaveEdit = async (data: any) => {
+    if (!id) return;
+    try {
+      await updateSource(id, {
+        display_name: data.displayName,
+        domain_tags: data.tags,
+        source_role: data.role || undefined,
+        attention_level: ATTENTION_REVERSE[data.priority] || "regular",
+        content_topics: data.topic ? [data.topic] : [],
+        notes: data.notes || null,
+      });
+      await loadSource();
+    } catch (e) { console.error(e); }
   };
 
-  const handleConfirmDelete = () => {
-    console.log("Delete source", id);
-    // Delete and navigate back
-    navigate("/admin?tab=source-library");
+  const handleConfirmDelete = async () => {
+    if (!id) return;
+    try {
+      await deleteSource(id);
+      navigate("/admin?tab=source-library");
+    } catch (e) { console.error(e); }
   };
 
   return (
@@ -323,11 +386,23 @@ export function SourceDetailPage() {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <button className="text-xs text-muted-foreground hover:text-foreground">
+                      <button
+                        onClick={async () => {
+                          try { await toggleDisplayPosition(placement.id, !placement.enabled); await loadSource(); }
+                          catch (e) { console.error(e); }
+                        }}
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                      >
                         {placement.enabled ? "暂停" : "恢复"}
                       </button>
                       <span className="text-muted-foreground">·</span>
-                      <button className="text-xs text-destructive hover:underline">移除</button>
+                      <button
+                        onClick={async () => {
+                          try { await removeDisplayPosition(placement.id); await loadSource(); }
+                          catch (e) { console.error(e); }
+                        }}
+                        className="text-xs text-destructive hover:underline"
+                      >移除</button>
                     </div>
                   </div>
                 ))}
@@ -341,7 +416,17 @@ export function SourceDetailPage() {
       <SourceEditDrawer
         open={editDrawer}
         onClose={() => setEditDrawer(false)}
-        source={source}
+        source={{
+          id: source.id ?? "",
+          name: source.displayName,
+          type: source.type,
+          identity: source.identity,
+          tags: source.tags,
+          role: source.role,
+          priority: source.priority,
+          topic: source.topic,
+          notes: source.notes,
+        }}
         onSave={handleSaveEdit}
       />
 
@@ -364,8 +449,14 @@ export function SourceDetailPage() {
         onClose={() => setAddPlacementDrawer(false)}
         spaceName="选择空间"
         channelName=""
-        onAddSource={(sourceId) => {
-          console.log("Add to placement", sourceId);
+        onAddSource={async (selectedSourceId) => {
+          // 详情页"添加位置"语义：把【当前源】加到选中位置。
+          // 但 AddSourceDrawer 的 onAddSource 回的是被选中源的 id（用于在「空间-频道」上下文添加）。
+          // 详情页没有空间/频道上下文，无法直接用此抽屉添加位置；保持原型 UI 不变，
+          // 此处回调当前打印待后续用「选空间→选频道→addDisplayPosition」工作流替换。
+          // TODO: 替换为带空间选择的弹窗（与原型一致：先选空间，再选频道）
+          console.warn("[SourceDetailPage] add placement TODO; selected source =", selectedSourceId);
+          setAddPlacementDrawer(false);
         }}
       />
     </div>

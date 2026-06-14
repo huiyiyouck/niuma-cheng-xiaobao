@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, Fragment } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Badge } from "../components/ui/badge";
+import { listAlerts, updateAlertStatus, listLogs, getLogsConfig } from "../lib/api";
 
 type AlertSeverity = "high" | "medium" | "low";
 type LogLevel = "INFO" | "WARN" | "ERROR";
@@ -28,84 +29,54 @@ interface Log {
   details: string;
 }
 
-const mockLogs: Log[] = [
-  {
-    id: "log-1",
-    time: "2026-06-09 14:30:22",
-    level: "ERROR",
-    module: "fetch",
-    source: "OpenAI官方账号",
-    message: "HTTP 429: Rate limit exceeded",
-    details: "完整堆栈信息:\nError: HTTP 429\n  at fetch.ts:45\n  at Worker.run:12",
-  },
-  {
-    id: "log-2",
-    time: "2026-06-09 14:28:15",
-    level: "ERROR",
-    module: "fetch",
-    source: "TechCrunch RSS",
-    message: "HTTP 503 Service Unavailable",
-    details: "完整堆栈信息:\nError: HTTP 503\n  at fetch.ts:45",
-  },
-  {
-    id: "log-3",
-    time: "2026-06-09 14:25:10",
-    level: "WARN",
-    module: "api",
+// 后端 severity (info/warning/critical) → 原型 (low/medium/high)
+function mapSeverity(s: string): AlertSeverity {
+  if (s === "critical") return "high";
+  if (s === "warning") return "medium";
+  return "low";
+}
+// 后端 alert → 原型 Alert
+function mapAlert(a: any): Alert {
+  return {
+    id: String(a.id),
+    type: a.type ?? a.scope ?? "告警",
+    source: a.source_display_name ?? a.space_name ?? a.scope ?? "全局",
+    message: a.message ?? "",
+    time: a.last_triggered_at ?? a.created_at ?? "",
+    severity: mapSeverity(a.severity ?? "info"),
+    // active = 未处理；acknowledged/resolved/ignored 视为已处理
+    handled: (a.status ?? "active") !== "active",
+    relatedLogIds: [],
+  };
+}
+
+// 后端 log level (debug/info/warning/error) → 原型 (INFO/WARN/ERROR)
+function mapLogLevel(l: string): LogLevel {
+  const u = (l || "").toUpperCase();
+  if (u === "ERROR") return "ERROR";
+  if (u === "WARNING" || u === "WARN") return "WARN";
+  return "INFO";
+}
+// 后端 log entry → 原型 Log
+function mapLog(e: any, idx: number): Log {
+  const ts = e.timestamp ?? "";
+  // 后端 log 没有 module/source 字段；从 message 启发推断 module，source 留"全局"
+  const msg = String(e.message ?? "");
+  let module: LogModule = "system";
+  if (/HTTP /i.test(msg)) module = "api";
+  else if (/fetch|抓取/i.test(msg)) module = "fetch";
+  else if (/worker/i.test(msg)) module = "worker";
+  else if (/stream/i.test(msg)) module = "stream";
+  return {
+    id: `log-${ts}-${idx}`,
+    time: ts ? new Date(ts).toISOString().replace("T", " ").slice(0, 19) : "",
+    level: mapLogLevel(e.level),
+    module,
     source: "全局",
-    message: "API response time: 2.3s",
-    details: "Request details:\nEndpoint: /api/news\nDuration: 2.3s",
-  },
-  {
-    id: "log-4",
-    time: "2026-06-09 14:20:05",
-    level: "INFO",
-    module: "system",
-    source: "Bloomberg Feed",
-    message: "Source configuration updated",
-    details: "Config changes: interval changed from 30m to 15m",
-  },
-  {
-    id: "log-5",
-    time: "2026-06-09 14:15:00",
-    level: "INFO",
-    module: "worker",
-    source: "全局",
-    message: "Worker started successfully",
-    details: "Worker ID: worker-123\nStarted at: 2026-06-09 14:15:00",
-  },
-];
-
-// 自动从ERROR日志生成告警
-const generateAlertsFromLogs = (logs: Log[]): Alert[] => {
-  const errorLogs = logs.filter((log) => log.level === "ERROR");
-  const alertsFromErrors = errorLogs.map((log) => ({
-    id: `alert-${log.id}`,
-    type: log.module === "fetch" ? "抓取失败" : "系统错误",
-    source: log.source,
-    message: log.message,
-    time: log.time,
-    severity: "high" as AlertSeverity,
-    handled: false,
-    relatedLogIds: [log.id],
-  }));
-
-  // 手动告警
-  const manualAlerts: Alert[] = [
-    {
-      id: "alert-manual-1",
-      type: "身份变更",
-      source: "@elonmusk",
-      message: "X/Twitter 账号句柄发生变更",
-      time: "2026-06-09 13:00:00",
-      severity: "medium",
-      handled: false,
-      relatedLogIds: [],
-    },
-  ];
-
-  return [...alertsFromErrors, ...manualAlerts];
-};
+    message: msg.split("\n")[0].slice(0, 200),
+    details: msg,
+  };
+}
 
 const severityIcons: Record<AlertSeverity, string> = {
   high: "🔴",
@@ -124,20 +95,55 @@ export function MonitoringPage() {
   const [logSearchQuery, setLogSearchQuery] = useState("");
   const [logTimeRange, setLogTimeRange] = useState<string>("24h");
 
-  const [alerts, setAlerts] = useState<Alert[]>(generateAlertsFromLogs(mockLogs));
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [logs, setLogs] = useState<Log[]>([]);
+  const [logLevelsAvail, setLogLevelsAvail] = useState<string[]>([]);
+
+  // 加载告警（含已处理，前端再筛）
+  async function loadAlerts() {
+    try {
+      const r: any = await listAlerts({ include_processed: true });
+      setAlerts((r?.alerts ?? []).map(mapAlert));
+    } catch { setAlerts([]); }
+  }
+  // 加载日志
+  async function loadLogs() {
+    try {
+      const r: any = await listLogs({
+        level: logLevelFilter === "all" ? undefined : logLevelFilter,
+        search: logSearchQuery || undefined,
+        page_size: 200,
+      });
+      setLogs((r?.entries ?? []).map(mapLog));
+    } catch { setLogs([]); }
+  }
+
+  useEffect(() => { loadAlerts(); }, []);
+  useEffect(() => {
+    if (mainTab !== "logs") return;
+    loadLogs();
+    (async () => {
+      try {
+        const c: any = await getLogsConfig();
+        setLogLevelsAvail(Array.isArray(c?.levels) ? c.levels : []);
+      } catch { /* ignore */ }
+    })();
+  }, [mainTab, logLevelFilter, logSearchQuery]);
 
   const filteredAlerts = showHandled ? alerts : alerts.filter((alert) => !alert.handled);
   const unhandledCount = alerts.filter((a) => !a.handled).length;
 
-  const filteredLogs = mockLogs.filter((log) => {
-    if (logLevelFilter !== "all" && log.level !== logLevelFilter) return false;
+  // 模块筛选仍走前端（后端无 module 字段，靠启发式推断）
+  const filteredLogs = logs.filter((log) => {
     if (logModuleFilter !== "all" && log.module !== logModuleFilter) return false;
-    if (logSearchQuery && !log.message.toLowerCase().includes(logSearchQuery.toLowerCase())) return false;
     return true;
   });
 
-  const handleDismiss = (id: string) => {
-    setAlerts(alerts.map((a) => (a.id === id ? { ...a, handled: true } : a)));
+  const handleDismiss = async (id: string) => {
+    try {
+      await updateAlertStatus(id, "acknowledged");
+      await loadAlerts();
+    } catch (e) { console.error(e); }
   };
 
   const getAlertById = (logId: string) => {
@@ -362,8 +368,8 @@ export function MonitoringPage() {
                       const isExpanded = expandedLog === log.id;
                       const relatedAlert = getAlertById(log.id);
                       return (
-                        <>
-                          <tr key={log.id} className="border-b border-border hover:bg-muted/20">
+                        <Fragment key={log.id}>
+                          <tr className="border-b border-border hover:bg-muted/20">
                             <td className="px-4 py-3 text-sm font-mono">{log.time}</td>
                             <td className="px-4 py-3">
                               <Badge variant={log.level === "ERROR" ? "error" : log.level === "WARN" ? "warning" : "info"}>
@@ -406,7 +412,7 @@ export function MonitoringPage() {
                               </td>
                             </tr>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </tbody>
