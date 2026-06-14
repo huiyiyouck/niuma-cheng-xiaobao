@@ -465,14 +465,15 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
   app.delete("/sources/:id", async (req: FastifyRequest, reply: FastifyReply) => {
     const { id } = req.params as { id: string };
     const { rows: [existing] } = await pool.query(
-      "SELECT id, type, lifecycle_status FROM sources WHERE id = $1", [id],
+      "SELECT id, type, lifecycle_status, source_origin FROM sources WHERE id = $1", [id],
     );
     if (!existing) return reply.status(404).send({ detail: "信息源不存在" });
 
-    // v0.5.1: X Source 由 X Portal 规则同步管理，禁止平台删除
-    if (existing.type === "x_twitter") {
+    // X Portal 同步的源（source_origin='x_synced'）由 Portal 规则管理，禁止平台删除；
+    // 平台手动创建的 X 源（source_origin='manual'）允许正常删除
+    if (existing.type === "x_twitter" && existing.source_origin === "x_synced") {
       return reply.status(400).send({
-        detail: "X 信息源请在 X Developer Portal 删除规则，平台会在 5 分钟内自动同步",
+        detail: "X 信息源（Portal 同步）请在 X Developer Portal 删除规则，平台会在 5 分钟内自动同步",
       });
     }
 
