@@ -136,17 +136,16 @@ export async function sourcesRoutes(app: FastifyInstance): Promise<void> {
   app.post("/sources", async (req: FastifyRequest, reply: FastifyReply) => {
     const body = SourceCreate.parse(req.body);
 
-    // v0.5.1: X Source 由 X Developer Portal 规则自动同步，禁止平台创建
-    if (body.type === "x_twitter") {
-      return reply.status(400).send({
-        detail: "X 信息源由 X Developer Portal 规则自动同步，请在 Portal 创建规则后等待同步",
-      });
-    }
+    // 允许平台创建 X 源：手动源 source_origin='manual'、x_rule_id=NULL，
+    // 不会被 X 规则反向同步误删（x-rule-sync 删除分支会跳过无 x_rule_id 的源）。
+    // 注意：手动 X 源无 Portal 规则，实际抓取仍依赖 X 抓取链路对该源的覆盖。
 
     // 标准化 identity
     let identity = body.identity.trim();
     if (body.type === "rss") {
       identity = identity.replace(/\/+$/, "");
+    } else if (body.type === "x_twitter") {
+      identity = identity.replace(/^@+/, "").toLowerCase();
     }
 
     // 去重检查：身份

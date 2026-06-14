@@ -74,7 +74,16 @@ export const getSource = (id: UUID) => requestJson(`/v1/sources/${id}`);
 export const createSource = (payload: {
   type: string; source_identity: string; display_name: string;
   domain_tags?: string[]; source_role?: string; content_topics?: string[]; attention_level?: string; notes?: string;
-}) => requestJson("/v1/sources", { method: "POST", body: payload });
+}) => requestJson("/v1/sources", { method: "POST", body: {
+  type: payload.type,
+  identity: payload.source_identity, // 后端字段名为 identity
+  display_name: payload.display_name,
+  domain_tags: payload.domain_tags,
+  source_role: payload.source_role,
+  content_topics: payload.content_topics,
+  attention_level: payload.attention_level,
+  notes: payload.notes,
+} });
 export const updateSource = (id: UUID, payload: {
   display_name?: string; source_identity?: string; domain_tags?: string[]; source_role?: string;
   content_topics?: string[]; attention_level?: string; notes?: string | null; fetch_config?: Record<string, unknown>;
@@ -82,11 +91,9 @@ export const updateSource = (id: UUID, payload: {
 export const deleteSource = (id: UUID) => requestJson(`/v1/sources/${id}`, { method: "DELETE" });
 export const pauseSource = (id: UUID) => requestJson(`/v1/sources/${id}/pause`, { method: "POST" });
 export const resumeSource = (id: UUID) => requestJson(`/v1/sources/${id}/resume`, { method: "POST" });
-export const verifySource = (id: UUID) => requestJson(`/v1/sources/${id}/verify`, { method: "POST" });
+// 新建前预验证：后端只有 POST /v1/sources/verify（body 字段为 identity）
 export const preVerifySource = (payload: { type: string; source_identity: string }) =>
-  requestJson("/v1/sources/pre-verify", { method: "POST", body: payload });
-export const checkDuplicateSource = (payload: { type: string; source_identity: string }) =>
-  requestJson("/v1/sources/check-duplicate", { method: "POST", body: payload });
+  requestJson("/v1/sources/verify", { method: "POST", body: { type: payload.type, identity: payload.source_identity } });
 export const syncXRules = () => requestJson("/v1/x/sync-rules", { method: "POST" });
 
 // ── 展示位置 ──────────────────────────────────────────────

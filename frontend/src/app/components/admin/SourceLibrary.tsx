@@ -1,74 +1,45 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { Plus, RefreshCw, Download, ExternalLink, Trash2, ChevronUp, ChevronDown, Repeat } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { Badge } from "../ui/badge";
 import { PlacementTooltip } from "../ui/PlacementTooltip";
+import { listSources, syncXRules, deleteSource } from "../../lib/api";
 
 type SortField = "name" | "type" | "availability" | "lastFetch" | "totalNews";
 type SortDirection = "asc" | "desc";
 
-const mockSources = [
-  {
-    id: "1",
-    name: "Claude code官方账号",
-    identity: "anthropicai",
-    type: "X/Twitter",
-    tags: ["其他", "帖子"],
-    availability: "normal",
-    isRunning: true,
-    placements: [
-      { space: "AI", channel: "行业资讯" },
-      { space: "科技", channel: "全部" },
-    ],
-    lastFetch: "2小时前",
-    totalNews: 21,
-  },
-  {
-    id: "2",
-    name: "加密狗",
-    identity: "jiamigou",
-    type: "X/Twitter",
-    tags: ["其他", "帖子"],
-    availability: "normal",
-    isRunning: true,
-    placements: [
-      { space: "AI", channel: "行业资讯" },
-    ],
-    lastFetch: "2小时前",
-    totalNews: 19,
-  },
-  {
-    id: "3",
-    name: "Solanamobile官方账号",
-    identity: "solanamobile",
-    type: "X/Twitter",
-    tags: ["其他", "帖子"],
-    availability: "normal",
-    isRunning: true,
-    placements: [
-      { space: "财经", channel: "市场动态" },
-      { space: "财经", channel: "全部" },
-    ],
-    lastFetch: "2小时前",
-    totalNews: 28,
-  },
-  {
-    id: "4",
-    name: "OpenAI官方账号",
-    identity: "openai",
-    type: "X/Twitter",
-    tags: ["AI", "其他", "帖子"],
-    availability: "normal",
-    isRunning: true,
-    placements: [
-      { space: "AI", channel: "模型动态" },
-    ],
-    lastFetch: "2小时前",
-    totalNews: 21,
-  },
-];
+function fmtAgo(iso?: string | null): string {
+  if (!iso) return "—";
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "刚刚";
+  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
+  return `${Math.floor(diff / 86400)}天前`;
+}
+function mapType(t: string): string {
+  return t === "x_twitter" ? "X/Twitter" : t === "rss" ? "RSS" : t;
+}
+const availabilityFromBackend: Record<string, string> = {
+  normal: "normal", needs_fix: "needs-fix", source_error: "source-error", removed: "removed",
+};
+// 后端 source → 原型表格 shape
+function mapSource(s: any) {
+  const positions = Array.isArray(s.display_positions) ? s.display_positions : [];
+  return {
+    id: String(s.id),
+    name: s.display_name ?? "",
+    identity: s.source_identity ?? "",
+    type: mapType(s.type),
+    tags: Array.isArray(s.domain_tags) ? s.domain_tags : [],
+    availability: availabilityFromBackend[s.availability_status] ?? s.availability_status,
+    isRunning: s.operational_status === "fetching",
+    placements: positions.map((p: any) => ({ space: p.space_name ?? "", channel: p.channel_name ?? "" })),
+    lastFetch: fmtAgo(s.last_fetched_at),
+    totalNews: s.total_news_count ?? 0,
+  };
+}
 
 const availabilityLabels: Record<string, string> = {
   normal: "正常",
@@ -78,6 +49,7 @@ const availabilityLabels: Record<string, string> = {
 };
 
 export function SourceLibrary() {
+  const [sources, setSources] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
@@ -87,6 +59,15 @@ export function SourceLibrary() {
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+
+  // 一次拉全量，筛选/排序/分页仍由前端处理（保持原型交互）
+  async function loadSources() {
+    try {
+      const r: any = await listSources({ page_size: 100 });
+      setSources((r?.sources ?? []).map(mapSource));
+    } catch { setSources([]); }
+  }
+  useEffect(() => { loadSources(); }, []);
 
   const hasActiveFilters = searchQuery || typeFilter !== "all" || availabilityFilter !== "all" || runningFilter !== "all";
 
@@ -115,7 +96,7 @@ export function SourceLibrary() {
     );
   };
 
-  const filteredSources = mockSources.filter((source) => {
+  const filteredSources = sources.filter((source) => {
     if (searchQuery && !source.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (typeFilter !== "all" && source.type !== typeFilter) return false;
     if (availabilityFilter !== "all" && source.availability !== availabilityFilter) return false;
@@ -127,11 +108,12 @@ export function SourceLibrary() {
   const totalPages = Math.ceil(filteredSources.length / perPage);
   const paginatedSources = filteredSources.slice((currentPage - 1) * perPage, currentPage * perPage);
 
-  const handleDeleteSource = (source: typeof mockSources[0]) => {
+  const handleDeleteSource = (source: any) => {
     setDeleteDialog({
       open: true,
       data: {
         type: "source",
+        id: source.id,
         name: source.name,
         placementCount: source.placements.length,
         newsCount: source.totalNews,
@@ -156,11 +138,17 @@ export function SourceLibrary() {
           <Plus className="h-4 w-4 inline mr-2" />
           新建信息源
         </button>
-        <button className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap">
+        <button
+          onClick={() => loadSources()}
+          className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"
+        >
           <RefreshCw className="h-4 w-4 inline mr-2" />
           刷新
         </button>
-        <button className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap">
+        <button
+          onClick={async () => { try { await syncXRules(); await loadSources(); } catch (e) { console.error(e); } }}
+          className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"
+        >
           <Repeat className="h-4 w-4 inline mr-2" />
           同步 X 规则
         </button>
@@ -394,8 +382,11 @@ export function SourceLibrary() {
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
         data={deleteDialog.data}
-        onConfirm={() => {
-          console.log("Delete confirmed");
+        onConfirm={async () => {
+          try {
+            if (deleteDialog.data?.id) await deleteSource(deleteDialog.data.id);
+            await loadSources();
+          } catch (e) { console.error(e); }
           setDeleteDialog({ open: false, data: null });
         }}
       />

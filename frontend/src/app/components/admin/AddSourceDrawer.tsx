@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Search, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
+import { listSources, preVerifySource, createSource } from "../../lib/api";
 
 interface Source {
   id: string;
@@ -13,45 +14,33 @@ interface Source {
   isAlreadyAdded: boolean;
 }
 
-const mockAvailableSources: Source[] = [
-  {
-    id: "1",
-    name: "TechCrunch",
-    type: "RSS",
-    tags: ["科技", "创业"],
-    availability: "normal",
-    isRunning: true,
-    placementCount: 2,
-    isAlreadyAdded: false,
-  },
-  {
-    id: "2",
-    name: "@elonmusk",
-    type: "X/Twitter",
-    tags: ["科技", "商业"],
-    availability: "normal",
-    isRunning: true,
-    placementCount: 1,
-    isAlreadyAdded: true,
-  },
-  {
-    id: "3",
-    name: "Bloomberg Feed",
-    type: "RSS",
-    tags: ["财经", "市场"],
-    availability: "normal",
-    isRunning: true,
-    placementCount: 3,
-    isAlreadyAdded: false,
-  },
-];
+function mapType(t: string): string {
+  return t === "x_twitter" ? "X/Twitter" : t === "rss" ? "RSS" : t;
+}
+// 后端 source → 抽屉可选源 shape；isAlreadyAdded 依据是否已在当前空间/频道
+function mapAvailable(s: any, spaceName: string, channelName: string): Source {
+  const positions = Array.isArray(s.display_positions) ? s.display_positions : [];
+  const isAlreadyAdded = positions.some(
+    (p: any) => p.space_name === spaceName && (channelName === "全部" || p.channel_name === channelName)
+  );
+  return {
+    id: String(s.id),
+    name: s.display_name ?? "",
+    type: mapType(s.type),
+    tags: Array.isArray(s.domain_tags) ? s.domain_tags : [],
+    availability: s.availability_status ?? "normal",
+    isRunning: s.operational_status === "fetching",
+    placementCount: s.position_count ?? positions.length,
+    isAlreadyAdded,
+  };
+}
 
 interface AddSourceDrawerProps {
   open: boolean;
   onClose: () => void;
   spaceName: string;
   channelName: string;
-  onAddSource: (sourceId: string) => void;
+  onAddSource: (sourceId: string) => void | Promise<void>;
 }
 
 type DrawerView = "search" | "create";
@@ -63,6 +52,16 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
+  const [available, setAvailable] = useState<Source[]>([]);
+
+  // 信息源库全量拉取（筛选仍走前端，保持原型交互）
+  async function loadAvailable() {
+    try {
+      const r: any = await listSources({ page_size: 100 });
+      setAvailable((r?.sources ?? []).map((s: any) => mapAvailable(s, spaceName, channelName)));
+    } catch { setAvailable([]); }
+  }
+  useEffect(() => { if (open) loadAvailable(); }, [open, spaceName, channelName]);
 
   // Create form state
   const [sourceType, setSourceType] = useState<SourceType>("x-search");
@@ -77,20 +76,21 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("idle");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
-  const filteredSources = mockAvailableSources.filter((source) => {
+  const filteredSources = available.filter((source) => {
     if (searchQuery && !source.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     if (typeFilter !== "all" && source.type !== typeFilter) return false;
     return source.availability === "normal";
   });
 
-  const handleAddSource = (sourceId: string) => {
-    onAddSource(sourceId);
-    // In real implementation, update the source's isAlreadyAdded state
+  const handleAddSource = async (sourceId: string) => {
+    await onAddSource(sourceId);
+    await loadAvailable(); // 重新加载以更新「已添加」状态
   };
 
-  const handleBatchAdd = () => {
-    selectedSources.forEach(id => handleAddSource(id));
+  const handleBatchAdd = async () => {
+    for (const id of selectedSources) await onAddSource(id);
     setSelectedSources([]);
+    await loadAvailable();
   };
 
   const toggleSourceSelection = (sourceId: string) => {
@@ -101,24 +101,42 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
     );
   };
 
-  const handleVerify = () => {
+  // 表单 → createSource 入参
+  const buildCreatePayload = () => ({
+    type: sourceType === "x-search" ? "x_twitter" : "rss",
+    source_identity: identity.trim(),
+    display_name: (displayName || identity).trim(),
+    domain_tags: tags,
+    content_topics: topic ? [topic] : [],
+    attention_level: priority === "高" ? "core" : priority === "低" ? "observe" : "regular",
+    notes: notes || undefined,
+  });
+
+  const handleVerify = async () => {
     setVerificationStatus("verifying");
-    // Simulate verification
-    setTimeout(() => {
-      setVerificationStatus(Math.random() > 0.3 ? "success" : "error");
-    }, 1500);
+    try {
+      await preVerifySource({ type: sourceType === "x-search" ? "x_twitter" : "rss", source_identity: identity.trim() });
+      setVerificationStatus("success");
+    } catch {
+      setVerificationStatus("error");
+    }
   };
 
-  const handleSaveAndAdd = () => {
-    // Save source and add to current placement
-    console.log("Saving and adding source...");
-    setView("search");
-    resetCreateForm();
+  const handleSaveAndAdd = async () => {
+    try {
+      const created: any = await createSource(buildCreatePayload());
+      if (created?.id) await onAddSource(created.id);
+      setView("search");
+      resetCreateForm();
+      await loadAvailable();
+    } catch (e) { console.error(e); }
   };
 
-  const handleSaveAsPending = () => {
-    // Save source as needs-fix status
-    console.log("Saving as pending fix...");
+  const handleSaveAsPending = async () => {
+    try {
+      const created: any = await createSource(buildCreatePayload());
+      if (created?.id) await onAddSource(created.id);
+    } catch (e) { console.error(e); }
     onClose();
     resetCreateForm();
   };

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Plus, MoreHorizontal, Edit2, Trash2, ChevronDown, X, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "../../lib/utils";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -8,81 +8,63 @@ import { SpaceEditDialog } from "./SpaceEditDialog";
 import { ChannelEditDialog } from "./ChannelEditDialog";
 import { Badge } from "../ui/badge";
 import { PlacementTooltip } from "../ui/PlacementTooltip";
+import {
+  listSpaces, createSpace, updateSpace, deleteSpace, reorderSpaces,
+  listChannels, createChannel, updateChannel, deleteChannel, reorderChannels,
+  listSpaceSources, pauseSource, resumeSource,
+  addDisplayPosition, removeDisplayPosition, moveDisplayPosition,
+} from "../../lib/api";
 
-// Mock data
-const mockSpaces = [
-  { id: "ai", name: "AI", icon: "🤖", description: "人工智能相关", channelCount: 3, sourceCount: 5 },
-  { id: "finance", name: "财经", icon: "💰", description: "财经市场资讯", channelCount: 2, sourceCount: 3 },
-  { id: "tech", name: "科技", icon: "💻", description: "科技行业动态", channelCount: 2, sourceCount: 4 },
-];
+function fmtAgo(iso?: string | null): string {
+  if (!iso) return "—";
+  const diff = (Date.now() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "刚刚";
+  if (diff < 3600) return `${Math.floor(diff / 60)}分钟前`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}小时前`;
+  return `${Math.floor(diff / 86400)}天前`;
+}
+function mapType(t: string): string {
+  return t === "x_twitter" ? "X/Twitter" : t === "rss" ? "RSS" : t;
+}
 
-const mockChannels: Record<string, Array<{ id: string; name: string; sourceCount: number; isAll: boolean }>> = {
-  ai: [
-    { id: "all", name: "全部", sourceCount: 5, isAll: true },
-    { id: "models", name: "模型动态", sourceCount: 2, isAll: false },
-    { id: "industry", name: "行业资讯", sourceCount: 3, isAll: false },
-  ],
-  finance: [
-    { id: "all", name: "全部", sourceCount: 3, isAll: true },
-    { id: "market", name: "市场动态", sourceCount: 2, isAll: false },
-  ],
-  tech: [
-    { id: "all", name: "全部", sourceCount: 4, isAll: true },
-    { id: "startup", name: "创业公司", sourceCount: 2, isAll: false },
-  ],
-};
-
-const mockSources = [
-  {
-    id: "1",
-    name: "Claude code官方账号",
-    type: "X/Twitter",
-    availability: "normal",
-    isRunning: true,
-    tags: ["AI", "other", "帖子"],
-    identity: "@anthropicai",
-    fetchConfig: "最近回应: 4小时前  历史抓取: 20",
-    placements: [
-      { space: "AI", channel: "模型动态" },
-      { space: "科技", channel: "全部" },
-    ],
-    failureCount: 0,
-  },
-  {
-    id: "2",
-    name: "OpenAI官方账号",
-    type: "X/Twitter",
-    availability: "normal",
-    isRunning: true,
-    tags: ["AI", "other", "帖子"],
-    identity: "@openai",
-    fetchConfig: "最近回应: 4小时前  历史抓取: 20",
-    placements: [
-      { space: "AI", channel: "模型动态" },
-    ],
-    failureCount: 0,
-  },
-  {
-    id: "3",
-    name: "TechCrunch AI",
-    type: "RSS",
-    availability: "needs-fix",
-    isRunning: false,
-    tags: ["AI", "新闻"],
-    identity: "https://techcrunch.com/category/artificial-intelligence/feed/",
-    fetchConfig: "最近回应: 3小时前  历史抓取: 0",
-    placements: [
-      { space: "AI", channel: "行业资讯" },
-    ],
-    failureCount: 5,
-  },
-];
-
-type EditingSpace = { id: string; name: string; icon: string; description: string } | null;
-type EditingChannel = { spaceId: string; id: string; name: string } | null;
+// 后端 space → 原型 shape（驼峰）
+function mapSpace(s: any) {
+  return {
+    id: String(s.id),
+    name: s.name,
+    icon: s.icon ?? "📁",
+    description: s.description ?? "",
+    channelCount: s.channel_count ?? 0,
+    sourceCount: s.source_count ?? 0,
+  };
+}
+// 后端 channel → 原型 shape
+function mapChannel(c: any) {
+  return { id: String(c.id), name: c.name, sourceCount: c.source_count ?? 0, isAll: false, description: c.description ?? "" };
+}
+// listSpaceSources 聚合源 → 原型 shape（positions 端口 space_name 为空，用当前空间名兜底）
+function mapSpaceSource(s: any, spaceName: string) {
+  const positions = Array.isArray(s.display_positions) ? s.display_positions : [];
+  return {
+    id: String(s.id),
+    name: s.display_name ?? "",
+    type: mapType(s.type),
+    availability: s.availability_status === "normal" ? "normal" : "needs-fix",
+    isRunning: !s.paused,
+    tags: Array.isArray(s.domain_tags) ? s.domain_tags : [],
+    identity: s.source_identity ?? "",
+    fetchConfig: `最近抓取: ${fmtAgo(s.last_fetched_at)}  历史新闻: ${s.total_news_count ?? 0}`,
+    placements: positions.map((p: any) => ({ space: spaceName, channel: p.channel_name ?? "" })),
+    failureCount: s.consecutive_failures ?? 0,
+    _positions: positions,
+  };
+}
 
 export function SpacesManagement() {
-  const [selectedSpace, setSelectedSpace] = useState("ai");
+  const [spaces, setSpaces] = useState<any[]>([]);
+  const [channels, setChannels] = useState<any[]>([{ id: "all", name: "全部", sourceCount: 0, isAll: true }]);
+  const [sources, setSources] = useState<any[]>([]);
+  const [selectedSpace, setSelectedSpace] = useState("");
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [hoveredSpace, setHoveredSpace] = useState<string | null>(null);
   const [hoveredChannel, setHoveredChannel] = useState<string | null>(null);
@@ -92,69 +74,130 @@ export function SpacesManagement() {
   const [addSourceDrawer, setAddSourceDrawer] = useState(false);
   const [sourceToDelete, setSourceToDelete] = useState<string | null>(null);
 
-  const currentSpace = mockSpaces.find(s => s.id === selectedSpace);
-  const channels = mockChannels[selectedSpace] || [];
+  const currentSpace = spaces.find((s) => s.id === selectedSpace);
   const currentChannel = channels.find((c) => c.id === selectedChannel);
   const isInAllChannel = selectedChannel === "all";
 
-  // Filter sources based on current channel
-  const filteredSources = selectedChannel === "all"
-    ? mockSources.filter(s => s.placements.some(p => p.space === currentSpace?.name))
-    : mockSources.filter(s =>
-        s.placements.some(p => p.space === currentSpace?.name && p.channel === currentChannel?.name)
-      );
+  // 加载空间列表（mount / 增删改后）
+  async function loadSpaces() {
+    try {
+      const sp: any[] = await listSpaces();
+      const list = (sp ?? []).map(mapSpace);
+      setSpaces(list);
+      setSelectedSpace((prev) => (prev && list.some((s) => s.id === prev) ? prev : list[0]?.id ?? ""));
+    } catch (e) { console.error(e); }
+  }
+  // 加载当前空间频道（前端补「全部」）
+  async function loadChannels() {
+    if (!selectedSpace) return;
+    const sp = spaces.find((s) => s.id === selectedSpace);
+    try {
+      const ch: any[] = await listChannels(selectedSpace);
+      setChannels([{ id: "all", name: "全部", sourceCount: sp?.sourceCount ?? 0, isAll: true }, ...(ch ?? []).map(mapChannel)]);
+    } catch { setChannels([{ id: "all", name: "全部", sourceCount: 0, isAll: true }]); }
+  }
+  // 加载当前空间/频道下的信息源
+  async function loadSources() {
+    if (!selectedSpace) { setSources([]); return; }
+    const sp = spaces.find((s) => s.id === selectedSpace);
+    try {
+      const raw = await listSpaceSources(selectedSpace, selectedChannel === "all" ? null : selectedChannel);
+      setSources(raw.map((s) => mapSpaceSource(s, sp?.name ?? "")));
+    } catch { setSources([]); }
+  }
 
-  const handleSpaceEdit = (space: typeof mockSpaces[0] | null) => {
+  useEffect(() => { loadSpaces(); }, []);
+  useEffect(() => { setSelectedChannel("all"); loadChannels(); }, [selectedSpace]);
+  useEffect(() => { loadSources(); }, [selectedSpace, selectedChannel]);
+
+  // 信息源已按空间/频道从后端加载，直接用
+  const filteredSources = sources;
+
+  // 空间排序
+  async function moveSpace(idx: number, dir: -1 | 1) {
+    const arr = [...spaces];
+    const j = idx + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[idx], arr[j]] = [arr[j], arr[idx]];
+    try { await reorderSpaces(arr.map((s, i) => ({ id: s.id, sort_order: (i + 1) * 10 }))); await loadSpaces(); } catch (e) { console.error(e); }
+  }
+  // 频道排序（channels[0] 是前端造的「全部」，不参与）
+  async function moveChannel(idx: number, dir: -1 | 1) {
+    const arr = [...channels];
+    const j = idx + dir;
+    if (j < 1 || j >= arr.length) return;
+    [arr[idx], arr[j]] = [arr[j], arr[idx]];
+    const real = arr.filter((c) => !c.isAll);
+    try { await reorderChannels(selectedSpace, real.map((c, i) => ({ id: c.id, sort_order: (i + 1) * 10 }))); await loadChannels(); } catch (e) { console.error(e); }
+  }
+  // 暂停 / 恢复
+  async function toggleSourcePause(source: any) {
+    try {
+      if (source.isRunning) await pauseSource(source.id); else await resumeSource(source.id);
+      await loadSources();
+    } catch (e) { console.error(e); }
+  }
+
+  const handleSpaceEdit = (space: any | null) => {
     setSpaceEditDialog({ open: true, space });
   };
 
-  const handleSpaceSave = (data: { name: string; icon: string; description: string }) => {
-    console.log("Save space", data);
-    // Save logic here
+  const handleSpaceSave = async (data: { name: string; icon: string; description: string }) => {
+    try {
+      if (spaceEditDialog.space?.id) await updateSpace(spaceEditDialog.space.id, { name: data.name, description: data.description, icon: data.icon });
+      else await createSpace({ name: data.name, description: data.description, icon: data.icon });
+      await loadSpaces();
+    } catch (e) { console.error(e); }
   };
 
-  const handleSpaceDelete = (space: typeof mockSpaces[0]) => {
+  const handleSpaceDelete = (space: any) => {
     setDeleteDialog({
       open: true,
       data: {
         type: "space",
+        id: space.id,
         name: space.name,
         channelCount: space.channelCount,
-        placementCount: 15,
-        newsCount: 1247,
+        placementCount: space.sourceCount,
+        newsCount: 0,
       },
     });
   };
 
-  const handleChannelEdit = (channel: typeof channels[0] | null) => {
+  const handleChannelEdit = (channel: any | null) => {
     if (channel?.isAll) return;
     setChannelEditDialog({
       open: true,
-      channel: channel ? { id: channel.id, name: channel.name, description: "" } : null
+      channel: channel ? { id: channel.id, name: channel.name, description: channel.description ?? "" } : null
     });
   };
 
-  const handleChannelSave = (data: { name: string; description: string }) => {
-    console.log("Save channel", data);
-    // Check for duplicates and save
+  const handleChannelSave = async (data: { name: string; description: string }) => {
+    try {
+      if (channelEditDialog.channel?.id) await updateChannel(selectedSpace, channelEditDialog.channel.id, { name: data.name, description: data.description });
+      else await createChannel(selectedSpace, { name: data.name, description: data.description });
+      await loadChannels();
+      await loadSpaces();
+    } catch (e) { console.error(e); }
   };
 
-  const handleChannelDelete = (channel: typeof channels[0]) => {
+  const handleChannelDelete = (channel: any) => {
     setDeleteDialog({
       open: true,
       data: {
         type: "channel",
+        id: channel.id,
         name: channel.name,
         spaceName: currentSpace?.name,
         placementCount: channel.sourceCount,
         sourceCount: channel.sourceCount,
-        newsCount: 892,
+        newsCount: 0,
         hasConflicts: false,
       },
     });
   };
 
-  const handleSourceRemove = (source: typeof mockSources[0]) => {
+  const handleSourceRemove = (source: any) => {
     setSourceToDelete(source.id);
     setDeleteDialog({
       open: true,
@@ -162,7 +205,7 @@ export function SpacesManagement() {
         type: "remove-placement",
         sourceName: source.name,
         location: `${currentSpace?.name} / ${currentChannel?.name}`,
-        isLastPlacement: source.placements.length === 1,
+        isLastPlacement: (source._positions?.length ?? 0) <= 1,
       },
     });
   };
@@ -179,7 +222,7 @@ export function SpacesManagement() {
         </div>
 
         <div className="flex gap-3 flex-wrap">
-          {mockSpaces.map((space, idx) => (
+          {spaces.map((space, idx) => (
             <div
               key={space.id}
               onMouseEnter={() => setHoveredSpace(space.id)}
@@ -238,18 +281,18 @@ export function SpacesManagement() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            console.log("Move left");
+                            moveSpace(idx, -1);
                           }}
                           className="absolute -left-7 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded"
                         >
                           <ChevronLeft className="h-4 w-4" />
                         </button>
                       )}
-                      {idx < mockSpaces.length - 1 && (
+                      {idx < spaces.length - 1 && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            console.log("Move right");
+                            moveSpace(idx, 1);
                           }}
                           className="absolute -right-7 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded"
                         >
@@ -329,7 +372,7 @@ export function SpacesManagement() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log("Move up");
+                          moveChannel(idx, -1);
                         }}
                         className="p-0.5 hover:bg-accent rounded"
                       >
@@ -340,7 +383,7 @@ export function SpacesManagement() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          console.log("Move down");
+                          moveChannel(idx, 1);
                         }}
                         className="p-0.5 hover:bg-accent rounded"
                       >
@@ -454,7 +497,10 @@ export function SpacesManagement() {
                         <button className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm">
                           详情
                         </button>
-                        <button className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm">
+                        <button
+                          onClick={() => toggleSourcePause(source)}
+                          className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm"
+                        >
                           暂停
                         </button>
 
@@ -471,8 +517,12 @@ export function SpacesManagement() {
                               <DropdownMenu.Content className="min-w-[160px] bg-popover border border-border rounded-md shadow-lg p-1 z-50">
                                 <DropdownMenu.RadioGroup
                                   value={source.placements.find(p => p.space === currentSpace?.name)?.channel || ""}
-                                  onValueChange={(value) => {
-                                    console.log("Change channel to", value);
+                                  onValueChange={async (value) => {
+                                    try {
+                                      const pos = source._positions?.[0];
+                                      const ch = channels.find((c) => c.name === value && !c.isAll);
+                                      if (pos && ch) { await moveDisplayPosition(pos.id, ch.id); await loadSources(); await loadChannels(); }
+                                    } catch (e) { console.error(e); }
                                   }}
                                 >
                                   {channels
@@ -536,12 +586,22 @@ export function SpacesManagement() {
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
         data={deleteDialog.data}
-        onConfirm={(migrateToRoot) => {
-          console.log("Confirm action", deleteDialog.data?.type, migrateToRoot);
-          if (deleteDialog.data?.type === "remove-placement") {
-            console.log("Removing source from placement", sourceToDelete);
-            // TODO: Remove source from current space/channel
-          }
+        onConfirm={async () => {
+          const d = deleteDialog.data;
+          try {
+            if (d?.type === "space") await deleteSpace(d.id);
+            else if (d?.type === "channel") await deleteChannel(selectedSpace, d.id);
+            else if (d?.type === "remove-placement") {
+              const src = sources.find((s) => s.id === sourceToDelete);
+              const positions = isInAllChannel
+                ? (src?._positions ?? [])
+                : (src?._positions ?? []).filter((p: any) => String(p.channel_id) === selectedChannel);
+              for (const p of positions) await removeDisplayPosition(p.id);
+            }
+            await loadSpaces();
+            await loadChannels();
+            await loadSources();
+          } catch (e) { console.error(e); }
           setDeleteDialog({ open: false, data: null });
           setSourceToDelete(null);
         }}
@@ -553,8 +613,13 @@ export function SpacesManagement() {
         onClose={() => setAddSourceDrawer(false)}
         spaceName={currentSpace?.name || ""}
         channelName={currentChannel?.name || ""}
-        onAddSource={(sourceId) => {
-          console.log("Add source", sourceId);
+        onAddSource={async (sourceId) => {
+          try {
+            await addDisplayPosition({ source_id: sourceId, space_id: selectedSpace, channel_id: isInAllChannel ? null : selectedChannel });
+            await loadSources();
+            await loadChannels();
+            await loadSpaces();
+          } catch (e) { console.error(e); }
         }}
       />
     </div>

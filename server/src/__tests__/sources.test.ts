@@ -73,7 +73,7 @@ describe("Source 创建", () => {
     expect(res.statusCode).toBe(201);
     const data = JSON.parse(res.payload);
     expect(data.type).toBe("rss");
-    expect(data.identity).toBe("https://example.com/rss.xml");
+    expect(data.source_identity).toBe("https://example.com/rss.xml");
     expect(data.display_name).toBe("Example RSS");
     expect(data.domain_tags).toEqual(["AI", "科技"]);
   });
@@ -90,7 +90,7 @@ describe("Source 创建", () => {
     });
     expect(res.statusCode).toBe(201);
     const data = JSON.parse(res.payload);
-    expect(data.identity).toBe("openai");
+    expect(data.source_identity).toBe("openai");
   });
 
   it("POST /v1/sources 重复身份应返回 409", async () => {
@@ -139,10 +139,10 @@ describe("Source 详情", () => {
     });
     expect(res.statusCode).toBe(200);
     const data = JSON.parse(res.payload);
-    expect(data.source.id).toBe(id);
-    expect(data.source.positions).toEqual([]);
-    expect(data.source.identity_history).toEqual([]);
-    expect(data.source).toHaveProperty("operational_status");
+    expect(data.id).toBe(id);
+    expect(data.display_positions).toEqual([]);
+    expect(data.identity_history).toEqual([]);
+    expect(data).toHaveProperty("operational_status");
   });
 
   it("GET /v1/sources/:id 不存在的 Source 返回 404", async () => {
