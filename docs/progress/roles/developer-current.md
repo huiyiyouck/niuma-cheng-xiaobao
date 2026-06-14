@@ -6,6 +6,56 @@
 
 ---
 
+## 2026-06-14 — v0.6 联调精修收口：测试环境部署 + 角标/新闻列表/stats 修复 + 监控页改造 + 添加位置弹窗
+
+- 本次角色：全栈开发（Developer）；模式：实现阶段联调精修
+- 实际完成 7 项修复/增强：
+
+### 测试环境部署
+- `frontend/dist/` rsync 到 `/var/www/test.huiyiyou.cloud/`，nginx 已配 HTTPS + `/v1/`→8001
+- `news-api-test.service` active (PID 1262289，:8001，news_test 库)
+- 生产 dist 未被本次覆盖（上次 6-13 事故已规避）
+
+### 角标接真实 API
+- `RootLayout.tsx`：`unhandledAlertsCount = 3` mock → `getUnreadAlertsCount()` 真实调用
+- mount 拉一次 + 60s 轮询 + 切前台刷新 + 进监控页 800ms 再刷
+- 当前测试库真实告警数：21-27 条
+
+### NewsPage 数据层修复（3 处根因）
+- `entities` 对象数组 `[{name,type}]` 规范化为字符串，修复 React 渲染崩溃（列表全空）
+- `tags_v2` 空对象 `{}` → 回退 v0.5 `tags` 数组
+- `sort=time` → `published_desc`（后端只接受枚举），修复 400 Bad Request
+- `getGlobalStats()` → `getSpaceStats(selectedSpace)`（404→200 + 字段对齐）
+
+### 监控页三步改造
+- **一键处理**：右上⻆调用 `PATCH /v1/alerts/batch`（`status=acknowledged`），confirm 二次确认
+- **日志染色**：ERROR 整行红 + 消息红字 / WARN 整行黄 / INFO 默认；级别 Badge 用现有 shadcn variant
+- **告警→日志跳转**：点击「关联日志」→ 切日志 Tab → 顶部蓝条「已定位到告警相关日志」+ 60s 时间窗 + 关键词过滤 → 命行左侧蓝条 + 蓝色底色 + Target 图标 → `scrollIntoView`
+- 告警卡片美化：左色条 + 严重度图标盒（AlertCircle/AlertTriangle/Info）+ 相对时间 + 幽灵按钮 + hover 微浮
+
+### 添加位置弹窗
+- 新建 `components/ui/AddPlacementDialog.tsx`（复用 shadcn Dialog/Select/Button/Label）
+- 语义区别于 AddSourceDrawer（"为源添加位置" vs "在空间-频道下加源"）
+- 兼容性：`sourceName?` / `existingPlacements?`（防重复）/ `onConfirm` 回调把 API 控制权交调用方
+- `SourceDetailPage.tsx:457` TODO 已关闭
+
+### UI 组件库纪律（已记录，不执行）
+- Owner 提出三原则：复用优先 / 集中存放 / 兼容性 → 记入 `memory/ui-component-library-discipline.md`
+- Owner 拍板：v0.6 联调精修完成后才启动专项提取，本次不执行
+- 布局重构方案（左中右 app shell + 导航融合 + 按页定宽 + 触发右抽屉）已讨论定方向，记入同一 memory
+- 本次 AddPlacementDialog 率先按纪律执行（复用/集中/兼容），commit message 含「复用：shadcn Dialog 等 4 件；新建：1；改造：0」
+
+### Git 节点
+- 前端变更 6 文件：RootLayout / NewsPage / MonitoringPage / SourceDetailPage / api.ts / AddPlacementDialog
+- 文档变更：developer-current.md / v0.6.md / INDEX.md / memory 增补
+- 未推送（收尾 commit 完成后一起推送）
+
+### 下一步
+- Owner 浏览器验证 test 环境完整功能后 → 放开 worker 跑 v0.6 评分/标签数据 或 切换到服务器做 OpenClaw 集成
+- UI 组件库专项 + 左中右布局重构：v0.6 收尾后单独启动
+
+---
+
 ## 2026-06-13 — v0.6 前端联调 + 独立测试环境 + systemd 持久化
 
 - 本次角色：全栈开发（Developer）；模式：实现阶段 前端联调 + 测试环境搭建（Owner 指定）

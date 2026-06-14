@@ -9,7 +9,7 @@ import * as Slider from "@radix-ui/react-slider";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
 import { StatCard } from "../components/ui/StatCard";
-import { getGlobalStats, listSpaces, listChannels, listNews, getNews } from "../lib/api";
+import { getSpaceStats, listSpaces, listChannels, listNews, getNews } from "../lib/api";
 
 type NewsItem = {
   id: string;
@@ -40,7 +40,13 @@ function fmtAgo(iso?: string): string {
 function mapNews(n: any): NewsItem {
   const sourceId = n.source?.id ?? n.source_id ?? null;
   const sourceName = n.source?.name ?? n.source_display_name ?? "未知来源";
-  const tags = n.tags_v2 ?? n.tags ?? [];
+  // tags_v2 后端可能是 {} 对象（v0.6 空字段），优先用数组形态，否则回退到 v0.5 tags 数组
+  const tags = Array.isArray(n.tags_v2) ? n.tags_v2 : (Array.isArray(n.tags) ? n.tags : []);
+  // entities 后端是 [{name, type}, ...] 对象数组，规范化为字符串数组避免 React 渲染对象崩溃
+  const rawEntities = Array.isArray(n.entities) ? n.entities : [];
+  const entities = rawEntities
+    .map((e: any) => (typeof e === "string" ? e : (e?.name ?? "")))
+    .filter((s: string) => !!s);
   return {
     id: String(n.id),
     title: n.title ?? "",
@@ -49,8 +55,8 @@ function mapNews(n: any): NewsItem {
     channel: n.channel_name ?? "",
     time: fmtAgo(n.published_at ?? n.created_at),
     summary: n.summary ?? "",
-    tags: Array.isArray(tags) ? tags : [],
-    entities: Array.isArray(n.entities) ? n.entities : [],
+    tags,
+    entities,
     fullContent: n.content ?? n.full_content ?? n.body ?? undefined,
     originalUrl: n.url ?? n.original_url ?? undefined,
   };
@@ -78,10 +84,10 @@ export function NewsPage() {
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [minScore, setMinScore] = useState([0]);
-  const [sortBy, setSortBy] = useState("time");
+  const [sortBy, setSortBy] = useState("published_desc");
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
 
-  // 初次加载：空间列表 + 全局统计
+  // 初次加载：空间列表
   useEffect(() => {
     (async () => {
       try {
@@ -90,8 +96,16 @@ export function NewsPage() {
         setSpaces(list);
         if (list.length) setSelectedSpace(list[0].id);
       } catch { /* ignore */ }
+    })();
+  }, []);
+
+  // 切空间：加载该空间的统计 + 频道
+  useEffect(() => {
+    if (!selectedSpace) return;
+    setSelectedChannel("all");
+    (async () => {
       try {
-        const g: any = await getGlobalStats();
+        const g: any = await getSpaceStats(selectedSpace);
         setStats([
           { label: "今日新增", value: String(g.today_new ?? 0) },
           { label: "总新闻", value: String(g.total_news ?? 0) },
@@ -99,14 +113,6 @@ export function NewsPage() {
           { label: "频道数", value: String(g.channel_count ?? 0) },
         ]);
       } catch { /* ignore */ }
-    })();
-  }, []);
-
-  // 切换空间：加载频道
-  useEffect(() => {
-    if (!selectedSpace) return;
-    setSelectedChannel("all");
-    (async () => {
       try {
         const ch: any[] = await listChannels(selectedSpace);
         setChannels([{ id: "all", name: "全部" }, ...(ch ?? []).map((c) => ({ id: String(c.id), name: c.name }))]);
@@ -229,7 +235,7 @@ export function NewsPage() {
               <Select.Portal>
                 <Select.Content className="bg-popover border border-border rounded-md shadow-lg overflow-hidden z-50">
                   <Select.Viewport>
-                    {[["time", "按时间"], ["score", "按评分"], ["source", "按来源"]].map(([v, label]) => (
+                    {[["published_desc", "按时间"], ["score_desc", "按评分"]].map(([v, label]) => (
                       <Select.Item key={v} value={v} className="px-4 py-2 hover:bg-accent cursor-pointer focus:bg-accent outline-none text-sm">
                         <Select.ItemText>{label}</Select.ItemText>
                       </Select.Item>
@@ -312,14 +318,14 @@ export function NewsPage() {
           </div>
         </div>
 
-        {/* Detail panel — in flow, slides in from right via margin+transform */}
+        {/* Detail panel — 嵌入式右滑面板：与新闻列表齐平，宽度 0 ↔ 420px */}
         <div className={cn(
           "shrink-0 overflow-hidden border-l border-border bg-background flex flex-col shadow-xl",
           "transition-[width] duration-300 ease-in-out",
           selectedNews ? "w-[420px]" : "w-0"
         )}>
           <div className={cn(
-            "w-[420px] h-full flex flex-col",
+            "w-[420px] h-full min-h-0 flex flex-col",
             "transition-transform duration-300 ease-in-out",
             selectedNews ? "translate-x-0" : "translate-x-full"
           )}>

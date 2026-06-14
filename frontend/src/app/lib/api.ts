@@ -161,7 +161,7 @@ export const getNews = (id: UUID) => requestJson(`/v1/news/${id}`);
 
 // ── Stats 统计 ────────────────────────────────────────────
 export const getSpaceStats = (spaceId: UUID) => requestJson(`/v1/stats?space_id=${spaceId}`);
-export const getGlobalStats = () => requestJson("/v1/global-stats");
+export const getGlobalStats = () => requestJson("/v1/stats");
 
 // ── Alerts 告警 ───────────────────────────────────────────
 export const listAlerts = (opts?: { include_processed?: boolean }) =>
@@ -170,13 +170,16 @@ export const getUnreadAlertsCount = () => requestJson("/v1/alerts/unread-count")
 // 状态机：active → acknowledged|ignored；acknowledged → resolved|ignored；ignored → active
 export const updateAlertStatus = (id: UUID, status: "acknowledged" | "ignored" | "resolved" | "active") =>
   requestJson(`/v1/alerts/${id}`, { method: "PATCH", body: { status } });
+// 批量更新告警状态：传 status=acknowledged 一键把全部 active 告警标为已确认
+export const batchUpdateAlertStatus = (status: "acknowledged" | "ignored" | "resolved") =>
+  requestJson(`/v1/alerts/batch`, { method: "PATCH", body: { status } });
 
 // ── Logs 日志（后端真实路径为 /v1/admin/logs）─────────────
 export const getLogsConfig = () => requestJson("/v1/admin/logs/config");
 export function listLogs(opts?: {
-  level?: string; source?: string; search?: string;
-  start?: string; end?: string;
-  page?: number; page_size?: number;
+  level?: string; source?: string; keyword?: string;
+  from?: string; to?: string;
+  limit?: number; offset?: number;
 }) {
   const qs = new URLSearchParams();
   if (opts) for (const [k, v] of Object.entries(opts)) if (v !== undefined && v !== null && v !== "") qs.set(k, String(v));

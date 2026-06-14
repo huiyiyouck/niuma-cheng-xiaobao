@@ -1,10 +1,37 @@
+import { useEffect, useState } from "react";
 import { Outlet, Link, useLocation } from "react-router";
 import { Newspaper, Settings, Bell, Activity } from "lucide-react";
 import { cn } from "../lib/utils";
+import { getUnreadAlertsCount } from "../lib/api";
 
 export function RootLayout() {
   const location = useLocation();
-  const unhandledAlertsCount = 3; // Mock count
+  const [unhandledAlertsCount, setUnhandledAlertsCount] = useState(0);
+
+  // 顶部红色角标接真实数据：mount 拉一次 + 60s 轮询 + 切回前台/进入监控页主动刷新
+  useEffect(() => {
+    let alive = true;
+    async function load() {
+      try {
+        const r: any = await getUnreadAlertsCount();
+        if (alive) setUnhandledAlertsCount(Number(r?.count ?? 0));
+      } catch { /* 拉取失败保留上次值，不闪烁 */ }
+    }
+    load();
+    const t = setInterval(load, 60_000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    return () => { alive = false; clearInterval(t); window.removeEventListener("focus", onFocus); };
+  }, []);
+
+  // 切到监控页后短延时再刷一次（处理告警后角标快速反映）
+  useEffect(() => {
+    if (!location.pathname.startsWith("/monitoring")) return;
+    const id = setTimeout(async () => {
+      try { const r: any = await getUnreadAlertsCount(); setUnhandledAlertsCount(Number(r?.count ?? 0)); } catch {}
+    }, 800);
+    return () => clearTimeout(id);
+  }, [location.pathname]);
 
   const isActive = (path: string) => {
     if (path === "/news") {

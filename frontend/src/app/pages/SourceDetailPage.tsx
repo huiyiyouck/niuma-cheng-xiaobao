@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from "react-router";
 import { ChevronRight, AlertTriangle, Trash2, Edit, Plus } from "lucide-react";
 import { SourceEditDrawer } from "../components/admin/SourceEditDrawer";
 import { DeleteConfirmDialog } from "../components/admin/DeleteConfirmDialog";
-import { AddSourceDrawer } from "../components/admin/AddSourceDrawer";
+import { AddPlacementDialog } from "../components/ui/AddPlacementDialog";
 import {
   getSource, updateSource, deleteSource,
   toggleDisplayPosition, removeDisplayPosition, addDisplayPosition,
@@ -102,6 +102,8 @@ export function SourceDetailPage() {
         space: p.space_name ?? "",
         channel: p.channel_name ?? "全部",
         enabled: !!p.enabled,
+        space_id: p.space_id ?? null,
+        channel_id: p.channel_id ?? null,
       }))
     : [];
 
@@ -443,20 +445,19 @@ export function SourceDetailPage() {
         onConfirm={handleConfirmDelete}
       />
 
-      {/* Add Placement Drawer */}
-      <AddSourceDrawer
+      {/* Add Placement Dialog —「为当前源添加位置」语义，区别于 AddSourceDrawer 的「在空间-频道下加源」 */}
+      <AddPlacementDialog
         open={addPlacementDrawer}
-        onClose={() => setAddPlacementDrawer(false)}
-        spaceName="选择空间"
-        channelName=""
-        onAddSource={async (selectedSourceId) => {
-          // 详情页"添加位置"语义：把【当前源】加到选中位置。
-          // 但 AddSourceDrawer 的 onAddSource 回的是被选中源的 id（用于在「空间-频道」上下文添加）。
-          // 详情页没有空间/频道上下文，无法直接用此抽屉添加位置；保持原型 UI 不变，
-          // 此处回调当前打印待后续用「选空间→选频道→addDisplayPosition」工作流替换。
-          // TODO: 替换为带空间选择的弹窗（与原型一致：先选空间，再选频道）
-          // console.warn("[SourceDetailPage] add placement TODO; selected source =", selectedSourceId);
-          setAddPlacementDrawer(false);
+        onOpenChange={setAddPlacementDrawer}
+        sourceName={source.displayName}
+        existingPlacements={placements.map((p: any) => ({
+          space_id: p.space_id,
+          channel_id: p.channel_id,
+        }))}
+        onConfirm={async (spaceId, channelId) => {
+          if (!source.id) return;
+          await addDisplayPosition({ source_id: source.id, space_id: spaceId, channel_id: channelId });
+          await loadSource();
         }}
       />
     </div>

@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：实现阶段进行中 — 后端 A+B+C 已实现；前端 4 页已 mock→真实 API 联调；独立测试环境在线（test.huiyiyou.cloud + news_test 库 + :8001 systemd news-api-test）
+- 当前阶段：实现阶段进行中 — 后端 A+B+C 已实现；前端 4 页联调精修完成（角标/NewsPage 修复/监控页改造/AddPlacementDialog）；独立测试环境在线（test.huiyiyou.cloud + news_test 库 + :8001 systemd news-api-test）
 - 阻塞项：—
-- 下一步入口：剩余联调精修（空间页写操作：源暂停移除/空间频道增删改 + 对话框完整化 + 小瑕疵）；可选放开 worker 生成 v0.6 评分/标签数据看完整效果
+- 下一步入口：Owner 浏览器验证 test 环境完整功能 → 可选放开 worker 跑 v0.6 评分/标签数据 / OpenClaw 集成验证；v0.6 收尾后启动 UI 组件库专项 + 左中右布局重构
 
 ## 版本列表
 
