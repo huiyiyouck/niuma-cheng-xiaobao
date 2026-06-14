@@ -1,17 +1,45 @@
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
-import tailwindcss from "@tailwindcss/vite";
-import { fileURLToPath, URL } from "node:url";
+import { defineConfig } from 'vite'
+import path from 'path'
+import tailwindcss from '@tailwindcss/vite'
+import react from '@vitejs/plugin-react'
 
-// https://vite.dev/config/
+
+function figmaAssetResolver() {
+  return {
+    name: 'figma-asset-resolver',
+    resolveId(id) {
+      if (id.startsWith('figma:asset/')) {
+        const filename = id.replace('figma:asset/', '')
+        return path.resolve(__dirname, 'src/assets', filename)
+      }
+    },
+  }
+}
+
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
-  build: {
-    emptyOutDir: false,
-  },
+  plugins: [
+    figmaAssetResolver(),
+    // The React and Tailwind plugins are both required for Make, even if
+    // Tailwind is not being actively used – do not remove them
+    react(),
+    tailwindcss(),
+  ],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // Alias @ to the src directory
+      '@': path.resolve(__dirname, './src'),
     },
   },
-});
+
+  // File types to support raw imports. Never add .css, .tsx, or .ts files to this.
+  assetsInclude: ['**/*.svg', '**/*.csv'],
+
+  // dev server：代理 /v1 与 /uploads 到独立测试后端（:8001），生产由 nginx 反代
+  server: {
+    host: true,
+    proxy: {
+      '/v1': { target: 'http://localhost:8001', changeOrigin: true },
+      '/uploads': { target: 'http://localhost:8001', changeOrigin: true },
+    },
+  },
+})
