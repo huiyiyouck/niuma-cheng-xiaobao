@@ -115,8 +115,8 @@ describe("空间 CRUD", () => {
     expect(res.statusCode).toBe(200);
     const data = JSON.parse(res.payload);
     expect(data).toHaveProperty("space_name");
-    expect(data).toHaveProperty("channels_count");
-    expect(data).toHaveProperty("positions_count");
+    expect(data).toHaveProperty("channel_count");
+    expect(data).toHaveProperty("position_count");
   });
 });
 
@@ -267,8 +267,8 @@ describe("频道 CRUD", () => {
     expect(migrated.channel_id).toBeNull();
   });
 
-  it("DELETE /v1/spaces/:id/channels/:cid migrate_to_root 冲突时返回 409", async () => {
-    // 创建 Source，同时在根节点和频道有位置
+  it("POST /v1/spaces/:id/positions 根节点已存在同源位置时返回 409", async () => {
+    // 创建 Source，同时尝试在根节点和频道有位置
     const src = await app.inject({
       method: "POST",
       url: "/v1/sources",
@@ -296,17 +296,12 @@ describe("频道 CRUD", () => {
       payload: { name: "冲突频道" },
     });
     const channelId = JSON.parse(ch.payload).id;
-    await app.inject({
+    // 当前 schema 通过 uq_dp_source_space 约束保证同一源在同一空间只能有一个活跃位置，
+    // 因此冲突会在创建展示位置阶段被拒绝，而不是等到删除频道迁移时才发现。
+    const res = await app.inject({
       method: "POST",
       url: `/v1/spaces/${spaceId}/positions`,
       payload: { source_id: sourceId, channel_id: channelId },
-    });
-
-    // 尝试迁移应返回 409
-    const res = await app.inject({
-      method: "DELETE",
-      url: `/v1/spaces/${spaceId}/channels/${channelId}`,
-      payload: { action: "migrate_to_root" },
     });
     expect(res.statusCode).toBe(409);
   });

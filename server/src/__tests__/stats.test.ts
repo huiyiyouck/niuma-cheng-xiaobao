@@ -24,11 +24,12 @@ describe("统计", () => {
     const res = await app.inject({ method: "GET", url: "/v1/stats" });
     expect(res.statusCode).toBe(200);
     const data = JSON.parse(res.payload);
-    expect(data).toHaveProperty("total_news");
     expect(data).toHaveProperty("today_new");
+    expect(data).toHaveProperty("avg_score");
+    expect(data).toHaveProperty("active_spaces");
     expect(data).toHaveProperty("active_sources");
-    expect(data).toHaveProperty("channel_count");
-    expect(data.total_news).toBe(0);
+    expect(data).toHaveProperty("unprocessed_alerts");
+    expect(data.today_new).toBe(0);
     expect(data.active_sources).toBe(0);
   });
 
