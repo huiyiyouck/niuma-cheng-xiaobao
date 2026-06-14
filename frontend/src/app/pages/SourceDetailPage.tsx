@@ -455,7 +455,7 @@ export function SourceDetailPage() {
           // 详情页没有空间/频道上下文，无法直接用此抽屉添加位置；保持原型 UI 不变，
           // 此处回调当前打印待后续用「选空间→选频道→addDisplayPosition」工作流替换。
           // TODO: 替换为带空间选择的弹窗（与原型一致：先选空间，再选频道）
-          console.warn("[SourceDetailPage] add placement TODO; selected source =", selectedSourceId);
+          // console.warn("[SourceDetailPage] add placement TODO; selected source =", selectedSourceId);
           setAddPlacementDrawer(false);
         }}
       />
