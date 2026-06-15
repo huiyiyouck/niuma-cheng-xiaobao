@@ -40,20 +40,26 @@ interface AddSourceDrawerProps {
   onClose: () => void;
   spaceName: string;
   channelName: string;
-  onAddSource: (sourceId: string) => void | Promise<void>;
+  onAddSource?: (sourceId: string) => void | Promise<void>;
+  initialView?: DrawerView;
+  /** 仅创建源（信息源库入口），不显示「添加到当前位置」语义 */
+  createOnly?: boolean;
 }
 
 type DrawerView = "search" | "create";
 type SourceType = "x-search" | "rss";
 type VerificationStatus = "idle" | "verifying" | "success" | "error";
 
-export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSource }: AddSourceDrawerProps) {
-  const [view, setView] = useState<DrawerView>("search");
+export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSource, initialView = "search", createOnly = false }: AddSourceDrawerProps) {
+  const [view, setView] = useState<DrawerView>(initialView);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [available, setAvailable] = useState<Source[]>([]);
   const [availableLoading, setAvailableLoading] = useState(false);
+
+  // 每次打开时按 initialView 复位（创建入口直接进 create 视图）
+  useEffect(() => { if (open) setView(initialView); }, [open, initialView]);
 
   // 信息源库全量拉取（筛选仍走前端，保持原型交互）
   async function loadAvailable() {
@@ -128,17 +134,22 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
   const handleSaveAndAdd = async () => {
     try {
       const created: any = await createSource(buildCreatePayload());
-      if (created?.id) await onAddSource(created.id);
-      setView("search");
+      if (createOnly) {
+        // 信息源库入口：仅新建，不需要"添加到位置"
+        onClose();
+      } else {
+        if (created?.id && onAddSource) await onAddSource(created.id);
+        setView("search");
+        await loadAvailable();
+      }
       resetCreateForm();
-      await loadAvailable();
     } catch (e) { console.error(e); }
   };
 
   const handleSaveAsPending = async () => {
     try {
       const created: any = await createSource(buildCreatePayload());
-      if (created?.id) await onAddSource(created.id);
+      if (!createOnly && created?.id && onAddSource) await onAddSource(created.id);
     } catch (e) { console.error(e); }
     onClose();
     resetCreateForm();
@@ -183,7 +194,7 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
-            {view === "create" && (
+            {view === "create" && !createOnly && (
               <button
                 onClick={() => setView("search")}
                 className="p-1 hover:bg-accent rounded"
@@ -536,7 +547,7 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
                     onClick={handleSaveAndAdd}
                     className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90"
                   >
-                    保存并添加到当前位置
+                    {createOnly ? "保存信息源" : "保存并添加到当前位置"}
                   </button>
                 )}
 

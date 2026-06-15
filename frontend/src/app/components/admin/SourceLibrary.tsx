@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Plus, RefreshCw, Download, ExternalLink, Trash2, ChevronUp, ChevronDown, Repeat } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import { AddSourceDrawer } from "./AddSourceDrawer";
 import { Badge } from "../ui/badge";
 import { PlacementTooltip } from "../ui/PlacementTooltip";
 import { listSources, syncXRules, deleteSource } from "../../lib/api";
@@ -64,6 +65,7 @@ export function SourceLibrary() {
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(20);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; data: any }>({ open: false, data: null });
+  const [createDrawer, setCreateDrawer] = useState(false);
 
   // 一次拉全量，筛选/排序/分页仍由前端处理（保持原型交互）
   async function loadSources() {
@@ -164,7 +166,10 @@ export function SourceLibrary() {
             className="w-full pl-3 pr-4 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        <button className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90 whitespace-nowrap">
+        <button
+          onClick={() => setCreateDrawer(true)}
+          className="px-4 py-2 bg-primary text-primary-foreground rounded hover:opacity-90 whitespace-nowrap"
+        >
           <Plus className="h-4 w-4 inline mr-2" />
           新建信息源
         </button>
@@ -427,6 +432,16 @@ export function SourceLibrary() {
           } catch (e) { console.error(e); }
           setDeleteDialog({ open: false, data: null });
         }}
+      />
+
+      {/* Create Source Drawer（仅创建模式，无空间/频道上下文） */}
+      <AddSourceDrawer
+        open={createDrawer}
+        onClose={() => { setCreateDrawer(false); loadSources(); }}
+        spaceName=""
+        channelName=""
+        initialView="create"
+        createOnly
       />
     </div>
   );
