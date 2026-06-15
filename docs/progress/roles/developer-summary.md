@@ -2,19 +2,18 @@
 
 > 长期摘要、当前关注点和常见风险。启动时与 `developer-current.md` 一并读取。
 > 旧条目原文见 `developer-archive.md`。
-> 最近一次更新：2026-06-12（v0.6 设计文档 R2 Developer 复审收尾分层归档）
+> 最近一次更新：2026-06-15（v0.6 前端联调精修与管理页交互修复收尾分层归档）
 
 ---
 
-## 当前状态（2026-06-12）
+## 当前状态（2026-06-15）
 
-- **当前迭代**：v0.6（设计阶段 R2 复审中）
-  - Developer R2 ⚠️有条件通过（R1 高严重度 2 条全部关闭，R2 新增 #D11 l1_retry 创建时机 + #D12 交叉引用断链）
-  - PM + Developer 已 R2 复审通过，待 DevOps / Tester 2 方 R2 复审
-  - 工程接力基础从 R1 的 85% 提升到 R2 的 92%
-  - 下一步：DevOps / Tester R2 复审 → 全部通过则设计定稿进实施阶段
+- **当前迭代**：v0.6（实现阶段联调精修中）
+  - 后端 A+B+C 已实现，前端 React 4 页接真实 API；test 环境已通过 IP 入口 `http://115.191.43.79` 临时验证（nginx 80 default_server 指 test 独立目录）
+  - 本次 Developer 连续提交 8 个本地 commit：左中右布局、三页 UI 精修、管理页乐观更新/拖拽/toast/Loading、源详情展示位置反馈、`display_positions` 软删除后无法重加迁移修复
+  - test 库已手动 DROP 历史残留唯一约束并实测添加位置 409 → 成功；生产部署需跑 `0006_drop_dp_channel_unique`
 - **v0.5 状态**：已关闭（2026-06-09 PM 有条件关闭），无 Developer 遗留代码任务
-- **跨任务待办（Developer 归属）**：INDEX 跨任务待办表当前无 Developer 待办项
+- **跨任务待办（Developer 归属）**：OpenClaw L1 Agent 化仍挂起，待切换服务器验证；UI 组件库专项/左中右专项已在本次以最小实现落地，后续可继续抽组件
 
 ## 角色定位回顾
 
@@ -23,6 +22,14 @@
 - 不擅自改产品范围、不擅自改架构决策、不绕过 TDD、不绕过受保护路径删除门禁
 
 ## 当前关注点
+
+### 0. v0.6 当前实现/联调关注点（2026-06-15）
+
+- 7+ 个本地 commit 尚未 push；若 Owner 确认，按 memory `git-push-workflow` 先 `git pull --rebase` 再 push
+- `display_positions_source_id_channel_space_id_channel_id_key` 是历史残留全表唯一约束，已在 test 库手动 DROP 并写入迁移 `0006`；生产上线必须执行 migrate，否则软删除位置仍无法重加
+- 生产/测试部署去软链接化已登记 DevOps P1；当前生产仍可能软链到 `frontend/dist`，开发 build 有污染生产风险
+- 临时 IP 入口 nginx 改动不在 git：`115.191.43.79:80` 指 test；验证后应由 DevOps 规整或删除
+- 浏览页新闻列表仍用骨架屏而非全局 Loading；如 Owner 继续要求统一，可再改
 
 ### 1. v0.6 设计文档 R2 Review 后承接到实施阶段的 Developer 事项
 

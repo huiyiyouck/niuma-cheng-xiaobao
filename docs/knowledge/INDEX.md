@@ -15,6 +15,7 @@
 - [Node.js 进程 unlink-while-open 应急恢复套路](engineering/nodejs-unlink-while-open-recovery.md) — 源码丢失但进程还活的应急判断 + 恢复步骤 + 陷阱（v0.4 Incident 实战沉淀）
 - [Vue 3 setup 中 const 解构 props 非响应式陷阱](engineering/vue3-setup-props-non-reactive-pitfall.md) — 子组件"不刷新"症状的常见根因 + computed/watch 修法 + Review checklist 建议
 - [外部 Portal 作为真理源的反向同步模式](engineering/external-portal-as-truth-source.md) — 外部平台已有完整管理能力时内部被动同步的架构模式、关键约束、适用与不适用场景（v0.5.1 X 反向同步实战沉淀）
+- [软删除表的唯一约束必须排除 deleted_at](engineering/soft-delete-unique-index.md) — 软删除后允许重建时必须使用 `WHERE deleted_at IS NULL` 的部分唯一索引，避免「列表没有但新增报已存在」
 
 ## Testing（测试）
 

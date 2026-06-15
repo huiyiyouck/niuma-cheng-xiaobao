@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：实现阶段进行中 — 后端 A+B+C 已实现；前端 4 页联调精修完成（角标/NewsPage 修复/监控页改造/AddPlacementDialog）；独立测试环境在线（test.huiyiyou.cloud + news_test 库 + :8001 systemd news-api-test）
-- 阻塞项：—
-- 下一步入口：Owner 浏览器验证 test 环境完整功能 → 可选放开 worker 跑 v0.6 评分/标签数据 / OpenClaw 集成验证；v0.6 收尾后启动 UI 组件库专项 + 左中右布局重构
+- 当前阶段：实现阶段进行中 — 后端 A+B+C 已实现；前端 React 4 页接真实 API；6/15 完成左中右布局、三页 UI 精修、管理页交互连续修复（乐观更新/拖拽/toast/Loading/空间级重复拦截）和 `display_positions` 软删除后无法重加修复；独立测试环境在线（IP 入口 http://115.191.43.79 + news_test 库 + :8001 systemd news-api-test）
+- 阻塞项：生产/测试部署去软链接化待 DevOps；Owner 继续 test 验证；7+ commit 未 push
+- 下一步入口：Owner 浏览器验证 test 环境完整功能 → 需要则 Developer 继续精修；通过后可切 DevOps 规整部署（去软链 + 处理 IP 临时入口）/ 可选放开 worker 跑 v0.6 评分标签数据 / OpenClaw 集成验证
 
 ## 版本列表
 
@@ -50,6 +50,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-15 | Developer | v0.6 前端联调精修与管理页交互连续修复 | ✅ 已完成阶段性精修 — 7+ commit：左中右布局 + AppSidebar；浏览页空间/频道合并、评分配色、新闻详情抽屉与异步回弹修复；管理页乐观更新、空间拖拽排序、状态色、Toaster、统一 Loading、添加/删除/暂停/恢复反馈即时化；源详情展示位置添加/移除/恢复反馈；后端修复 `display_positions` 历史唯一约束导致软删除后无法重加（迁移 `0006_drop_dp_channel_unique`，test 库已手动验证） | Owner 继续 test 验证；通过后可 push / 交 DevOps 规整部署去软链与临时 IP 入口 |
 | 2026-06-13 | Architect | v0.6 设计文档翻牌定稿 | ✅ 设计文档状态「待Review」→「已定稿（有条件）」，补 PM 裁定摘要和四方条件承接清单。v0.6 设计阶段架构师工作闭环：PRD R1/R2 → UI R1 → 设计 R1 产出 + R2 汇总修订 → 翻牌定稿 | 切换到 Developer 启动 v0.6 实现阶段 R1 |
 | 2026-06-13 | PM | v0.6 设计 R2 定稿裁定 + 阶段推进 | ✅ **有条件定稿，进入实现阶段** — PM 裁定不开 R3：四方 R2 复审均已完成且均为有条件通过，无新的产品范围高阻断；R1 高严重度工程/测试硬伤已由 R2 在方向上关闭或基本关闭。剩余共性问题集中在 R2 修改摘要与正文不一致，不静默改 Architect 正文，转为实施/部署阶段显式承接：Developer 承接 #D11/#D12 与迁移 DML 断链；Tester 承接 #T13、上传兜底和告警 SQL 测试假设；DevOps 承接 #O1/#O2/#O3/#O8/#O15 的上传目录、nginx、依赖增量和 .env 检查；PM 接受 #P3/#P5 为文档可信度遗留，后续如影响范围或验收再走 Change Note / 回阶段 | 切换到 Developer 启动 v0.6 实现阶段 R1 |
 | 2026-06-12 | DevOps | v0.6 设计文档 R2 DevOps 复审 | ⚠️ **有条件通过（R2）** — R1 11 条：1 完全关闭 #O6（由 §4.4/§4.5 间接关）+ 3 基本关闭 #O1/#O2/#O3（R2 修改摘要方向 100% 与 DevOps R1 推荐对齐——部署前置工作 / 选项 A / npm 增量 + native binding 红线，但**正文一字未动**） + 6 合理分流（部署侧自治承接） + 1 未关闭 #O8 client_max_body_size（1MB 边界 P0 风险，R2 摘要声称已关、正文未落，与 Tester R2 #T13 独立发现一致）。R2 新增 #O15（中）：R2 摘要 vs 正文 4 处不一致致部署侧执行依据缺失，与 PM R2 #P5 / Developer R2 #D12 / Tester R2 #T13 同源——DevOps 视角强调"部署执行环节按正文拍 mkdir/nginx -t/apt install"，摘要方向不能直接落地。R2 间接贡献：tasks.last_error_kind / workerLoop 5 sem 池 / callLLM<T> 双模型 / 错误归档对照表对部署侧友好；接力基础 75%→82-85%。建议方案 B（不开 R3 + DevOps 部署侧自治承接 + 摘要文案订正） | PM 介入 v0.6 设计文档 R2，决定开 R3 微调或直接进实施阶段 |
