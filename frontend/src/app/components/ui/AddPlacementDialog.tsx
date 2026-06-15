@@ -52,6 +52,7 @@ export function AddPlacementDialog({
   const [spaceId, setSpaceId] = useState<string>("");
   const [channelId, setChannelId] = useState<string>("__all__");
   const [submitting, setSubmitting] = useState(false);
+  const [channelsLoading, setChannelsLoading] = useState(false);
 
   // 打开时拉空间列表；关闭时重置选项
   useEffect(() => {
@@ -72,22 +73,21 @@ export function AddPlacementDialog({
   // 切空间时拉对应频道；空间未选则清空频道列表
   useEffect(() => {
     if (!spaceId) { setChannels([]); setChannelId("__all__"); return; }
+    setChannelsLoading(true);
     (async () => {
       try {
         const ch: any[] = await listChannels(spaceId);
         setChannels((ch ?? []).map((c) => ({ id: String(c.id), name: c.name })));
         setChannelId("__all__");
       } catch (e) { console.error(e); setChannels([]); }
+      finally { setChannelsLoading(false); }
     })();
   }, [spaceId]);
 
   // 校验「这个 空间+频道 组合是不是已经存在」
-  const isDuplicate = (sId: string, cId: string | null): boolean => {
-    return existingPlacements.some((p) => {
-      const pSpace = p.space_id ? String(p.space_id) : "";
-      const pCh = p.channel_id ? String(p.channel_id) : null;
-      return pSpace === sId && pCh === cId;
-    });
+  const isDuplicate = (sId: string, _cId: string | null): boolean => {
+    // 一空间一位置：源已在该空间即视为重复，不区分频道
+    return existingPlacements.some((p) => (p.space_id ? String(p.space_id) : "") === sId);
   };
 
   const targetChannelId = channelId === "__all__" ? null : channelId;
@@ -141,10 +141,16 @@ export function AddPlacementDialog({
                 <SelectValue placeholder={spaceId ? "选择频道..." : "请先选择空间"} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">全部（不指定频道）</SelectItem>
-                {channels.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                ))}
+                {channelsLoading ? (
+                  <div className="px-3 py-3 text-center text-sm text-muted-foreground">加载频道中…</div>
+                ) : (
+                  <>
+                    <SelectItem value="__all__">全部（不指定频道）</SelectItem>
+                    {channels.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
+                  </>
+                )}
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
@@ -154,7 +160,7 @@ export function AddPlacementDialog({
 
           {duplicate && (
             <div className="rounded-md bg-amber-50 border border-amber-200 px-3 py-2 text-sm text-amber-800">
-              该信息源已经在这个空间-频道下了，无法重复添加。
+              该信息源已经在这个空间下了。一个源在一个空间只能有一个位置，不能重复添加。
             </div>
           )}
         </div>

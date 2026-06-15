@@ -21,9 +21,8 @@ function mapType(t: string): string {
 // 后端 source → 抽屉可选源 shape；isAlreadyAdded 依据是否已在当前空间/频道
 function mapAvailable(s: any, spaceName: string, channelName: string): Source {
   const positions = Array.isArray(s.display_positions) ? s.display_positions : [];
-  const isAlreadyAdded = positions.some(
-    (p: any) => p.space_name === spaceName && (channelName === "全部" || p.channel_name === channelName)
-  );
+  // 一空间一位置：源已在该空间（任意频道）即视为已添加，不能再加到该空间其它频道
+  const isAlreadyAdded = positions.some((p: any) => p.space_name === spaceName);
   return {
     id: String(s.id),
     name: s.display_name ?? "",

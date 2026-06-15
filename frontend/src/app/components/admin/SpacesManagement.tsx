@@ -68,6 +68,7 @@ export function SpacesManagement() {
   const [channels, setChannels] = useState<any[]>([{ id: "all", name: "全部", sourceCount: 0, isAll: true }]);
   const [sources, setSources] = useState<any[]>([]);
   const [sourcesLoading, setSourcesLoading] = useState(true);
+  const [channelsLoading, setChannelsLoading] = useState(false);
   const [selectedSpace, setSelectedSpace] = useState("");
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [hoveredSpace, setHoveredSpace] = useState<string | null>(null);
@@ -95,10 +96,12 @@ export function SpacesManagement() {
   async function loadChannels() {
     if (!selectedSpace) return;
     const sp = spaces.find((s) => s.id === selectedSpace);
+    setChannelsLoading(true);
     try {
       const ch: any[] = await listChannels(selectedSpace);
       setChannels([{ id: "all", name: "全部", sourceCount: sp?.sourceCount ?? 0, isAll: true }, ...(ch ?? []).map(mapChannel)]);
     } catch { setChannels([{ id: "all", name: "全部", sourceCount: 0, isAll: true }]); }
+    finally { setChannelsLoading(false); }
   }
   // 加载当前空间/频道下的信息源
   async function loadSources() {
@@ -140,13 +143,13 @@ export function SpacesManagement() {
   async function toggleSourcePause(source: any) {
     const wasRunning = source.isRunning;
     setSources((prev) => prev.map((s) => (s.id === source.id ? { ...s, isRunning: !wasRunning } : s)));
+    toast.success(wasRunning ? "已暂停抓取" : "已恢复抓取");  // 与乐观更新同步弹出
     try {
       if (wasRunning) await pauseSource(source.id); else await resumeSource(source.id);
-      toast.success(wasRunning ? "已暂停抓取" : "已恢复抓取");
     } catch (e) {
       console.error(e);
       setSources((prev) => prev.map((s) => (s.id === source.id ? { ...s, isRunning: wasRunning } : s)));
-      toast.error("操作失败，请重试");
+      toast.error("操作失败，已撤销");
     }
   }
 
@@ -366,7 +369,8 @@ export function SpacesManagement() {
           </div>
 
           <div className="space-y-1">
-            {channels.map((channel, idx) => (
+            {channelsLoading && <Loading className="py-6" />}
+            {!channelsLoading && channels.map((channel, idx) => (
               <div
                 key={channel.id}
                 onMouseEnter={() => setHoveredChannel(channel.id)}
@@ -639,6 +643,7 @@ export function SpacesManagement() {
           if (d?.type === "space") setSpaces((prev) => prev.filter((s) => s.id !== d.id));
           else if (d?.type === "channel") setChannels((prev) => prev.filter((c) => c.id !== d.id));
           else if (d?.type === "remove-placement") setSources((prev) => prev.filter((s) => s.id !== removedSourceId));
+          toast.success("已删除");  // 与乐观移除同步弹出
           try {
             if (d?.type === "space") { await deleteSpace(d.id); await loadSpaces(); }
             else if (d?.type === "channel") { await deleteChannel(selectedSpace, d.id); await loadChannels(); await loadSpaces(); }
@@ -650,8 +655,7 @@ export function SpacesManagement() {
               for (const p of positions) await removeDisplayPosition(p.id);
               await loadSources(); await loadChannels();
             }
-            toast.success("已删除");
-          } catch (e) { console.error(e); toast.error("删除失败，请重试"); loadSpaces(); loadChannels(); loadSources(); }
+          } catch (e) { console.error(e); toast.error("删除失败，已恢复"); loadSpaces(); loadChannels(); loadSources(); }
         }}
       />
 
