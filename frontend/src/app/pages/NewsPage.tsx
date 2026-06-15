@@ -1,15 +1,14 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams, useOutletContext } from "react-router";
 import {
-  Search, TrendingUp, FileText, Radio, FolderOpen,
+  Search, Inbox,
   ExternalLink, X, Tag, Building2, Clock, BarChart2, ChevronRight,
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import * as Slider from "@radix-ui/react-slider";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
-import { StatCard } from "../components/ui/StatCard";
-import { getSpaceStats, listSpaces, listChannels, listNews, getNews } from "../lib/api";
+import { listChannels, listNews, getNews } from "../lib/api";
 
 type NewsItem = {
   id: string;
@@ -25,7 +24,13 @@ type NewsItem = {
   originalUrl?: string;
 };
 
-const STAT_ICONS = [TrendingUp, FileText, Radio, FolderOpen];
+// 评分徽章配色：四档，低分用红色警示，避免灰底与卡片背景混淆
+function scoreBadgeCls(score: number): string {
+  if (score >= 8) return "bg-green-100 text-green-800";
+  if (score >= 6) return "bg-blue-100 text-blue-800";
+  if (score >= 4) return "bg-amber-100 text-amber-800";
+  return "bg-red-100 text-red-800";
+}
 
 function fmtAgo(iso?: string): string {
   if (!iso) return "";
@@ -72,47 +77,26 @@ function CenterWrap({ children, className }: { children: React.ReactNode; classN
 }
 
 export function NewsPage() {
-  const [spaces, setSpaces] = useState<Array<{ id: string; name: string }>>([{ id: "all", name: "全部" }]);
+  // 空间列表由 RootLayout 加载并经 Outlet context 下发；当前空间由左栏导航通过 URL `?space=` 驱动
+  const { spaces } = useOutletContext<{ spaces: Array<{ id: string; name: string }> }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const selectedSpace = searchParams.get("space") || spaces[0]?.id || "";
+
   const [channels, setChannels] = useState<Array<{ id: string; name: string }>>([{ id: "all", name: "全部" }]);
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
-  const [stats, setStats] = useState<Array<{ label: string; value: string }>>([
-    { label: "今日新增", value: "-" }, { label: "总新闻", value: "-" },
-    { label: "启用信息源", value: "-" }, { label: "频道数", value: "-" },
-  ]);
+  const [loading, setLoading] = useState(true);
 
-  const [selectedSpace, setSelectedSpace] = useState("");
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [minScore, setMinScore] = useState([0]);
   const [sortBy, setSortBy] = useState("published_desc");
   const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
 
-  // 初次加载：空间列表
-  useEffect(() => {
-    (async () => {
-      try {
-        const sp: any[] = await listSpaces();
-        const list = (sp ?? []).map((s) => ({ id: String(s.id), name: s.name }));
-        setSpaces(list);
-        if (list.length) setSelectedSpace(list[0].id);
-      } catch { /* ignore */ }
-    })();
-  }, []);
-
-  // 切空间：加载该空间的统计 + 频道
+  // 切空间：重置频道并加载该空间的频道（统计已下放到左栏）
   useEffect(() => {
     if (!selectedSpace) return;
     setSelectedChannel("all");
     (async () => {
-      try {
-        const g: any = await getSpaceStats(selectedSpace);
-        setStats([
-          { label: "今日新增", value: String(g.today_new ?? 0) },
-          { label: "总新闻", value: String(g.total_news ?? 0) },
-          { label: "启用信息源", value: String(g.active_sources ?? 0) },
-          { label: "频道数", value: String(g.channel_count ?? 0) },
-        ]);
-      } catch { /* ignore */ }
       try {
         const ch: any[] = await listChannels(selectedSpace);
         setChannels([{ id: "all", name: "全部" }, ...(ch ?? []).map((c) => ({ id: String(c.id), name: c.name }))]);
@@ -123,6 +107,7 @@ export function NewsPage() {
   // 加载新闻（空间/频道/搜索/排序变化时）
   useEffect(() => {
     if (!selectedSpace) return;
+    setLoading(true);
     (async () => {
       try {
         const items: any[] = await listNews(selectedSpace, {
@@ -133,6 +118,7 @@ export function NewsPage() {
         });
         setNewsList((items ?? []).map(mapNews));
       } catch { setNewsList([]); }
+      finally { setLoading(false); }
     })();
   }, [selectedSpace, selectedChannel, searchQuery, sortBy]);
 
@@ -142,9 +128,18 @@ export function NewsPage() {
     setSelectedNews(news);
     try {
       const full: any = await getNews(news.id);
-      setSelectedNews({ ...news, ...mapNews(full) });
+      // 仅当用户仍停留在这条新闻时才回写，避免关闭/切换后异步补全又把面板弹回来
+      setSelectedNews((cur) => (cur?.id === news.id ? { ...news, ...mapNews(full) } : cur));
     } catch { /* 保留列表项数据 */ }
   }
+
+  // ESC 关闭详情面板
+  useEffect(() => {
+    if (!selectedNews) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setSelectedNews(null); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedNews]);
 
   const visibleNews = newsList.filter((n) => n.score >= minScore[0]);
 
@@ -152,54 +147,48 @@ export function NewsPage() {
     <div className="h-full flex flex-col">
 
       {/* ── Frozen top section ───────────────────────────── */}
-      <div className="shrink-0 border-b border-border px-6 pt-5 pb-0">
-        {/* Stats */}
-        <div className="pb-4">
-          <div className="grid grid-cols-4 gap-3">
-            {stats.map((stat, i) => (
-              <StatCard key={stat.label} label={stat.label} value={stat.value} icon={STAT_ICONS[i]} />
+      <div className="shrink-0 border-b border-border px-6 pt-4 pb-0">
+        {/* 空间 + 频道 同一行（数据少，合并紧凑不空旷） */}
+        <div className="flex items-center gap-3 pb-3 flex-wrap">
+          {/* 空间分段控件 */}
+          <div className="inline-flex gap-1 p-1 bg-muted rounded-lg shrink-0">
+            {spaces.map((space) => (
+              <button
+                key={space.id}
+                onClick={() => setSearchParams({ space: space.id })}
+                className={cn(
+                  "px-4 py-1.5 rounded-md text-sm font-medium transition-all",
+                  selectedSpace === space.id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {space.name}
+              </button>
             ))}
           </div>
-        </div>
-
-        {/* Space tabs */}
-        <div className="border-t border-border pt-3 pb-2 flex gap-2">
-          {spaces.map((space) => (
-            <button
-              key={space.id}
-              onClick={() => { setSelectedSpace(space.id); setSelectedChannel("all"); }}
-              className={cn(
-                "px-4 py-1.5 rounded-full text-sm transition-colors",
-                selectedSpace === space.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-secondary-foreground hover:bg-accent"
-              )}
-            >
-              {space.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Channel tabs */}
-        <div className="pb-3 flex gap-1.5 flex-wrap">
-          {channels.map((channel) => (
+          <div className="h-5 w-px bg-border shrink-0" />
+          {/* 频道描边 chip */}
+          <div className="flex gap-1.5 flex-wrap">
+            {channels.map((channel) => (
             <button
               key={channel.id}
               onClick={() => setSelectedChannel(channel.id)}
               className={cn(
-                "px-3 py-1 rounded-full text-sm transition-colors",
+                "px-3 py-1 rounded-full text-sm border transition-colors",
                 selectedChannel === channel.id
-                  ? "bg-accent text-accent-foreground font-medium"
-                  : "text-muted-foreground hover:bg-accent/50"
+                  ? "bg-primary text-primary-foreground border-primary font-medium"
+                  : "bg-transparent text-muted-foreground border-border hover:border-foreground/30 hover:text-foreground"
               )}
             >
               {channel.name}
             </button>
-          ))}
+            ))}
+          </div>
         </div>
 
         {/* Filters */}
-        <div className="border-t border-border py-3 bg-muted/20">
+        <div className="border-t border-border py-3">
           <div className="flex items-center gap-3">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -248,33 +237,49 @@ export function NewsPage() {
         </div>
       </div>
 
-      {/* ── Scrollable news list + inline detail panel ───── */}
-      <div className="flex-1 flex overflow-hidden">
+      {/* ── 列表 + 覆盖式详情抽屉 ───── */}
+      <div className="flex-1 overflow-hidden relative">
 
-        {/* News list — scrolls, content centered */}
-        <div className="flex-1 overflow-auto py-5 px-6">
+        {/* News list — 详情打开时右侧让出抽屉空间，列表居中、可滚动/点击切换 */}
+        <div className={cn(
+          "h-full overflow-auto py-5 px-6 transition-[margin] duration-300 ease-in-out",
+          selectedNews ? "mr-[440px]" : ""
+        )}>
           <div className="max-w-[800px] mx-auto space-y-3">
-            {visibleNews.map((news) => (
+            {loading ? (
+              [...Array(5)].map((_, i) => (
+                <div key={i} className="bg-card border border-border rounded-lg p-4 animate-pulse">
+                  <div className="h-4 bg-muted rounded w-3/4 mb-3" />
+                  <div className="h-3 bg-muted rounded w-1/2 mb-3" />
+                  <div className="h-3 bg-muted rounded w-full mb-2" />
+                  <div className="flex gap-2"><div className="h-5 w-12 bg-muted rounded" /><div className="h-5 w-12 bg-muted rounded" /></div>
+                </div>
+              ))
+            ) : visibleNews.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <Inbox className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                <p className="text-sm text-muted-foreground">该频道暂无新闻</p>
+              </div>
+            ) : (
+              visibleNews.map((news) => (
               <div
                 key={news.id}
                 onClick={() => openNews(news)}
                 className={cn(
-                  "bg-card border rounded-lg p-4 cursor-pointer transition-all",
+                  "bg-card border rounded-xl p-5 cursor-pointer transition-all",
                   selectedNews?.id === news.id
                     ? "border-primary/50 shadow-md ring-1 ring-primary/20"
-                    : "border-border hover:shadow-sm"
+                    : "border-border hover:border-primary/30 hover:shadow-md"
                 )}
               >
                 <div className="flex items-start gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-3 mb-2">
-                      <h3 className="flex-1 font-medium leading-snug">{news.title}</h3>
+                      <h3 className="flex-1 font-semibold leading-snug">{news.title}</h3>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <span className={cn(
                           "px-2 py-0.5 rounded text-xs font-medium",
-                          news.score >= 8 ? "bg-green-100 text-green-800" :
-                          news.score >= 6 ? "bg-blue-100 text-blue-800" :
-                          "bg-gray-100 text-gray-800"
+                          scoreBadgeCls(news.score)
                         )}>
                           {news.score}
                         </span>
@@ -308,27 +313,24 @@ export function NewsPage() {
                         <span key={tag} className="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded">{tag}</span>
                       ))}
                       {news.entities.map((entity) => (
-                        <span key={entity} className="px-2 py-0.5 bg-accent text-accent-foreground text-xs rounded">{entity}</span>
+                        <span key={entity} className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded font-medium">{entity}</span>
                       ))}
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
-        {/* Detail panel — 嵌入式右滑面板：与新闻列表齐平，宽度 0 ↔ 420px */}
+        {/* Detail panel — 右滑抽屉：列表让位不被遮挡，ESC/X 关闭，列表仍可滚动切换 */}
         <div className={cn(
-          "shrink-0 overflow-hidden border-l border-border bg-background flex flex-col shadow-xl",
-          "transition-[width] duration-300 ease-in-out",
-          selectedNews ? "w-[420px]" : "w-0"
+          "absolute top-0 right-0 h-full w-[440px] max-w-full bg-background border-l border-border shadow-2xl flex flex-col",
+          "transition-transform duration-300 ease-in-out",
+          selectedNews ? "translate-x-0" : "translate-x-full"
         )}>
-          <div className={cn(
-            "w-[420px] h-full min-h-0 flex flex-col",
-            "transition-transform duration-300 ease-in-out",
-            selectedNews ? "translate-x-0" : "translate-x-full"
-          )}>
+          <div className="w-full h-full min-h-0 flex flex-col">
             {/* Header */}
             <div className="flex items-start justify-between p-5 border-b border-border shrink-0">
               <div className="flex-1 pr-4">
@@ -336,9 +338,7 @@ export function NewsPage() {
                   <div className="flex items-center gap-2 mb-2">
                     <span className={cn(
                       "px-2 py-0.5 rounded text-xs font-medium",
-                      selectedNews.score >= 8 ? "bg-green-100 text-green-800" :
-                      selectedNews.score >= 6 ? "bg-blue-100 text-blue-800" :
-                      "bg-gray-100 text-gray-800"
+                      scoreBadgeCls(selectedNews.score)
                     )}>
                       评分 {selectedNews.score}
                     </span>

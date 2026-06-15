@@ -324,7 +324,7 @@ export function MonitoringPage() {
                   <p className="text-muted-foreground">当前没有未处理的告警</p>
                 </div>
               ) : (
-                <div className="space-y-3 max-w-4xl">
+                <div className="space-y-3">
                   {filteredAlerts.map((alert) => {
                     const theme = SEVERITY_THEME[alert.severity];
                     const Icon = theme.Icon;
