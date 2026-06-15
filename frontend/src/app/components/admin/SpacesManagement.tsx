@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loading } from "../ui/Loading";
-import { Plus, MoreHorizontal, Edit2, Trash2, ChevronDown, X, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
+import { Plus, MoreHorizontal, Edit2, Trash2, ChevronDown, X } from "lucide-react";
 import { cn } from "../../lib/utils";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
@@ -36,6 +36,7 @@ function mapSpace(s: any) {
     name: s.name,
     icon: s.icon ?? "📁",
     description: s.description ?? "",
+    sort_order: Number(s.sort_order ?? 0),
     channelCount: s.channel_count ?? 0,
     sourceCount: s.source_count ?? 0,
   };
@@ -64,15 +65,17 @@ function mapSpaceSource(s: any, spaceName: string) {
 
 export function SpacesManagement() {
   const [spaces, setSpaces] = useState<any[]>([]);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [spacesLoading, setSpacesLoading] = useState(true);
+  const [spaceDragIdx, setSpaceDragIdx] = useState<number | null>(null);
+  const [spaceDragOverIdx, setSpaceDragOverIdx] = useState<number | null>(null);
   const [channels, setChannels] = useState<any[]>([{ id: "all", name: "全部", sourceCount: 0, isAll: true }]);
+  const [channelDragIdx, setChannelDragIdx] = useState<number | null>(null);
+  const [channelDragOverIdx, setChannelDragOverIdx] = useState<number | null>(null);
   const [sources, setSources] = useState<any[]>([]);
   const [sourcesLoading, setSourcesLoading] = useState(true);
   const [channelsLoading, setChannelsLoading] = useState(false);
   const [selectedSpace, setSelectedSpace] = useState("");
   const [selectedChannel, setSelectedChannel] = useState("all");
-  const [hoveredSpace, setHoveredSpace] = useState<string | null>(null);
-  const [hoveredChannel, setHoveredChannel] = useState<string | null>(null);
   const [spaceEditDialog, setSpaceEditDialog] = useState<{ open: boolean; space: any }>({ open: false, space: null });
   const [channelEditDialog, setChannelEditDialog] = useState<{ open: boolean; channel: any }>({ open: false, channel: null });
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; data: any }>({ open: false, data: null });
@@ -85,12 +88,14 @@ export function SpacesManagement() {
 
   // 加载空间列表（mount / 增删改后）
   async function loadSpaces() {
+    setSpacesLoading(true);
     try {
       const sp: any[] = await listSpaces();
       const list = (sp ?? []).map(mapSpace);
       setSpaces(list);
       setSelectedSpace((prev) => (prev && list.some((s) => s.id === prev) ? prev : list[0]?.id ?? ""));
     } catch (e) { console.error(e); }
+    finally { setSpacesLoading(false); }
   }
   // 加载当前空间频道（前端补「全部」）
   async function loadChannels() {
@@ -122,22 +127,20 @@ export function SpacesManagement() {
   // 信息源已按空间/频道从后端加载，直接用
   const filteredSources = sources;
 
-  // 空间排序
-  async function moveSpace(idx: number, dir: -1 | 1) {
-    const arr = [...spaces];
-    const j = idx + dir;
-    if (j < 0 || j >= arr.length) return;
-    [arr[idx], arr[j]] = [arr[j], arr[idx]];
-    try { await reorderSpaces(arr.map((s, i) => ({ id: s.id, sort_order: (i + 1) * 10 }))); await loadSpaces(); } catch (e) { console.error(e); }
-  }
-  // 频道排序（channels[0] 是前端造的「全部」，不参与）
-  async function moveChannel(idx: number, dir: -1 | 1) {
+  // 频道拖拽排序（channels[0] 是前端造的「全部」，不参与）
+  function handleChannelDrop(targetIdx: number) {
+    setChannelDragOverIdx(null);
+    if (channelDragIdx === null || channelDragIdx === targetIdx || targetIdx < 1 || channelDragIdx < 1) {
+      setChannelDragIdx(null); return;
+    }
     const arr = [...channels];
-    const j = idx + dir;
-    if (j < 1 || j >= arr.length) return;
-    [arr[idx], arr[j]] = [arr[j], arr[idx]];
+    const [moved] = arr.splice(channelDragIdx, 1);
+    arr.splice(targetIdx, 0, moved);
+    setChannelDragIdx(null);
+    setChannels(arr);
     const real = arr.filter((c) => !c.isAll);
-    try { await reorderChannels(selectedSpace, real.map((c, i) => ({ id: c.id, sort_order: (i + 1) * 10 }))); await loadChannels(); } catch (e) { console.error(e); }
+    reorderChannels(selectedSpace, real.map((c, i) => ({ id: c.id, sort_order: (i + 1) * 10 })))
+      .catch((e) => { console.error(e); loadChannels(); });
   }
   // 暂停 / 恢复（乐观更新：立即翻转状态，失败回滚）
   async function toggleSourcePause(source: any) {
@@ -155,11 +158,12 @@ export function SpacesManagement() {
 
   // 空间拖拽排序（乐观：立即重排，失败回滚重拉）
   function handleSpaceDrop(targetIdx: number) {
-    if (dragIdx === null || dragIdx === targetIdx) { setDragIdx(null); return; }
+    setSpaceDragOverIdx(null);
+    if (spaceDragIdx === null || spaceDragIdx === targetIdx) { setSpaceDragIdx(null); return; }
     const arr = [...spaces];
-    const [moved] = arr.splice(dragIdx, 1);
+    const [moved] = arr.splice(spaceDragIdx, 1);
     arr.splice(targetIdx, 0, moved);
-    setDragIdx(null);
+    setSpaceDragIdx(null);
     setSpaces(arr);
     reorderSpaces(arr.map((s, i) => ({ id: s.id, sort_order: (i + 1) * 10 }))).catch((e) => { console.error(e); loadSpaces(); });
   }
@@ -175,8 +179,9 @@ export function SpacesManagement() {
         await loadSpaces();
         toast.success("空间已更新");
       } else {
-        // 新建：append 到末尾并选中（不全量重拉，避免卡顿和跳到第一位）
-        const created: any = await createSpace({ name: data.name, description: data.description, icon: data.icon });
+        // 新建：传 sort_order = max+10 让其稳定排在末尾（后端按 sort_order 升序），并立即 append + 选中
+        const maxSort = spaces.reduce((m, s) => Math.max(m, Number(s.sort_order ?? 0)), 0);
+        const created: any = await createSpace({ name: data.name, description: data.description, icon: data.icon, sort_order: maxSort + 10 });
         const ns = mapSpace(created);
         setSpaces((prev) => [...prev, ns]);
         setSelectedSpace(ns.id);
@@ -258,19 +263,40 @@ export function SpacesManagement() {
           </button>
         </div>
 
+        {spacesLoading ? (
+          <Loading text="加载空间…" className="py-8" />
+        ) : (
         <div className="flex gap-3 flex-wrap">
           {spaces.map((space, idx) => (
             <div
               key={space.id}
               draggable
-              onDragStart={() => setDragIdx(idx)}
-              onDragOver={(e) => e.preventDefault()}
+              onDragStart={(e) => {
+                setSpaceDragIdx(idx);
+                e.dataTransfer.effectAllowed = "move";
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (spaceDragIdx !== null && spaceDragIdx !== idx) setSpaceDragOverIdx(idx);
+              }}
+              onDragLeave={() => setSpaceDragOverIdx((cur) => (cur === idx ? null : cur))}
               onDrop={() => handleSpaceDrop(idx)}
-              onDragEnd={() => setDragIdx(null)}
-              onMouseEnter={() => setHoveredSpace(space.id)}
-              onMouseLeave={() => setHoveredSpace(null)}
-              className={cn("relative transition-opacity", dragIdx === idx && "opacity-40")}
+              onDragEnd={() => { setSpaceDragIdx(null); setSpaceDragOverIdx(null); }}
+              className={cn(
+                "relative transition-all duration-200 cursor-grab active:cursor-grabbing",
+                spaceDragIdx === idx && "opacity-50 scale-95",
+                spaceDragOverIdx === idx && spaceDragIdx !== idx && "scale-105",
+              )}
             >
+              {/* 拖拽插入指示线（左侧） */}
+              {spaceDragOverIdx === idx && spaceDragIdx !== null && spaceDragIdx > idx && (
+                <span className="absolute -left-2 top-0 h-full w-0.5 bg-primary rounded-full" />
+              )}
+              {/* 拖拽插入指示线（右侧） */}
+              {spaceDragOverIdx === idx && spaceDragIdx !== null && spaceDragIdx < idx && (
+                <span className="absolute -right-2 top-0 h-full w-0.5 bg-primary rounded-full" />
+              )}
               <div
                 onClick={() => {
                   setSelectedSpace(space.id);
@@ -278,10 +304,12 @@ export function SpacesManagement() {
                 }}
                 onDoubleClick={() => handleSpaceEdit(space)}
                 className={cn(
-                    "w-[180px] p-3 rounded-lg border-2 transition-all text-left relative cursor-pointer",
-                    selectedSpace === space.id
-                      ? "border-primary bg-primary/5"
-                      : "border-border bg-card hover:border-primary/50"
+                    "w-[180px] p-3 rounded-lg border-2 transition-all text-left relative",
+                    spaceDragIdx === idx
+                      ? "border-primary shadow-xl ring-2 ring-primary/30 bg-primary/5"
+                      : selectedSpace === space.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
                   )}
                 >
                   <div className="flex items-start gap-2 mb-2">
@@ -315,34 +343,6 @@ export function SpacesManagement() {
                   <div className="text-xs text-muted-foreground">
                     {space.channelCount}个频道 · {space.sourceCount}个信息源
                   </div>
-
-                  {/* Sort arrows */}
-                  {hoveredSpace === space.id && (
-                    <>
-                      {idx > 0 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            moveSpace(idx, -1);
-                          }}
-                          className="absolute -left-7 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </button>
-                      )}
-                      {idx < spaces.length - 1 && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            moveSpace(idx, 1);
-                          }}
-                          className="absolute -right-7 top-1/2 -translate-y-1/2 p-0.5 hover:bg-accent rounded"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
-                      )}
-                    </>
-                  )}
                 </div>
             </div>
           ))}
@@ -355,9 +355,11 @@ export function SpacesManagement() {
             <span>新建空间</span>
           </button>
         </div>
+        )}
       </div>
 
-      {/* Content Area: Channels + Sources */}
+      {/* Content Area: Channels + Sources（空间未就绪不渲染，消除多 spinner 并存） */}
+      {!spacesLoading && (
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Channels */}
         <div className="w-56 border-r border-border bg-card p-4">
@@ -373,10 +375,34 @@ export function SpacesManagement() {
             {!channelsLoading && channels.map((channel, idx) => (
               <div
                 key={channel.id}
-                onMouseEnter={() => setHoveredChannel(channel.id)}
-                onMouseLeave={() => setHoveredChannel(null)}
-                className="relative"
+                draggable={!channel.isAll}
+                onDragStart={(e) => {
+                  if (channel.isAll) return;
+                  setChannelDragIdx(idx);
+                  e.dataTransfer.effectAllowed = "move";
+                }}
+                onDragOver={(e) => {
+                  if (channel.isAll || channelDragIdx === null) return;
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (channelDragIdx !== idx) setChannelDragOverIdx(idx);
+                }}
+                onDragLeave={() => setChannelDragOverIdx((cur) => (cur === idx ? null : cur))}
+                onDrop={() => handleChannelDrop(idx)}
+                onDragEnd={() => { setChannelDragIdx(null); setChannelDragOverIdx(null); }}
+                className={cn(
+                  "relative transition-all duration-200",
+                  !channel.isAll && "cursor-grab active:cursor-grabbing",
+                  channelDragIdx === idx && "opacity-50",
+                )}
               >
+                {/* 拖拽插入指示线 */}
+                {channelDragOverIdx === idx && channelDragIdx !== null && channelDragIdx > idx && (
+                  <span className="absolute left-0 -top-0.5 w-full h-0.5 bg-primary rounded-full" />
+                )}
+                {channelDragOverIdx === idx && channelDragIdx !== null && channelDragIdx < idx && (
+                  <span className="absolute left-0 -bottom-0.5 w-full h-0.5 bg-primary rounded-full" />
+                )}
                 <button
                   onClick={() => setSelectedChannel(channel.id)}
                   onDoubleClick={() => handleChannelEdit(channel)}
@@ -407,34 +433,6 @@ export function SpacesManagement() {
                     </div>
                   </div>
                 </button>
-
-                {/* Sort arrows for non-all channels */}
-                {!channel.isAll && hoveredChannel === channel.id && (
-                  <div className="absolute -right-6 top-1/2 -translate-y-1/2 flex flex-col gap-0.5">
-                    {idx > 1 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          moveChannel(idx, -1);
-                        }}
-                        className="p-0.5 hover:bg-accent rounded"
-                      >
-                        <ChevronUp className="h-3 w-3" />
-                      </button>
-                    )}
-                    {idx < channels.length - 1 && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          moveChannel(idx, 1);
-                        }}
-                        className="p-0.5 hover:bg-accent rounded"
-                      >
-                        <ChevronDown className="h-3 w-3" />
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
             ))}
 
@@ -612,6 +610,7 @@ export function SpacesManagement() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Space Edit Dialog */}
       <SpaceEditDialog

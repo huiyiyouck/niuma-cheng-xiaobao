@@ -27,7 +27,7 @@ async function requestJson<T = any>(path: string, opts: RequestOpts = {}): Promi
 
 // ── Space 空间 ────────────────────────────────────────────
 export const listSpaces = () => requestJson("/v1/spaces");
-export const createSpace = (payload: { name: string; description?: string; icon?: string }) =>
+export const createSpace = (payload: { name: string; description?: string; icon?: string; sort_order?: number }) =>
   requestJson("/v1/spaces", { method: "POST", body: payload });
 export const updateSpace = (id: UUID, payload: { name?: string; description?: string; icon?: string }) =>
   requestJson(`/v1/spaces/${id}`, { method: "PUT", body: payload });

@@ -78,7 +78,7 @@ function CenterWrap({ children, className }: { children: React.ReactNode; classN
 
 export function NewsPage() {
   // 空间列表由 RootLayout 加载并经 Outlet context 下发；当前空间由左栏导航通过 URL `?space=` 驱动
-  const { spaces } = useOutletContext<{ spaces: Array<{ id: string; name: string }> }>();
+  const { spaces, spacesLoading } = useOutletContext<{ spaces: Array<{ id: string; name: string }>; spacesLoading: boolean }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedSpace = searchParams.get("space") || spaces[0]?.id || "";
 
@@ -153,6 +153,12 @@ export function NewsPage() {
       <div className="shrink-0 border-b border-border px-6 pt-4 pb-0">
         {/* 空间 + 频道 同一行（数据少，合并紧凑不空旷） */}
         <div className="flex items-center gap-3 pb-3 flex-wrap">
+          {spacesLoading ? (
+            <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground py-1.5">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />加载空间…
+            </span>
+          ) : (
+          <>
           {/* 空间分段控件 */}
           <div className="inline-flex gap-1 p-1 bg-muted rounded-lg shrink-0">
             {spaces.map((space) => (
@@ -193,6 +199,8 @@ export function NewsPage() {
             </button>
             ))}
           </div>
+          </>
+          )}
         </div>
 
         {/* Filters */}

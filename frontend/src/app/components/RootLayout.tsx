@@ -10,6 +10,7 @@ export function RootLayout() {
   const location = useLocation();
   const [unhandledAlertsCount, setUnhandledAlertsCount] = useState(0);
   const [spaces, setSpaces] = useState<Space[]>([]);
+  const [spacesLoading, setSpacesLoading] = useState(true);
 
   // 空间列表加载一次，经 Outlet context 下发给 NewsPage；左栏导航也消费
   useEffect(() => {
@@ -18,6 +19,7 @@ export function RootLayout() {
         const sp: any[] = await listSpaces();
         setSpaces((sp ?? []).map((s) => ({ id: String(s.id), name: s.name })));
       } catch { /* 列表为空时左栏二级不展开，不阻塞渲染 */ }
+      finally { setSpacesLoading(false); }
     })();
   }, []);
 
@@ -53,7 +55,7 @@ export function RootLayout() {
 
       {/* 中栏：各页面内容 */}
       <main className="flex-1 overflow-hidden flex flex-col">
-        <Outlet context={{ spaces }} />
+        <Outlet context={{ spaces, spacesLoading }} />
       </main>
 
       {/* 全局 Toast 通知 */}
