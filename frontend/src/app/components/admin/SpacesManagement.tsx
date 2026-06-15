@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import { Loading } from "../ui/Loading";
 import { Plus, MoreHorizontal, Edit2, Trash2, ChevronDown, X, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
 import { cn } from "../../lib/utils";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -62,8 +64,10 @@ function mapSpaceSource(s: any, spaceName: string) {
 
 export function SpacesManagement() {
   const [spaces, setSpaces] = useState<any[]>([]);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [channels, setChannels] = useState<any[]>([{ id: "all", name: "全部", sourceCount: 0, isAll: true }]);
   const [sources, setSources] = useState<any[]>([]);
+  const [sourcesLoading, setSourcesLoading] = useState(true);
   const [selectedSpace, setSelectedSpace] = useState("");
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [hoveredSpace, setHoveredSpace] = useState<string | null>(null);
@@ -98,12 +102,14 @@ export function SpacesManagement() {
   }
   // 加载当前空间/频道下的信息源
   async function loadSources() {
-    if (!selectedSpace) { setSources([]); return; }
+    if (!selectedSpace) { setSources([]); setSourcesLoading(false); return; }
     const sp = spaces.find((s) => s.id === selectedSpace);
+    setSourcesLoading(true);
     try {
       const raw = await listSpaceSources(selectedSpace, selectedChannel === "all" ? null : selectedChannel);
       setSources(raw.map((s) => mapSpaceSource(s, sp?.name ?? "")));
     } catch { setSources([]); }
+    finally { setSourcesLoading(false); }
   }
 
   useEffect(() => { loadSpaces(); }, []);
@@ -130,12 +136,29 @@ export function SpacesManagement() {
     const real = arr.filter((c) => !c.isAll);
     try { await reorderChannels(selectedSpace, real.map((c, i) => ({ id: c.id, sort_order: (i + 1) * 10 }))); await loadChannels(); } catch (e) { console.error(e); }
   }
-  // 暂停 / 恢复
+  // 暂停 / 恢复（乐观更新：立即翻转状态，失败回滚）
   async function toggleSourcePause(source: any) {
+    const wasRunning = source.isRunning;
+    setSources((prev) => prev.map((s) => (s.id === source.id ? { ...s, isRunning: !wasRunning } : s)));
     try {
-      if (source.isRunning) await pauseSource(source.id); else await resumeSource(source.id);
-      await loadSources();
-    } catch (e) { console.error(e); }
+      if (wasRunning) await pauseSource(source.id); else await resumeSource(source.id);
+      toast.success(wasRunning ? "已暂停抓取" : "已恢复抓取");
+    } catch (e) {
+      console.error(e);
+      setSources((prev) => prev.map((s) => (s.id === source.id ? { ...s, isRunning: wasRunning } : s)));
+      toast.error("操作失败，请重试");
+    }
+  }
+
+  // 空间拖拽排序（乐观：立即重排，失败回滚重拉）
+  function handleSpaceDrop(targetIdx: number) {
+    if (dragIdx === null || dragIdx === targetIdx) { setDragIdx(null); return; }
+    const arr = [...spaces];
+    const [moved] = arr.splice(dragIdx, 1);
+    arr.splice(targetIdx, 0, moved);
+    setDragIdx(null);
+    setSpaces(arr);
+    reorderSpaces(arr.map((s, i) => ({ id: s.id, sort_order: (i + 1) * 10 }))).catch((e) => { console.error(e); loadSpaces(); });
   }
 
   const handleSpaceEdit = (space: any | null) => {
@@ -144,10 +167,19 @@ export function SpacesManagement() {
 
   const handleSpaceSave = async (data: { name: string; icon: string; description: string }) => {
     try {
-      if (spaceEditDialog.space?.id) await updateSpace(spaceEditDialog.space.id, { name: data.name, description: data.description, icon: data.icon });
-      else await createSpace({ name: data.name, description: data.description, icon: data.icon });
-      await loadSpaces();
-    } catch (e) { console.error(e); }
+      if (spaceEditDialog.space?.id) {
+        await updateSpace(spaceEditDialog.space.id, { name: data.name, description: data.description, icon: data.icon });
+        await loadSpaces();
+        toast.success("空间已更新");
+      } else {
+        // 新建：append 到末尾并选中（不全量重拉，避免卡顿和跳到第一位）
+        const created: any = await createSpace({ name: data.name, description: data.description, icon: data.icon });
+        const ns = mapSpace(created);
+        setSpaces((prev) => [...prev, ns]);
+        setSelectedSpace(ns.id);
+        toast.success("空间已创建");
+      }
+    } catch (e) { console.error(e); toast.error("操作失败，请重试"); }
   };
 
   const handleSpaceDelete = (space: any) => {
@@ -174,11 +206,13 @@ export function SpacesManagement() {
 
   const handleChannelSave = async (data: { name: string; description: string }) => {
     try {
-      if (channelEditDialog.channel?.id) await updateChannel(selectedSpace, channelEditDialog.channel.id, { name: data.name, description: data.description });
+      const isEdit = !!channelEditDialog.channel?.id;
+      if (isEdit) await updateChannel(selectedSpace, channelEditDialog.channel.id, { name: data.name, description: data.description });
       else await createChannel(selectedSpace, { name: data.name, description: data.description });
       await loadChannels();
       await loadSpaces();
-    } catch (e) { console.error(e); }
+      toast.success(isEdit ? "频道已更新" : "频道已创建");
+    } catch (e) { console.error(e); toast.error("操作失败，请重试"); }
   };
 
   const handleChannelDelete = (channel: any) => {
@@ -225,9 +259,14 @@ export function SpacesManagement() {
           {spaces.map((space, idx) => (
             <div
               key={space.id}
+              draggable
+              onDragStart={() => setDragIdx(idx)}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={() => handleSpaceDrop(idx)}
+              onDragEnd={() => setDragIdx(null)}
               onMouseEnter={() => setHoveredSpace(space.id)}
               onMouseLeave={() => setHoveredSpace(null)}
-              className="relative"
+              className={cn("relative transition-opacity", dragIdx === idx && "opacity-40")}
             >
               <div
                 onClick={() => {
@@ -429,7 +468,9 @@ export function SpacesManagement() {
             </div>
 
             {/* Sources List */}
-            {filteredSources.length === 0 ? (
+            {sourcesLoading ? (
+              <Loading text="加载信息源…" />
+            ) : filteredSources.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">当前频道暂无信息源</p>
                 <button
@@ -459,7 +500,10 @@ export function SpacesManagement() {
                           )}>
                             {source.availability === "normal" ? "正常" : "待修复"}
                           </span>
-                          <span className="px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded flex items-center gap-1">
+                          <span className={cn(
+                            "px-2 py-0.5 text-xs rounded flex items-center gap-1",
+                            source.isRunning ? "bg-green-100 text-green-800" : "bg-gray-200 text-gray-500"
+                          )}>
                             <div className={cn(
                               "h-1.5 w-1.5 rounded-full",
                               source.isRunning ? "bg-green-600" : "bg-gray-400"
@@ -501,7 +545,7 @@ export function SpacesManagement() {
                           onClick={() => toggleSourcePause(source)}
                           className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm"
                         >
-                          暂停
+                          {source.isRunning ? "暂停" : "恢复"}
                         </button>
 
                         {/* Channel display/selector */}
@@ -588,22 +632,26 @@ export function SpacesManagement() {
         data={deleteDialog.data}
         onConfirm={async () => {
           const d = deleteDialog.data;
+          const removedSourceId = sourceToDelete;
+          // 立即关弹窗 + 乐观移除，消除等待感
+          setDeleteDialog({ open: false, data: null });
+          setSourceToDelete(null);
+          if (d?.type === "space") setSpaces((prev) => prev.filter((s) => s.id !== d.id));
+          else if (d?.type === "channel") setChannels((prev) => prev.filter((c) => c.id !== d.id));
+          else if (d?.type === "remove-placement") setSources((prev) => prev.filter((s) => s.id !== removedSourceId));
           try {
-            if (d?.type === "space") await deleteSpace(d.id);
-            else if (d?.type === "channel") await deleteChannel(selectedSpace, d.id);
+            if (d?.type === "space") { await deleteSpace(d.id); await loadSpaces(); }
+            else if (d?.type === "channel") { await deleteChannel(selectedSpace, d.id); await loadChannels(); await loadSpaces(); }
             else if (d?.type === "remove-placement") {
-              const src = sources.find((s) => s.id === sourceToDelete);
+              const src = sources.find((s) => s.id === removedSourceId);
               const positions = isInAllChannel
                 ? (src?._positions ?? [])
                 : (src?._positions ?? []).filter((p: any) => String(p.channel_id) === selectedChannel);
               for (const p of positions) await removeDisplayPosition(p.id);
+              await loadSources(); await loadChannels();
             }
-            await loadSpaces();
-            await loadChannels();
-            await loadSources();
-          } catch (e) { console.error(e); }
-          setDeleteDialog({ open: false, data: null });
-          setSourceToDelete(null);
+            toast.success("已删除");
+          } catch (e) { console.error(e); toast.error("删除失败，请重试"); loadSpaces(); loadChannels(); loadSources(); }
         }}
       />
 
@@ -619,7 +667,8 @@ export function SpacesManagement() {
             await loadSources();
             await loadChannels();
             await loadSpaces();
-          } catch (e) { console.error(e); }
+            toast.success("信息源已添加");
+          } catch (e) { console.error(e); toast.error("添加失败，请重试"); }
         }}
       />
     </div>

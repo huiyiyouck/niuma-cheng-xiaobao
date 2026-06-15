@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router";
 import { getUnreadAlertsCount, listSpaces } from "../lib/api";
 import { AppSidebar } from "./AppSidebar";
+import { Toaster } from "./ui/sonner";
 
 type Space = { id: string; name: string };
 
@@ -54,6 +55,9 @@ export function RootLayout() {
       <main className="flex-1 overflow-hidden flex flex-col">
         <Outlet context={{ spaces }} />
       </main>
+
+      {/* 全局 Toast 通知 */}
+      <Toaster richColors position="top-right" />
     </div>
   );
 }

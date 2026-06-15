@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, Search, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { listSources, preVerifySource, createSource } from "../../lib/api";
+import { Loading } from "../ui/Loading";
 
 interface Source {
   id: string;
@@ -53,13 +54,16 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [available, setAvailable] = useState<Source[]>([]);
+  const [availableLoading, setAvailableLoading] = useState(false);
 
   // 信息源库全量拉取（筛选仍走前端，保持原型交互）
   async function loadAvailable() {
+    setAvailableLoading(true);
     try {
       const r: any = await listSources({ page_size: 100 });
       setAvailable((r?.sources ?? []).map((s: any) => mapAvailable(s, spaceName, channelName)));
     } catch { setAvailable([]); }
+    finally { setAvailableLoading(false); }
   }
   useEffect(() => { if (open) loadAvailable(); }, [open, spaceName, channelName]);
 
@@ -240,7 +244,8 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
 
               {/* Results List */}
               <div className="space-y-2">
-                {filteredSources.map((source) => (
+                {availableLoading && <Loading />}
+                {!availableLoading && filteredSources.map((source) => (
                   <div
                     key={source.id}
                     className={cn(

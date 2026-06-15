@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Loading } from "../components/ui/Loading";
+import { toast } from "sonner";
 import { Link, useParams, useNavigate } from "react-router";
 import { ChevronRight, AlertTriangle, Trash2, Edit, Plus } from "lucide-react";
 import { SourceEditDrawer } from "../components/admin/SourceEditDrawer";
@@ -7,6 +9,7 @@ import { AddPlacementDialog } from "../components/ui/AddPlacementDialog";
 import {
   getSource, updateSource, deleteSource,
   toggleDisplayPosition, removeDisplayPosition, addDisplayPosition,
+  pauseSource, resumeSource,
   listNews,
 } from "../lib/api";
 
@@ -52,6 +55,17 @@ export function SourceDetailPage() {
     } catch (e) { console.error(e); setRaw(null); }
   }
   useEffect(() => { loadSource(); }, [id]);
+
+  // 源级暂停 / 恢复抓取
+  async function handleToggleSource() {
+    if (!raw) return;
+    const wasRunning = raw.operational_status === "fetching";
+    try {
+      if (wasRunning) await pauseSource(raw.id); else await resumeSource(raw.id);
+      await loadSource();
+      toast.success(wasRunning ? "已暂停抓取" : "已恢复抓取");
+    } catch (e) { console.error(e); toast.error("操作失败，请重试"); }
+  }
 
   // 拉「最近新闻」：选用源所在的第一个空间作为 space_id（后端 /v1/news 强制要 space_id）
   useEffect(() => {
@@ -118,9 +132,7 @@ export function SourceDetailPage() {
   if (!source) {
     return (
       <div className="h-full overflow-auto">
-        <div className="max-w-7xl mx-auto p-6">
-          <div className="text-muted-foreground">加载中…</div>
-        </div>
+        <Loading className="h-full" />
       </div>
     );
   }
@@ -201,6 +213,12 @@ export function SourceDetailPage() {
                 </div>
 
                 <div className="flex gap-2">
+                  <button
+                    onClick={handleToggleSource}
+                    className={"px-3 py-1.5 rounded text-sm " + (source.isRunning ? "bg-secondary text-secondary-foreground hover:bg-accent" : "bg-green-600 text-white hover:bg-green-700")}
+                  >
+                    {source.isRunning ? "暂停抓取" : "恢复抓取"}
+                  </button>
                   <button
                     onClick={handleEdit}
                     className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm"

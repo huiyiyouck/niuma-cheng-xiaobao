@@ -6,6 +6,8 @@ import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
 import { Badge } from "../ui/badge";
 import { PlacementTooltip } from "../ui/PlacementTooltip";
 import { listSources, syncXRules, deleteSource } from "../../lib/api";
+import { toast } from "sonner";
+import { Loading } from "../ui/Loading";
 
 type SortField = "name" | "type" | "availability" | "lastFetch" | "totalNews";
 type SortDirection = "asc" | "desc";
@@ -50,6 +52,9 @@ const availabilityLabels: Record<string, string> = {
 
 export function SourceLibrary() {
   const [sources, setSources] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [availabilityFilter, setAvailabilityFilter] = useState("all");
@@ -62,12 +67,37 @@ export function SourceLibrary() {
 
   // 一次拉全量，筛选/排序/分页仍由前端处理（保持原型交互）
   async function loadSources() {
+    setLoading(true);
     try {
       const r: any = await listSources({ page_size: 100 });
       setSources((r?.sources ?? []).map(mapSource));
     } catch { setSources([]); }
+    finally { setLoading(false); }
   }
   useEffect(() => { loadSources(); }, []);
+
+  // 刷新：转圈 + 成功/失败 toast
+  async function handleRefresh() {
+    setRefreshing(true);
+    try {
+      const r: any = await listSources({ page_size: 100 });
+      setSources((r?.sources ?? []).map(mapSource));
+      toast.success("信息源列表已刷新");
+    } catch { toast.error("刷新失败，请重试"); }
+    finally { setRefreshing(false); }
+  }
+
+  // 同步 X 规则：转圈 + 成功/失败 toast
+  async function handleSync() {
+    setSyncing(true);
+    try {
+      await syncXRules();
+      const r: any = await listSources({ page_size: 100 });
+      setSources((r?.sources ?? []).map(mapSource));
+      toast.success("X 规则同步完成");
+    } catch { toast.error("X 规则同步失败，请重试"); }
+    finally { setSyncing(false); }
+  }
 
   const hasActiveFilters = searchQuery || typeFilter !== "all" || availabilityFilter !== "all" || runningFilter !== "all";
 
@@ -139,17 +169,19 @@ export function SourceLibrary() {
           新建信息源
         </button>
         <button
-          onClick={() => loadSources()}
-          className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap disabled:opacity-60"
         >
-          <RefreshCw className="h-4 w-4 inline mr-2" />
+          <RefreshCw className={cn("h-4 w-4 inline mr-2", refreshing && "animate-spin")} />
           刷新
         </button>
         <button
-          onClick={async () => { try { await syncXRules(); await loadSources(); } catch (e) { console.error(e); } }}
-          className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap"
+          onClick={handleSync}
+          disabled={syncing}
+          className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap disabled:opacity-60"
         >
-          <Repeat className="h-4 w-4 inline mr-2" />
+          <Repeat className={cn("h-4 w-4 inline mr-2", syncing && "animate-spin")} />
           同步 X 规则
         </button>
       </div>
@@ -246,7 +278,13 @@ export function SourceLibrary() {
             </tr>
           </thead>
           <tbody>
-            {paginatedSources.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={9}>
+                  <Loading />
+                </td>
+              </tr>
+            ) : paginatedSources.length === 0 ? (
               <tr>
                 <td colSpan={9} className="text-center py-12">
                   <div className="text-muted-foreground">
