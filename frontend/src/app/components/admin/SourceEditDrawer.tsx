@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 interface SourceEditDrawerProps {
   open: boolean;
@@ -15,7 +15,7 @@ interface SourceEditDrawerProps {
     topic: string;
     notes: string;
   } | null;
-  onSave: (data: any) => void;
+  onSave: (data: any) => void | Promise<void>;
 }
 
 export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDrawerProps) {
@@ -25,6 +25,10 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
   const [priority, setPriority] = useState("中");
   const [topic, setTopic] = useState("");
   const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  // X 源的展示名由 X Developer Portal Tag 同步管理，UI 不可编辑（后端会 400）
+  const isXSource = source?.type === "X/Twitter" || source?.type === "x_twitter";
 
   useEffect(() => {
     if (source) {
@@ -34,23 +38,33 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
       setPriority(source.priority || "中");
       setTopic(source.topic || "");
       setNotes(source.notes || "");
+      setSubmitting(false);
     }
   }, [source, open]);
 
-  const handleSave = () => {
-    if (!displayName.trim()) {
+  const handleSave = async () => {
+    if (!isXSource && !displayName.trim()) {
       alert("请输入展示名称");
       return;
     }
-    onSave({
-      displayName: displayName.trim(),
-      tags,
-      role,
-      priority,
-      topic,
-      notes,
-    });
-    onClose();
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      // 等后端完成再关；X 源不传 displayName，避免后端 400
+      await onSave({
+        displayName: isXSource ? undefined : displayName.trim(),
+        tags,
+        role,
+        priority,
+        topic,
+        notes,
+      });
+      onClose();
+    } catch {
+      // 父级已 toast.error，留住抽屉让用户重试或取消
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!open || !source) return null;
@@ -58,14 +72,14 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
   return (
     <>
       {/* Overlay */}
-      <div className="fixed inset-0 bg-black/30 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/30 z-40" onClick={() => { if (!submitting) onClose(); }} />
 
       {/* Drawer */}
       <div className="fixed top-0 right-0 bottom-0 w-[500px] bg-card border-l border-border shadow-2xl z-50 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3>编辑信息源</h3>
-          <button onClick={onClose} className="p-1 hover:bg-accent rounded">
+          <button onClick={onClose} disabled={submitting} className="p-1 hover:bg-accent rounded disabled:opacity-50">
             <X className="h-4 w-4" />
           </button>
         </div>
@@ -85,13 +99,20 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-2">展示名称 *</label>
-            <input
-              type="text"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            />
+            <label className="block text-sm font-medium mb-2">展示名称{isXSource ? "" : " *"}</label>
+            {isXSource ? (
+              <>
+                <div className="px-3 py-2 bg-muted rounded-md text-sm">{displayName || "—"}</div>
+                <p className="text-xs text-muted-foreground mt-1">X 信息源的展示名由 X Developer Portal Tag 同步，不可在此修改</p>
+              </>
+            ) : (
+              <input
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
+              />
+            )}
           </div>
 
           <div>
@@ -178,15 +199,18 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
         <div className="p-4 border-t border-border flex gap-3">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-accent"
+            disabled={submitting}
+            className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed"
           >
             取消
           </button>
           <button
             onClick={handleSave}
-            className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90"
+            disabled={submitting}
+            className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
           >
-            保存
+            {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+            {submitting ? "保存中…" : "保存"}
           </button>
         </div>
       </div>

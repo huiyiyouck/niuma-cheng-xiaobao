@@ -139,6 +139,7 @@ export function SourceDetailPage() {
   const handleSaveEdit = async (data: any) => {
     if (!id) return;
     try {
+      // X 源 display_name 由后端 X 同步管理；前端传 undefined → 不下发该字段（后端会 400）
       await updateSource(id, {
         display_name: data.displayName,
         domain_tags: data.tags,
@@ -148,7 +149,15 @@ export function SourceDetailPage() {
         notes: data.notes || null,
       });
       await loadSource();
-    } catch (e) { console.error(e); }
+      toast.success("已保存");
+    } catch (e: any) {
+      console.error(e);
+      // 解析后端 detail（如 X 源不可改名等业务错误）
+      const msg = String(e?.message ?? "");
+      const m = msg.match(/\{.*"detail":"([^"]+)"/);
+      toast.error(m ? `保存失败：${m[1]}` : "保存失败，请重试");
+      throw e;  // 让抽屉留住，submitting 复位
+    }
   };
 
   const handleConfirmDelete = async () => {
