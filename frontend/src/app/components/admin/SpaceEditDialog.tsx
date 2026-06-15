@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 interface SpaceEditDialogProps {
   open: boolean;
@@ -11,11 +11,12 @@ interface SpaceEditDialogProps {
     icon: string;
     description: string;
   } | null;
-  onSave: (data: { name: string; icon: string; description: string }) => void;
+  onSave: (data: { name: string; icon: string; description: string }) => Promise<void> | void;
 }
 
 export function SpaceEditDialog({ open, onOpenChange, space, onSave }: SpaceEditDialogProps) {
   const [name, setName] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const [icon, setIcon] = useState("🔖");
   const [description, setDescription] = useState("");
 
@@ -31,13 +32,17 @@ export function SpaceEditDialog({ open, onOpenChange, space, onSave }: SpaceEdit
     }
   }, [space, open]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!name.trim()) {
       alert("请输入空间名称");
       return;
     }
-    onSave({ name: name.trim(), icon, description: description.trim() });
-    onOpenChange(false);
+    setSubmitting(true);
+    try {
+      await onSave({ name: name.trim(), icon, description: description.trim() });
+      onOpenChange(false);
+    } catch (e) { console.error(e); }
+    finally { setSubmitting(false); }
   };
 
   return (
@@ -102,8 +107,10 @@ export function SpaceEditDialog({ open, onOpenChange, space, onSave }: SpaceEdit
               </Dialog.Close>
               <button
                 onClick={handleSave}
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90"
+                disabled={submitting}
+                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:opacity-90 disabled:opacity-60 flex items-center justify-center gap-2"
               >
+                {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
                 保存
               </button>
             </div>

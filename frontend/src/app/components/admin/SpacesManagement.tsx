@@ -182,7 +182,7 @@ export function SpacesManagement() {
         setSelectedSpace(ns.id);
         toast.success("空间已创建");
       }
-    } catch (e) { console.error(e); toast.error("操作失败，请重试"); }
+    } catch (e) { console.error(e); toast.error("操作失败，请重试"); throw e; }
   };
 
   const handleSpaceDelete = (space: any) => {
@@ -215,7 +215,7 @@ export function SpacesManagement() {
       await loadChannels();
       await loadSpaces();
       toast.success(isEdit ? "频道已更新" : "频道已创建");
-    } catch (e) { console.error(e); toast.error("操作失败，请重试"); }
+    } catch (e) { console.error(e); toast.error("操作失败，请重试"); throw e; }
   };
 
   const handleChannelDelete = (channel: any) => {
