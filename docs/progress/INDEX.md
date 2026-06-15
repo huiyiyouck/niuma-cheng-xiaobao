@@ -132,6 +132,7 @@
 | P2 | 信息源级别代理配置：每个 Source 可独立控制是否走代理抓取（当前为全局代理） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 部分 RSS 源可能不需要代理 | ✅ 已评估（2026-06-09）— 不作为前端管理能力；如需 Source 级代理，作为后端内部抓取策略由设计阶段按需处理 |
 | P1 | MCP 协议信息源完整支持：新建/编辑/删除 MCP 源的 UI、工具选择、配置管理（当前仅后台 API 临时创建） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 金十数据 MCP 接入为临时后台方案 | 待 PM 评估，纳入后续迭代规划 |
 | P1 | **L1 Agent 化：OpenClaw 集成替换内建 LLM 调用** — L1 处理链路接入 OpenClaw 服务（Agentic tool-use），由 Agent 自主驱动 KB 检索/链接读取/Web 搜索/X 搜索，替代当前 `l1-processor.ts` 空壳 Stage 3 + 硬编码 5 阶段；主 Server 只做 fetch raw_item → 调 OpenClaw Agent → 存结果 | Developer | 2026-06-13 v0.6 实现阶段讨论 — Owner 决定 LLM 处理由外部 Agent 承担 | ⏳ 待切换到服务器上做 OpenClaw 集成验证：① 确认 Agent 配置和 Web Search 能力 ② 用 `openclaw agent --json` 拿结构化新闻输出 ③ 验证输出格式可对接 l1-processor.ts 写入契约 |
+| **P1** | 生产/测试部署去软链接化（部署目录与开发目录彻底解耦）：当前生产 `news.huiyiyou.cloud` 是软链接 → 开发目录 `frontend/dist`，导致 `npm run build` 即直接污染生产（6-13 起多次发生）。改为：部署流程 `build` 后将编译产物**拷贝（rsync）到独立生产目录**，nginx 指向该独立目录而非软链接（nginx `root` 已是 `/var/www/news.huiyiyou.cloud`，只需将该路径从软链接换成真实目录 + 建立 build→rsync 部署步骤）。测试环境同理走独立目录（`test.huiyiyou.cloud` 当前已是 rsync 独立目录，需复核确认部署流程与生产统一）。落实后开发仓库 build 不再影响任何环境。 | DevOps | 2026-06-15 Owner 口述 | 待启动 |
 
 ## Bootstrap 记录
 - 时间：2026-05-23（估计，基于早期 commit）
