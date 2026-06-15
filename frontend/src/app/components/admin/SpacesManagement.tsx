@@ -636,25 +636,41 @@ export function SpacesManagement() {
         onConfirm={async () => {
           const d = deleteDialog.data;
           const removedSourceId = sourceToDelete;
-          // 立即关弹窗 + 乐观移除，消除等待感
-          setDeleteDialog({ open: false, data: null });
-          setSourceToDelete(null);
-          if (d?.type === "space") setSpaces((prev) => prev.filter((s) => s.id !== d.id));
-          else if (d?.type === "channel") setChannels((prev) => prev.filter((c) => c.id !== d.id));
-          else if (d?.type === "remove-placement") setSources((prev) => prev.filter((s) => s.id !== removedSourceId));
-          toast.success("已删除");  // 与乐观移除同步弹出
+          // 等后端完成再关弹窗 + 本地更新（不全量重拉，避免父级 loading 兜底闪动）
           try {
-            if (d?.type === "space") { await deleteSpace(d.id); await loadSpaces(); }
-            else if (d?.type === "channel") { await deleteChannel(selectedSpace, d.id); await loadChannels(); await loadSpaces(); }
-            else if (d?.type === "remove-placement") {
+            if (d?.type === "space") {
+              await deleteSpace(d.id);
+              setSpaces((prev) => {
+                const next = prev.filter((s) => s.id !== d.id);
+                // 当前选中被删 → 选首个；否则保持
+                setSelectedSpace((cur) => (cur === d.id ? (next[0]?.id ?? "") : cur));
+                return next;
+              });
+            } else if (d?.type === "channel") {
+              await deleteChannel(selectedSpace, d.id);
+              setChannels((prev) => prev.filter((c) => c.id !== d.id));
+              if (selectedChannel === d.id) setSelectedChannel("all");
+              // 频道删除后空间的频道/源数会变，静默刷新（非父级 loading）
+              listSpaces().then((sp: any[]) => setSpaces((sp ?? []).map(mapSpace))).catch(() => {});
+            } else if (d?.type === "remove-placement") {
               const src = sources.find((s) => s.id === removedSourceId);
               const positions = isInAllChannel
                 ? (src?._positions ?? [])
                 : (src?._positions ?? []).filter((p: any) => String(p.channel_id) === selectedChannel);
               for (const p of positions) await removeDisplayPosition(p.id);
-              await loadSources(); await loadChannels();
+              setSources((prev) => prev.filter((s) => s.id !== removedSourceId));
+              // 频道下源数 / 空间汇总数变化，静默刷新
+              loadChannels();
+              listSpaces().then((sp: any[]) => setSpaces((sp ?? []).map(mapSpace))).catch(() => {});
             }
-          } catch (e) { console.error(e); toast.error("删除失败，已恢复"); loadSpaces(); loadChannels(); loadSources(); }
+            setDeleteDialog({ open: false, data: null });
+            setSourceToDelete(null);
+            toast.success("已删除");
+          } catch (e) {
+            console.error(e);
+            toast.error("删除失败，请重试");
+            throw e;  // 让弹窗 submitting 状态退出但不关闭，用户可重试或取消
+          }
         }}
       />
 

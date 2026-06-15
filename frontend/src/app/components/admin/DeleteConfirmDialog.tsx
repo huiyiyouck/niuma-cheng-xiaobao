@@ -1,6 +1,6 @@
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, AlertTriangle } from "lucide-react";
+import { X, AlertTriangle, Loader2 } from "lucide-react";
 
 interface DeleteSpaceData {
   type: "space";
@@ -40,33 +40,36 @@ interface DeleteConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: DeleteData;
-  onConfirm: (migrateToRoot?: boolean) => void;
+  onConfirm: (migrateToRoot?: boolean) => void | Promise<void>;
 }
 
 export function DeleteConfirmDialog({ open, onOpenChange, data, onConfirm }: DeleteConfirmDialogProps) {
   const [confirmName, setConfirmName] = useState("");
   const [migrateOption, setMigrateOption] = useState<"migrate" | "remove">("migrate");
+  const [submitting, setSubmitting] = useState(false);
 
   if (!data) return null;
 
   const isNameMatch = confirmName === data.name;
 
-  const handleConfirm = () => {
-    if (!isNameMatch) return;
+  const handleConfirm = async () => {
+    if (!isNameMatch && data.type !== "remove-placement") return;
+    if (submitting) return;
 
-    if (data.type === "channel") {
-      onConfirm(migrateOption === "migrate");
-    } else {
-      onConfirm();
+    setSubmitting(true);
+    try {
+      // 等待后端完成再关弹窗：让用户感知到"在做事"，避免乐观更新导致的突兀闪动
+      await onConfirm(data.type === "channel" ? migrateOption === "migrate" : undefined);
+      // 成功后由父组件关闭并 reset；若父组件没关，这里兜底
+      setConfirmName("");
+      setMigrateOption("migrate");
+    } finally {
+      setSubmitting(false);
     }
-
-    // Reset state
-    setConfirmName("");
-    setMigrateOption("migrate");
   };
 
   return (
-    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+    <Dialog.Root open={open} onOpenChange={(o) => { if (!submitting) onOpenChange(o); }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-card border border-border rounded-lg shadow-xl max-w-md w-full p-6 z-50" aria-describedby={undefined}>
@@ -78,7 +81,7 @@ export function DeleteConfirmDialog({ open, onOpenChange, data, onConfirm }: Del
               }
             </Dialog.Title>
             <Dialog.Close asChild>
-              <button className="p-1 hover:bg-accent rounded">
+              <button disabled={submitting} className="p-1 hover:bg-accent rounded disabled:opacity-50">
                 <X className="h-4 w-4" />
               </button>
             </Dialog.Close>
@@ -240,16 +243,19 @@ export function DeleteConfirmDialog({ open, onOpenChange, data, onConfirm }: Del
             {/* Actions */}
             <div className="flex gap-3 pt-2">
               <Dialog.Close asChild>
-                <button className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-accent">
+                <button disabled={submitting} className="flex-1 px-4 py-2 bg-secondary text-secondary-foreground rounded-md hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed">
                   取消
                 </button>
               </Dialog.Close>
               <button
                 onClick={handleConfirm}
-                disabled={data.type !== "remove-placement" && !isNameMatch}
-                className="flex-1 px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={submitting || (data.type !== "remove-placement" && !isNameMatch)}
+                className="flex-1 px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2"
               >
-                {data.type === "remove-placement" ? "确认移除" : "确认删除"}
+                {submitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {submitting
+                  ? (data.type === "remove-placement" ? "正在移除…" : "正在删除…")
+                  : (data.type === "remove-placement" ? "确认移除" : "确认删除")}
               </button>
             </div>
           </div>
