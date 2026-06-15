@@ -43,6 +43,13 @@
       "when": 1749800000000,
       "tag": "0005_v0.6_l0_l1_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1749900000000,
+      "tag": "0006_drop_dp_channel_unique",
+      "breakpoints": true
     }
   ]
 }

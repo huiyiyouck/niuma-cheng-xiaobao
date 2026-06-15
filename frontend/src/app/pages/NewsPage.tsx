@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useSearchParams, useOutletContext } from "react-router";
 import {
-  Search, Inbox,
+  Search, Inbox, Loader2,
   ExternalLink, X, Tag, Building2, Clock, BarChart2, ChevronRight,
 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -83,6 +83,7 @@ export function NewsPage() {
   const selectedSpace = searchParams.get("space") || spaces[0]?.id || "";
 
   const [channels, setChannels] = useState<Array<{ id: string; name: string }>>([{ id: "all", name: "全部" }]);
+  const [channelsLoading, setChannelsLoading] = useState(false);
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -96,11 +97,13 @@ export function NewsPage() {
   useEffect(() => {
     if (!selectedSpace) return;
     setSelectedChannel("all");
+    setChannelsLoading(true);
     (async () => {
       try {
         const ch: any[] = await listChannels(selectedSpace);
         setChannels([{ id: "all", name: "全部" }, ...(ch ?? []).map((c) => ({ id: String(c.id), name: c.name }))]);
       } catch { setChannels([{ id: "all", name: "全部" }]); }
+      finally { setChannelsLoading(false); }
     })();
   }, [selectedSpace]);
 
@@ -170,7 +173,12 @@ export function NewsPage() {
           <div className="h-5 w-px bg-border shrink-0" />
           {/* 频道描边 chip */}
           <div className="flex gap-1.5 flex-wrap">
-            {channels.map((channel) => (
+            {channelsLoading && (
+              <span className="inline-flex items-center gap-1.5 text-sm text-muted-foreground py-1">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />加载频道…
+              </span>
+            )}
+            {!channelsLoading && channels.map((channel) => (
             <button
               key={channel.id}
               onClick={() => setSelectedChannel(channel.id)}
