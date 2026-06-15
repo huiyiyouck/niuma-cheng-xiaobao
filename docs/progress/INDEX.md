@@ -7,7 +7,7 @@
 - 当前迭代：v0.6
 - 当前模式：标准迭代
 - 当前阶段：实现阶段进行中 — 后端 A+B+C 已实现；前端 React 4 页接真实 API；6/15 完成左中右布局、三页 UI 精修、管理页交互连续修复（乐观更新/拖拽/toast/Loading/空间级重复拦截）和 `display_positions` 软删除后无法重加修复；独立测试环境在线（IP 入口 http://115.191.43.79 + news_test 库 + :8001 systemd news-api-test）
-- 阻塞项：生产/测试部署去软链接化待 DevOps；Owner 继续 test 验证；7+ commit 未 push
+- 阻塞项：生产/测试部署去软链接化待 DevOps；Owner 继续 test 验证
 - 下一步入口：Owner 浏览器验证 test 环境完整功能 → 需要则 Developer 继续精修；通过后可切 DevOps 规整部署（去软链 + 处理 IP 临时入口）/ 可选放开 worker 跑 v0.6 评分标签数据 / OpenClaw 集成验证
 
 ## 版本列表
