@@ -9,7 +9,6 @@ import { AddPlacementDialog } from "../components/ui/AddPlacementDialog";
 import {
   getSource, updateSource, deleteSource,
   toggleDisplayPosition, removeDisplayPosition, addDisplayPosition,
-  pauseSource, resumeSource,
   listNews,
 } from "../lib/api";
 
@@ -55,17 +54,6 @@ export function SourceDetailPage() {
     } catch (e) { console.error(e); setRaw(null); }
   }
   useEffect(() => { loadSource(); }, [id]);
-
-  // 源级暂停 / 恢复抓取
-  async function handleToggleSource() {
-    if (!raw) return;
-    const wasRunning = raw.operational_status === "fetching";
-    try {
-      if (wasRunning) await pauseSource(raw.id); else await resumeSource(raw.id);
-      await loadSource();
-      toast.success(wasRunning ? "已暂停抓取" : "已恢复抓取");
-    } catch (e) { console.error(e); toast.error("操作失败，请重试"); }
-  }
 
   // 拉「最近新闻」：选用源所在的第一个空间作为 space_id（后端 /v1/news 强制要 space_id）
   useEffect(() => {
@@ -213,12 +201,6 @@ export function SourceDetailPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  <button
-                    onClick={handleToggleSource}
-                    className={"px-3 py-1.5 rounded text-sm " + (source.isRunning ? "bg-secondary text-secondary-foreground hover:bg-accent" : "bg-green-600 text-white hover:bg-green-700")}
-                  >
-                    {source.isRunning ? "暂停抓取" : "恢复抓取"}
-                  </button>
                   <button
                     onClick={handleEdit}
                     className="px-3 py-1.5 bg-secondary text-secondary-foreground rounded hover:bg-accent text-sm"
@@ -408,20 +390,21 @@ export function SourceDetailPage() {
                     <div className="flex gap-2">
                       <button
                         onClick={async () => {
-                          try { await toggleDisplayPosition(placement.id, !placement.enabled); await loadSource(); }
-                          catch (e) { console.error(e); }
+                          const wasEnabled = placement.enabled;
+                          try { await toggleDisplayPosition(placement.id, !wasEnabled); toast.success(wasEnabled ? "已暂停该位置抓取" : "已恢复该位置抓取"); loadSource(); }
+                          catch (e) { console.error(e); toast.error("操作失败，请重试"); }
                         }}
-                        className="text-xs text-muted-foreground hover:text-foreground"
+                        className="px-2.5 py-1 rounded-md text-xs border border-border text-foreground hover:bg-accent"
                       >
                         {placement.enabled ? "暂停" : "恢复"}
                       </button>
                       <span className="text-muted-foreground">·</span>
                       <button
                         onClick={async () => {
-                          try { await removeDisplayPosition(placement.id); await loadSource(); }
-                          catch (e) { console.error(e); }
+                          try { await removeDisplayPosition(placement.id); toast.success("已移除该位置"); loadSource(); }
+                          catch (e) { console.error(e); toast.error("移除失败（可能是唯一位置不可移除）"); }
                         }}
-                        className="text-xs text-destructive hover:underline"
+                        className="px-2.5 py-1 rounded-md text-xs text-destructive border border-destructive/30 hover:bg-destructive/10"
                       >移除</button>
                     </div>
                   </div>
@@ -474,8 +457,11 @@ export function SourceDetailPage() {
         }))}
         onConfirm={async (spaceId, channelId) => {
           if (!source.id) return;
-          await addDisplayPosition({ source_id: source.id, space_id: spaceId, channel_id: channelId });
-          await loadSource();
+          try {
+            await addDisplayPosition({ source_id: source.id, space_id: spaceId, channel_id: channelId });
+            toast.success("已添加展示位置");
+            loadSource();
+          } catch (e) { console.error(e); toast.error("添加失败，请重试"); throw e; }
         }}
       />
     </div>

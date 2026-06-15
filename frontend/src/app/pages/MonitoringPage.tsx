@@ -1,4 +1,5 @@
 import { useState, useEffect, Fragment, useRef } from "react";
+import { Loading } from "../components/ui/Loading";
 import { CheckCircle2, XCircle, AlertTriangle, AlertCircle, Info, ArrowRight, Clock, Target, X as XIcon } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Badge } from "../components/ui/badge";
@@ -139,7 +140,9 @@ export function MonitoringPage() {
   const [logTimeRange, setLogTimeRange] = useState<string>("24h");
 
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [alertsLoading, setAlertsLoading] = useState(true);
   const [logs, setLogs] = useState<Log[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
   // 高亮跳转状态：告警→日志时设这两个，日志列表用它定位/染色
   const [highlightWindow, setHighlightWindow] = useState<{ from: string; to: string; keyword: string } | null>(null);
   const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
@@ -148,12 +151,15 @@ export function MonitoringPage() {
   const [batchAcking, setBatchAcking] = useState(false);
 
   async function loadAlerts() {
+    setAlertsLoading(true);
     try {
       const r: any = await listAlerts({ include_processed: true });
       setAlerts((r?.alerts ?? []).map(mapAlert));
     } catch { setAlerts([]); }
+    finally { setAlertsLoading(false); }
   }
   async function loadLogs() {
+    setLogsLoading(true);
     try {
       const r: any = await listLogs({
         level: logLevelFilter === "all" ? undefined : logLevelFilter,
@@ -162,6 +168,7 @@ export function MonitoringPage() {
       });
       setLogs((r?.entries ?? []).map(mapLog));
     } catch { setLogs([]); }
+    finally { setLogsLoading(false); }
   }
 
   useEffect(() => { loadAlerts(); }, []);
@@ -317,7 +324,9 @@ export function MonitoringPage() {
             </div>
 
             <div className="flex-1 overflow-auto p-6">
-              {filteredAlerts.length === 0 ? (
+              {alertsLoading ? (
+                <Loading />
+              ) : filteredAlerts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-64 text-center">
                   <CheckCircle2 className="h-16 w-16 text-green-500 mb-4" />
                   <h3 className="font-medium mb-2">一切正常</h3>
@@ -499,7 +508,9 @@ export function MonitoringPage() {
             </div>
 
             {/* Logs Table */}
-            {filteredLogs.length === 0 ? (
+            {logsLoading ? (
+              <Loading />
+            ) : filteredLogs.length === 0 ? (
               <div className="text-center py-12">
                 <XCircle className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
                 <p className="text-lg font-medium">无符合条件的日志</p>

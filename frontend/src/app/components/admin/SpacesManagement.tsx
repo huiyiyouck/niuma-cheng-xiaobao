@@ -102,7 +102,7 @@ export function SpacesManagement() {
   }
   // 加载当前空间/频道下的信息源
   async function loadSources() {
-    if (!selectedSpace) { setSources([]); setSourcesLoading(false); return; }
+    if (!selectedSpace) { setSources([]); return; }  // 空间未就绪时保持 loading，不闪空态
     const sp = spaces.find((s) => s.id === selectedSpace);
     setSourcesLoading(true);
     try {
