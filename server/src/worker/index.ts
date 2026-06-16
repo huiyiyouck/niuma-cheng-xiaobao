@@ -114,8 +114,16 @@ async function reclaimLoop(stopSignal: AbortSignal): Promise<void> {
 
 function sleep(ms: number, stopSignal: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
-    const t = setTimeout(resolve, ms);
-    stopSignal.addEventListener("abort", () => clearTimeout(t), { once: true });
+    // 关键：正常超时结束后必须 removeEventListener，否则每次 sleep 都会在
+    // 长期存活的 stopSignal 上永久累积 abort 监听器（once:true 仅在 abort 触发后才清，
+    // 而服务运行期 abort 永不触发）→ 监听器数百万级泄漏，addEventListener 退化 O(n)，
+    // 表现为主线程 100% CPU + 内存线性增长 + 页面越来越慢。
+    const onAbort = () => { clearTimeout(t); resolve(); };
+    const t = setTimeout(() => {
+      stopSignal.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    stopSignal.addEventListener("abort", onAbort, { once: true });
   });
 }
 
