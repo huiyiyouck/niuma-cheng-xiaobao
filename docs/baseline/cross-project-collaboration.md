@@ -37,21 +37,75 @@ coordination 仓库由 Owner 创建或指定。推荐最小结构：
 
 ```text
 README.md
+PROJECTS.md
 STATUS.md
 CHANGELOG.md
 contracts/
+communications/
 decisions/
 ```
 
 | 路径 | 作用 |
 |------|------|
 | `README.md` | 生态总览、成员项目、协作入口 |
+| `PROJECTS.md` | 项目目录：每个项目的仓库、职责、Owner、当前入口和关联沟通文档 |
 | `STATUS.md` | 跨项目当前状态：谁等谁、阻塞项、下一步 |
 | `CHANGELOG.md` | 跨项目重大事件、契约 breaking change、迁移提醒 |
 | `contracts/` | 跨项目契约单一真源，如 HTTP schema、事件、字段语义 |
+| `communications/` | 项目间沟通文档，按参与项目成对或多方归档 |
 | `decisions/` | 影响两个以上项目的决策记录 |
 
 coordination 仓库不要承载业务项目的全部 PRD、设计文档、测试报告或角色日志。需要查看项目内部细节时，从 `STATUS.md` 链接回对应项目文件。
+
+## 项目目录与沟通文档索引
+
+coordination 仓库必须有一个总目录，说明有哪些项目、每个项目负责什么、项目之间的沟通文档在哪里。
+
+### `PROJECTS.md`
+
+`PROJECTS.md` 是跨项目目录真源。推荐字段：
+
+| 字段 | 说明 |
+|------|------|
+| 项目 id | 稳定短名，如 `xiaobao`、`ai` |
+| 项目名称 | 人可读名称 |
+| 仓库 | Git URL 或本地约定路径 |
+| 职责边界 | 该项目负责什么、不负责什么 |
+| 当前入口 | 指向该项目 `docs/progress/INDEX.md` 或项目 README |
+| 关联项目 | 与哪些项目存在契约或交付依赖 |
+| 沟通文档 | 指向 `communications/` 下的对应文件 |
+
+### `communications/`
+
+项目间沟通文档放在 `communications/` 下，按参与项目命名：
+
+```text
+communications/
+├── xiaobao__ai.md
+├── xiaobao__coordination.md
+└── xiaobao__ai__coordination.md
+```
+
+命名规则：
+
+- 两个项目之间：`{project-a}__{project-b}.md`
+- 三个以上项目：`{project-a}__{project-b}__{project-c}.md`
+- 项目 id 使用 `PROJECTS.md` 中的稳定短名
+- 文件名只表达参与方，不表达临时议题；临时议题写进文档内章节
+
+每份沟通文档头部必须写清楚：
+
+```markdown
+# {项目 A} ↔ {项目 B} 沟通记录
+
+- 参与项目：{project-a}, {project-b}
+- 关系类型：调用方/服务方、共享契约、部署依赖、数据同步等
+- 契约真源：contracts/{contract-name}.md
+- 当前状态入口：STATUS.md#{anchor}
+- 最近更新：YYYY-MM-DD
+```
+
+`PROJECTS.md` 必须反向链接每份沟通文档，避免出现“不知道这是谁和谁的文档”的孤儿沟通记录。
 
 ## 契约真源
 
@@ -132,4 +186,3 @@ coordination 仓库不要承载业务项目的全部 PRD、设计文档、测试
 - `multi-agent-workflow.md` 仍定义单项目内的角色、阶段和 Review 规则。
 - `mechanisms.md` 仍定义 Bootstrap、收尾、关闭检查和流程审计。
 - 本文件只补充跨项目真源、交接和新项目复用规则。
-

@@ -30,6 +30,8 @@
 - 影响范围：`docs/baseline/` 多文件；不涉及业务代码；不删除受保护路径文件；需要 Owner 明确确认后才能修改 baseline 正文。
 - Owner 确认：Owner 已回复“需要有啥确认的跟我说，我来拍板”“继续呀”，视为确认 WM 按上述方案收编。
 - 执行结果：已新增 `docs/baseline/cross-project-collaboration.md`；同步更新 `runtime.md`、`multi-agent-workflow.md`、`bootstrap.md`、`mechanisms.md`、`conventions.md`，明确 coordination 仓库、契约真源、跨项目交接、新项目复用 Bootstrap 约束，并修正基线修正流程中 Architect / WM 职责旧口径。
+- Owner 追加裁定：coordination 里需要“总的目录”说明哪个是哪个项目的沟通文档、是谁跟谁的项目文档。
+- 补充执行：已在 `cross-project-collaboration.md` 增加 `PROJECTS.md` 和 `communications/` 规则；`PROJECTS.md` 作为项目目录真源，`communications/{project-a}__{project-b}.md` 作为项目间沟通文档，且要求双向链接，防止孤儿沟通记录。
 - 下一步入口：Owner 创建 `niuma-cheng-coordination` 仓库后，按新基线创建最小骨架；`niuma-cheng-ai` 在自身仓库执行团队工作流 Bootstrap。
 - 收尾状态：已收编，待提交
 
