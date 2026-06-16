@@ -91,6 +91,15 @@ export const config = {
   llmL1MaxRetries: getInt("LLM_L1_MAX_RETRIES", 3),
   llmTimeoutMs: getInt("LLM_TIMEOUT_MS", 60000),
 
+  // v0.6 L1 处理引擎：builtin（内建 LLM 完整链路，经设计阶段 Review）| agent（OpenClaw news-l1 嵌入，生产侧未验证，仅显式 opt-in）
+  // 默认 builtin：OpenClaw 嵌入路径生产未验证（Gateway scope pending / 成本未控），方向上已定为废弃
+  // （见 ad-hoc 2026-06-16-spike-langgraph-agent-hub-proposal.md §12 D1），不作默认引擎；agent 模式下内建 LLM 仅回退做翻译保底
+  l1Engine: get("L1_ENGINE", "builtin"),
+  openclawBin: get("OPENCLAW_BIN", "openclaw"),
+  openclawAgentId: get("OPENCLAW_AGENT_ID", "news-l1"),
+  openclawTimeoutMs: getInt("OPENCLAW_TIMEOUT_MS", 200000),
+  webSearchMaxResults: getInt("WEB_SEARCH_MAX_RESULTS", 5),
+
   // Worker
   workerId: get("WORKER_ID", "worker-1"),
   schedulerScanSeconds: getInt("SCHEDULER_SCAN_SECONDS", 5),

@@ -65,7 +65,7 @@ export interface L1Output {
 
 // ── 通用工具 ────────────────────────────────────────────────
 
-function extractFirstJsonObject(text: string): Record<string, unknown> | null {
+export function extractFirstJsonObject(text: string): Record<string, unknown> | null {
   const start = text.indexOf("{");
   if (start < 0) return null;
   let depth = 0;
@@ -322,4 +322,19 @@ export async function processL1LLM(input: L1Input): Promise<L1Output> {
     dims?.confidence?.score || 0, dims?.clarity?.score || 0,
     result.needs_context);
   return result;
+}
+
+// ── v0.6 回退：内建 LLM 只做翻译（agent 处理失败时的保底，不做分析/评分）─────
+
+export async function translateOnly(text: string): Promise<{ title: string; zh: string }> {
+  const prompt = `把下面内容翻译成中文，并起一个简短中文标题。只输出严格 JSON，不要多余文字：
+{"title":"中文标题","zh":"中文翻译"}
+
+content:
+${text}`;
+  const result = await callLLM<Record<string, unknown>>(prompt, { model: config.l1LlmModel });
+  return {
+    title: typeof result.title === "string" && result.title.trim() ? result.title : "无标题",
+    zh: typeof result.zh === "string" && result.zh.trim() ? result.zh : text,
+  };
 }

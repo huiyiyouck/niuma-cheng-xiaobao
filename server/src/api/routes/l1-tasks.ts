@@ -3,7 +3,7 @@ import { pool } from "../../db/pool.ts";
 
 /**
  * L1 手动重试（AC-31）
- * #D11：不创建 l1_retry type，手动重试创建 l1_process + 应用层标注触发来源
+ * #D11：不创建 l1_retry type，手动重试创建 l1_process。
  */
 export async function l1TasksRoutes(app: FastifyInstance): Promise<void> {
   app.post("/l1-tasks/:task_id/retry", async (req: FastifyRequest, reply: FastifyReply) => {
@@ -27,7 +27,7 @@ export async function l1TasksRoutes(app: FastifyInstance): Promise<void> {
       return reply.status(400).send({ detail: `当前 L1 状态 ${task.l1_status} 不支持重试` });
     }
 
-    // #D11：创建新的 l1_process task，metadata 标注手动触发
+    // #D11：创建新的 l1_process task；当前 tasks 表无 metadata 列，不额外记录触发来源。
     const { rows: [newTask] } = await pool.query(
       `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, attempt, max_attempts, created_at, updated_at)
        VALUES('l1_process', $1, $2, 'queued', 1, now(), 0, 3, now(), now())

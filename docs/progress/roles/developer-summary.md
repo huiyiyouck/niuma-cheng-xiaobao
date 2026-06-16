@@ -13,7 +13,7 @@
   - 本次 Developer 连续提交 8 个本地 commit：左中右布局、三页 UI 精修、管理页乐观更新/拖拽/toast/Loading、源详情展示位置反馈、`display_positions` 软删除后无法重加迁移修复
   - test 库已手动 DROP 历史残留唯一约束并实测添加位置 409 → 成功；生产部署需跑 `0006_drop_dp_channel_unique`
 - **v0.5 状态**：已关闭（2026-06-09 PM 有条件关闭），无 Developer 遗留代码任务
-- **跨任务待办（Developer 归属）**：OpenClaw L1 Agent 化仍挂起，待切换服务器验证；UI 组件库专项/左中右专项已在本次以最小实现落地，后续可继续抽组件
+- **跨任务待办（Developer 归属）**：OpenClaw L1 Agent 化已完成本机代码层 smoke + `news_test` 单条真实 raw_item / worker 端到端验证（任务 succeeded、raw_item completed、processed_news 写入、news_positions fan-out）；待 3-5 条小批量观察并发/耗时/失败回退；UI 组件库专项/左中右专项已在本次以最小实现落地，后续可继续抽组件
 
 ## 角色定位回顾
 

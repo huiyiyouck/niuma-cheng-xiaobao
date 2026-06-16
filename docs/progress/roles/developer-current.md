@@ -6,6 +6,53 @@
 
 ---
 
+## 2026-06-16 — LangGraph AI 处理中枢方案二轮收敛 + L1_ENGINE 默认值安全修复
+
+- 本次角色：全栈开发（Developer）；模式：Tech Spike / Proposal 续（非迭代评估）+ 安全修复
+- Owner 多轮讨论收敛 LangGraph「AI 处理中枢」方向，结论全部沉淀进提案 §12（草案主体保留，§12 为增量真源）
+- 已拍板决策（提案 §12.1 D1-D5）：
+  - D1 评分体系**方案保留、代码废弃**（四维加权方法论 + `L1Output` 契约留；`l1-processor.ts` 内建五阶段 + OpenClaw 嵌入整体废弃）
+  - D2 AI 处理解耦为独立服务，新闻平台退化为调用方
+  - D3 **新闻平台 Node + AI 中枢 Python**——v0.3「全栈 Node 统一」的有限度、有意识反转，边界仅限中枢一个服务
+  - D4 AI 处理异步化
+  - D5 中枢承载新闻平台**多种 AI 能力**（news-l1 + 影响力扩展 + 时间线复盘…），非泛化多项目；第一版不为无关项目做抽象
+- 产品更正（提案 §12.2，待 PM 收口广播）：新闻分两类——①直接入库展示 ②经 AI 处理后展示；前端需显式标记字段
+- 服务器评估（提案 §12.3，4 核 8G 实测）：load 0.3 / available 6.1G / **Swap=0** / OpenClaw Gateway 占 551M。结论**带得起，前提外部 API 推理**（IO-bound）；本地跑模型免谈；隐患是 Swap=0 + 外部 API 成本，非机器资源
+- LangGraph 选型（提案 §12.4）：中枢编排多 workflow 合理；news-l1 内部建议固定流水线，影响力/时间线可更 agent 化
+- 异步工程问题清单（提案 §12.5）+ 边界划分（§12.6 `calcScoreTotal` 留平台）交 Architect 架构阶段
+- **安全修复**：`config.ts` `L1_ENGINE` 默认 `agent`→`builtin`。根因——生产 `server/.env` 未设该项，完全依赖代码默认值；OpenClaw 嵌入生产未验证（Gateway scope pending / 成本未控）且方向已废弃。`tsc` 0 错误。test scheduler 关闭（SCHEDULER_SCAN_SECONDS=999999）运行时不命中、生产 inactive 下次起服生效，**无需重启**
+- 遗留处理：OpenClaw 嵌入代码（`openclaw.ts` + `l1-processor.ts` agent 分支）方向上 v0.6.1 废弃，删 `server/` 受保护路径须走架构师门禁，留 v0.6.1 实现阶段统一删；本次按 last-out 规则统一 commit 全部遗留（含上个会话 OpenClaw 批次的正常实现产出 callLLM/L0L1 骨架/API endpoint）
+- 下一步：Owner 决定切 **PM 立 v0.6.1 PRD**（含两类新闻产品更正）→ **Architect 出 Agent Hub 架构方案**（含 D3 技术栈、§12.5 异步模型、§12.6 边界）
+
+---
+
+## 2026-06-16 — LangGraph Agent Hub 方案评估与 v0.6.1 候选提案
+
+- 本次角色：全栈开发（Developer）；模式：Tech Spike / Proposal（非迭代技术预研输入）
+- Owner 新决策倾向：不使用 OpenClaw agent 作为新闻平台长期信息处理中枢，改为考虑使用 LangGraph 搭建独立 Agent 中枢，先服务新闻聚合平台，后续接入其他项目
+- Developer 判断：方向可行，且比把 OpenClaw CLI/agent 直接嵌入新闻平台更适合长期演进；建议独立 `agent-hub` 服务承载 LangGraph，新闻平台通过 HTTP 调用，不在 Node worker 内直接嵌入 LangGraph
+- 已新增提案：[LangGraph Agent Hub 技术预研提案](../ad-hoc/2026-06-16-spike-langgraph-agent-hub-proposal.md)
+- 关键结论：v0.6 可先收尾，不启用 LLM/Agent 新闻处理链路；LangGraph Agent Hub 建议作为 v0.6.1 补充迭代候选，由 PM 创建 PRD 或 Architect 先出架构方案
+- 约束：本次只沉淀方案，不启动标准迭代，不改生产运行策略，不运行新的 LLM/Agent 处理
+
+---
+
+## 2026-06-16 — OpenClaw news-l1 Agent 集成验证 smoke
+
+- 本次角色：全栈开发（Developer）；模式：v0.6 实现阶段专项验证（Owner 指定：验证用 OpenClaw agent 处理平台新闻）
+- 已确认当前工作树已有 OpenClaw 集成改动：`L1_ENGINE=agent` 默认开启、`server/src/worker/openclaw.ts` 新增 `webSearch()` / `processL1ViaAgent()` / `validateL1Output()`，`l1-processor.ts` 改为 agent 优先、失败后内建 LLM 仅翻译兜底
+- 验证结果：
+  - `cd server && npm run build` 通过，TypeScript 0 错误
+  - `openclaw status` 可见 `news-l1` agent 会话和本地 Gateway 服务；Gateway 有 scope upgrade pending 提示，但不阻断 `--local` agent smoke
+  - `openclaw capability web search --query ... --json --limit 3` 通过，provider=tavily，返回真实搜索结果
+  - `openclaw agent --agent news-l1 --local --message ... --json --timeout 120` 通过，耗时约 67s，返回严格 JSON；`toolSummary.calls=1` 且工具为 `web_search`
+  - 代码级 smoke：直接调用 `webSearch()` + `processL1ViaAgent()`，成功得到平台 `L1Output` 结构（title / summary / translation / context / analysis / score_dimensions / tags / needs_context），四维评分和 tags 可被当前校验层接住
+- 端到端补验（同日）：在 `news_test` 插入 1 条 `l1_process` queued 任务并调用一次 `workerLoop()`；真实 raw item `39e44f28-47b4-4eee-a5ca-bfd75c422d05` 处理成功，任务 `6de4139b-3284-421f-bc2d-f91d240f1b62` → `succeeded`，`raw_items.l1_status=completed`，新建 `processed_news` `609c20aa-ab65-4b95-8933-ce8d7d5f40ff`，标题「加密KOL「加密狗」预告高确定性RWA项目套利机会及低损耗对冲教程」，`score_total=2.8`，`tags_v2.processing` 含 `engine:agent`，`source_refs.search_fetched=true`，fan-out `news_positions=1`；耗时约 117s
+- 发现：`tasks` 表无 `metadata` 列，历史记录中“手动重试创建 `l1_process` + `metadata.triggered_by='manual'`”只能改为“创建 `l1_process`，不记录 metadata”；已修正 `l1-tasks.ts` 注释
+- 结论：OpenClaw `news-l1` agent 作为 v0.6 L1 主处理引擎的本机代码层 smoke + `news_test` 单条真实 raw_item / worker 端到端验证均已通过；下一步可做 3-5 条小批量观察，重点看总耗时、并发、失败回退和 token/成本
+
+---
+
 ## 2026-06-15 — v0.6 前端左中右布局重构 + 三页 UI/交互精修 + 管理页 bug 修复批 + 后端约束 bug
 
 - 本次角色：全栈开发（Developer）；模式：实现阶段联调精修（Owner 主导的连续前端打磨 + 一个后端 bug）；7 个 commit（eb06ee0 → 6e085d2）
@@ -31,7 +78,7 @@
 - 同步把生产「去软链接化」登记为 DevOps P1 待办（20fffc3）
 
 ### 下一步
-- Owner 继续验证；7 commit 待 push（Owner 未决定）；浏览页新闻列表骨架是否统一成 Loading 待定；OpenClaw 集成（原 P1）仍挂起
+- Owner 继续验证；7 commit 待 push（Owner 未决定）；浏览页新闻列表骨架是否统一成 Loading 待定；OpenClaw 集成已于 2026-06-16 完成本机代码层 smoke，待真实 raw_item / worker 小批量验证
 
 ---
 

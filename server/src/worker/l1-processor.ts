@@ -1,7 +1,9 @@
 import type { PoolClient } from "pg";
+import { config } from "../shared/config.ts";
 import { workerLogger } from "../shared/logger.ts";
-import { processL1LLM } from "./llm.ts";
+import { processL1LLM, translateOnly } from "./llm.ts";
 import type { L1Input, L1Output } from "./llm.ts";
+import { webSearch, processL1ViaAgent, buildFallbackOutput } from "./openclaw.ts";
 
 const log = workerLogger;
 
@@ -96,17 +98,12 @@ async function linkRead(rawItemUrl: string | null): Promise<string | null> {
 }
 
 // ── 阶段 3：外部搜索 ────────────────────────────────────────
-//
-// TODO v0.7：OpenClaw Agent 集成
-//   当前为 P2 空壳。v0.7 启动后，整个 L1 处理链路（Stage 1-5）将替换为
-//   调用本地 OpenClaw 服务的 Agentic tool-use 循环，由 Agent 自主调度
-//   KB 检索 / 链接读取 / Web 搜索 / X 搜索，不再由本文件串行编排。
-//   详见 INDEX.md 跨任务待办「L1 Agent 化：OpenClaw 集成」。
-// ─────────────────────────────────────────────────────────────
-
-async function externalSearch(rawItemId: string, _needsContext: boolean): Promise<string | null> {
-  log.debug("L1 EXTERNAL SEARCH skipped (deferred to v0.7 OpenClaw) raw_item_id=%s", rawItemId);
-  return null;
+// 由后端直接调真实 web.search（已实测可靠），把结果喂给 news-l1 agent；
+// 不让 agent 自主搜——embedded 不跑 tool-use 循环，且模型会谎报 sources=web_search。
+async function externalSearch(rawText: string): Promise<string | null> {
+  const query = extractKeywords(rawText, 5).join(" ");
+  if (!query) return null;
+  return webSearch(query);
 }
 
 // ── L1 process 主入口 ───────────────────────────────────────
@@ -137,6 +134,13 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
 
   log.info("L1 START raw_item_id=%s source=%s source_type=%s", rawItemId, row.identity, row.source_type);
 
+  const rawText = extractRawText(content);
+  const domainTags: string[] = Array.isArray(row.domain_tags)
+    ? row.domain_tags
+    : typeof row.domain_tags === "object" && row.domain_tags !== null
+      ? Object.values(row.domain_tags)
+      : [];
+
   // ── 阶段 1：库内检索（失败不阻断）─────────────────────────
   const kbResults = await kbSearch(conn, rawItemId, row.source_id);
   log.info("L1 STAGE1 kb_search raw_item_id=%s found=%d", rawItemId, kbResults.length);
@@ -146,17 +150,9 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
   log.info("L1 STAGE2 link_read raw_item_id=%s fetched=%s len=%d",
     rawItemId, linkContent ? "yes" : "no", linkContent?.length || 0);
 
-  // ── 阶段 3：外部搜索（P2 空壳，失败不阻断）─────────────────
-  const searchSummary = await externalSearch(rawItemId, false);
+  // ── 阶段 3：外部搜索（后端实搜，失败不阻断）────────────────
+  const searchSummary = await externalSearch(rawText);
   log.info("L1 STAGE3 external_search raw_item_id=%s fetched=%s", rawItemId, searchSummary ? "yes" : "no");
-
-  // ── 阶段 4：LLM 主调用 ────────────────────────────────────
-  const rawText = extractRawText(content);
-  const domainTags: string[] = Array.isArray(row.domain_tags)
-    ? row.domain_tags
-    : typeof row.domain_tags === "object" && row.domain_tags !== null
-      ? Object.values(row.domain_tags)
-      : [];
 
   const l1Input: L1Input = {
     sourceIdentity: String(row.identity || ""),
@@ -168,13 +164,36 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
     searchSummary,
   };
 
+  // ── 阶段 4：主处理 —— agent 优先，失败回退内建 LLM 仅翻译 ───
   let l1Result: L1Output;
-  try {
-    l1Result = await processL1LLM(l1Input);
-  } catch (err: any) {
-    (err as any).errorKind = classifyL1ErrorKind(err);
-    throw err;
+  let engineTag: string;
+  if (config.l1Engine === "agent") {
+    try {
+      l1Result = await processL1ViaAgent(l1Input);
+      engineTag = "engine:agent";
+      log.info("L1 STAGE4 agent ok raw_item_id=%s", rawItemId);
+    } catch (err: any) {
+      log.warn("L1 STAGE4 agent FAILED raw_item_id=%s err=%s — 回退内建 LLM 仅翻译", rawItemId, err.message);
+      try {
+        const tr = await translateOnly(rawText);
+        l1Result = buildFallbackOutput(tr);
+        engineTag = "engine:fallback";
+      } catch (ferr: any) {
+        (ferr as any).errorKind = classifyL1ErrorKind(ferr);
+        throw ferr;
+      }
+    }
+  } else {
+    try {
+      l1Result = await processL1LLM(l1Input);
+      engineTag = "engine:builtin";
+    } catch (err: any) {
+      (err as any).errorKind = classifyL1ErrorKind(err);
+      throw err;
+    }
   }
+  // 引擎标记写入 tags.processing，便于事后筛选/重处理（尤其 engine:fallback 项）
+  l1Result.tags.processing = [...(l1Result.tags.processing || []), engineTag];
 
   const scoreTotal = calcScoreTotal(l1Result.score_dimensions);
 
