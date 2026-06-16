@@ -122,18 +122,6 @@ const LOG_ROW_CLASS: Record<LogLevel, string> = {
   INFO:  "hover:bg-muted/30 border-border",
 };
 
-// 从告警类型/消息里提取最有信息量的关键词，用于在日志里软关联高亮
-function extractAlertKeyword(a: Alert): string {
-  // 优先用 type（如 x_stream_disconnected），转成 message 里大概率出现的形式
-  if (a.type && /^[a-z][a-z0-9_]+$/i.test(a.type)) {
-    // x_stream_disconnected → "X Stream" / "x_stream"
-    const seg = a.type.split("_").slice(0, 2).join(" ");
-    return seg;
-  }
-  // 退而求其次：截 message 前 10 个字
-  return (a.message || "").slice(0, 10);
-}
-
 export function MonitoringPage() {
   const [mainTab, setMainTab] = useState<"alerts" | "logs">("alerts");
   const [showHandled, setShowHandled] = useState(false);
@@ -149,7 +137,7 @@ export function MonitoringPage() {
   const [logs, setLogs] = useState<Log[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   // 高亮跳转状态：告警→日志时设这两个，日志列表用它定位/染色
-  const [highlightWindow, setHighlightWindow] = useState<{ from: string; to: string; keyword: string } | null>(null);
+  const [highlightWindow, setHighlightWindow] = useState<{ from: string; to: string } | null>(null);
   const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
 
   // 一键处理「确认中」 loading
@@ -169,10 +157,19 @@ export function MonitoringPage() {
   async function loadLogs() {
     setLogsLoading(true);
     try {
+      // 告警关联模式：按告警时段（高亮窗前后各放宽 15 分钟给上下文）拉日志。
+      // 否则只拉最新 200 条，历史告警（如昨天触发）对应时刻的日志根本不在范围内，
+      // 时间窗内零命中 → 跳过去定位不到任何行。
+      const w = highlightWindow;
+      const range = w ? {
+        from: new Date(new Date(w.from).getTime() - 14 * 60_000).toISOString(),
+        to:   new Date(new Date(w.to).getTime()   + 14 * 60_000).toISOString(),
+      } : {};
       const r: any = await listLogs({
         level: logLevelFilter === "all" ? undefined : logLevelFilter,
         keyword: logSearchQuery || undefined,
-        limit: 200,
+        ...range,
+        limit: w ? 1000 : 200,
       });
       setLogs((r?.entries ?? []).map(mapLog));
     } catch { setLogs([]); }
@@ -186,7 +183,7 @@ export function MonitoringPage() {
     (async () => {
       try { await getLogsConfig(); } catch { /* ignore */ }
     })();
-  }, [mainTab, logLevelFilter, logSearchQuery]);
+  }, [mainTab, logLevelFilter, logSearchQuery, highlightWindow]);
 
   // 跳到日志后等列表加载完，把第一条命中行 scrollIntoView
   useEffect(() => {
@@ -209,11 +206,9 @@ export function MonitoringPage() {
   function isHighlighted(log: Log): boolean {
     if (!highlightWindow) return false;
     const ts = log.timestamp || "";
-    if (ts < highlightWindow.from || ts > highlightWindow.to) return false;
-    const kw = highlightWindow.keyword.toLowerCase();
-    if (!kw) return true;
-    return log.message.toLowerCase().includes(kw)
-        || log.details.toLowerCase().includes(kw);
+    // 时间落在告警时刻 ±60s 内即视为关联并定位。不再要求关键词命中——否则
+    // zero_new 等「结论型」告警的内部类型名永远匹配不到中文/HTTP 日志，零命中、无处定位。
+    return ts >= highlightWindow.from && ts <= highlightWindow.to;
   }
 
   const handleDismiss = async (id: string) => {
@@ -242,7 +237,7 @@ export function MonitoringPage() {
     const t = new Date(alert.timestamp).getTime();
     const from = new Date(t - 60_000).toISOString();
     const to   = new Date(t + 60_000).toISOString();
-    setHighlightWindow({ from, to, keyword: extractAlertKeyword(alert) });
+    setHighlightWindow({ from, to });
     // 清掉可能误过滤命中行的筛选
     setLogLevelFilter("all");
     setLogModuleFilter("all");
@@ -459,12 +454,6 @@ export function MonitoringPage() {
                         {" – "}
                         {new Date(highlightWindow.to).toLocaleTimeString("zh-CN", { hour12: false })}
                       </span>
-                      {highlightWindow.keyword && (
-                        <>
-                          <span className="text-blue-300">·</span>
-                          <span>关键词「{highlightWindow.keyword}」</span>
-                        </>
-                      )}
                     </div>
                   </div>
                   <button
