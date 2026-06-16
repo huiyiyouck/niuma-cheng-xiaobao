@@ -363,7 +363,7 @@ export function NewsPage() {
 
         {/* Detail panel — 右滑抽屉：列表让位不被遮挡，ESC/X 关闭，列表仍可滚动切换 */}
         <div className={cn(
-          "absolute top-0 right-0 h-full w-[440px] max-w-full bg-background border-l border-border shadow-2xl flex flex-col",
+          "absolute top-0 right-0 h-full w-[440px] max-w-full bg-card border-l border-border shadow-2xl flex flex-col",
           "transition-transform duration-300 ease-in-out",
           selectedNews ? "translate-x-0" : "translate-x-full"
         )}>

@@ -160,7 +160,8 @@ export function MonitoringPage() {
   async function loadAlerts() {
     setAlertsLoading(true);
     try {
-      const r: any = await listAlerts({ include_processed: true });
+      // 未勾「显示已处理」只拉 active，避免大量已处理告警占满分页把未处理的挤出列表
+      const r: any = await listAlerts(showHandled ? undefined : { status: "active" });
       setAlerts((r?.alerts ?? []).map(mapAlert));
     } catch { setAlerts([]); }
     finally { setAlertsLoading(false); }
@@ -178,7 +179,7 @@ export function MonitoringPage() {
     finally { setLogsLoading(false); }
   }
 
-  useEffect(() => { loadAlerts(); }, []);
+  useEffect(() => { loadAlerts(); }, [showHandled]);
   useEffect(() => {
     if (mainTab !== "logs") return;
     loadLogs();

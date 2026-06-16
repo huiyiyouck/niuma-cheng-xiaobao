@@ -164,8 +164,9 @@ export const getSpaceStats = (spaceId: UUID) => requestJson(`/v1/stats?space_id=
 export const getGlobalStats = () => requestJson("/v1/stats");
 
 // ── Alerts 告警 ───────────────────────────────────────────
-export const listAlerts = (opts?: { include_processed?: boolean }) =>
-  requestJson(`/v1/alerts${opts?.include_processed ? "?include_processed=true" : ""}`);
+// status 省略时返回全部状态最新若干条；传 "active" 只看未处理，避免被大量 resolved 挤出分页上限
+export const listAlerts = (opts?: { status?: string }) =>
+  requestJson(`/v1/alerts?page_size=200${opts?.status ? `&status=${opts.status}` : ""}`);
 export const getUnreadAlertsCount = () => requestJson("/v1/alerts/unread-count");
 // 状态机：active → acknowledged|ignored；acknowledged → resolved|ignored；ignored → active
 export const updateAlertStatus = (id: UUID, status: "acknowledged" | "ignored" | "resolved" | "active") =>
