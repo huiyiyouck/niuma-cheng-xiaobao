@@ -21,6 +21,7 @@ interface SourceEditDrawerProps {
 export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDrawerProps) {
   const [displayName, setDisplayName] = useState("");
   const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
   const [role, setRole] = useState("");
   const [priority, setPriority] = useState("中");
   const [topic, setTopic] = useState("");
@@ -34,6 +35,7 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
     if (source) {
       setDisplayName(source.name);
       setTags(source.tags);
+      setTagInput("");
       setRole(source.role || "");
       setPriority(source.priority || "中");
       setTopic(source.topic || "");
@@ -50,10 +52,13 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
     if (submitting) return;
     setSubmitting(true);
     try {
+      // 兜底：用户输入标签后未按回车直接保存时，把输入框残留文字也并入，避免内容丢失
+      const trimmed = tagInput.trim();
+      const finalTags = trimmed && !tags.includes(trimmed) ? [...tags, trimmed] : tags;
       // 等后端完成再关；X 源不传 displayName，避免后端 400
       await onSave({
         displayName: isXSource ? undefined : displayName.trim(),
-        tags,
+        tags: finalTags,
         role,
         priority,
         topic,
@@ -119,11 +124,15 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
             <label className="block text-sm font-medium mb-2">领域标签</label>
             <input
               type="text"
-              placeholder="输入标签后按回车添加"
+              placeholder="输入标签后按回车添加（直接保存也会自动收录）"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && e.currentTarget.value) {
-                  setTags([...tags, e.currentTarget.value]);
-                  e.currentTarget.value = "";
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  const v = tagInput.trim();
+                  if (v && !tags.includes(v)) setTags([...tags, v]);
+                  setTagInput("");
                 }
               }}
               className="w-full px-3 py-2 bg-background border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
