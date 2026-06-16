@@ -306,7 +306,7 @@ export function NewsPage() {
                   "bg-card border rounded-xl p-5 cursor-pointer transition-all",
                   selectedNews?.id === news.id
                     ? "border-primary/50 shadow-md ring-1 ring-primary/20"
-                    : "border-border hover:border-primary/30 hover:shadow-md"
+                    : "border-border/60 shadow-sm hover:border-primary/30 hover:shadow-md hover:-translate-y-0.5"
                 )}
               >
                 <div className="flex items-start gap-3">
