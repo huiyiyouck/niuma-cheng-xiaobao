@@ -362,7 +362,7 @@ export function SpacesManagement() {
       {!spacesLoading && (
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Channels */}
-        <div className="w-56 border-r border-border bg-card p-4">
+        <div className="w-56 border-r border-border p-4">
           <div className="flex items-center justify-between mb-3">
             <h4 className="text-sm font-medium">频道</h4>
             <button className="p-1 hover:bg-accent rounded">
@@ -486,7 +486,7 @@ export function SpacesManagement() {
             ) : (
               <div className="space-y-3">
                 {filteredSources.map((source) => (
-                  <div key={source.id} className="bg-card border border-border rounded-lg p-4">
+                  <div key={source.id} className="bg-card border border-border rounded-lg shadow-sm p-4">
                     {/* Source Header */}
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

@@ -276,7 +276,7 @@ export function SourceLibrary() {
       </div>
 
       {/* Table */}
-      <div className="bg-card border border-border rounded-lg overflow-hidden">
+      <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
         <table className="w-full">
           <thead className="bg-muted/30 border-b border-border">
             <tr>

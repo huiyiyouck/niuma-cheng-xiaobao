@@ -297,7 +297,7 @@ export function MonitoringPage() {
       <div className="flex-1 overflow-auto">
         {mainTab === "alerts" ? (
           <div className="h-full flex flex-col">
-            <div className="border-b border-border bg-card px-6 py-4">
+            <div className="border-b border-border px-6 py-4">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-lg font-medium">告警</h1>
                 <div className="flex items-center gap-3">
@@ -373,7 +373,7 @@ export function MonitoringPage() {
                       <div
                         key={alert.id}
                         className={cn(
-                          "group relative bg-card border border-border rounded-lg overflow-hidden transition-all",
+                          "group relative bg-card border border-border rounded-lg shadow-sm overflow-hidden transition-all",
                           alert.handled ? "opacity-60" : "hover:shadow-md hover:-translate-y-px"
                         )}
                       >
@@ -549,7 +549,7 @@ export function MonitoringPage() {
                 <p className="text-sm text-muted-foreground mt-1">尝试调整筛选条件</p>
               </div>
             ) : (
-              <div className="bg-card border border-border rounded-lg overflow-hidden">
+              <div className="bg-card border border-border rounded-lg shadow-sm overflow-hidden">
                 <table className="w-full">
                   <thead className="bg-muted/30 border-b border-border">
                     <tr>

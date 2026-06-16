@@ -201,7 +201,7 @@ export function SourceDetailPage() {
           {/* Left Column */}
           <div className="col-span-2 space-y-6">
             {/* Header */}
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <h1>{source.displayName}</h1>
@@ -255,7 +255,7 @@ export function SourceDetailPage() {
             </div>
 
             {/* Basic Info */}
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-6">
               <h3 className="mb-4">基本资料</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -278,7 +278,7 @@ export function SourceDetailPage() {
             </div>
 
             {/* Tags & Notes */}
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-6">
               <h3 className="mb-4">标签与备注</h3>
               <div className="space-y-4">
                 <div>
@@ -313,7 +313,7 @@ export function SourceDetailPage() {
             </div>
 
             {/* Fetch Status */}
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-6">
               <h3 className="mb-4">抓取状态</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -336,7 +336,7 @@ export function SourceDetailPage() {
             </div>
 
             {/* Recent News Timeline */}
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-6">
               <h3 className="mb-4">最近一周新闻</h3>
               <div className="space-y-4">
                 {recentNews.map((news, idx) => (
@@ -365,7 +365,7 @@ export function SourceDetailPage() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Usage Stats */}
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-6">
               <h3 className="mb-4">使用概况</h3>
               <div className="grid grid-cols-2 gap-3">
                 <div className="text-center p-3 bg-muted/50 rounded">
@@ -388,7 +388,7 @@ export function SourceDetailPage() {
             </div>
 
             {/* Placements */}
-            <div className="bg-card border border-border rounded-lg p-6">
+            <div className="bg-card border border-border rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-4">
                 <h3>展示位置</h3>
                 <button

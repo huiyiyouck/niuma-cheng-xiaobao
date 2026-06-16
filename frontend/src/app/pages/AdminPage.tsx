@@ -18,7 +18,7 @@ export function AdminPage() {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="border-b border-border bg-card">
+      <div className="border-b border-border">
         <div className="px-6 py-4">
           <h1 className="mb-4">管理</h1>
           <div className="flex gap-1">
