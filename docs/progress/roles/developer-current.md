@@ -6,6 +6,23 @@
 
 ---
 
+## 2026-06-16 — 建 niuma-cheng-ai 独立中枢骨架 + 跨项目协作机制设计（移交 WM）
+
+- 本次角色：全栈开发（Developer）；模式：Owner 指挥的项目创建 + 跨项目协作设计（非迭代）
+- Owner 拍板直接建 AI 中枢独立项目；Developer 确认「建骨架零技术难度、无大风险、可逆」，纠正上一轮把流程洁癖当技术风险
+- 已建 `~/Project/niuma-cheng-ai`（独立 git 仓库，init commit `0ee6c9a`）：
+  - Python 3.12 + FastAPI + LangGraph；端口 8100（避开 8000/8001/18789）
+  - 契约 `schemas.py`（L1Input / L1Output / RunResponse，按提案 §6/§7；评分 score_total 留平台、中枢只产四维 score+reason 见 §12.6）
+  - API `main.py`（`/health` + `POST /v1/runs/news-l1`）
+  - news-l1 LangGraph **固定流水线** kb→link→search→llm（§12.4 判断，节点占位返回结构化 stub，tags.processing=`["engine:agent_hub","stub"]`）
+  - 依赖已装、冒烟测试 **2 passed**；真实节点逻辑 / 异步对接 / 状态持久化待 v0.6.1 架构定稿
+- 跨项目协作：Owner 要求两项目协作机制，产出 [跨项目协作机制设计提案](../ad-hoc/2026-06-16-proposal-cross-project-collaboration.md)——三层结构（xiaobao / ai / coordination）+ 协调仓库内容（契约单一真源 / STATUS / CHANGELOG / decisions）+ 工作约定（开工前 pull / 改契约先改协调仓库 / 完成影响对方的事更新 STATUS 点名）
+- 分工（Owner 指定）：跨项目协作 + 整个团队工作流同步**移交 WM**；`niuma-cheng-coordination` 仓库 **Owner 自建** GitHub；niuma-cheng-ai 团队工作流需**该项目新会话 Bootstrap**
+- 边界：跨项目协作属 WM 域基线修正，Developer 只产设计输入，**未碰 `docs/baseline/`**
+- 下一步：Owner 找 WM 收编跨项目协作进 baseline + 定 ai 工作流初始化方式；Owner 建 coordination 仓库
+
+---
+
 ## 2026-06-16 — LangGraph AI 处理中枢方案二轮收敛 + L1_ENGINE 默认值安全修复
 
 - 本次角色：全栈开发（Developer）；模式：Tech Spike / Proposal 续（非迭代评估）+ 安全修复
