@@ -1,10 +1,10 @@
-# 跨项目协作机制设计（niuma-cheng 多项目）— 待 WM 基线化
+# 跨项目协作机制设计（niuma-cheng 多项目）— 已 WM 基线化
 
 - 日期：2026-06-16
 - 模式：Proposal（基线修正候选）
 - 产出角色：Developer（开发工程师）
 - 归属处理：**WM（工作流管理者）** + Owner 确认
-- 当前状态：草案 — Developer 设计输入，待 WM 收编进团队基线
+- 当前状态：✅ 已收编 — WM 已新增 `docs/baseline/cross-project-collaboration.md`，并同步相关 baseline 入口与机制文件
 - 执行约束：本文件只沉淀设计，不修改 `docs/baseline/`（基线修改属 WM 域，须经 Owner 确认）
 
 ## 1. 背景
@@ -63,7 +63,19 @@ niuma-cheng-coordination   (协调中心)        ← 跨项目唯一真源，两
 
 | 事项 | 归属 | 状态 |
 |------|------|------|
-| 跨项目协作规则写进 baseline | WM | 待启动（本提案为输入） |
-| niuma-cheng-ai 团队工作流初始化方式 | WM | 待启动 |
+| 跨项目协作规则写进 baseline | WM | ✅ 已完成（新增 `docs/baseline/cross-project-collaboration.md`） |
+| niuma-cheng-ai 团队工作流初始化方式 | WM | ✅ 已完成规则定义（新项目只复用 baseline/templates，不继承 progress；在目标项目内 Bootstrap） |
 | `niuma-cheng-coordination` GitHub 仓库创建 | Owner | Owner 自行处理 |
 | 协调仓库骨架内容（§3） | 创建后由相关角色填充 | 待仓库就绪 |
+
+## 8. WM 收编记录
+
+- 收编日期：2026-06-16
+- 收编角色：WM（工作流管理者）
+- 基线变更：
+  - 新增 `docs/baseline/cross-project-collaboration.md`
+  - 更新 `runtime.md`：增加跨项目协作加载路由和质量底线
+  - 更新 `multi-agent-workflow.md`：补充多项目协作结构说明
+  - 更新 `bootstrap.md` / `mechanisms.md`：补充新项目复用团队工作流约束
+  - 更新 `conventions.md`：修正基线修正流程中 Architect / WM 职责旧口径
+- 后续动作：Owner 创建 `niuma-cheng-coordination` 仓库；仓库就绪后按新基线创建最小骨架。

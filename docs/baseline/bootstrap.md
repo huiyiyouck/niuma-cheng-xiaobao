@@ -69,6 +69,24 @@ Bootstrap 完成后，Agent 不自动启动迭代，而是询问用户：
 | 迭代记录 | 启动标准迭代时 | PM（产品经理） |
 | 知识库条目 | 产生可复用知识时 | 各角色 |
 
+## 新项目复用团队工作流
+
+新项目复用本团队工作流时，Bootstrap 仍只在目标项目内初始化团队工作台。
+
+允许复用：
+
+- `docs/baseline/` 中的通用规则
+- `docs/templates/` 中的模板
+- 当前客户端入口文件结构（如 `CLAUDE.md`、`AGENTS.md`）
+
+禁止复用：
+
+- 源项目的 `docs/progress/`
+- 源项目的迭代记录、角色日志、当前状态
+- 未改写项目事实的 `project-context.md`
+
+如果新项目属于多项目生态，按 `cross-project-collaboration.md` 在 coordination 仓库登记项目关系和当前状态。
+
 ## 不允许做的事
 
 - 不允许空项目第一步直接进入实现阶段。

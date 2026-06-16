@@ -31,6 +31,7 @@ docs/
 │   ├── context-policy.md
 │   ├── mechanisms.md
 │   ├── bootstrap.md
+│   ├── cross-project-collaboration.md
 │   ├── role-pm.md
 │   ├── role-ui.md
 │   ├── role-architect.md
@@ -51,6 +52,8 @@ docs/
 ```
 
 `baseline/` 写”怎么协作”，`progress/` 写”实际做了什么”。`CLAUDE.md` 和 `AGENTS.md` 是项目根目录中面向不同客户端的入口文件，随工作流一起存在；它们进入团队模式后共用同一套基线。
+
+多项目协作时，每个业务项目保留自己的 `baseline/`、`progress/` 和 `knowledge/`。跨项目契约、状态和决策放在 Owner 指定的 coordination 仓库中，规则见 `docs/baseline/cross-project-collaboration.md`。
 
 ## 3. 角色名称
 
@@ -77,6 +80,12 @@ docs/
 团队知识库用于沉淀可复用知识、未落地机会、架构取舍、Bug 根因、部署经验和复盘结论。它不是流水账，不能替代角色日志。
 
 知识库路径为 `docs/knowledge/`。写入规则、分类和读取规则见 `docs/baseline/knowledge-base.md`。
+
+## 5.1 跨项目协作
+
+当任务涉及两个以上项目、外部项目契约、coordination 仓库或新项目复用团队工作流时，按 `docs/baseline/cross-project-collaboration.md` 执行。
+
+项目级当前状态仍以本项目 `docs/progress/INDEX.md` 为真源；跨项目状态和契约以 coordination 仓库为真源。两者通过链接和摘要互相引用，不复制整份进度。
 
 ## 6. 上下文治理
 

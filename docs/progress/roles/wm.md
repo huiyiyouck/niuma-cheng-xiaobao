@@ -1,5 +1,38 @@
 # WM（工作流管理者）角色日志
 
+## 2026-06-16 — 收编 Developer 跨项目协作基线提案
+
+- 本次角色：WM
+- 动作：读取并初审 Developer 提交的基线修正候选
+- 触发源：Owner 提醒“开发又给基线做提案”
+- 输入材料：
+  - [跨项目协作机制设计（niuma-cheng 多项目）](../ad-hoc/2026-06-16-proposal-cross-project-collaboration.md)
+  - `docs/progress/roles/developer-current.md` 2026-06-16 “建 niuma-cheng-ai 独立中枢骨架 + 跨项目协作机制设计”
+  - `docs/progress/INDEX.md` 当前非迭代工作登记
+- 事实确认：
+  - Developer commit `9b2976c` 已把提案提交进仓库；当前工作区干净。
+  - `niuma-cheng-xiaobao` 仍是新闻平台项目；`niuma-cheng-ai` 已作为独立 AI 中枢仓库创建；二者通过 `L1Input` / `L1Output` / `RunResponse` HTTP 契约耦合。
+  - 现有 baseline 基本是单项目模型，缺少跨项目契约真源、协调仓库、跨项目状态交接和新项目复用团队工作流的规则。
+- WM 初判：
+  - 提案方向成立：跨项目协作不应塞进任一业务项目的 `docs/progress/INDEX.md` 作为唯一真源；需要独立 coordination 仓库承载跨项目契约和状态。
+  - `contracts/news-l1.md` 作为契约单一真源是必要约束，能避免 xiaobao / ai 双边各写一份契约后漂移。
+  - `STATUS.md` / `CHANGELOG.md` / `decisions/` 适合作为协调仓库最小骨架；不宜把各项目内部迭代记录复制进去。
+  - `niuma-cheng-ai` 应在自身仓库执行 Bootstrap 初始化，拥有独立 `project-context.md` 和 `progress/INDEX.md`；不应直接共享 xiaobao 的动态进度。
+  - 当前 baseline 中 `conventions.md` §基线修正流程仍写“架构师起草/修改 baseline”，而 `role-wm.md` 与 runtime 已把基线维护归到 WM；本次收编时建议顺手修正该旧口径，避免 Architect / WM 职责冲突。
+- [基线修正提案] 问题：现有团队工作流缺少多项目协作规则，无法定义 coordination 仓库、跨项目契约真源、跨项目状态交接、跨项目开工前同步检查，以及新项目如何复用/初始化团队工作流；同时 `conventions.md` 中基线修正职责仍残留 Architect 旧口径。
+- [基线修正提案] 建议：
+  1. 新增 `docs/baseline/cross-project-collaboration.md`，定义多项目边界、coordination 仓库职责、契约单一真源、跨项目 `STATUS.md` / `CHANGELOG.md` / `decisions/` 规则、跨项目交接留痕。
+  2. 更新 `runtime.md` 默认/按需加载规则：只有任务涉及多项目、外部项目契约、coordination 仓库或新项目 Bootstrap 复用时，才读取跨项目协作基线。
+  3. 更新 `multi-agent-workflow.md` 文件结构和适用范围：说明每个项目保留独立 baseline/progress，coordination 只记录跨项目事实，不替代项目级 INDEX。
+  4. 更新 `bootstrap.md` / `mechanisms.md`：明确新项目复用团队工作流时，先复制或安装 baseline，再在目标项目内执行 Bootstrap；不得继承源项目的 `progress/` 动态状态。
+  5. 更新 `conventions.md` §基线修正流程，把“架构师起草/修改 baseline”修正为“WM 或 Owner 指定角色起草；人工确认后由指定角色修改”，与 `role-wm.md` 对齐。
+  6. 后续在 Owner 创建 `niuma-cheng-coordination` 仓库后，由相关角色按该基线创建最小骨架：`README.md`、`contracts/news-l1.md`、`STATUS.md`、`CHANGELOG.md`、`decisions/`。
+- 影响范围：`docs/baseline/` 多文件；不涉及业务代码；不删除受保护路径文件；需要 Owner 明确确认后才能修改 baseline 正文。
+- Owner 确认：Owner 已回复“需要有啥确认的跟我说，我来拍板”“继续呀”，视为确认 WM 按上述方案收编。
+- 执行结果：已新增 `docs/baseline/cross-project-collaboration.md`；同步更新 `runtime.md`、`multi-agent-workflow.md`、`bootstrap.md`、`mechanisms.md`、`conventions.md`，明确 coordination 仓库、契约真源、跨项目交接、新项目复用 Bootstrap 约束，并修正基线修正流程中 Architect / WM 职责旧口径。
+- 下一步入口：Owner 创建 `niuma-cheng-coordination` 仓库后，按新基线创建最小骨架；`niuma-cheng-ai` 在自身仓库执行团队工作流 Bootstrap。
+- 收尾状态：已收编，待提交
+
 ## 2026-06-07 — 接入 Codex 第二客户端（事后补登基线修正提案）
 
 - 本次角色：WM

@@ -44,6 +44,7 @@
 - `docs/baseline/context-policy.md`
 - `docs/baseline/mechanisms.md`
 - `docs/baseline/knowledge-base.md`
+- `docs/baseline/cross-project-collaboration.md`
 - `docs/baseline/subagents/`
 - 所有模板文件
 - 所有历史迭代全文
@@ -89,6 +90,7 @@ Bootstrap 只初始化团队工作台（目录结构 + 进度索引），不自�
 | 迭代是否结束、准备关闭版本 | 迭代关闭检查 | `mechanisms.md`、当前迭代记录、必要 summary |
 | 修改团队规则、新增/删除角色 | 基线修正 | `role-wm.md`、相关 baseline 文件 |
 | 查询沉淀经验、写入长期知识 | 知识库工作 | `knowledge-base.md`、`docs/knowledge/INDEX.md` |
+| 跨项目协作、外部项目契约、coordination 仓库、新项目复用团队工作流 | 跨项目协作 | `cross-project-collaboration.md`、相关 coordination 文件或相关 ad-hoc |
 
 如果无法判断是否进入迭代，先问用户，不要同时加载标准迭代和非迭代规则。用户只是指定某个角色工作，不代表进入标准迭代；除非用户明确要求功能落地、版本推进或完整开发，否则按非迭代自主任务处理或先询问。
 
@@ -130,10 +132,12 @@ Bootstrap 只初始化团队工作台（目录结构 + 进度索引），不自�
 - 标准迭代产出采用动态 Review，默认至少 2 个相关 Review 方；少于 2 个需用户确认。
 - 已定稿内容不能静默修改；轻量变更走 Change Note，重大变更回到对应阶段。
 - 动态状态真源：项目级当前状态写在 `docs/progress/INDEX.md`；迭代阶段细节写在 `docs/progress/iterations/vX.Y.md`；`project-context.md` 只写项目事实。
+- 跨项目状态和契约真源由 coordination 仓库承载；本项目 `INDEX.md` 只记录本项目状态和对 coordination 的引用。
 - 每次会话结束必须至少更新角色日志；状态变化影响项目入口时，同步更新 `docs/progress/INDEX.md`。
 - 团队知识沉淀到 `docs/knowledge/`，但启动时只读索引和相关条目，不全文加载知识库。
 - 每个会话只允许承担一个角色；不同会话可以分别承担不同角色，并通过产出物、Review 记录和进度状态协作。
 - 当前会话只能执行当前角色职责范围内的工作。需要更换角色时，先完成当前角色日志和状态同步，再由用户明确切换角色或开启新的角色会话。
+- 当前会话只属于一个项目；跨项目工作按 `cross-project-collaboration.md` 交接，不在 A 项目会话中直接改 B 项目进度。
 - Review 必须由被指定的 Review 角色执行。产出角色不能在同一会话中切换身份完成自产自审。
 - 只做当前角色允许做的事。
 - 禁止 force push；禁止跳过 hooks；禁止覆盖未归属修改。
