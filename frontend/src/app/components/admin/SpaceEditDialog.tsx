@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface SpaceEditDialogProps {
   open: boolean;
@@ -34,7 +35,7 @@ export function SpaceEditDialog({ open, onOpenChange, space, onSave }: SpaceEdit
 
   const handleSave = async () => {
     if (!name.trim()) {
-      alert("请输入空间名称");
+      toast.error("请输入空间名称");
       return;
     }
     setSubmitting(true);

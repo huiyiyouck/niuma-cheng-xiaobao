@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface SourceEditDrawerProps {
   open: boolean;
@@ -46,7 +47,7 @@ export function SourceEditDrawer({ open, onClose, source, onSave }: SourceEditDr
 
   const handleSave = async () => {
     if (!isXSource && !displayName.trim()) {
-      alert("请输入展示名称");
+      toast.error("请输入展示名称");
       return;
     }
     if (submitting) return;

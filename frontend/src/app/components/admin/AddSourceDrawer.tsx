@@ -3,6 +3,10 @@ import { X, Search, ArrowLeft, CheckCircle, AlertCircle } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { listSources, preVerifySource, createSource } from "../../lib/api";
 import { Loading } from "../ui/Loading";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from "../ui/alert-dialog";
 
 interface Source {
   id: string;
@@ -84,6 +88,7 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
   const [searchInterval, setSearchInterval] = useState("30");
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>("idle");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [confirmCloseOpen, setConfirmCloseOpen] = useState(false);
 
   const filteredSources = available.filter((source) => {
     if (searchQuery && !source.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
@@ -167,13 +172,19 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
     setHasUnsavedChanges(false);
   };
 
+  // 实际关闭：重置表单 + 回搜索视图 + 通知父级
+  const doClose = () => {
+    resetCreateForm();
+    setView("search");
+    setConfirmCloseOpen(false);
+    onClose();
+  };
+
   const handleClose = () => {
-    if (hasUnsavedChanges && view === "create") {
-      if (confirm("未保存的内容将丢失，确认关闭？")) {
-        resetCreateForm();
-        setView("search");
-        onClose();
-      }
+    // 直接判断新建表单是否填过内容（hasUnsavedChanges 历史上从未被置 true，不可依赖）
+    const createDirty = view === "create" && !!(identity || displayName || tags.length || role || topic || notes);
+    if (createDirty) {
+      setConfirmCloseOpen(true);
     } else {
       onClose();
     }
@@ -564,6 +575,21 @@ export function AddSourceDrawer({ open, onClose, spaceName, channelName, onAddSo
           )}
         </div>
       </div>
+
+      <AlertDialog open={confirmCloseOpen} onOpenChange={setConfirmCloseOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>放弃未保存的内容？</AlertDialogTitle>
+            <AlertDialogDescription>
+              你在新建信息源时填写的内容尚未保存，关闭后将丢失。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>继续编辑</AlertDialogCancel>
+            <AlertDialogAction onClick={doClose}>放弃并关闭</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface ChannelEditDialogProps {
   open: boolean;
@@ -30,7 +31,7 @@ export function ChannelEditDialog({ open, onOpenChange, channel, onSave }: Chann
 
   const handleSave = async () => {
     if (!name.trim()) {
-      alert("请输入频道名称");
+      toast.error("请输入频道名称");
       return;
     }
     setSubmitting(true);
