@@ -128,6 +128,7 @@
 
 | 优先级 | 待办 | 归属角色 | 来源 | 状态 |
 |--------|------|----------|------|------|
+| P1 | 创建或提供独立跨项目沟通仓库 `niuma-cheng-coordination`（GitHub URL 或本地路径），用于后续按基线初始化 `README.md` / `PROJECTS.md` / `STATUS.md` / `CHANGELOG.md` / `contracts/` / `communications/` / `decisions/` 最小骨架 | Owner | 2026-06-16 WM 收编跨项目协作基线后，Owner 确认“独立的跨项目沟通的仓库没有给你，明天来弄” | 待 Owner 明天提供仓库地址或本地路径 |
 | **P0** | **修复 frontend 31 个 TS 错误使 `npm run build` 通过**（v0.5 重构遗孤：14 个文件含 SubChannel→Channel 重命名、Source.source_url/status 字段消失、SourceRole/AvailabilityStatus/DomainTag 类型契约偏移、SpaceDeletePreview/ChannelDeletePreview 形状变化、markVerified/listSubChannels 函数已删；详见 `iterations/v0.5.1-frontend-ts-errors.txt`） | Developer | 2026-06-07 DevOps v0.5.1 部署发现：公网前端仍是 5-31 旧版本，本次构建失败无法部署 | ✅ 已完成（2026-06-07）— 修复 commit `ebd9d1e` + Architect Review 留痕 `b02cbd4` + 删除 commit `a79acfb`；`npm run build` 通过 0 错误 |
 | P2 | `ChannelPills.vue` 受保护路径删除 Review：与已删的 `ChannelFilter.vue` 同属孤儿（NewsPage 频道筛选已完全内联 `.cc-pill`），全仓零引用 | Developer | 2026-06-07 Architect Review 提醒（不阻塞本次 5 文件删除门禁） | ✅ 已完成（2026-06-07）— Owner 直接同意（零引用 + 项目 Owner 授权），跳过 Architect Review；申请文档撤回，单文件删除 |
 | P1 | 完成 v0.5 PRD 规划：确认三条主线范围（X/Twitter 实时监听、信息源管理重构、评分体系方法论） | PM | 2026-06-01 PM v0.5 规划讨论阶段性收尾 | ✅ 已完成：三条主线已收编进 v0.5 PRD R1，标准迭代已启动 |
