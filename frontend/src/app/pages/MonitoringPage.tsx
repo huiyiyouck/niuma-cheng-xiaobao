@@ -1,8 +1,13 @@
 import { useState, useEffect, Fragment, useRef } from "react";
+import { toast } from "sonner";
 import { Loading } from "../components/ui/Loading";
 import { CheckCircle2, XCircle, AlertTriangle, AlertCircle, Info, ArrowRight, Clock, Target, X as XIcon } from "lucide-react";
 import { cn } from "../lib/utils";
 import { Badge } from "../components/ui/badge";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from "../components/ui/alert-dialog";
 import {
   listAlerts, updateAlertStatus, batchUpdateAlertStatus,
   listLogs, getLogsConfig,
@@ -149,6 +154,8 @@ export function MonitoringPage() {
 
   // 一键处理「确认中」 loading
   const [batchAcking, setBatchAcking] = useState(false);
+  // 一键处理二次确认弹窗
+  const [confirmBatchOpen, setConfirmBatchOpen] = useState(false);
 
   async function loadAlerts() {
     setAlertsLoading(true);
@@ -213,13 +220,18 @@ export function MonitoringPage() {
     catch (e) { console.error(e); }
   };
 
-  // 一键处理：把所有 active 告警批量置 acknowledged
+  // 一键处理：把所有 active 告警批量置 acknowledged（经二次确认弹窗触发）
   const handleBatchAck = async () => {
     if (unhandledCount === 0 || batchAcking) return;
-    if (!window.confirm(`确认把 ${unhandledCount} 条未处理告警一键标记为已确认？`)) return;
+    const count = unhandledCount;
     setBatchAcking(true);
-    try { await batchUpdateAlertStatus("acknowledged"); await loadAlerts(); }
-    catch (e) { console.error(e); alert("批量处理失败，请稍后重试"); }
+    try {
+      await batchUpdateAlertStatus("acknowledged");
+      await loadAlerts();
+      setConfirmBatchOpen(false);
+      toast.success(`已将 ${count} 条告警标记为已处理`);
+    }
+    catch (e) { console.error(e); toast.error("批量处理失败，请稍后重试"); }
     finally { setBatchAcking(false); }
   };
 
@@ -299,7 +311,7 @@ export function MonitoringPage() {
                     <span className="text-muted-foreground">显示已处理</span>
                   </label>
                   <button
-                    onClick={handleBatchAck}
+                    onClick={() => setConfirmBatchOpen(true)}
                     disabled={unhandledCount === 0 || batchAcking}
                     className={cn(
                       "px-3 py-1.5 rounded-md text-sm font-medium flex items-center gap-1.5 transition-colors",
@@ -312,6 +324,26 @@ export function MonitoringPage() {
                     <CheckCircle2 className="h-4 w-4" />
                     {batchAcking ? "处理中…" : `一键处理${unhandledCount > 0 ? ` (${unhandledCount})` : ""}`}
                   </button>
+
+                  <AlertDialog open={confirmBatchOpen} onOpenChange={(o) => { if (!batchAcking) setConfirmBatchOpen(o); }}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>一键处理 {unhandledCount} 条告警？</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          将这 {unhandledCount} 条未处理告警全部标记为「已处理」。这只是标记已读，<strong>不会修复告警背后的根因</strong>，请确认相关问题已被处理或可以忽略。
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel disabled={batchAcking}>取消</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={(e) => { e.preventDefault(); handleBatchAck(); }}
+                          disabled={batchAcking}
+                        >
+                          {batchAcking ? "处理中…" : "确认全部标记已处理"}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
 

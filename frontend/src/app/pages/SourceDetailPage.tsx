@@ -42,6 +42,8 @@ export function SourceDetailPage() {
   const [editDrawer, setEditDrawer] = useState(false);
   const [deleteDialog, setDeleteDialog] = useState(false);
   const [addPlacementDrawer, setAddPlacementDrawer] = useState(false);
+  // 「从展示位置移除」二次确认目标（null 表示弹窗关闭）
+  const [removeTarget, setRemoveTarget] = useState<{ id: string; space: string; channel: string } | null>(null);
 
   const [raw, setRaw] = useState<any>(null);
   const [recentNews, setRecentNews] = useState<any[]>([]);
@@ -166,6 +168,21 @@ export function SourceDetailPage() {
       await deleteSource(id);
       navigate("/admin?tab=source-library");
     } catch (e) { console.error(e); }
+  };
+
+  // 从展示位置移除：等后端完成再关弹窗；失败抛出让弹窗保持打开 + 提示原因
+  const handleConfirmRemove = async () => {
+    if (!removeTarget) return;
+    try {
+      await removeDisplayPosition(removeTarget.id);
+      setRemoveTarget(null);
+      toast.success("已从该位置移除");
+      loadSource();
+    } catch (e) {
+      console.error(e);
+      toast.error("移除失败（可能是唯一位置不可移除）");
+      throw e;
+    }
   };
 
   return (
@@ -409,10 +426,7 @@ export function SourceDetailPage() {
                       </button>
                       <span className="text-muted-foreground">·</span>
                       <button
-                        onClick={async () => {
-                          try { await removeDisplayPosition(placement.id); toast.success("已移除该位置"); loadSource(); }
-                          catch (e) { console.error(e); toast.error("移除失败（可能是唯一位置不可移除）"); }
-                        }}
+                        onClick={() => setRemoveTarget({ id: placement.id, space: placement.space, channel: placement.channel })}
                         className="px-2.5 py-1 rounded-md text-xs text-destructive border border-destructive/30 hover:bg-destructive/10"
                       >移除</button>
                     </div>
@@ -454,6 +468,21 @@ export function SourceDetailPage() {
         }}
         onConfirm={handleConfirmDelete}
       />
+
+      {/* Remove Placement Dialog — 复用 DeleteConfirmDialog 的 remove-placement 形态，危险动作二次确认 */}
+      {removeTarget && (
+        <DeleteConfirmDialog
+          open={!!removeTarget}
+          onOpenChange={(o) => { if (!o) setRemoveTarget(null); }}
+          data={{
+            type: "remove-placement" as const,
+            sourceName: source.displayName,
+            location: `${removeTarget.space} / ${removeTarget.channel}`,
+            isLastPlacement: placements.length === 1,
+          }}
+          onConfirm={handleConfirmRemove}
+        />
+      )}
 
       {/* Add Placement Dialog —「为当前源添加位置」语义，区别于 AddSourceDrawer 的「在空间-频道下加源」 */}
       <AddPlacementDialog

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Link, useSearchParams, useOutletContext } from "react-router";
 import {
-  Search, Inbox, Loader2,
+  Search, Inbox, Loader2, AlertTriangle, RefreshCw,
   ExternalLink, X, Tag, Building2, Clock, BarChart2, ChevronRight,
 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -86,6 +87,9 @@ export function NewsPage() {
   const [channelsLoading, setChannelsLoading] = useState(false);
   const [newsList, setNewsList] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  // 加载失败标记 + 重试触发器：用于区分「真实空」与「加载失败」
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   const [selectedChannel, setSelectedChannel] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,6 +115,7 @@ export function NewsPage() {
   useEffect(() => {
     if (!selectedSpace) return;
     setLoading(true);
+    setLoadError(false);
     (async () => {
       try {
         const items: any[] = await listNews(selectedSpace, {
@@ -120,10 +125,14 @@ export function NewsPage() {
           page_size: 50,
         });
         setNewsList((items ?? []).map(mapNews));
-      } catch { setNewsList([]); }
+      } catch {
+        setNewsList([]);
+        setLoadError(true);
+        toast.error("新闻加载失败，请重试");
+      }
       finally { setLoading(false); }
     })();
-  }, [selectedSpace, selectedChannel, searchQuery, sortBy]);
+  }, [selectedSpace, selectedChannel, searchQuery, sortBy, reloadTick]);
 
   // 点开详情：用列表项数据，并异步补全完整正文
   async function openNews(news: NewsItem) {
@@ -271,6 +280,18 @@ export function NewsPage() {
                   <div className="flex gap-2"><div className="h-5 w-12 bg-muted rounded" /><div className="h-5 w-12 bg-muted rounded" /></div>
                 </div>
               ))
+            ) : loadError ? (
+              <div className="flex flex-col items-center justify-center py-24 text-center">
+                <AlertTriangle className="h-10 w-10 text-destructive/50 mb-3" />
+                <p className="text-sm text-muted-foreground mb-4">新闻加载失败，请检查网络后重试</p>
+                <button
+                  onClick={() => setReloadTick((t) => t + 1)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm border border-border hover:bg-accent"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  重试
+                </button>
+              </div>
             ) : visibleNews.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-center">
                 <Inbox className="h-10 w-10 text-muted-foreground/40 mb-3" />

@@ -3,6 +3,10 @@ import { Link } from "react-router";
 import { Plus, RefreshCw, Download, ExternalLink, Trash2, ChevronUp, ChevronDown, Repeat } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { DeleteConfirmDialog } from "./DeleteConfirmDialog";
+import {
+  AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogFooter,
+  AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel,
+} from "../ui/alert-dialog";
 import { AddSourceDrawer } from "./AddSourceDrawer";
 import { Badge } from "../ui/badge";
 import { PlacementTooltip } from "../ui/PlacementTooltip";
@@ -66,6 +70,8 @@ export function SourceLibrary() {
   const [perPage, setPerPage] = useState(20);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; data: any }>({ open: false, data: null });
   const [createDrawer, setCreateDrawer] = useState(false);
+  // 同步 X 规则二次确认弹窗
+  const [confirmSyncOpen, setConfirmSyncOpen] = useState(false);
 
   // 一次拉全量，筛选/排序/分页仍由前端处理（保持原型交互）
   async function loadSources() {
@@ -89,13 +95,14 @@ export function SourceLibrary() {
     finally { setRefreshing(false); }
   }
 
-  // 同步 X 规则：转圈 + 成功/失败 toast
+  // 同步 X 规则：经二次确认弹窗触发；转圈 + 成功/失败 toast
   async function handleSync() {
     setSyncing(true);
     try {
       await syncXRules();
       const r: any = await listSources({ page_size: 100 });
       setSources((r?.sources ?? []).map(mapSource));
+      setConfirmSyncOpen(false);
       toast.success("X 规则同步完成");
     } catch { toast.error("X 规则同步失败，请重试"); }
     finally { setSyncing(false); }
@@ -182,13 +189,33 @@ export function SourceLibrary() {
           刷新
         </button>
         <button
-          onClick={handleSync}
+          onClick={() => setConfirmSyncOpen(true)}
           disabled={syncing}
           className="px-4 py-2 bg-secondary text-secondary-foreground rounded hover:bg-accent whitespace-nowrap disabled:opacity-60"
         >
           <Repeat className={cn("h-4 w-4 inline mr-2", syncing && "animate-spin")} />
           同步 X 规则
         </button>
+
+        <AlertDialog open={confirmSyncOpen} onOpenChange={(o) => { if (!syncing) setConfirmSyncOpen(o); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>同步 X 规则？</AlertDialogTitle>
+              <AlertDialogDescription>
+                将按当前 X 信息源配置向 X（Twitter）平台重新下发抓取规则。该操作会调用外部平台接口、可能需要数十秒，期间请勿重复触发。
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={syncing}>取消</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => { e.preventDefault(); handleSync(); }}
+                disabled={syncing}
+              >
+                {syncing ? "同步中…" : "确认同步"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       {/* Filters */}
