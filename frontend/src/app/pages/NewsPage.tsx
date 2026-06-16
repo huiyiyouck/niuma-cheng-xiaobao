@@ -6,6 +6,7 @@ import {
   ExternalLink, X, Tag, Building2, Clock, BarChart2, ChevronRight,
 } from "lucide-react";
 import { cn } from "../lib/utils";
+import { tagColor } from "../lib/tagColor";
 import * as Slider from "@radix-ui/react-slider";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
@@ -347,7 +348,7 @@ export function NewsPage() {
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{news.summary}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {news.tags.map((tag) => (
-                        <span key={tag} className="px-2 py-0.5 bg-secondary text-secondary-foreground text-xs rounded">{tag}</span>
+                        <span key={tag} className={cn("px-2 py-0.5 text-xs rounded font-medium", tagColor(tag))}>{tag}</span>
                       ))}
                       {news.entities.map((entity) => (
                         <span key={entity} className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded font-medium">{entity}</span>
@@ -427,7 +428,7 @@ export function NewsPage() {
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       {selectedNews.tags.map((tag) => (
-                        <span key={tag} className="px-2.5 py-1 bg-secondary text-secondary-foreground text-xs rounded-md">{tag}</span>
+                        <span key={tag} className={cn("px-2.5 py-1 text-xs rounded-md font-medium", tagColor(tag))}>{tag}</span>
                       ))}
                       {selectedNews.entities.map((entity) => (
                         <span key={entity} className="px-2.5 py-1 bg-accent text-accent-foreground text-xs rounded-md font-medium">{entity}</span>

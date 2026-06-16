@@ -6,6 +6,7 @@ import { ChevronRight, AlertTriangle, Trash2, Edit, Plus } from "lucide-react";
 import { SourceEditDrawer } from "../components/admin/SourceEditDrawer";
 import { DeleteConfirmDialog } from "../components/admin/DeleteConfirmDialog";
 import { AddPlacementDialog } from "../components/ui/AddPlacementDialog";
+import { tagColor } from "../lib/tagColor";
 import {
   getSource, updateSource, deleteSource,
   toggleDisplayPosition, removeDisplayPosition, addDisplayPosition,
@@ -285,7 +286,7 @@ export function SourceDetailPage() {
                   <div className="text-sm text-muted-foreground mb-2">领域标签</div>
                   <div className="flex gap-2">
                     {source.tags.map((tag) => (
-                      <span key={tag} className="px-3 py-1 bg-secondary text-secondary-foreground rounded text-sm">
+                      <span key={tag} className={`px-3 py-1 rounded text-sm font-medium ${tagColor(tag)}`}>
                         {tag}
                       </span>
                     ))}
