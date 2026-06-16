@@ -19,13 +19,14 @@ export async function createAlert(
   severity: string = "warning",
   dedupKey?: string,
 ): Promise<void> {
-  // 如果有 dedup_key，先尝试更新已有告警
+  // 如果有 dedup_key，先尝试更新已有告警（含仍处于 active 的同类告警：
+  // 持续未处理的同一问题应刷新计数/时间，而不是每次重复 INSERT 形成告警风暴）
   if (dedupKey) {
     const { rowCount } = await conn.query(
       `UPDATE alerts
        SET status = 'active', last_triggered_at = now(), message = $2, meta = $3::jsonb
        WHERE dedup_key = $1
-         AND status IN ('resolved', 'ignored')
+         AND status IN ('active', 'resolved', 'ignored')
          AND last_triggered_at > now() - INTERVAL '24 hours'`,
       [dedupKey, message, JSON.stringify(meta)],
     );

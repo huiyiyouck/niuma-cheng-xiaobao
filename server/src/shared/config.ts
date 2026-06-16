@@ -23,7 +23,10 @@ try {
 }
 
 function get(key: string, fallback: string): string {
-  return process.env[key] || env[key] || fallback;
+  // 显式设置的环境变量（含空字符串，如 systemd Environment=X_BEARER_TOKEN=）优先于 .env 文件，
+  // 避免「想用空值显式禁用某能力」却被 .env 回退覆盖（测试环境用空 token 禁用 X Stream 即依赖此语义）
+  if (key in process.env) return process.env[key] as string;
+  return env[key] || fallback;
 }
 function getBool(key: string, fallback: boolean): boolean {
   const v = process.env[key] || env[key];
