@@ -30,8 +30,11 @@
     6. communications 文档分两层：A 需求台账（状态机）+ B 联调记录；修订头部模板去掉「调用方/服务方」主框定，改为「参与项目 + 协作主纲」。
   - 影响范围：`docs/baseline/cross-project-collaboration.md` 正文 + coordination 实例文档（`communications/`）；不涉及业务代码；不删除受保护路径文件。
   - Owner 裁定（2026-06-17）：(a) 批准按提案落地；(b) 含「拒绝/退回」路径；(c) 认可状态枚举：已提报/评估中/已承接/已拒绝/开发中(转入迭代)/联调中/已关闭。
-  - 执行结果：已在 `cross-project-collaboration.md` 新增 §跨项目需求流转（定位/生命周期/角色权限/迭代衔接/会话边界/A·B 两层结构），并修订 §项目目录与沟通文档索引 的 communications 头部模板（去「调用方/服务方」主框定 → 「协作主纲」）；同步更新 coordination 实例 `communications/xiaobao__ai.md`（台账加承接人/转入迭代/状态机）与 `communications/README.md`（需求流转与角色权限段）。
-- 收尾状态：coordination 骨架 + 需求流转机制均已落地并推送；baseline 与实例一致
+  - 执行结果（首版）：已在 `cross-project-collaboration.md` 新增 §跨项目需求流转，并修订 communications 头部模板。
+  - Owner 二次细化（2026-06-17）：明确「**需求提报中心是需求池、提报时不指定承接方、由项目 PM/Architect 主动认领或 Owner 直接指派、承接之后才建 communications 沟通文档**」——纠正首版把需求台账直接放进 `xiaobao__ai.md` 且提报时即指向 ai 的偏差。据此重构：
+    - baseline：§跨项目需求流转 改为「需求池 + 认领/指派模型」，新增 §需求提报中心(REQUESTS.md) 字段规范；§coordination 结构表 + ASCII 加 `REQUESTS.md`；communications 头部模板与目录描述改为「承接之后的协作与联调」。
+    - coordination 实例：新增 `REQUESTS.md` 需求池（REQ-001 既有需求、ai 承接、联调中）；`communications/xiaobao__ai.md` 去提报台账改为承接后协作沟通 + 引用 REQUESTS；`communications/README.md`、根 `README.md`、`STATUS.md` 同步加 REQUESTS 入口与承接后定位。
+- 收尾状态：coordination 骨架 + 需求流转机制（含需求提报中心）均已落地并推送；baseline 与实例一致
 
 ## 2026-06-16 — 收编 Developer 跨项目协作基线提案
 
