@@ -1,5 +1,38 @@
 # WM（工作流管理者）角色日志
 
+## 2026-06-17 — 初始化 coordination 仓库最小骨架
+
+- 本次角色：WM
+- 动作：跨项目协作 — 按 `cross-project-collaboration.md` 基线，为 Owner 提供的 `niuma-cheng-coordination` 仓库创建最小骨架
+- 触发源：Owner 提供仓库地址 `git@github.com:huiyiyouck/niuma-cheng-coordination.git` 并要求“继续上次工作 + 麻雀虽小五脏俱全”
+- 事实确认：
+  - clone 后为空仓库；本地 `~/Project/niuma-cheng-ai` 存在但**无 git remote、未 Bootstrap**；xiaobao remote `git@github.com:huiyiyouck/niuma-cheng-xiaobao.git`
+  - 契约真源取自 ai 项目 `src/agent_hub/schemas.py`（`L1Input`/`L1Output`/`RunResponse`），endpoint `POST /v1/runs/news-l1` + `GET /health`
+- 产出（coordination 仓库，commit 已推 origin/main）：
+  - `README.md` 生态总览 / `PROJECTS.md` 项目目录真源（xiaobao + ai）
+  - `STATUS.md` 跨项目状态（xiaobao v0.6 实现阶段 / ai 待 Bootstrap，无强阻塞）
+  - `CHANGELOG.md` 跨项目变更日志（含 news-l1 v1 收编、多项目扩展）
+  - `contracts/news-l1.md` 契约 v1 单一真源（四维原始评分在 ai，加权 `score_total` 留 xiaobao）
+  - `communications/xiaobao__ai.md` 沟通文档（与 PROJECTS.md 双向链接）
+  - `decisions/0001-ai-hub-split.md` + `decisions/README.md`（D1–D5 跨项目决策引用 xiaobao spike 提案 §12）
+- 会话边界说明：本会话为 xiaobao WM；按基线 §角色会话边界，当前项目角色可在 coordination 仓库建立/更新跨项目设施，未触碰 ai 项目内部 `docs/progress/`
+- 跨项目交接：coordination `STATUS.md` 已登记两项跨项目事项（ai Bootstrap / news-l1 契约）；本项目侧同步更新 INDEX（见下）
+- 提醒 Owner：`niuma-cheng-ai` 当前无 git remote，需配置后才能纳入 coordination 真源链路并 Bootstrap
+- 下一步入口：Owner 为 ai 配置 remote → ai 项目会话进入团队模式执行 Bootstrap → 回填 coordination `PROJECTS.md`/`STATUS.md`
+- [基线修正提案] 跨项目需求流转机制（2026-06-17，✅ Owner 已确认并落地）：
+  - 问题：现有 `cross-project-collaboration.md` 把 `communications/` 仅定义为「项目间沟通文档」，头部模板用「调用方/服务方」框定，未定义其作为**跨项目需求提报与流转聚合平台**的定位、需求生命周期、提报/承接的角色权限、承接后转内部迭代的衔接。导致会话两次把它误解为单向工单/静态关系说明。
+  - 建议方案：
+    1. 在 `cross-project-collaboration.md` 新增 §跨项目需求流转，定义定位 = 跨项目需求提报与流转聚合平台；
+    2. 需求生命周期：提报 → 评估承接（含拒绝/退回）→ 转入承接方项目内部标准迭代 → 开发 → 联调 → 关闭；
+    3. 角色权限：任一项目**任一角色可提报**；仅**目标项目 PM 或 Architect 可承接/拒绝**；
+    4. 会话边界：提报由提出方项目角色在自己会话写入 coordination；承接由目标项目 PM/Architect 在目标项目会话评估并回写；与「一会话一项目一角色」一致；
+    5. 承接后 communications 只登记「转入 {项目} vX.Y」并链接回该项目 INDEX，不复制迭代细节；
+    6. communications 文档分两层：A 需求台账（状态机）+ B 联调记录；修订头部模板去掉「调用方/服务方」主框定，改为「参与项目 + 协作主纲」。
+  - 影响范围：`docs/baseline/cross-project-collaboration.md` 正文 + coordination 实例文档（`communications/`）；不涉及业务代码；不删除受保护路径文件。
+  - Owner 裁定（2026-06-17）：(a) 批准按提案落地；(b) 含「拒绝/退回」路径；(c) 认可状态枚举：已提报/评估中/已承接/已拒绝/开发中(转入迭代)/联调中/已关闭。
+  - 执行结果：已在 `cross-project-collaboration.md` 新增 §跨项目需求流转（定位/生命周期/角色权限/迭代衔接/会话边界/A·B 两层结构），并修订 §项目目录与沟通文档索引 的 communications 头部模板（去「调用方/服务方」主框定 → 「协作主纲」）；同步更新 coordination 实例 `communications/xiaobao__ai.md`（台账加承接人/转入迭代/状态机）与 `communications/README.md`（需求流转与角色权限段）。
+- 收尾状态：coordination 骨架 + 需求流转机制均已落地并推送；baseline 与实例一致
+
 ## 2026-06-16 — 收编 Developer 跨项目协作基线提案
 
 - 本次角色：WM
