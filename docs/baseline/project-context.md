@@ -15,6 +15,9 @@ cd server && npm run dev (API+Worker 同进程) + cd frontend && npm run dev (�
 - DATABASE_URL
 - OPENAI_API_KEY
 
+## 外部依赖与集成
+- `coordination_root`：`/root/Project/niuma-cheng-coordination`（remote：`git@github.com:huiyiyouck/niuma-cheng-coordination.git`；本地 checkout 已于 2026-06-22 确认可用）
+
 ## 业务边界
 - 本项目做：多源新闻抓取、LLM 处理、结构化新闻卡片聚合
 - 本项目不做：未定义

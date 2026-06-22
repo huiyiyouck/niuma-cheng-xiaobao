@@ -279,3 +279,23 @@
   - Developer / UI 优先修移动端导航与布局断点。
   - 其次补齐关键动作的 loading、成功、失败和确认反馈。
   - 再优化监控页文案与管理页高风险动作权重。
+
+## 2026-06-22 — PM 同步项目真源定位
+
+- 本次角色：产品架构师(PM)
+- 动作：同步项目真源定位与当前索引记录。
+- 涉及文档：
+  - `docs/baseline/project-context.md`
+  - `docs/progress/INDEX.md`
+  - `docs/progress/roles/pm-current.md`
+- 结论：
+  - 当前仓库已同步到工作流真源基线 commit `8cf6e5f`（对应 agent-workflow 真源 `c8c66ce` / P8 增量）。
+  - 接入本地 coordination 真源 checkout：`/root/Project/niuma-cheng-coordination`，remote 匹配 `git@github.com:huiyiyouck/niuma-cheng-coordination.git`，同步后 HEAD 为 `499f84e`。
+  - coordination 当前状态：`ai` 已完成 Bootstrap、已配置 remote、PM（ck）已正式承接 REQ-001；`news-l1` v1 生效中，双方当前一致；BCR-001 已标记 xiaobao/ai 均已回流下游。
+  - 修正并同步 `INDEX.md` 中跨项目协作记录和 2026-06-17 WM 行的过期状态，保持项目级真源与 coordination 真源一致。
+- 验证证据：
+  - 启动检查已执行：`git pull --rebase` 返回 `Already up to date.`。
+  - coordination 检查已执行：`git status --short --branch` 干净，`git pull --rebase` 返回 `Already up to date.`。
+  - 已读取 coordination `STATUS.md` / `PROJECTS.md` / `REQUESTS.md` / `contracts/news-l1.md`。
+  - 本次只修改 Markdown 文档，未运行代码测试。
+- 下一步：PM 可在 xiaobao 侧继续 v0.6.1 PRD；跨项目 L1 真实化由 ai PM 启动 v0.1 PRD 承接。
