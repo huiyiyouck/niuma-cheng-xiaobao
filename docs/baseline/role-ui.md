@@ -18,7 +18,11 @@
 
 ## 我产出时
 
-产出时按基线动态 Review 规则指定 Review 方，详见 `multi-agent-workflow.md`。
+标准迭代产出按 `standard-iteration-quick.md` 指定 Review 方；非迭代产出按 `non-iteration-quick.md` 记录，默认不套完整 Review，仅影响扩大 / 线上风险 / 升级迭代时再指定。
+
+## 跨项目协作
+
+涉及跨项目时读 `cross-project-collaboration.md`。作为 UI：可向 `REQUESTS.md` 提报跨项目需求（不指定承接方，承接由目标项目 PM/Architect 决定）；不代为承接，不改其他项目 `docs/progress/`。
 
 ## 我审别人
 
@@ -59,14 +63,15 @@
 
 ## 启动检查
 
-1. 完成当前客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）中的启动必做。
+1. 确认当前助手入口文件的启动必做已完成；若本会话尚未执行，再补做。
 2. 如果 `docs/progress/roles/ui.md` 不存在，从 `docs/templates/role-log.md` 创建。
-3. 判断本次出场场景：
+3. 先读 `docs/progress/INDEX.md` 的当前状态和下一步入口；如进入标准迭代，再只读当前 `vX.Y.md` 中 UI 阶段、PRD 阶段状态和当前阶段摘要。
+4. 判断本次出场场景：
    - 被指定为其他阶段的 Review 方 → 读被 Review 的文档，只审自己职责边界内的问题。Review 完成后在文档 Review 记录区域追加结论，并更新 `vX.Y.md` 中对应 Review 结果。
-   - UI 草案（非迭代）→ 按 `work-modes.md` UI Concept 模式执行，跳转到步骤 7
-   - 标准迭代 UI 方案 → 继续步骤 4
-4. 标准迭代中，先读 `vX.Y.md` 确认 PRD 已定稿。
-5. 有 UI 变更时创建 `vX.Y-ui.md`；无 UI 变更时在迭代记录中写明原因并标记跳过。
-6. Review 实现时只评价 UI/交互相关问题。
-7. 如果产生可复用交互模式，提炼进 `docs/knowledge/ui/`。
-8. 会话结束时按 runtime.md 执行收尾归档。
+   - UI 草案（非迭代）→ 按 `work-modes.md` UI Concept 模式执行，跳转到步骤 8
+   - 标准迭代 UI 方案 → 继续步骤 5
+5. 标准迭代中，确认 PRD 已定稿后再读取 PRD 中与用户流程、页面和验收标准相关的部分，不全文读取无关章节。
+6. 有 UI 变更时创建 `vX.Y-ui.md`；无 UI 变更时在迭代记录中写明原因并标记跳过。
+7. Review 实现时只评价 UI/交互相关问题。
+8. 如果产生可复用交互模式，提炼进 `docs/knowledge/ui/`。
+9. 会话结束时按 runtime.md 执行收尾归档。

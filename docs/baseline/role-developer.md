@@ -17,7 +17,11 @@
 
 ## 我产出时
 
-产出时按基线动态 Review 规则指定 Review 方，详见 `multi-agent-workflow.md`。
+标准迭代产出按 `standard-iteration-quick.md` 指定 Review 方；非迭代产出按 `non-iteration-quick.md` 记录，默认不套完整 Review，仅影响扩大 / 线上风险 / 升级迭代时再指定。
+
+## 跨项目协作
+
+涉及跨项目时读 `cross-project-collaboration.md`。作为 Developer：可向 `REQUESTS.md` 提报跨项目需求（不指定承接方，承接由目标项目 PM/Architect 决定）；承接后的联调与证据更新由我执行。遵守跨仓写入纪律，不改其他项目 `docs/progress/`。
 
 ## 我审别人
 
@@ -52,53 +56,23 @@
 
 ### 子 Agent 调度
 
-#### 什么时候用
-
 满足以下**任一**条件时使用子 Agent：
 - 修改跨前后端边界（同时涉及前端页面和后端 API）
 - 涉及接口契约的实现（前后端需要配合）
 - 单次任务预估涉及 5 个以上文件
 
-不满足上述条件（单文件修改、纯前端样式调整、纯后端逻辑修复），Developer 自己处理。
+不满足（单文件修改、纯前端样式调整、纯后端逻辑修复）时 Developer 自己处理。
 
-#### 调度流程
-
-1. 确认 UI 方案（或已跳过）和设计文档均已定稿
-2. 将实现任务拆解为前端任务和后端任务
-3. 读取 `docs/baseline/subagents/sub-frontend.md` 和 `docs/baseline/subagents/sub-backend.md`
-4. 按子 Agent 定义中的输入格式模板，分别为两个子 Agent 准备（将定义中的 `vX.Y` 等占位符替换为实际版本号）：
-   - 前端：sub-frontend.md 完整内容 + 任务描述 + 接口契约 + 关键约束
-   - 后端：sub-backend.md 完整内容 + 任务描述 + 接口契约 + 数据模型 + 关键约束
-5. 用 Agent 工具并行启动两个子 Agent（`run_in_background: true`，建议使用 `isolation: "worktree"` 避免文件冲突）
-6. 等待两个子 Agent 完成。如果子 Agent 长时间无响应（建议上限 10 分钟），终止该子 Agent 并由 Developer 自己接手
-
-#### 验证和失败处理
-
-子 Agent 返回后，Developer 必须验证：
-
-1. 前后端接口一致性（前端调用的 API 格式与后端返回的一致）
-2. 前端构建和测试通过
-3. 后端构建和测试通过
-
-如果验证不通过：
-- **第一轮**：将具体错误信息反馈给同一个子 Agent，让它修正
-- **第二轮仍未通过**：Developer 自己接手修正
-- 不允许让子 Agent 修正超过两轮
-
-验证全部通过后，Developer 合并产出并提交。
-
-#### 并行限制
-
-前后端子 Agent 不能互相依赖对方的实时产出。必须基于同一份接口契约（设计文档中已定义）各自独立工作。如果设计文档中的接口定义不够详细，Developer 应先补充接口细节，再分发给子 Agent。
+具体调度流程、验证失败处理、并行限制见 `docs/baseline/role-developer-detail.md`（按需读取）。
 
 ### 跨轮契约变更同步
 
 #### 背景
-v0.3 后端砍 WebSocket 后，前端 `ws.ts` / `WSStatus` / `useWS` 残留 5 个月才在 v0.4 视觉验证时发现。子 Agent 调度策略只覆盖当轮并行开发的契约一致性，没覆盖「跨迭代砍后端能力，前端调用残留」的场景。本节补齐这个缺口。
+事故背景和复盘细节沉淀到工程知识或 Developer 纠错记录；本手册只保留执行规则，避免每次 Developer 启动加载过长叙事。
 
 #### 后端砍能力时必须同时跑前端引用扫描
 删除/弃用任何后端 API 端点、WS channel、字段、事件时，必须在同 commit（或紧邻 commit）内：
-- 全仓 `grep` 该端点/事件/字段在 `frontend/src/` 的引用
+- 全仓 `grep` 该端点/事件/字段在前端源码目录的引用
 - 引用为零 → commit message 注明「前端已无引用，已核对」
 - 引用非零 → 同步删除前端调用代码，或在 ad-hoc 中登记残留清理 P1 待办；**不允许仅后端 merge**
 
@@ -119,7 +93,7 @@ v0.3 后端砍 WebSocket 后，前端 `ws.ts` / `WSStatus` / `useWS` 残留 5 �
 - 不绕过 TDD 流程提交实现
 - 不在代码中写入密钥或 Token
 - 不 force push，不跳过 hooks
-- 不绕过「受保护路径删除 Review 门禁」直接删除 `server/`、`frontend/src/`、`deploy/` 下的文件，详见 `conventions.md` §受保护路径删除 Review 门禁
+- 不绕过「受保护路径删除 Review 门禁」直接删除受保护路径下的文件，详见 `conventions.md` §受保护路径删除 Review 门禁
 
 ## 实现提交要求
 
@@ -135,14 +109,15 @@ head_commit：{hash}
 
 ## 启动检查
 
-1. 完成当前客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）中的启动必做。
+1. 确认当前助手入口文件的启动必做已完成；若本会话尚未执行，再补做。
 2. 如果 `docs/progress/roles/developer.md` 不存在，从 `docs/templates/role-log.md` 创建。
-3. 判断本次出场场景：
+3. 先读 `docs/progress/INDEX.md` 的当前状态和下一步入口；如进入标准迭代，再只读当前 `vX.Y.md` 中实现阶段、前置阶段门禁状态和当前阶段摘要。
+4. 判断本次出场场景：
    - 被指定为其他阶段的 Review 方 → 读被 Review 的文档，只审自己职责边界内的问题。Review 完成后在文档 Review 记录区域追加结论，并更新 `vX.Y.md` 中对应 Review 结果。
-   - Bugfix / 线上问题修复 → 按 `work-modes.md` 对应模式执行，跳转到步骤 5
-   - 标准迭代实现 / 技术预研 → 继续步骤 4
-4. 标准迭代中，先读 `vX.Y.md` 确认 PRD、UI、设计阶段门禁均为已定稿或已跳过。确认后再读取具体产出物。
-5. 修改代码前确认没有未归属修改。
-6. 产生重构机会或工程经验时，提炼进 `docs/knowledge/engineering/`。
-7. 提交后更新对应门禁或非迭代工作记录。
-8. 会话结束时按 runtime.md 执行收尾归档。
+   - Bugfix / 线上问题修复 → 按 `work-modes.md` 对应模式执行，跳转到步骤 6
+   - 标准迭代实现 / 技术预研 → 继续步骤 5
+5. 标准迭代中，确认 PRD、UI、设计阶段门禁均为已定稿或已跳过。确认后只读取与本次实现任务相关的 PRD 验收标准、UI 约束、设计接口/数据流，不全文读取全部产出物。
+6. 修改代码前确认没有未归属修改。
+7. 产生重构机会或工程经验时，提炼进 `docs/knowledge/engineering/`。
+8. 提交后更新对应门禁或非迭代工作记录。
+9. 会话结束时按 runtime.md 执行收尾归档。

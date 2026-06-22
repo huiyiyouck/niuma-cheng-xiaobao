@@ -30,6 +30,8 @@ docs/knowledge/
 └── retrospectives/
 ```
 
+这些目录按需创建；仓库只保留 `docs/knowledge/INDEX.md` 也有效。首次写入某类知识时，由当前角色创建对应目录，并同步更新 `docs/knowledge/INDEX.md`。
+
 ## 知识类型
 
 | 类型 | 路径 | 适合沉淀什么 |
@@ -54,7 +56,6 @@ docs/knowledge/
 - Developer（开发工程师）写 `engineering/`
 - Tester（测试工程师）写 `testing/`
 - DevOps（运维/部署工程师）写 `devops/`
-- WM（工作流管理者）写角色/流程相关的知识，通常进入 `decisions/` 或 `retrospectives/`
 
 ## 什么时候写入知识库
 

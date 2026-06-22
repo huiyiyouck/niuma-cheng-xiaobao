@@ -10,14 +10,20 @@
 | 产出物 | 路径 |
 |--------|------|
 | 设计文档 | `docs/progress/iterations/vX.Y-design.md` |
-| ADR | `docs/baseline/architecture.md` |
+| ADR | `docs/knowledge/decisions/` |
 | 技术预研记录 | `docs/progress/ad-hoc/YYYY-MM-DD-spike-{short-name}.md` |
 | 架构知识 | `docs/knowledge/architecture/` |
 | Architect（架构师）日志 | `docs/progress/roles/architect.md` |
 
+项目首次启用工作流时，如需定义受保护路径名单，写入 `docs/knowledge/decisions/` 下的 ADR（`baseline/` 是工作流框架层，不放项目 ADR）；如果项目已有 ADR 目录，沿用项目约定路径，并在 `docs/knowledge/INDEX.md` 中登记。
+
 ## 我产出时
 
-产出时按基线动态 Review 规则指定 Review 方，详见 `multi-agent-workflow.md`。
+标准迭代产出按 `standard-iteration-quick.md` 指定 Review 方；非迭代产出按 `non-iteration-quick.md` 记录，默认不套完整 Review，仅影响扩大 / 线上风险 / 升级迭代时再指定。
+
+## 跨项目协作
+
+涉及跨项目需求 / 契约 / 状态时读 `cross-project-collaboration.md`，按其发现机制定位 coordination 仓。作为 Architect：可在**本项目会话**承接 / 拒绝跨项目需求并推动转为本项目迭代，也可提报；跨项目契约改动先改 coordination `contracts/`；不替其他项目承接、不改其 `docs/progress/`。
 
 ## 我审别人
 
@@ -30,7 +36,7 @@
 
 ## 受保护路径删除 Review 职责
 
-按 `conventions.md` §受保护路径删除 Review 门禁，架构师是受保护路径（`server/`、`frontend/src/`、`deploy/`、`docs/baseline/`、`docs/templates/`、`CLAUDE.md`、`AGENTS.md`）删除操作的指定 Review 方。
+按 `conventions.md` §受保护路径删除 Review 门禁，架构师是受保护路径（项目业务源码 / 部署配置 / `docs/baseline/` / `docs/templates/` / 助手入口文件等）删除操作的指定 Review 方。
 
 被请求 Review 时：
 1. 读取删除清单中每个文件的当前内容和最近 commit 记录
@@ -92,14 +98,14 @@
 
 ## 启动检查
 
-1. 完成当前客户端入口文件（`CLAUDE.md` 或 `AGENTS.md`）中的启动必做。
+1. 确认当前助手入口文件的启动必做已完成；若本会话尚未执行，再补做。
 2. 如果 `docs/progress/roles/architect.md` 不存在，从 `docs/templates/role-log.md` 创建。
-3. 读取当前迭代记录和项目架构上下文。
+3. 先读 `docs/progress/INDEX.md` 的当前状态和下一步入口；如进入标准迭代，再只读当前 `vX.Y.md` 中设计阶段、PRD/UI 阶段状态和当前阶段摘要。项目架构上下文只读取与本次设计或 Review 直接相关的条目。
 4. 判断本次出场场景：
    - 被指定为其他阶段的 Review 方 → 读被 Review 的文档，只审自己职责边界内的问题。Review 完成后在文档 Review 记录区域追加结论，并更新 `vX.Y.md` 中对应 Review 结果。
    - 技术预研（非迭代）→ 记录问题、候选方案、验证结果、建议是否升级为标准迭代，跳转到步骤 8
    - 标准迭代设计 → 继续步骤 5
-5. 标准迭代中，先确认 PRD 已定稿。再检查 UI 阶段状态：如果 UI 已定稿或已跳过，继续；如果 UI 阶段状态缺失，询问用户。
+5. 标准迭代中，先确认 PRD 已定稿。再检查 UI 阶段状态：如果 UI 已定稿或已跳过，继续；如果 UI 阶段状态缺失，询问用户。确认后只读取 PRD/UI 中影响架构、接口、数据流和约束的部分。
 6. 确认后创建设计文档。
 7. 如果设计文档本轮指定 Review 方已全部反馈，按状态机定稿或修改进入下一轮。
 8. 产生架构取舍或技术边界经验时，提炼进 `docs/knowledge/architecture/`。

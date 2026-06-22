@@ -1,16 +1,14 @@
-# 多角色协作基线
+# agent-workflow 多角色协作基线
 
 | 字段 | 值 |
 |------|-----|
 | 版本 | v1.0 |
 | 状态 | 通用模板 |
-| 适用范围 | 使用 AI 编程 Agent 的单人/小型项目 |
+| 适用范围 | 使用 Codex、Claude Code 或其他 AI 编程助手的单人/小型项目 |
 
 ## 1. 目标
 
-这套基线把多个角色工作会话组织成一个轻量开发团队：同一个人可以在不同时间以 PM（产品经理）、UI（界面设计师）、Architect（架构师）、Developer（开发工程师）、Tester（测试工程师）、DevOps（运维/部署工程师）等角色启动 Agent，让项目拥有启动、需求、界面、设计、实现、测试、部署和复盘的持续记忆。
-
-工作流只关心当前会话承担的角色，不关心会话由哪一种客户端启动。一个会话只承担一个角色；不同会话可以分别承担不同角色。
+这套基线把 AI 助手会话组织成一个轻量开发团队：同一个人可以在不同时间以 PM（产品经理）、UI（界面设计师）、Architect（架构师）、Developer（开发工程师）、Tester（测试工程师）、DevOps（运维/部署工程师）等角色启动 Agent，让项目拥有启动、需求、界面、设计、实现、测试、部署和复盘的持续记忆。
 
 人类用户是项目 Owner（负责人）和实际项目经理，负责最终协调、优先级判断和流程取舍。工作流不设置常驻 Project Manager（项目经理）Agent，避免让一人公司产生没有实际价值的管理层。
 
@@ -19,45 +17,53 @@
 ## 2. 文件结构
 
 ```text
-CLAUDE.md                         ← Claude Code 入口
-AGENTS.md                         ← Codex 入口
-docs/
-├── baseline/
-│   ├── project-context.md
-│   ├── runtime.md
-│   ├── multi-agent-workflow.md
-│   ├── work-modes.md
-│   ├── knowledge-base.md
-│   ├── context-policy.md
-│   ├── mechanisms.md
-│   ├── bootstrap.md
-│   ├── cross-project-collaboration.md
-│   ├── role-pm.md
-│   ├── role-ui.md
-│   ├── role-architect.md
-│   ├── role-developer.md
-│   ├── role-tester.md
-│   ├── role-devops.md
-│   ├── role-wm.md
-│   └── subagents/
-│       ├── sub-frontend.md
-│       └── sub-backend.md
-├── progress/
-│   ├── INDEX.md
-│   ├── iterations/
-│   ├── ad-hoc/
-│   ├── archive/
-│   └── roles/
-└── knowledge/                     ← 团队知识库（沉淀“以后还值得知道什么”）
+AGENTS.md / CLAUDE.md
+└── docs/
+    ├── baseline/
+    │   ├── project-context.md
+    │   ├── runtime.md
+    │   ├── multi-agent-workflow.md
+    │   ├── work-modes.md
+    │   ├── knowledge-base.md
+    │   ├── context-policy.md
+    │   ├── mechanisms.md
+    │   ├── bootstrap.md
+    │   ├── role-general.md
+    │   ├── role-pm.md
+    │   ├── role-ui.md
+    │   ├── role-architect.md
+    │   ├── role-developer.md
+    │   ├── role-tester.md
+    │   ├── role-devops.md
+    │   └── subagents/
+    │       ├── sub-frontend.md
+    │       └── sub-backend.md
+    └── progress/
+        ├── INDEX.md
+        ├── iterations/
+        ├── ad-hoc/
+        ├── archive/
+        └── roles/
+└── docs/knowledge/                 ← 团队知识库（沉淀“以后还值得知道什么”）
 ```
 
-`baseline/` 写”怎么协作”，`progress/` 写”实际做了什么”。`CLAUDE.md` 和 `AGENTS.md` 是项目根目录中面向不同客户端的入口文件，随工作流一起存在；它们进入团队模式后共用同一套基线。
-
-多项目协作时，每个业务项目保留自己的 `baseline/`、`progress/` 和 `knowledge/`。跨项目契约、状态和决策放在 Owner 指定的 coordination 仓库中，规则见 `docs/baseline/cross-project-collaboration.md`。
+`baseline/` 写”怎么协作”，`progress/` 写”实际做了什么”。项目根目录的助手入口文件随工作流一起存在：Codex 使用 `AGENTS.md`，Claude Code 使用 `CLAUDE.md`；同一项目同时使用两种助手时，两个入口文件内容应保持一致。
 
 ## 3. 角色名称
 
 文档中首次出现角色时应优先使用“英文代号（中文名称）”格式，方便阅读，同时保留稳定角色 id。
+
+### 入口角色
+
+入口角色只负责默认响应和角色切换，不属于工作流角色集合，不参与标准迭代门禁，不写角色日志。
+
+| 英文代号 | 中文名称 | 角色手册 |
+|----------|----------|----------|
+| General | 通用助手 | 默认不读取；维护入口规则时可参考 `docs/baseline/role-general.md` |
+
+### 工作流角色
+
+工作流角色在用户明确或确认切换后才加载 `docs/baseline/runtime.md`，并按角色手册、当前状态和当前任务按需读取上下文。
 
 | 英文代号 | 中文名称 |
 |----------|----------|
@@ -67,7 +73,6 @@ docs/
 | Developer | 开发工程师 |
 | Tester | 测试工程师 |
 | DevOps | 运维/部署工程师 |
-| WM | 工作流管理者 |
 
 ## 4. 工作模式
 
@@ -80,12 +85,6 @@ docs/
 团队知识库用于沉淀可复用知识、未落地机会、架构取舍、Bug 根因、部署经验和复盘结论。它不是流水账，不能替代角色日志。
 
 知识库路径为 `docs/knowledge/`。写入规则、分类和读取规则见 `docs/baseline/knowledge-base.md`。
-
-## 5.1 跨项目协作
-
-当任务涉及两个以上项目、外部项目契约、coordination 仓库或新项目复用团队工作流时，按 `docs/baseline/cross-project-collaboration.md` 执行。
-
-项目级当前状态仍以本项目 `docs/progress/INDEX.md` 为真源；跨项目状态和契约以 coordination 仓库为真源。两者通过链接和摘要互相引用，不复制整份进度。
 
 ## 6. 上下文治理
 
@@ -111,7 +110,7 @@ PRD 阶段 -> UI 方案阶段 -> 设计阶段 -> 实现阶段 -> 测试阶段 ->
 | 实现 | Developer（开发工程师） | 产出方按影响领域动态指定 | 指定 Review 方全部通过 |
 | 测试 | Tester（测试工程师） | 产出方按影响领域动态指定 | 测试报告通过，阻塞缺陷关闭或明确延期 |
 | 部署 | DevOps（运维/部署工程师） | 默认独立检查；高风险时动态指定确认方 | 部署检查通过，或明确记录阻塞/跳过原因 |
-| 迭代关闭 | 当前 Agent 执行关闭检查 | 用户确认 | INDEX、迭代记录、角色日志、Change Note、知识沉淀状态一致 |
+| 迭代关闭 | 当前 Agent 执行关闭检查；涉及测试判断时切 Tester 或请求 Tester Review | 用户确认 | INDEX、迭代记录、当前角色日志、Change Note、知识沉淀状态一致；其他角色只登记待补充 |
 
 当前阶段未定稿前，不进入下一阶段。Spike 或纯技术预研可以跳过部分阶段，但必须在迭代记录中说明原因和实际 Review 方。
 
@@ -119,11 +118,15 @@ PRD 阶段 -> UI 方案阶段 -> 设计阶段 -> 实现阶段 -> 测试阶段 ->
 
 PM（产品经理）负责产品内容是否正确，但不代表人类做最终项目协调。阶段推进、优先级取舍、是否接受风险延期，由人类 Owner 最终确认。
 
-Bootstrap 初始化、收尾归档、迭代关闭检查、流程审计不是角色，而是非角色机制。触发时机、执行者和结束条件见 `docs/baseline/mechanisms.md`。任何当前会话 Agent 都可以在用户要求或自动检测到触发条件后执行这些机制，但关键结果必须由用户确认。
+Bootstrap 初始化、收尾归档、迭代关闭检查不是角色，而是非角色机制。触发时机、执行者和结束条件见 `docs/baseline/mechanisms.md`。流程审计由当前会话 Agent 执行；如发现工作流规则本身需要修改，按 §14 写基线提案带回真源仓库处理，不在本项目直接改框架。关键结果必须由用户确认。
 
-## 8. 状态机
+## 8. 状态词命名空间
 
-产出文档和阶段门禁使用同一套状态词：
+不同层级使用不同状态词，不允许混用。角色更新状态时，必须先确认自己正在修改的是阶段门禁、文档生命周期、任务记录、归档记录、部署检查还是 Change Note。
+
+### 8.1 阶段门禁状态
+
+标准迭代各阶段门禁使用以下状态词：
 
 | 状态 | 含义 |
 |------|------|
@@ -133,6 +136,21 @@ Bootstrap 初始化、收尾归档、迭代关闭检查、流程审计不是角�
 | 已定稿 | 当前轮次指定 Review 方均通过 |
 | 阻塞 | 需要人类或外部条件解除 |
 | 已跳过 | 该阶段不适用于本迭代，必须写原因 |
+
+### 8.2 其他状态词
+
+| 层级 | 允许状态 | 真源 |
+|------|----------|------|
+| 迭代最终状态 | 进行中 / 已完成 / 已关闭 / 阻塞 | `docs/progress/iterations/vX.Y.md` |
+| 非迭代任务状态 | 进行中 / 已完成 / 已中止 / 升级为迭代 / 已归档 | `docs/progress/ad-hoc/` |
+| 收尾归档状态 | 未收尾 / 收尾中 / 已归档 | `docs/progress/iterations/vX.Y.md` 或对应 ad-hoc |
+| 部署检查状态 | 待检查 / 检查中 / 通过 / 阻塞 / 已跳过 | 迭代记录的部署就绪检查 |
+| Change Note 状态 | 待确认 / 已确认 / 已执行 / 已归档 / 已废弃 / 升级为重大变更 | Change Note 文件和迭代记录 |
+| 跨任务待办状态 | 待处理 / 处理中 / 待确认 / 已完成 / 已废弃 | `docs/progress/INDEX.md` 跨任务待办 |
+
+`已定稿` 只用于阶段门禁；`已完成` 只用于任务或迭代结果；`已归档` 只用于收尾、Change Note 或非迭代记录归档。不要用 `已完成` 代替阶段 `已定稿`，也不要用 `已归档` 代替迭代关闭。
+
+### 8.3 状态真源规则
 
 状态真源规则：
 
@@ -220,7 +238,7 @@ Change Note 详细执行规则和归档流程见 `docs/baseline/mechanisms.md`�
 |------|------------|----------|
 | PRD | PM（产品经理） | Review 计划中指定的角色追加 Review |
 | 设计文档 | Architect（架构师） | Review 计划中指定的角色追加 Review |
-| 代码 | Developer（开发工程师） | Review 方不直接改，除非用户明确要求 |
+| 代码 | Developer（开发工程师） | Review 方只追加 Review，不直接改正文；需改正文由产出方进入 `修改中` 处理，或退出 Review 后按 Change Note / 回阶段规则执行 |
 | UI 方案 | UI（界面设计师） | Review 计划中指定的角色追加 Review |
 | 测试报告 | Tester（测试工程师） | Review 计划中指定的角色追加 Review |
 | Change Note | 提出变更的角色或被用户指定的执行角色 | 受影响角色确认、执行角色补充证据 |
@@ -251,7 +269,7 @@ docs/progress/roles/{role}-corrections.md
 [基线修正提案] 问题：...；建议：...
 ```
 
-Architect（架构师）或 WM（工作流管理者）可汇总提案，但修改基线必须经过人类确认。
+`baseline/` 是工作流框架，由真源仓库统一维护。本项目内任何角色都不直接改 `baseline/`，只记录 `[基线修正提案]`，由 Owner 带回真源仓库评估、修改，再随框架同步回来。
 
 ## 15. 角色创建机制
 
@@ -271,4 +289,4 @@ Architect（架构师）或 WM（工作流管理者）可汇总提案，但修�
 - 没有产出路径、状态入口或退出条件。
 - 增加的协调成本大于收益。
 
-新增角色必须通过 `role-wm.md` 的流程，并更新角色矩阵、迭代模板、日志和纠错文件。
+新增、修改或删除工作流角色属于框架变更，由真源仓库统一处理（更新角色矩阵、迭代模板、日志和纠错文件）。本项目发现角色需要调整时，只写 `[基线修正提案]` 带回真源仓库，不在本项目直接增删角色。General 是入口默认角色，不适用工作流角色新增流程。
