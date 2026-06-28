@@ -9,16 +9,49 @@ interface RequestOpts {
 }
 
 const BASE = "";
+const ADMIN_TOKEN_STORAGE_KEY = "__admin_token__";
+
+export class ApiError extends Error {
+  status: number;
+  detail: string;
+
+  constructor(status: number, path: string, detail: string) {
+    super(`HTTP ${status} ${path} ${detail}`);
+    this.name = "ApiError";
+    this.status = status;
+    this.detail = detail;
+  }
+}
+
+export function getAdminToken(): string {
+  const envToken = (import.meta as any).env?.VITE_ADMIN_TOKEN || "";
+  if (envToken) return envToken;
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(ADMIN_TOKEN_STORAGE_KEY) || "";
+}
+
+export function saveAdminToken(token: string): void {
+  if (typeof window === "undefined") return;
+  const value = token.trim();
+  if (value) window.localStorage.setItem(ADMIN_TOKEN_STORAGE_KEY, value);
+  else window.localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);
+}
+
+function withAdminToken(headers: Record<string, string> = {}): Record<string, string> {
+  const token = getAdminToken();
+  return token ? { ...headers, "x-admin-token": token } : headers;
+}
 
 async function requestJson<T = any>(path: string, opts: RequestOpts = {}): Promise<T> {
+  const headers: Record<string, string> = opts.body !== undefined ? { "Content-Type": "application/json" } : {};
   const res = await fetch(`${BASE}${path}`, {
     method: opts.method || "GET",
-    headers: opts.body !== undefined ? { "Content-Type": "application/json" } : {},
+    headers: withAdminToken(headers),
     body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    throw new Error(`HTTP ${res.status} ${path} ${detail}`);
+    throw new ApiError(res.status, path, detail);
   }
   if (res.status === 204) return undefined as T;
   const text = await res.text();
@@ -40,7 +73,7 @@ export const reorderSpaces = (items: { id: UUID; sort_order: number }[]) =>
 export async function uploadSpaceIcon(id: UUID, file: File): Promise<{ icon_url: string; icon_type: string }> {
   const fd = new FormData();
   fd.append("file", file);
-  const res = await fetch(`${BASE}/v1/spaces/${id}/icon`, { method: "POST", body: fd });
+  const res = await fetch(`${BASE}/v1/spaces/${id}/icon`, { method: "POST", headers: withAdminToken(), body: fd });
   if (!res.ok) throw new Error(`HTTP ${res.status} icon upload`);
   return res.json();
 }
