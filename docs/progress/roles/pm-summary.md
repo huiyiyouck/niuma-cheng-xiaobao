@@ -3,9 +3,9 @@
 ## 当前状态
 
 - 当前迭代：v0.6
-- 当前阶段：实现阶段待启动
-- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `iterations/v0.6-ui-spec.md`（R1 有条件通过）与 `iterations/v0.6-design.md`（R1 + R2 均有条件通过）
-- 下一步入口：Developer（开发工程师）启动 v0.6 实现阶段 R1，首个实现记录需显式承接设计 R2 遗留条件
+- 当前阶段：实现阶段联调精修 Developer 侧已收口，等待 Owner 提具体 bug / DevOps 规整生产部署
+- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `iterations/v0.6-ui-spec.md`（R1 有条件通过）与 `iterations/v0.6-design.md`（R1 + R2 均有条件通过）；2026-06-28 已完成 PM 侧收尾核对
+- 下一步入口：Owner 继续测试环境验证并提交具体 bug；或切换 DevOps 处理生产/测试部署去软链接化。Owner 验收和部署检查齐备后，再执行迭代关闭检查
 
 ## v0.6 关键上下文
 

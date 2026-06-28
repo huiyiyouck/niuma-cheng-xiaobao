@@ -1,105 +1,3 @@
-## 2026-06-02 — PM 会话收尾：v0.5 PRD R1 待多角色 Review
-
-- 本次角色：产品架构师(PM)
-- 动作：收尾归档 + PM 日志分层
-- 涉及文档：
-  - `docs/progress/INDEX.md`
-  - `docs/progress/roles/pm-current.md`
-  - `docs/progress/roles/pm-summary.md`
-  - `docs/progress/roles/pm-archive.md`
-- 收尾结论：暂停待续。v0.5 已正式启动，停留在 PRD 阶段 R1 Review中，不推进下一阶段。
-- 本次完成：
-  - 信息源管理重构 Product Brief。
-  - 事件时间线与影响链机会登记。
-  - 信息评分方法论 Product Brief。
-  - v0.5 标准迭代记录和 PRD R1。
-  - PM 日志超过 300 行，按上下文治理规则完成分层归档。
-- 验证证据：
-  - 已执行 `git diff --check`，无 Markdown 空白错误。
-  - 未运行代码测试：本次只修改规划和流程文档，没有修改代码。
-- 遗留问题/风险：
-  - PRD R1 等待 UI、Architect、Developer、Tester、DevOps 五个角色 Review。
-  - 生产数据清理不可逆，后续必须保留 Architect Review、DevOps 表级统计和 Owner 确认门禁。
-  - X API 套餐和计费策略需在上线前核验。
-- 下一步：以 UI、Architect、Developer、Tester、DevOps 角色分别 Review `docs/progress/iterations/v0.5-prd.md`。
-
-## 2026-06-09 — v0.5 迭代关闭检查 + Summary 归档 + 知识库沉淀
-
-- 本次角色：产品架构师(PM)
-- 动作：迭代关闭检查 + 归档摘要 + 统一 commit
-- 涉及文档：
-  - `docs/progress/iterations/v0.5.md`
-  - `docs/progress/iterations/v0.5-summary.md`（新建）
-  - `docs/progress/INDEX.md`
-  - `docs/knowledge/engineering/external-portal-as-truth-source.md`（新建）
-  - `docs/knowledge/INDEX.md`
-  - `docs/progress/roles/pm-current.md`
-
-- 关闭检查（按 mechanisms.md §3 的 8 项）：
-  1. ✅ v0.5.md 各阶段状态一致（PRD R2 定稿 → UI R2 定稿 → 设计 R2 定稿 → 实现 R2 定稿 → 测试 R1 定稿 → 部署通过）
-  2. ✅ 各阶段 Review 结论完整（PRD 5/5 / UI 2/2 / 设计 3/3 / 实现 3/3 / 测试 2/2 / 部署 DevOps 全栈 12 项 verify）
-  3. ✅ 阻塞全清（前端 31 TS 错误 P0 解除、6 孤儿组件清理、X Stream 误告警修复 + 断流补偿）
-  4. ✅ INDEX 已更新
-  5. ✅ 角色日志无关键阻塞（Developer 最新日志明确"无遗留代码任务"）
-  6. ✅ Change Note 不适用
-  7. ✅ Summary 已创建；知识库已沉淀 1 条（外部 Portal 真理源反向同步模式）
-  8. ✅ 后端废弃能力前端引用清零（5 + 1 孤儿组件已全部 git rm）
-
-- 关闭结论：**✅ 可关闭（有条件关闭）**
-  - 条件 A：v0.5.1 X 反向同步未走标准 R1/R2 流程——Owner 拍板的架构反转，后端 10 项 API 端到端验证全过，前端 Owner 浏览器验证通过；必要时代补 Tester 完整 AC 复审
-  - 条件 B：Owner 试用 7 commits 视觉细化不升 Tester R2——Owner 逐条手动验证通过
-  - 条件 C：评分方法论本迭代只交付文档，不落地代码
-
-- 产出：
-  - `v0.5-summary.md`（16 项关键决策 / Review 质量结论 / 遗留问题 / 知识库 (1条) / 4 项 v0.6+ 候选机会 / Git 节点）
-  - `external-portal-as-truth-source.md`（反向同步模式知识沉淀到 engineering/）
-  - `v0.5.md`：关闭结论和 summary 链接写入
-  - `INDEX.md`：当前迭代 →「无」，模式 →「未选择」，v0.5 行 Summary 列补链接 + 状态更新；最近收尾摘要新增 PM 行
-  - `knowledge/INDEX.md`：新增 external-portal-as-truth-source 索引
-
-- 工作区清理：统一 commit 含 Developer 日志（视觉收口 44 行）+ INDEX Developer 状态推进 + 本次 PM 关闭检查全部产出
-
-- 关联迭代：v0.5（已关闭）
-- 遗留问题/风险：
-  - 4 项 P1/P2 候选待办（MCP UI / 标签管理 / 空间图标 / 源代理）登记在 INDEX，待 PM 纳入 v0.6 规划评估
-  - 重计算模块架构预研（时间线聚类 / 实体关联）作为 v0.6 启动输入材料
-- 下一步：Owner 决定下一步（启动 v0.6 / 其他非迭代任务 / 暂停）
-
-## 2026-06-09 — v0.6 需求讨论 + 标准迭代启动 + PRD R1
-
-- 本次角色：产品架构师(PM)
-- 动作：需求讨论收敛 → 创建标准迭代记录和 PRD R1
-- 涉及文档：
-  - `docs/progress/iterations/v0.6.md`（新建）
-  - `docs/progress/iterations/v0.6-prd.md`（新建）
-  - `docs/progress/INDEX.md`
-  - `docs/progress/roles/pm-current.md`
-- 结论：v0.6 正式启动，停留在 PRD 阶段 R1 Review中。
-- 范围锁定：
-  1. `/root/news-aggregation-platform` Figma 导出原型作为本期前端重构目标；不迁入 React，基于现有 Vue3 前端落地并接真实 API。
-  2. X 信息 L0/L1 分层处理：所有原始信息先入库；L0 只过滤明显无效内容；通过 L0 的 X 信息进入 L1；L1 完成后进入新闻流展示。
-  3. 空间图标上传：支持图片上传、替换、移除，同时保留 emoji / 文本图标能力。
-- L1 关键决策：
-  - 评论读取本期不做。
-  - 每条 L1 都做库内相关新闻检索。
-  - 有链接就尝试读取链接内容。
-  - X 搜索 / Web 搜索按 `needs_context=true` 触发，不是每条都搜。
-  - 抽屉展示四段内容：原文中文翻译、相关背景与补全、AI 分析与评价、AI 标签。
-  - 四维评分：时效性 25%、影响力 35%、置信度 25%、可理解度 15%；AI 输出维度分和理由，系统计算综合分。
-  - 标签类型：领域标签、实体标签、事件标签、内容类型、处理标签。
-- 明确不做：
-  - L2 事件追踪、时间线、深度搜索、深度分析、公众号/系列文章生成。
-  - 独立全屏详情页。
-  - 反馈按钮和反馈记录。
-  - 前端展示分流策略或处理工作流配置。
-  - Source 级代理前端配置。
-- Review 计划：UI / Architect / Developer / Tester / DevOps 五方 R1 Review。
-- 关联迭代：v0.6
-- 遗留问题/风险：
-  - 搜索服务、库内相关新闻检索算法、L0/L1 数据模型、图片存储方案需设计阶段确认。
-  - LLM / 搜索 / 链接读取带来成本、超时和失败重试风险。
-- 下一步：切换到 UI、Architect、Developer、Tester、DevOps 角色分别 Review `docs/progress/iterations/v0.6-prd.md`。
-
 ## 2026-06-09 — PM 会话收尾：v0.6 PRD R1 已提交 Review
 
 - 本次角色：产品架构师(PM)
@@ -299,3 +197,26 @@
   - 已读取 coordination `STATUS.md` / `PROJECTS.md` / `REQUESTS.md` / `contracts/news-l1.md`。
   - 本次只修改 Markdown 文档，未运行代码测试。
 - 下一步：PM 可在 xiaobao 侧继续 v0.6.1 PRD；跨项目 L1 真实化由 ai PM 启动 v0.1 PRD 承接。
+
+## 2026-06-28 — PM 全局收尾核对 + GitHub 推送确认
+
+- 本次角色：产品架构师(PM)
+- 动作：按 Owner 要求检查是否需要全局收尾，并核对 GitHub 推送状态。
+- 涉及文档：
+  - `docs/progress/roles/pm-current.md`
+  - `docs/progress/roles/pm-summary.md`
+  - `docs/progress/roles/pm-archive.md`
+- 结论：
+  - 当前不满足迭代关闭条件：v0.6 仍处于实现后 Owner 验证 / DevOps 部署规整阶段，缺少 Developer 自测最终结论、Owner 验收结论和部署检查结论。
+  - 不需要做迭代级全局关闭归档；本次只做 PM 侧最小收尾和日志分层。
+  - Git 启动检查显示本地 `main` 与 `origin/main` 已同步，拉取前后均无未推送提交。
+- 验证证据：
+  - `git pull --rebase` 返回 `Already up to date.`。
+  - `git status --short --branch` 显示 `## main...origin/main`，工作区在本次文档收尾前干净。
+  - `INDEX.md` 当前状态已指向 Owner 提具体 bug、Developer 修复或 DevOps 规整生产部署。
+  - 本次只修改 PM 日志和摘要，未运行代码测试。
+- 日志治理：
+  - `pm-current.md` 已超过 300 行阈值，本次将最旧 3 条记录移入 `pm-archive.md`，current 保持最近 10 条。
+- 下一步：
+  - Owner 继续验证测试环境并提交具体 bug，或切换 DevOps 处理生产/测试部署去软链接化。
+  - 若 Owner 明确接受当前 v0.6 结果并完成部署检查，再执行迭代关闭检查。
