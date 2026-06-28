@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import { config } from "../shared/config.ts";
 import { workerLogger } from "../shared/logger.ts";
 import { find } from "./fetchers/registry.ts";
 import { processLLM } from "./llm.ts";
@@ -27,7 +28,7 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
 
   const content = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
 
-  // 金十快讯不走 LLM，直接展示原始内容
+  // v0.6 收口：AI 未显式启用时，抓取内容先直显；X/Twitter 始终直显，AI 处理后续交给独立中枢。
   let title: string;
   let summary: string;
   let bullets: string[] = [];
@@ -35,11 +36,13 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
   let entities: any[] = [];
   let importanceScore = 0;
 
-  if (row.source_type === "jin10_flash") {
-    summary = (content.summary as string) || (content.introduction as string) || "";
-    title = (content.title as string) || summary.slice(0, 40) || "金十快讯";
-    tags = ["金十快讯"];
-    log.info("JIN10 DIRECT source_id=%s title=%s", sourceId, title.slice(0, 80));
+  if (shouldDirectDisplay(row.source_type)) {
+    const direct = buildDirectNews(row.source_type, content);
+    title = direct.title;
+    summary = direct.summary;
+    tags = direct.tags;
+    entities = direct.entities;
+    log.info("NEWS DIRECT source_type=%s source_id=%s title=%s", row.source_type, sourceId, title.slice(0, 80));
   } else {
     let text: string;
     const typeFetcher = find(row.source_type);
@@ -106,4 +109,61 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
   } else {
     log.debug("NEWS DEDUPED raw_item_id=%s", rawItemId);
   }
+
+  if (shouldDirectDisplay(row.source_type)) {
+    await conn.query(
+      `UPDATE raw_items
+       SET l0_status = 'skipped',
+           l0_label = 'direct_display',
+           l0_processed_at = now(),
+           l1_status = 'completed',
+           l1_processed_at = now()
+       WHERE id = $1`,
+      [rawItemId],
+    );
+  }
+}
+
+function shouldDirectDisplay(sourceType: string): boolean {
+  return sourceType === "x_twitter" || sourceType === "jin10_flash" || !config.aiProcessingEnabled;
+}
+
+function buildDirectNews(sourceType: string, content: Record<string, unknown>) {
+  if (sourceType === "jin10_flash") {
+    const summary = textOf(content.summary) || textOf(content.introduction);
+    return {
+      title: textOf(content.title) || truncateTitle(summary) || "金十快讯",
+      summary,
+      tags: ["金十快讯"],
+      entities: [],
+    };
+  }
+
+  if (sourceType === "x_twitter") {
+    const text = textOf(content.text);
+    const username = textOf(content.author_username);
+    return {
+      title: truncateTitle(text) || (username ? `@${username}` : "X/Twitter"),
+      summary: text,
+      tags: ["X/Twitter"],
+      entities: username ? [{ name: username, type: "account" }] : [],
+    };
+  }
+
+  const title = textOf(content.title);
+  const summary = textOf(content.summary) || textOf(content.content) || title;
+  return {
+    title: title || truncateTitle(summary) || "未命名新闻",
+    summary,
+    tags: [],
+    entities: [],
+  };
+}
+
+function textOf(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function truncateTitle(text: string): string {
+  return text.length > 80 ? `${text.slice(0, 77)}...` : text;
 }

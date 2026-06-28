@@ -22,6 +22,11 @@ const BACKOFF_CONFIG: Record<string, { maxAttempts: number; backoff: number[] }>
   // #D11：不创建 l1_retry task，手动重试走 l1_process + metadata
 };
 
+export function taskTypeForNewRawItem(sourceType: string): "process" | "l0_classify" {
+  if (sourceType === "x_twitter" && config.aiProcessingEnabled) return "l0_classify";
+  return "process";
+}
+
 // ── 构建 fetcher 配置 ────────────────────────────────────────
 
 function buildFetchConfig(
@@ -187,20 +192,12 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
     );
     if (inserted) {
       newRawIds.push(inserted.id);
-      // v0.6：X/Twitter 源走 L0→L1 流水线，非 X 源保持 v0.5 process 路径
-      if (row.source_type === "x_twitter") {
-        await conn.query(
-          `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, created_at, updated_at)
-           VALUES('l0_classify', $1, $2, 'queued', 0, now(), now(), now())`,
-          [row.source_id, inserted.id],
-        );
-      } else {
-        await conn.query(
-          `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, created_at, updated_at)
-           VALUES('process', $1, $2, 'queued', 0, now(), now(), now())`,
-          [row.source_id, inserted.id],
-        );
-      }
+      const taskType = taskTypeForNewRawItem(row.source_type);
+      await conn.query(
+        `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, created_at, updated_at)
+         VALUES($1, $2, $3, 'queued', 0, now(), now(), now())`,
+        [taskType, row.source_id, inserted.id],
+      );
     }
   }
 
@@ -258,7 +255,7 @@ export async function workerLoop(
     }
 
     // v0.6：l0_classify 复用 processSem（L0 体量小不会阻塞 process_raw_item）
-    if (!task) {
+    if (!task && config.aiProcessingEnabled) {
       if (await processSem.acquire()) {
         task = await claimTask(client, workerId, "l0_classify");
         if (task) { taskType = "l0_classify"; sem = processSem; }
@@ -267,7 +264,7 @@ export async function workerLoop(
     }
 
     // v0.6：l1_process 独立 l1Sem（避免阻塞 RSS/jin10 process_raw_item）
-    if (!task) {
+    if (!task && config.aiProcessingEnabled) {
       if (await l1Sem.acquire()) {
         task = await claimTask(client, workerId, "l1_process");
         if (task) { taskType = "l1_process"; sem = l1Sem; }

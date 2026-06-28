@@ -6,6 +6,23 @@
 
 ---
 
+## 2026-06-28 — v0.6 bug 收尾：AI 不放开 + X/Twitter 直显
+
+- 本次角色：全栈开发（Developer）；模式：标准迭代 v0.6 实现阶段 bug 收尾
+- Owner 决策：v0.6 当前只做 bug 收尾，**AI 处理不放开**；Twitter 抓到的东西直接展示在新闻页，AI 处理后续交给独立 AI 中枢管理；若无更多 bug，下一步交 DevOps 部署生产
+- 已实现代码侧收口：
+  - `config.ts` 新增 `ENABLE_AI_PROCESSING`，默认 `false`
+  - `dispatcher.ts` 新增 `taskTypeForNewRawItem()`：默认 X/Twitter 新 raw item 排普通 `process`；仅显式启用 AI 时排 `l0_classify`
+  - worker 主循环在 AI 未启用时不 claim `l0_classify` / `l1_process`，避免误跑内建 L0/L1 或 OpenClaw 路径
+  - `processor.ts` 对 X/Twitter 始终直显；AI 未启用时其他 source 也直显兜底；直显路径写 `processed_news` + fan-out `news_positions`，并将 raw 标记为 `l0_status=skipped` / `l1_status=completed`
+  - 新增迁移 `0007_backfill_x_direct_display.sql`，回填已有 X raw item 为可展示新闻，并把遗留 queued L0/L1 任务标记为 succeeded
+- TDD 证据：先新增 `x-direct-display.test.ts`，红灯为“X 仍调用 LLM / taskTypeForNewRawItem 不存在”；实现后 `npm test -- src/__tests__/x-direct-display.test.ts` 通过
+- 编译验证：`cd server && npm run build` 通过
+- DevOps 交接：生产部署需执行迁移 `0006_drop_dp_channel_unique` + `0007_backfill_x_direct_display`；生产环境保持不设置 `ENABLE_AI_PROCESSING=true`
+- 下一步：Owner 继续报具体 bug；若无 bug，切 DevOps 生产部署
+
+---
+
 ## 2026-06-16 — 建 niuma-cheng-ai 独立中枢骨架 + 跨项目协作机制设计（移交 WM）
 
 - 本次角色：全栈开发（Developer）；模式：Owner 指挥的项目创建 + 跨项目协作设计（非迭代）
@@ -66,7 +83,7 @@
   - 代码级 smoke：直接调用 `webSearch()` + `processL1ViaAgent()`，成功得到平台 `L1Output` 结构（title / summary / translation / context / analysis / score_dimensions / tags / needs_context），四维评分和 tags 可被当前校验层接住
 - 端到端补验（同日）：在 `news_test` 插入 1 条 `l1_process` queued 任务并调用一次 `workerLoop()`；真实 raw item `39e44f28-47b4-4eee-a5ca-bfd75c422d05` 处理成功，任务 `6de4139b-3284-421f-bc2d-f91d240f1b62` → `succeeded`，`raw_items.l1_status=completed`，新建 `processed_news` `609c20aa-ab65-4b95-8933-ce8d7d5f40ff`，标题「加密KOL「加密狗」预告高确定性RWA项目套利机会及低损耗对冲教程」，`score_total=2.8`，`tags_v2.processing` 含 `engine:agent`，`source_refs.search_fetched=true`，fan-out `news_positions=1`；耗时约 117s
 - 发现：`tasks` 表无 `metadata` 列，历史记录中“手动重试创建 `l1_process` + `metadata.triggered_by='manual'`”只能改为“创建 `l1_process`，不记录 metadata”；已修正 `l1-tasks.ts` 注释
-- 结论：OpenClaw `news-l1` agent 作为 v0.6 L1 主处理引擎的本机代码层 smoke + `news_test` 单条真实 raw_item / worker 端到端验证均已通过；下一步可做 3-5 条小批量观察，重点看总耗时、并发、失败回退和 token/成本
+- 结论：OpenClaw `news-l1` agent 技术验证结果保留；但按 2026-06-28 Owner 收口决策，v0.6 不放开 AI 处理，不再做 3-5 条小批量观察，后续 AI 处理由独立 AI 中枢管理
 
 ---
 

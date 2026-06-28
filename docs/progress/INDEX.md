@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：实现阶段联调精修 Developer 侧已收口 — 后端 A+B+C 已实现；前端 React 4 页接真实 API；左中右布局 + 三页 UI 精修 + 管理页交互修复 + `display_positions` 软删除约束 bug 修复均完成；前端 `npm run build` / 后端 `tsc --noEmit` 均 0 错误；独立测试环境在线且关键 API smoke 全通（IP 入口 http://115.191.43.79 + test.huiyiyou.cloud + news_test 库 + :8001 systemd news-api-test）；当前等待 Owner 提具体 bug 进入下一阶段
+- 当前阶段：实现阶段 bug 收尾 Developer 侧已收口 — 后端 A+B+C 已实现；前端 React 4 页接真实 API；左中右布局 + 三页 UI 精修 + 管理页交互修复 + `display_positions` 软删除约束 bug 修复均完成；本次补充 v0.6 收口决策：AI 处理默认不放开（`ENABLE_AI_PROCESSING=false`），X/Twitter raw item 直接生成新闻页可展示内容，并新增 `0007_backfill_x_direct_display` 回填迁移；前端此前 `npm run build` 通过，本次后端 `npm run build` / `npm test -- src/__tests__/x-direct-display.test.ts` 通过；当前等待 Owner 提具体 bug，若无 bug 切 DevOps 部署生产
 - 阻塞项：生产/测试部署去软链接化待 DevOps（生产 news-api 当前 inactive，前端 dist 因软链已是 v0.6 开发版）；Owner 继续 test 验证
-- 下一步入口：Owner 报具体 bug → Developer 修复 / 切 DevOps 规整生产部署（去软链 + 起 news-api + 处理 IP 临时入口） / 可选放开 worker 跑 v0.6 评分标签数据 / OpenClaw 3-5 条小批量观察
+- 下一步入口：Owner 报具体 bug → Developer 修复 / 若无 bug，切 DevOps 部署生产（迁移 0006 + 0007、去软链 + 起 news-api + 处理 IP 临时入口，且生产保持不设置 `ENABLE_AI_PROCESSING=true`）
 
 ## 版本列表
 
@@ -138,7 +138,7 @@
 | P2 | 空间图标支持上传图片（当前仅支持 emoji 文本输入） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 空间管理页图标编辑 | ✅ 已收编进 v0.6 PRD R1 — 支持图片上传、替换、移除，同时保留 emoji / 文本图标能力 |
 | P2 | 信息源级别代理配置：每个 Source 可独立控制是否走代理抓取（当前为全局代理） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 部分 RSS 源可能不需要代理 | ✅ 已评估（2026-06-09）— 不作为前端管理能力；如需 Source 级代理，作为后端内部抓取策略由设计阶段按需处理 |
 | P1 | MCP 协议信息源完整支持：新建/编辑/删除 MCP 源的 UI、工具选择、配置管理（当前仅后台 API 临时创建） | PM | 2026-06-07 v0.5 Owner 试用反馈 — 金十数据 MCP 接入为临时后台方案 | 待 PM 评估，纳入后续迭代规划 |
-| P1 | **L1 Agent 化：OpenClaw 集成替换内建 LLM 调用** — L1 处理链路接入 OpenClaw 服务（Agentic tool-use），由 Agent 自主驱动 KB 检索/链接读取/Web 搜索/X 搜索，替代当前 `l1-processor.ts` 空壳 Stage 3 + 硬编码 5 阶段；主 Server 只做 fetch raw_item → 调 OpenClaw Agent → 存结果 | Developer | 2026-06-13 v0.6 实现阶段讨论 — Owner 决定 LLM 处理由外部 Agent 承担 | ✅ 本机代码层 smoke + `news_test` 单条真实 raw_item / worker 端到端验证已通过（2026-06-16）：`openclaw status` 可见 `news-l1`；`web.search` 返回 Tavily 搜索结果；`news-l1 --local --json` 返回结构化新闻 JSON；真实任务 `6de4139b-3284-421f-bc2d-f91d240f1b62` succeeded，`raw_items.l1_status=completed`，`processed_news` 写入 `609c20aa-ab65-4b95-8933-ce8d7d5f40ff`，`tags_v2.processing` 含 `engine:agent`，fan-out 1 个展示位置。下一步：3-5 条小批量观察并发、耗时、失败回退和成本 |
+| P1 | **L1 Agent 化：OpenClaw 集成替换内建 LLM 调用** — L1 处理链路接入 OpenClaw 服务（Agentic tool-use），由 Agent 自主驱动 KB 检索/链接读取/Web 搜索/X 搜索，替代当前 `l1-processor.ts` 空壳 Stage 3 + 硬编码 5 阶段；主 Server 只做 fetch raw_item → 调 OpenClaw Agent → 存结果 | Developer | 2026-06-13 v0.6 实现阶段讨论 — Owner 决定 LLM 处理由外部 Agent 承担 | ✅ 技术验证已完成但 v0.6 不放开（2026-06-28 Owner 收口决策）— 2026-06-16 本机代码层 smoke + `news_test` 单条真实 raw_item / worker 端到端验证通过；但当前版本生产策略改为 `ENABLE_AI_PROCESSING=false`，X/Twitter raw item 直接展示，AI 处理后续由独立 AI 中枢管理；不再执行 OpenClaw 3-5 条小批量观察 |
 | **P1** | 生产/测试部署去软链接化（部署目录与开发目录彻底解耦）：当前生产 `news.huiyiyou.cloud` 是软链接 → 开发目录 `frontend/dist`，导致 `npm run build` 即直接污染生产（6-13 起多次发生）。改为：部署流程 `build` 后将编译产物**拷贝（rsync）到独立生产目录**，nginx 指向该独立目录而非软链接（nginx `root` 已是 `/var/www/news.huiyiyou.cloud`，只需将该路径从软链接换成真实目录 + 建立 build→rsync 部署步骤）。测试环境同理走独立目录（`test.huiyiyou.cloud` 当前已是 rsync 独立目录，需复核确认部署流程与生产统一）。落实后开发仓库 build 不再影响任何环境。 | DevOps | 2026-06-15 Owner 口述 | 待启动 |
 
 ## Bootstrap 记录

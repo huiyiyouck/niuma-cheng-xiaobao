@@ -85,6 +85,8 @@ export const config = {
   llmRetryBaseSeconds: getFloat("LLM_RETRY_BASE_SECONDS", 1.0),
 
   // v0.6 L0/L1 LLM（fallback 到 openaiModel 由 callLLM 处理）
+  // v0.6 收口默认不放开 AI 处理：X/Twitter 等抓取内容先直显；后续 AI 中枢接管后再显式启用。
+  aiProcessingEnabled: getBool("ENABLE_AI_PROCESSING", false),
   l0LlmModel: get("L0_LLM_MODEL", "gpt-4o-mini"),
   l1LlmModel: get("L1_LLM_MODEL", "gpt-4o-mini"),
   llmL0MaxRetries: getInt("LLM_L0_MAX_RETRIES", 3),
