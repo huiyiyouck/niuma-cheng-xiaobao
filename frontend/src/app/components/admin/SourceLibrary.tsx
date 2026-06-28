@@ -10,7 +10,7 @@ import {
 import { AddSourceDrawer } from "./AddSourceDrawer";
 import { Badge } from "../ui/badge";
 import { PlacementTooltip } from "../ui/PlacementTooltip";
-import { ApiError, listSources, saveAdminToken, syncXRules, deleteSource } from "../../lib/api";
+import { listSources, syncXRules, deleteSource } from "../../lib/api";
 import { toast } from "sonner";
 import { Loading } from "../ui/Loading";
 
@@ -99,31 +99,15 @@ export function SourceLibrary() {
   async function handleSync() {
     setSyncing(true);
     try {
-      await syncXRulesWithAdminToken();
+      await syncXRules();
       const r: any = await listSources({ page_size: 100 });
       setSources((r?.sources ?? []).map(mapSource));
       setConfirmSyncOpen(false);
       toast.success("X 规则同步完成");
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        toast.error("管理员 Token 不正确，请重新填写");
-      } else {
-        toast.error("X 规则同步失败，请重试");
-      }
+    } catch {
+      toast.error("X 规则同步失败，请重试");
     }
     finally { setSyncing(false); }
-  }
-
-  async function syncXRulesWithAdminToken() {
-    try {
-      return await syncXRules();
-    } catch (err) {
-      if (!(err instanceof ApiError) || err.status !== 403) throw err;
-      const token = window.prompt("请输入生产管理员 Token");
-      if (!token?.trim()) throw err;
-      saveAdminToken(token);
-      return await syncXRules();
-    }
   }
 
   const hasActiveFilters = searchQuery || typeFilter !== "all" || availabilityFilter !== "all" || runningFilter !== "all";

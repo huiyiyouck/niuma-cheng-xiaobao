@@ -10,7 +10,7 @@ import {
 } from "../components/ui/alert-dialog";
 import {
   listAlerts, updateAlertStatus, batchUpdateAlertStatus,
-  listLogs, getLogsConfig, ApiError, saveAdminToken,
+  listLogs, getLogsConfig,
 } from "../lib/api";
 
 type AlertSeverity = "high" | "medium" | "low";
@@ -222,7 +222,7 @@ export function MonitoringPage() {
     const count = unhandledCount;
     setBatchAcking(true);
     try {
-      await batchUpdateAlertStatusWithAdminToken("acknowledged");
+      await batchUpdateAlertStatus("acknowledged");
       await loadAlerts();
       setConfirmBatchOpen(false);
       toast.success(`已将 ${count} 条告警标记为已处理`);
@@ -230,18 +230,6 @@ export function MonitoringPage() {
     catch (e) { console.error(e); toast.error("批量处理失败，请稍后重试"); }
     finally { setBatchAcking(false); }
   };
-
-  async function batchUpdateAlertStatusWithAdminToken(status: "acknowledged" | "ignored" | "resolved") {
-    try {
-      return await batchUpdateAlertStatus(status);
-    } catch (err) {
-      if (!(err instanceof ApiError) || err.status !== 403) throw err;
-      const token = window.prompt("请输入生产管理员 Token");
-      if (!token?.trim()) throw err;
-      saveAdminToken(token);
-      return await batchUpdateAlertStatus(status);
-    }
-  }
 
   // 告警 → 日志：开 60s 时间窗 + 关键词；切到日志 Tab；清前端筛选避免误过滤
   const jumpToLogs = (alert: Alert) => {
