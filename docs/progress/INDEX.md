@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6
 - 当前模式：标准迭代
-- 当前阶段：实现阶段 bug 收尾 Developer 侧已收口 — 后端 A+B+C 已实现；前端 React 4 页接真实 API；左中右布局 + 三页 UI 精修 + 管理页交互修复 + `display_positions` 软删除约束 bug 修复均完成；本次补充 v0.6 收口决策：AI 处理默认不放开（`ENABLE_AI_PROCESSING=false`），X/Twitter raw item 直接生成新闻页可展示内容，并新增 `0007_backfill_x_direct_display` 回填迁移；前端此前 `npm run build` 通过，本次后端 `npm run build` / `npm test -- src/__tests__/x-direct-display.test.ts` 通过；当前等待 Owner 提具体 bug，若无 bug 切 DevOps 部署生产
-- 阻塞项：生产/测试部署去软链接化待 DevOps（生产 news-api 当前 inactive，前端 dist 因软链已是 v0.6 开发版）；Owner 继续 test 验证
-- 下一步入口：Owner 报具体 bug → Developer 修复 / 若无 bug，切 DevOps 部署生产（迁移 0006 + 0007、去软链 + 起 news-api + 处理 IP 临时入口，且生产保持不设置 `ENABLE_AI_PROCESSING=true`）
+- 当前阶段：实现完成并已部署生产上线（据 PM 2026-06-30 系统核查订正）— 后端 A+B+C 已实现；前端 React 4 页接真实 API；左中右布局 + 三页 UI 精修 + 管理页交互修复 + `display_positions` 软删除约束 bug 修复均完成；v0.6 收口决策（AI 处理默认不放开、X/Twitter raw item 直接生成可展示新闻、新增 `0007_backfill_x_direct_display` 回填迁移）已落地。**生产已于 2026-06-28 完成去软链接化隔离部署**：`news-api` 自 06-28 16:25 active（隔离目录 `/srv/niuma-news/prod/server`）；前端 06-28 16:17 已构建部署到真实目录 `/var/www/news.huiyiyou.cloud`（引用 `index-Ufw1OiMD.js`）；生产 `.env` 未设 `ENABLE_AI_PROCESSING`，走代码默认 false，AI 处理保持关闭。**注：此次部署 DevOps 尚未补登工作记录；部署完整 verify（迁移 0006/0007 是否落库、IP 临时入口处理）以 DevOps 补登记录为准，PM 不代写。**
+- 阻塞项：去软链接化部署阻塞已解除（已完成）。待办：① DevOps 补登 2026-06-28 生产部署工作记录与收尾；② PM 执行 v0.6 迭代关闭检查。
+- 下一步入口：① Owner 提醒 DevOps 角色补登 2026-06-28 部署记录并核对迁移 0006/0007 与 IP 临时入口；② PM 执行 v0.6 迭代关闭检查 → 产出 `iterations/v0.6-summary.md` → 关闭 v0.6
 
 ## 版本列表
 
@@ -19,7 +19,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
-| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | — | 设计 R2 已有条件定稿，进入实现阶段 |
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | — | 实现完成，已部署生产上线（2026-06-28 去软链接化隔离部署），待 DevOps 补登部署记录 + PM 迭代关闭检查 |
 
 ## 当前 Change Notes
 
@@ -52,6 +52,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-06-30 | PM | v0.6 状态订正：实况与 INDEX 严重不符 | ✅ 已订正 — 系统核查确认 v0.6 已于 2026-06-28 完成去软链接化生产部署（`news-api` active 自 06-28 16:25 / 隔离目录 `/srv/niuma-news/prod` / 前端真实目录 06-28 16:17 / 生产未设 `ENABLE_AI_PROCESSING` 走默认 false），但部署后无人回写：INDEX 仍写「inactive / 待部署」、DevOps 日志停在 06-12 无 06-28 部署记录、v0.6 未走迭代关闭检查。本次按实况订正 INDEX 当前状态 + 版本列表；DevOps 部署工作记录由 Owner 提醒 DevOps 角色补登（PM 不代写他人角色日志） | DevOps 补登 06-28 部署记录；PM 执行 v0.6 迭代关闭检查 |
 | 2026-06-17 | WM | 初始化 coordination 骨架 + 跨项目需求流转机制（需求提报中心）入基线 | ✅ 已完成并更新至 coordination HEAD `499f84e` — Owner 提供 `niuma-cheng-coordination` 仓库；WM 建骨架并推送；截至 2026-06-22，coordination 显示 `ai` 已完成 Bootstrap、已配置 remote、PM（ck）已承接 REQ-001，需求状态为联调中；`news-l1` v1 契约生效中；BCR-001 已回流 xiaobao/ai 下游 | ai PM 启动 v0.1 PRD；xiaobao 继续 v0.6 Owner 验证/部署去软链；跨项目契约变更以 coordination `contracts/news-l1.md` 为先 |
 | 2026-06-16 | WM | 收编跨项目协作机制进 baseline | ✅ 已完成 — 新增 `cross-project-collaboration.md`；同步 runtime 加载路由、workflow 总览、Bootstrap 复用约束、mechanisms 新项目复用机制、conventions 基线修正职责口径；追加 `PROJECTS.md` + `communications/` 规则，明确哪个沟通文档属于哪些项目 | Owner 创建 `niuma-cheng-coordination` 仓库；coordination 最小骨架建好后，ai 项目单独执行 Bootstrap |
 | 2026-06-16 | Developer | LangGraph AI 处理中枢方案二轮收敛 + L1_ENGINE 安全修复 + 统一收口 | ✅ 已完成 — 方向多轮讨论收敛沉淀进提案 §12（D1-D5 + 两类新闻产品更正 + 4核8G 服务器评估 + 异步问题清单 + 边界划分）；安全修复 `config.ts` L1_ENGINE 默认 agent→builtin（生产 `.env` 未设、纯靠代码默认值；OpenClaw 嵌入生产未验证且方向废弃），`tsc` 0 错误，无需重启；按 last-out 统一 commit 全部遗留（含上会话 OpenClaw 批次的正常实现产出） | Owner 切 PM 立 v0.6.1 PRD（含两类新闻产品更正）→ Architect 出 Agent Hub 架构方案；OpenClaw 嵌入代码删除走门禁留 v0.6.1 |

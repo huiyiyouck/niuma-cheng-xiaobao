@@ -3,9 +3,9 @@
 ## 当前状态
 
 - 当前迭代：v0.6
-- 当前阶段：实现阶段联调精修 Developer 侧已收口，等待 Owner 提具体 bug / DevOps 规整生产部署
-- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `iterations/v0.6-ui-spec.md`（R1 有条件通过）与 `iterations/v0.6-design.md`（R1 + R2 均有条件通过）；2026-06-28 已完成 PM 侧收尾核对
-- 下一步入口：Owner 继续测试环境验证并提交具体 bug；或切换 DevOps 处理生产/测试部署去软链接化。Owner 验收和部署检查齐备后，再执行迭代关闭检查
+- 当前阶段：实现完成并已部署生产上线（2026-06-28 去软链接化隔离部署，PM 2026-06-30 系统核查订正 INDEX）；待 DevOps 补登部署记录 + PM 执行迭代关闭检查
+- 当前角色产出：`docs/progress/iterations/v0.6-prd.md`（R2 已定稿）；PM 已 Review `iterations/v0.6-ui-spec.md`（R1 有条件通过）与 `iterations/v0.6-design.md`（R1 + R2 均有条件通过）；2026-06-28 已完成 PM 侧收尾核对；2026-06-30 订正 INDEX 当前状态/版本列表/收尾摘要至生产实况
+- 下一步入口：① Owner 提醒 DevOps 补登 2026-06-28 部署记录（核对迁移 0006/0007 落库、IP 临时入口）；② PM 执行 v0.6 迭代关闭检查 → 产出 `v0.6-summary.md` → 关闭 v0.6
 
 ## v0.6 关键上下文
 
