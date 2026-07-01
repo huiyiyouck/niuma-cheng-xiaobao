@@ -16,6 +16,8 @@ import { alertsRoutes } from "./routes/alerts.ts";
 import { xSyncRoutes } from "./routes/x-sync.ts";
 import { levelStatusRoutes } from "./routes/level-status.ts";
 import { l1TasksRoutes } from "./routes/l1-tasks.ts";
+import { aiDebugRoutes } from "./routes/ai-debug.ts";
+import { kbSearchRoutes } from "./routes/kb-search.ts";
 
 export async function buildApp() {
   const app = Fastify({ logger: false });
@@ -74,6 +76,8 @@ export async function buildApp() {
     await xSyncRoutes(scope);
     await levelStatusRoutes(scope);
     await l1TasksRoutes(scope);
+    await aiDebugRoutes(scope);
+    await kbSearchRoutes(scope);
   }, { prefix: "/v1" });
 
   // 根页面

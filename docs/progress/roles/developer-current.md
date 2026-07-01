@@ -6,6 +6,32 @@
 
 ---
 
+## 2026-07-01 — AI news-l1 跨项目联调入口 + KB search 契约对齐
+
+- 本次角色：全栈开发（Developer）；模式：非迭代跨项目联调任务（coordination `REQ-001`）
+- coordination 依据：`/root/Project/niuma-cheng-coordination`，同步后 HEAD `8eecdde`；读取 `STATUS.md`、`REQUESTS.md`、`communications/REQ-001-news-l1.md`、`contracts/news-l1.md`
+- Owner 要求：联调不能只做后端触发；需要前端调试页供验收，选择库内数据后发送给 ai 侧处理，并在页面看到返回；ai 侧提出的库内新闻搜索需求也要完成；联调契约必须定清楚传参、返回格式和数量。
+- 已完成 xiaobao 侧：
+  - 后端新增 AI Hub HTTP 客户端与配置 `AI_HUB_BASE_URL` / `AI_HUB_API_TOKEN` / `AI_HUB_TIMEOUT_MS`
+  - `L1_ENGINE=ai` 时 worker 可复用独立 AI Hub 调用路径
+  - 抽出 raw_item → `L1Input` 构造函数，联调入口与真实业务共用；补齐 `raw_content.url` 映射，符合 ai 侧 link read 规则
+  - 新增 `GET /v1/ai-debug/candidates`、`POST /v1/ai-debug/news-l1-runs`
+  - 新增 ai→xiaobao `POST /v1/kb-search`
+  - 前端新增 `/debug/ai` 页面和侧栏「联调」入口，可搜索/选择新闻、配置工具上限和超时、发送 AI、展示请求/响应 JSON 与结构化结果
+- coordination 已更新：
+  - `contracts/news-l1.md` 补齐 `raw_content` URL 规则、`KbResult`、`tool_summary` 口径、JSON 示例
+  - 新增 `contracts/kb-search.md` v1：`top_n` 默认 5 / 最大 10，返回 `results[]` 的固定结构
+  - 更新 `communications/REQ-001-news-l1.md`、`STATUS.md`、`CHANGELOG.md`
+- 验证：
+  - `cd server && npm run build` 通过
+  - `cd frontend && npm run build` 通过
+  - `cd server && npm test -- src/__tests__/x-direct-display.test.ts` 通过（2 passed）
+- 测试环境部署：已同步后端到 `/srv/niuma-news/test/server/src/`、前端 dist 到 `/var/www/test.huiyiyou.cloud/`，重启 `news-api-test.service` 后 active；`/health`、`/v1/ai-debug/candidates`、`/v1/kb-search` 均 200；前端测试目录引用新 bundle `index-CdgZSNqE.js`
+- 当前阻塞：`http://127.0.0.1:8100/health` 不通，真实发送 AI 需 ai 提供/启动测试服务地址
+- 下一步：配置 xiaobao `AI_HUB_BASE_URL` 指向 ai 服务 → Owner 在 `/debug/ai` 页面做真实端到端验收；ai 侧按 `contracts/kb-search.md` v1 接入实时库内检索
+
+---
+
 ## 2026-06-28 — v0.6 bug 收尾：AI 不放开 + X/Twitter 直显
 
 - 本次角色：全栈开发（Developer）；模式：标准迭代 v0.6 实现阶段 bug 收尾

@@ -200,3 +200,20 @@ export function listLogs(opts?: {
   const query = qs.toString();
   return requestJson(`/v1/admin/logs${query ? "?" + query : ""}`);
 }
+
+// ── AI 联调 ───────────────────────────────────────────────
+export function listAiDebugCandidates(opts?: { search?: string; page_size?: number }) {
+  const qs = new URLSearchParams();
+  if (opts?.search) qs.set("search", opts.search);
+  if (opts?.page_size) qs.set("page_size", String(opts.page_size));
+  const query = qs.toString();
+  return requestJson(`/v1/ai-debug/candidates${query ? "?" + query : ""}`);
+}
+
+export function runAiDebugNewsL1(payload: {
+  news_id?: UUID;
+  raw_item_id?: UUID;
+  options?: { max_tool_calls?: number; timeout_ms?: number };
+}) {
+  return requestJson("/v1/ai-debug/news-l1-runs", { method: "POST", body: payload });
+}

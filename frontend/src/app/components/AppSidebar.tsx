@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
-import { Newspaper, Settings, Activity, TrendingUp, FileText, Radio, FolderOpen } from "lucide-react";
+import { Newspaper, Settings, Activity, TrendingUp, FileText, Radio, FolderOpen, FlaskConical } from "lucide-react";
 import { cn } from "../lib/utils";
 import { getSpaceStats, getGlobalStats } from "../lib/api";
 
@@ -47,6 +47,7 @@ export function AppSidebar({ spaces, unreadCount }: { spaces: Space[]; unreadCou
   const browseActive = pathname === "/" || pathname.startsWith("/news");
   const adminActive = pathname.startsWith("/admin") || pathname.startsWith("/sources");
   const monitoringActive = pathname.startsWith("/monitoring");
+  const debugActive = pathname.startsWith("/debug");
   // 当前空间：与浏览页一致，URL 无 space 时取第一个
   const activeSpaceId = searchParams.get("space") || spaces[0]?.id;
   const activeSpaceName = spaces.find((s) => s.id === activeSpaceId)?.name;
@@ -85,6 +86,7 @@ export function AppSidebar({ spaces, unreadCount }: { spaces: Space[]; unreadCou
         <SidebarItem to="/news" icon={Newspaper} label="浏览" active={browseActive} />
         <SidebarItem to="/admin" icon={Settings} label="管理" active={adminActive} />
         <SidebarItem to="/monitoring" icon={Activity} label="监控" active={monitoringActive} badge={unreadCount} />
+        <SidebarItem to="/debug/ai" icon={FlaskConical} label="联调" active={debugActive} />
       </nav>
 
       {/* 统计概览（全局显示：浏览态=当前空间，其它页=全站） */}

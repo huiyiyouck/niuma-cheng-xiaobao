@@ -21,6 +21,7 @@ export default defineConfig(({ mode }) => {
   // token 只存在于 dev server 进程内，不进前端 bundle；生产由 nginx 注入或走 IP 白名单。
   const env = loadEnv(mode, __dirname, '')
   const proxyHeaders = env.ADMIN_TOKEN ? { 'x-admin-token': env.ADMIN_TOKEN } : {}
+  const apiProxyTarget = env.VITE_API_PROXY_TARGET || 'http://localhost:8001'
 
   return {
     plugins: [
@@ -44,8 +45,8 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true,
       proxy: {
-        '/v1': { target: 'http://localhost:8001', changeOrigin: true, headers: proxyHeaders },
-        '/uploads': { target: 'http://localhost:8001', changeOrigin: true, headers: proxyHeaders },
+        '/v1': { target: apiProxyTarget, changeOrigin: true, headers: proxyHeaders },
+        '/uploads': { target: apiProxyTarget, changeOrigin: true, headers: proxyHeaders },
       },
     },
   }

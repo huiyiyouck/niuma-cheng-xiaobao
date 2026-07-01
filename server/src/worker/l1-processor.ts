@@ -4,6 +4,7 @@ import { workerLogger } from "../shared/logger.ts";
 import { processL1LLM, translateOnly } from "./llm.ts";
 import type { L1Input, L1Output } from "./llm.ts";
 import { webSearch, processL1ViaAgent, buildFallbackOutput } from "./openclaw.ts";
+import { processL1ViaAiHub } from "./ai-hub.ts";
 
 const log = workerLogger;
 
@@ -24,7 +25,7 @@ function calcScoreTotal(dims: L1Output["score_dimensions"]): number {
 
 // ── 阶段 1：库内相关新闻检索（ILIKE）─────────────────────────
 
-async function kbSearch(conn: PoolClient, rawItemId: string, sourceId: string): Promise<Array<{ title: string; summary: string }>> {
+export async function kbSearch(conn: PoolClient, rawItemId: string, sourceId: string): Promise<Array<{ title: string; summary: string }>> {
   try {
     // 读取 raw_item 标题/摘要用于关键词提取
     const { rows: [row] } = await conn.query(
@@ -60,7 +61,7 @@ async function kbSearch(conn: PoolClient, rawItemId: string, sourceId: string): 
   }
 }
 
-function extractKeywords(text: string, maxTokens: number = 3): string[] {
+export function extractKeywords(text: string, maxTokens: number = 3): string[] {
   const stopWords = new Set([
     "the", "a", "an", "is", "are", "was", "were", "in", "on", "at",
     "to", "for", "of", "and", "or", "but", "it", "this", "that",
@@ -75,7 +76,7 @@ function extractKeywords(text: string, maxTokens: number = 3): string[] {
 
 // ── 阶段 2：链接读取 ────────────────────────────────────────
 
-async function linkRead(rawItemUrl: string | null): Promise<string | null> {
+export async function linkRead(rawItemUrl: string | null): Promise<string | null> {
   if (!rawItemUrl) return null;
   try {
     const controller = new AbortController();
@@ -100,7 +101,7 @@ async function linkRead(rawItemUrl: string | null): Promise<string | null> {
 // ── 阶段 3：外部搜索 ────────────────────────────────────────
 // 由后端直接调真实 web.search（已实测可靠），把结果喂给 news-l1 agent；
 // 不让 agent 自主搜——embedded 不跑 tool-use 循环，且模型会谎报 sources=web_search。
-async function externalSearch(rawText: string): Promise<string | null> {
+export async function externalSearch(rawText: string): Promise<string | null> {
   const query = extractKeywords(rawText, 5).join(" ");
   if (!query) return null;
   return webSearch(query);
@@ -113,18 +114,13 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
   if (!rawItemId) throw new Error("missing raw_item_id");
   const sourceId = task.source_id;
 
-  // 读取 raw_item + source
-  const { rows: [row] } = await conn.query(
-    `SELECT ri.id, ri.source_id, ri.source_item_url, ri.published_at, ri.content,
-            s.type AS source_type, s.identity, s.domain_tags
-     FROM raw_items ri
-     JOIN sources s ON s.id = ri.source_id
-     WHERE ri.id = $1`,
-    [rawItemId],
-  );
-  if (!row) throw new Error("raw_item not found");
-
-  const content = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
+  const prepared = await buildL1InputForRawItem(conn, rawItemId);
+  const row = prepared.row;
+  const content = prepared.content;
+  const kbResults = prepared.kbResults;
+  const linkContent = prepared.linkContent;
+  const searchSummary = prepared.searchSummary;
+  const l1Input = prepared.input;
 
   // 更新为 processing
   await conn.query(
@@ -132,42 +128,19 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
     [rawItemId],
   );
 
-  log.info("L1 START raw_item_id=%s source=%s source_type=%s", rawItemId, row.identity, row.source_type);
-
-  const rawText = extractRawText(content);
-  const domainTags: string[] = Array.isArray(row.domain_tags)
-    ? row.domain_tags
-    : typeof row.domain_tags === "object" && row.domain_tags !== null
-      ? Object.values(row.domain_tags)
-      : [];
-
-  // ── 阶段 1：库内检索（失败不阻断）─────────────────────────
-  const kbResults = await kbSearch(conn, rawItemId, row.source_id);
-  log.info("L1 STAGE1 kb_search raw_item_id=%s found=%d", rawItemId, kbResults.length);
-
-  // ── 阶段 2：链接读取（失败不阻断）─────────────────────────
-  const linkContent = await linkRead(row.source_item_url || null);
-  log.info("L1 STAGE2 link_read raw_item_id=%s fetched=%s len=%d",
-    rawItemId, linkContent ? "yes" : "no", linkContent?.length || 0);
-
-  // ── 阶段 3：外部搜索（后端实搜，失败不阻断）────────────────
-  const searchSummary = await externalSearch(rawText);
-  log.info("L1 STAGE3 external_search raw_item_id=%s fetched=%s", rawItemId, searchSummary ? "yes" : "no");
-
-  const l1Input: L1Input = {
-    sourceIdentity: String(row.identity || ""),
-    domainTags,
-    rawContent: content,
-    rawText,
-    kbResults,
-    linkContent,
-    searchSummary,
-  };
-
-  // ── 阶段 4：主处理 —— agent 优先，失败回退内建 LLM 仅翻译 ───
+  // ── 阶段 4：主处理 ───────────────────────────────────────
   let l1Result: L1Output;
   let engineTag: string;
-  if (config.l1Engine === "agent") {
+  if (config.l1Engine === "ai") {
+    try {
+      l1Result = await processL1ViaAiHub(l1Input);
+      engineTag = "engine:ai-hub";
+      log.info("L1 STAGE4 ai-hub ok raw_item_id=%s", rawItemId);
+    } catch (err: any) {
+      (err as any).errorKind = classifyL1ErrorKind(err);
+      throw err;
+    }
+  } else if (config.l1Engine === "agent") {
     try {
       l1Result = await processL1ViaAgent(l1Input);
       engineTag = "engine:agent";
@@ -175,7 +148,7 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
     } catch (err: any) {
       log.warn("L1 STAGE4 agent FAILED raw_item_id=%s err=%s — 回退内建 LLM 仅翻译", rawItemId, err.message);
       try {
-        const tr = await translateOnly(rawText);
+        const tr = await translateOnly(l1Input.rawText);
         l1Result = buildFallbackOutput(tr);
         engineTag = "engine:fallback";
       } catch (ferr: any) {
@@ -273,6 +246,61 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
   }
 }
 
+export async function buildL1InputForRawItem(conn: PoolClient, rawItemId: string): Promise<{
+  row: any;
+  content: Record<string, unknown>;
+  input: L1Input;
+  kbResults: Array<{ title: string; summary: string }>;
+  linkContent: string | null;
+  searchSummary: string | null;
+}> {
+  const { rows: [row] } = await conn.query(
+    `SELECT ri.id, ri.source_id, ri.source_item_url, ri.published_at, ri.content,
+            s.type AS source_type, s.identity, s.domain_tags
+     FROM raw_items ri
+     JOIN sources s ON s.id = ri.source_id
+     WHERE ri.id = $1`,
+    [rawItemId],
+  );
+  if (!row) throw new Error("raw_item not found");
+
+  const rawContent = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
+  const content = normalizeRawContent(rawContent, row.source_item_url || null);
+
+  log.info("L1 START raw_item_id=%s source=%s source_type=%s", rawItemId, row.identity, row.source_type);
+
+  const rawText = extractRawText(content);
+  const domainTags: string[] = Array.isArray(row.domain_tags)
+    ? row.domain_tags
+    : typeof row.domain_tags === "object" && row.domain_tags !== null
+      ? Object.values(row.domain_tags)
+      : [];
+
+  // ── 阶段 1：库内检索（失败不阻断）─────────────────────────
+  const kbResults = await kbSearch(conn, rawItemId, row.source_id);
+  log.info("L1 STAGE1 kb_search raw_item_id=%s found=%d", rawItemId, kbResults.length);
+
+  // ── 阶段 2：链接读取（失败不阻断）─────────────────────────
+  const linkContent = await linkRead(row.source_item_url || null);
+  log.info("L1 STAGE2 link_read raw_item_id=%s fetched=%s len=%d",
+    rawItemId, linkContent ? "yes" : "no", linkContent?.length || 0);
+
+  // ── 阶段 3：外部搜索（后端实搜，失败不阻断）────────────────
+  const searchSummary = await externalSearch(rawText);
+  log.info("L1 STAGE3 external_search raw_item_id=%s fetched=%s", rawItemId, searchSummary ? "yes" : "no");
+
+  const l1Input: L1Input = {
+    sourceIdentity: String(row.identity || ""),
+    domainTags,
+    rawContent: content,
+    rawText,
+    kbResults,
+    linkContent,
+    searchSummary,
+  };
+  return { row, content, input: l1Input, kbResults, linkContent, searchSummary };
+}
+
 // ── 工具函数 ─────────────────────────────────────────────────
 
 function extractRawText(content: Record<string, unknown>): string {
@@ -281,6 +309,13 @@ function extractRawText(content: Record<string, unknown>): string {
     || (content.title as string)
     || (content.description as string)
     || JSON.stringify(content);
+}
+
+function normalizeRawContent(content: Record<string, unknown>, sourceItemUrl: string | null): Record<string, unknown> {
+  if (!sourceItemUrl || typeof content.url === "string" || typeof content.canonical_url === "string") {
+    return content;
+  }
+  return { ...content, url: sourceItemUrl };
 }
 
 function classifyL1ErrorKind(err: Error): string {
