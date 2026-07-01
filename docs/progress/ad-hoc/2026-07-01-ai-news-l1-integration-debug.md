@@ -4,7 +4,7 @@
 - 角色：Developer
 - coordination 依据：`/root/Project/niuma-cheng-coordination`，同步后 HEAD `8eecdde`；读取 `STATUS.md`、`REQUESTS.md`、`communications/REQ-001-news-l1.md`、`contracts/news-l1.md`
 - 关联需求：coordination `REQ-001`
-- 状态：已完成 xiaobao 侧实现，待 ai 服务运行地址配置后真实端到端验收
+- 状态：已完成并部署测试环境；news-l1 主链路与 ai→xiaobao KB 命中用例已真实联调通过，可供 Owner 在 `/debug/ai` 页面验收
 
 ## 背景
 
@@ -49,7 +49,19 @@ Owner 追加要求：该入口需要前端调试页面用于验收；同时 ai �
   - 搜索 / 选择库内已入库新闻
   - 配置 `max_tool_calls` / `timeout_ms`
   - 发送到 ai `news-l1`
-  - 展示请求 JSON、响应 JSON、状态、耗时、工具调用统计、标题/摘要/四维评分/标签
+  - 点击发送后立即展示本次触发请求与“处理中”响应提示
+  - AI 返回后展示实际 `L1Input`、完整 `RunResponse`、状态、耗时、工具调用统计、标题/摘要/四维评分/标签
+
+### 测试环境联调收尾
+
+- ai 服务已在测试环境 `http://127.0.0.1:8100` 运行，`/health` 200。
+- xiaobao 测试环境已配置 `AI_HUB_BASE_URL=http://127.0.0.1:8100`。
+- 修复测试站点 nginx `/v1/` 反代默认超时导致的 `504 Gateway Time-out`：
+  - `proxy_connect_timeout 10s`
+  - `proxy_send_timeout 240s`
+  - `proxy_read_timeout 240s`
+  - `nginx -t` 通过并已 reload
+- 前端联调页体验优化：请求/响应区前置，发送后立即显示触发请求，避免等待 60-100s 时页面看起来无反馈。
 
 ## 验证
 
@@ -63,11 +75,17 @@ Owner 追加要求：该入口需要前端调试页面用于验收；同时 ai �
   - `GET http://127.0.0.1:8001/health`：200
   - `GET http://127.0.0.1:8001/v1/ai-debug/candidates?page_size=1`：200
   - `POST http://127.0.0.1:8001/v1/kb-search`：200
-  - 前端部署目录 `index.html` 已引用新 bundle `index-CdgZSNqE.js`
-- 未完成验证：`http://127.0.0.1:8100/health` 当前不可达，真实 `news-l1` 发送需等待 ai 服务运行地址。
+  - 前端部署目录 `index.html` 已引用新 bundle `index-_mFmSKB1.js`
+  - 公网 `GET https://test.huiyiyou.cloud/debug/ai`：200
+  - 公网 `GET https://test.huiyiyou.cloud/v1/ai-debug/candidates?page_size=1`：200
+  - 公网 `POST https://test.huiyiyou.cloud/v1/ai-debug/news-l1-runs`：200，耗时约 79s，返回 `status=succeeded`、`run_id=run_7e626cf5f391`
+- 真实联调证据：
+  - xiaobao→ai：`run_2a4dbc15f308` succeeded，`elapsed_ms=73601`，预填 `search_summary` 场景 `tool_summary` 全 0，符合预取上下文不计主动工具调用口径。
+  - ai→xiaobao KB 命中用例：`run_2e0072cba2a3` succeeded，`tool_summary.kb_search=1`，无 `degraded:kb_search_failed`。
+  - ai→xiaobao KB 空结果用例：xiaobao 返回 200 + `results: []`，ai 当前会标 `degraded:kb_search_failed`；coordination 已记录为 ai 侧语义优化项。
 
 ## 后续
 
-- ai 提供/启动测试环境服务地址；配置 xiaobao 后端 `AI_HUB_BASE_URL` 指向该服务地址。
-- 打开前端 `/debug/ai`，选择新闻执行真实端到端验收。
-- ai 侧按 `contracts/kb-search.md` v1 接入 `POST /v1/kb-search`，验证 `tool_summary.kb_search` 主动调用计数。
+- Owner 打开 `https://test.huiyiyou.cloud/debug/ai`，选择新闻执行验收抽样。
+- ai 侧优化 KB 空结果语义：`POST /v1/kb-search` 返回 200 + `results: []` 时不应标为 `kb_search_failed`，建议改为 `kb_search_empty` 或不降级。
+- 后续若进入生产启用 AI 处理，需另走 DevOps 发布：生产 `AI_HUB_BASE_URL`、鉴权策略、nginx 长超时、`ENABLE_AI_PROCESSING` / `L1_ENGINE=ai` 开关均需显式确认。

@@ -9,7 +9,7 @@
 ## 2026-07-01 — AI news-l1 跨项目联调入口 + KB search 契约对齐
 
 - 本次角色：全栈开发（Developer）；模式：非迭代跨项目联调任务（coordination `REQ-001`）
-- coordination 依据：`/root/Project/niuma-cheng-coordination`，同步后 HEAD `8eecdde`；读取 `STATUS.md`、`REQUESTS.md`、`communications/REQ-001-news-l1.md`、`contracts/news-l1.md`
+- coordination 依据：`/root/Project/niuma-cheng-coordination`；读取并更新 `STATUS.md`、`REQUESTS.md`、`communications/REQ-001-news-l1.md`、`contracts/news-l1.md`、`contracts/kb-search.md`
 - Owner 要求：联调不能只做后端触发；需要前端调试页供验收，选择库内数据后发送给 ai 侧处理，并在页面看到返回；ai 侧提出的库内新闻搜索需求也要完成；联调契约必须定清楚传参、返回格式和数量。
 - 已完成 xiaobao 侧：
   - 后端新增 AI Hub HTTP 客户端与配置 `AI_HUB_BASE_URL` / `AI_HUB_API_TOKEN` / `AI_HUB_TIMEOUT_MS`
@@ -26,9 +26,16 @@
   - `cd server && npm run build` 通过
   - `cd frontend && npm run build` 通过
   - `cd server && npm test -- src/__tests__/x-direct-display.test.ts` 通过（2 passed）
-- 测试环境部署：已同步后端到 `/srv/niuma-news/test/server/src/`、前端 dist 到 `/var/www/test.huiyiyou.cloud/`，重启 `news-api-test.service` 后 active；`/health`、`/v1/ai-debug/candidates`、`/v1/kb-search` 均 200；前端测试目录引用新 bundle `index-CdgZSNqE.js`
-- 当前阻塞：`http://127.0.0.1:8100/health` 不通，真实发送 AI 需 ai 提供/启动测试服务地址
-- 下一步：配置 xiaobao `AI_HUB_BASE_URL` 指向 ai 服务 → Owner 在 `/debug/ai` 页面做真实端到端验收；ai 侧按 `contracts/kb-search.md` v1 接入实时库内检索
+- 测试环境部署与收尾：
+  - 已同步后端到 `/srv/niuma-news/test/server/src/`、前端 dist 到 `/var/www/test.huiyiyou.cloud/`，`news-api-test.service` active；`/health`、`/v1/ai-debug/candidates`、`/v1/kb-search` 均 200
+  - ai 服务 `http://127.0.0.1:8100/health` 200，xiaobao 测试后端已可调用 ai
+  - 修复测试站点 nginx `/v1/` 默认超时导致 AI 慢请求 504：已加 `proxy_connect_timeout 10s`、`proxy_send_timeout 240s`、`proxy_read_timeout 240s`，`nginx -t` 通过并 reload
+  - 前端联调页已优化：点击发送后立即展示触发请求和“处理中”响应提示；AI 返回后展示实际 `L1Input` 与完整 `RunResponse`
+- 真实联调验证：
+  - 公网 `POST https://test.huiyiyou.cloud/v1/ai-debug/news-l1-runs` 通过，约 79s 返回 200，`run_id=run_7e626cf5f391`，`status=succeeded`
+  - xiaobao→ai：`run_2a4dbc15f308` succeeded；ai→xiaobao KB 命中：`run_2e0072cba2a3` succeeded 且 `tool_summary.kb_search=1`
+  - KB 空结果时 ai 当前标 `degraded:kb_search_failed`，coordination 已记录为 ai 侧语义优化项
+- 当前状态：xiaobao 侧联调入口完成、测试环境可验收；主链路不再阻塞。下一步由 Owner 在 `/debug/ai` 抽样验收，ai 侧优化 KB 空结果语义
 
 ---
 
