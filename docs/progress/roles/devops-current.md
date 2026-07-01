@@ -2,6 +2,47 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-06-28 — v0.6 部署阶段：#142 去软链接化 + 前后端全隔离 + test/生产上线
+
+> 角色：DevOps；模式：标准迭代 部署阶段（Owner「你是运维」→「去除软连接」→「进行部署：test/生产、与开发隔离、打包部署」）。
+
+### 触发
+
+承接 INDEX 跨任务待办 #142（去软链接化）+ v0.6「下一步=切 DevOps 部署生产」。Owner 三诉求：① test 部署 ② 生产部署 ③ 生产/测试与开发环境隔离、均通过打包部署上线。
+
+### 执行
+
+1. **打通通路**：本地公钥未授权，Owner 授权 `id_ed25519.pub` 后用别名 `zijie` 打通 SSH。
+2. **盘点**：生产 `news.huiyiyou.cloud` 软链 → `frontend/dist`；test 已独立目录；生产/测试后端**共享** `/root/Project/.../server`（仅 systemd env 区分库/端口）→ 两层隔离缺口。前端走相对路径（prod/test 可共用一份 build 产物）。
+3. **构建源**：服务器 git pull 到 `92beb8e`（开发收口已 push），前端 build、后端 deps 幂等。
+4. **test 隔离**：建 `/srv/niuma-news/test/server` rsync server；纠正 env 真源；改 news-api-test unit WD→/srv；0007 回填 154 条 X 直显；整站验证通过。
+5. **生产部署**（Owner 确认后）：备份 db/env/unit/nginx；建 `/srv/niuma-news/prod/server` + prod `.env`（`news` 库/AI 未放开）；库 schema 对齐（DROP 0006 残留唯一约束，约束 7→6 与 test 一致；0007 空库影响 0）；改 news-api unit WD→/srv + **去 `ExecStartPre migrate`**；前端去软链（symlink→真目录 + rsync）；起 news-api，公网首页/bundle/反代全通。
+6. **隔离实证**：构建源 `frontend/dist` 写 canary，生产/测试 www 均不出现 → build 不再污染线上。
+7. **沉淀**：固化 `deploy/deploy.sh`；更新 handbook（全隔离取代软链接模式）、INDEX（关闭 #142 + 部署阶段完成）、v0.6.md 部署就绪检查。
+
+### 结论
+
+✅ 部署通过（test + 生产）。两环境前后端与开发目录全隔离、均打包部署。
+
+### 关键发现 / 教训
+
+- **`.env.test` ≠ test 部署配置**：它是 `npm test`（vitest）的 `news_vitest` 库；test **环境**真源是 systemd unit 内联 env（`news_test`）。隔离迁移时不能拿 `.env.*` 当部署配置，要以**运行进程实际 env**（`/proc/PID/environ`）为准。
+- **生产/测试库 drizzle 元数据脱轨**：schema 当初 `db:push` 建，`__drizzle_migrations` 只 1 条（或无），实际 schema 已 v0.6 → 带 `ExecStartPre=drizzle-kit migrate` 的 unit 会重放 0001~0007 撞已存在 schema 致起服失败。处置：去 ExecStartPre migrate，schema 变更走人工；恢复 migrate 机制需单独对齐元数据（技术债，建议登记）。
+- **前端相对路径** → prod/test 共用一份 build 产物，区别仅 nginx 反代端口；去软链后前端打包目标 = nginx root `/var/www/<domain>`（真实目录）。
+- **生产库几乎空**（1 源/0 新闻）使迁移风险大降，但部署成功 ≠ 生产有内容，需 Owner 配源。
+
+### 下一步入口
+
+Owner 验收生产/test 站点 → PM 执行 v0.6 迭代关闭检查；生产配信息源。
+
+### 后续更新（2026-07-01 收尾据实补登）
+
+- **数据迁移**：Owner 反馈生产"数据/空间全没"。核查证明非删除——生产 `news` 库自接手前（06-28 `pg_dump` 备份为证）就只有占位数据（"测试空间"/"Conflict Test"），Owner 真实数据一直在 `news_test`（AI/财经 + 154 新闻）；此前生产 `news-api` 长期 inactive，用户看的其实是 test 环境。应 Owner 要求把 `news_test` 8 张业务表迁到生产：停服 → 备份 `db-pre-migrate` → 事务内 TRUNCATE + 导入（`session_replication_role` 因 news 非 superuser 被拒，改用 pg_dump 拓扑顺序导入成功）→ 起服。生产得 AI/财经 2 空间 + 4 源 + 7 展示位置 + 154 新闻。
+- **X sync 403**：Owner 报"X 规则同步失败"。定位为 admin 鉴权——`/v1/x/sync-rules` 走 adminGuard，生产 `ADMIN_TOKEN` 有值触发严格 token 校验，前端带的 token 不匹配 → 403（test 因 `ADMIN_TOKEN` 空跳过校验 + nginx 注入而无此问题）。交研发；开发重新部署修复（前端更新为 `index-Ufw1OiMD.js`，X sync 06-28 16:26 转 200）。**开发的重新部署未破坏隔离架构**（news-api WD 仍 `/srv/prod/server`、`/var/www/news` 仍 directory）。
+- **代码合并**：本地部署留痕与远端最新（`64d87f4`，含开发 AI 联调入口 + PM 06-30 状态订正）合并——INDEX 让位 PM 最新版并叠加 DevOps 补登，其余留痕保留。
+- **当前实况（07-01 核查）**：两服务均 active；生产 AI/财经空间在、新闻 worker 持续抓取增至约 320；X RULE SYNC 每日自动同步正常；隔离与去软链完好。
+- **既有技术债（登记）**：生产/测试库 drizzle 迁移元数据脱轨（db:push 历史），两 unit 去 `ExecStartPre migrate`；后续如恢复 migrate 机制需单独对齐元数据。
+
 ## 2026-06-12 — v0.6 设计文档 R2 DevOps 复审 + 会话收尾（同日第 2 次出场）
 
 > 角色：DevOps；模式：标准迭代 设计阶段 R2 复审。

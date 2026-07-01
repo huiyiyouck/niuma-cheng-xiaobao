@@ -4,6 +4,8 @@
 >
 > 来源：[v0.5.1 DevOps 部署收尾失误](../../progress/roles/devops.md#2026-06-07--v051-生产部署上线)——后端上线后翻牌「部署通过」，Owner 索取验证 URL 时才发现前端 `dist/` 是 7 天前的旧版本，重新构建又遇 31 个 TS 错误，公网长期跑陈旧前端无人察觉。
 
+> **⚠️ 架构更新（2026-06-28）**：本项目已**去软链接化 + 前后端全隔离**。生产/测试前端均为 `/var/www/<domain>` 真实独立目录（非软链），后端隔离运行于 `/srv/niuma-news/{prod,test}/server`（systemd WorkingDirectory）。部署＝构建源 `build` → `rsync` 分发，**build 不再污染线上**；流程固化为仓库内 `deploy/deploy.sh`。下文「软链接模式」章节转为历史背景，当前架构以本提示与 `deploy/deploy.sh` 为准。
+
 ## 核心结论一句话
 
 **部署检查表必须显式列「前端构建」和「前端产物部署」为独立步骤，且任一失败都阻塞整个迭代部署翻牌**。后端 systemd 起服只是部分成功。
@@ -32,7 +34,7 @@ readlink -f /var/www/<domain>
 
 | 模式 | 判别 | 部署动作 |
 |---|---|---|
-| **A. 软链接模式**（本项目当前架构）| `/var/www/<domain>` 是 symlink → 项目内 `frontend/dist/` | `npm run build` 即上线，无需 rsync |
+| **A. 软链接模式**（本项目 2026-06-28 前的旧架构，**已废弃**）| `/var/www/<domain>` 是 symlink → 项目内 `frontend/dist/` | `npm run build` 即上线，无需 rsync |
 | **B. rsync 模式** | `/var/www/<domain>` 是独立目录 | `rsync -av --delete frontend/dist/ /var/www/<domain>/` |
 | **C. 不一致**（symlink 指向陌生位置）| readlink 输出非预期路径 | **stop the line**，先排查为什么 |
 
