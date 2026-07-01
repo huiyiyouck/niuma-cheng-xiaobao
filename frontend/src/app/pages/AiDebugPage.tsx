@@ -36,6 +36,8 @@ export function AiDebugPage() {
   const [items, setItems] = useState<Candidate[]>([]);
   const [selected, setSelected] = useState<Candidate | null>(null);
   const [result, setResult] = useState<any>(null);
+  const [requestPreview, setRequestPreview] = useState("");
+  const [responsePreview, setResponsePreview] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [maxToolCalls, setMaxToolCalls] = useState(4);
   const [timeoutMs, setTimeoutMs] = useState(180000);
@@ -61,19 +63,37 @@ export function AiDebugPage() {
 
   async function submitRun() {
     if (!selected) return;
+    const triggerPayload = {
+      news_id: selected.news_id,
+      options: { max_tool_calls: maxToolCalls, timeout_ms: timeoutMs },
+    };
     setRunning(true);
     setResult(null);
     setError(null);
-    try {
-      const resp = await runAiDebugNewsL1({
+    setRequestPreview(prettyJson({
+      endpoint: "POST /v1/ai-debug/news-l1-runs",
+      note: "后端会按真实业务映射把所选新闻构造成 AI news-l1 L1Input；AI 返回后这里会替换为实际 L1Input。",
+      selected: {
         news_id: selected.news_id,
-        options: { max_tool_calls: maxToolCalls, timeout_ms: timeoutMs },
-      });
+        raw_item_id: selected.raw_item_id,
+        title: selected.title,
+      },
+      payload: triggerPayload,
+    }));
+    setResponsePreview("请求处理中，AI L1 处理通常需要 60-100 秒，请等待完整响应返回。");
+    try {
+      const resp = await runAiDebugNewsL1(triggerPayload);
       setResult(resp);
+      setRequestPreview(prettyJson(resp?.input));
+      setResponsePreview(prettyJson(resp?.response));
       toast.success("AI 联调返回成功");
     } catch (err: any) {
       const msg = err?.detail || err?.message || "AI 联调失败";
       setError(msg);
+      setResponsePreview(prettyJson({
+        status: "failed",
+        error: msg,
+      }));
       toast.error("AI 联调失败");
     } finally {
       setRunning(false);
@@ -84,8 +104,8 @@ export function AiDebugPage() {
   const status = result?.response?.status;
   const toolSummary = result?.response?.tool_summary;
 
-  const selectedInput = useMemo(() => prettyJson(result?.input), [result]);
-  const selectedResponse = useMemo(() => prettyJson(result?.response), [result]);
+  const selectedInput = useMemo(() => requestPreview || prettyJson(result?.input), [requestPreview, result]);
+  const selectedResponse = useMemo(() => responsePreview || prettyJson(result?.response), [responsePreview, result]);
 
   return (
     <div className="h-full flex flex-col">
@@ -154,7 +174,13 @@ export function AiDebugPage() {
                 {items.map((item) => (
                   <button
                     key={item.news_id}
-                    onClick={() => { setSelected(item); setResult(null); setError(null); }}
+                    onClick={() => {
+                      setSelected(item);
+                      setResult(null);
+                      setRequestPreview("");
+                      setResponsePreview("");
+                      setError(null);
+                    }}
                     className={cn(
                       "block w-full px-4 py-3 text-left hover:bg-accent/60 transition-colors",
                       selected?.news_id === item.news_id && "bg-accent"
@@ -207,6 +233,33 @@ export function AiDebugPage() {
                   <span className="break-all">{error}</span>
                 </div>
               )}
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">请求</span>
+                  {running && <span className="text-xs text-muted-foreground">已发送，等待 AI 返回</span>}
+                </div>
+                <Textarea
+                  className="min-h-[300px] font-mono text-xs"
+                  readOnly
+                  placeholder="点击发送 AI 后显示本次请求；AI 返回后显示实际 L1Input。"
+                  value={selectedInput}
+                />
+              </div>
+              <div>
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">响应</span>
+                  {running && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                </div>
+                <Textarea
+                  className="min-h-[300px] font-mono text-xs"
+                  readOnly
+                  placeholder="等待 AI 返回后显示完整 RunResponse。"
+                  value={selectedResponse}
+                />
+              </div>
             </div>
 
             {result && (
@@ -267,16 +320,6 @@ export function AiDebugPage() {
               </div>
             )}
 
-            <div className="grid gap-4 lg:grid-cols-2">
-              <div>
-                <div className="mb-2 text-sm font-medium">请求</div>
-                <Textarea className="min-h-[420px] font-mono text-xs" readOnly value={selectedInput} />
-              </div>
-              <div>
-                <div className="mb-2 text-sm font-medium">响应</div>
-                <Textarea className="min-h-[420px] font-mono text-xs" readOnly value={selectedResponse} />
-              </div>
-            </div>
           </div>
         </section>
       </div>
