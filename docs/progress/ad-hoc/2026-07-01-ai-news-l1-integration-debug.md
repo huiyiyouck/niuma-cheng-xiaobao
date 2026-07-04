@@ -89,3 +89,10 @@ Owner 追加要求：该入口需要前端调试页面用于验收；同时 ai �
 - Owner 打开 `https://test.huiyiyou.cloud/debug/ai`，选择新闻执行验收抽样。
 - ai 侧优化 KB 空结果语义：`POST /v1/kb-search` 返回 200 + `results: []` 时不应标为 `kb_search_failed`，建议改为 `kb_search_empty` 或不降级。
 - 后续若进入生产启用 AI 处理，需另走 DevOps 发布：生产 `AI_HUB_BASE_URL`、鉴权策略、nginx 长超时、`ENABLE_AI_PROCESSING` / `L1_ENGINE=ai` 开关均需显式确认。
+
+## 2026-07-04 补充：Owner 验收通过 + coordination 留痕
+
+- **Owner 验收结论**：Owner 已在 `/debug/ai` 抽样验收，确认联调 OK，可作为 ai v0.1 关闭依据。
+- **coordination 留痕**：已在 coordination 仓 `communications/REQ-001-news-l1.md` 补充 2026-07-04 联调完成章节，补齐 4 条成功用例数据、run_id、耗时范围、产出验证结论；`STATUS.md` / `REQUESTS.md` 同步推进状态至「验收中 / 待关闭」。
+- **coordination commit**：`f2702f3`，已 push。
+- **遗留项**：KB 空结果语义 ai 侧待优化（非阻塞，可入 v0.2 或独立任务）。
