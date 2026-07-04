@@ -198,6 +198,35 @@
   - 本次只修改 Markdown 文档，未运行代码测试。
 - 下一步：PM 可在 xiaobao 侧继续 v0.6.1 PRD；跨项目 L1 真实化由 ai PM 启动 v0.1 PRD 承接。
 
+## 2026-07-04 — v0.6 迭代关闭检查 + 归档摘要 + 知识库沉淀
+
+- 本次角色：产品架构师(PM)
+- 动作：执行 v0.6 迭代关闭检查 + 产出归档摘要 + 知识库沉淀 + 订正索引和迭代记录
+- 涉及文档：
+  - `docs/progress/iterations/v0.6-summary.md`（新建）
+  - `docs/progress/iterations/v0.6.md`（订正状态 + Git 节点 + 关闭归档节）
+  - `docs/progress/INDEX.md`（当前状态 + 版本列表 + 收尾摘要）
+  - `docs/knowledge/INDEX.md`（追加 2 条索引）
+  - `docs/knowledge/product/ai-capability-rollout-strategy.md`（新建）
+  - `docs/knowledge/engineering/prototype-driven-frontend-refactor.md`（新建）
+  - `docs/progress/roles/pm-current.md` / `pm-summary.md`
+- 关闭检查结论：✅ **有条件关闭**
+  - 9 项检查：7 通过 + 2 有条件
+  - 条件 A：测试阶段由 Developer 自测 + Owner 浏览器验收 + 生产上线验证替代正式 Tester 阶段（Owner 已确认接受）
+  - 条件 B：AI 处理（L0/L1 worker + OpenClaw 集成）代码已实现但默认不启用（`ENABLE_AI_PROCESSING=false`），X/Twitter raw item 直显；AI 处理后续由独立 AI 中枢（`niuma-cheng-ai`）承接
+  - 条件 C：设计文档 R2 摘要与正文不一致，实施阶段按正文落地（PM 裁定不开 R3）
+  - 条件 D：drizzle 迁移机制脱轨，systemd 去 ExecStartPre migrate（后续单独对齐）
+- 后端能力废弃核查：`frontend/src/` grep `l0_classify/l1_process/ENABLE_AI_PROCESSING/processL1ViaAgent/callLLM` 零匹配，前端引用为零 ✅
+- 元信息变更：本迭代未变更项目定位/名称/技术栈/上线/接入状态，跳过 coordination 元信息变更台账登记
+- 知识库沉淀 2 条：
+  1. AI 能力渐进式上线策略（product）— 代码已实现 + 开关默认关闭 + 独立服务承接
+  2. 原型驱动前端重构（engineering）— 1:1 还原 + mock 先行 + 后端渐进对接
+- 验证证据：
+  - `git pull --rebase` 返回 `Already up to date.`
+  - 工作区干净
+  - 本次为文档修改，未运行代码测试
+- 下一步：Owner 决定启动 v0.6.1 相关性迭代（AI 处理上线 + 新闻相关性 + `niuma-cheng-ai` 协同）
+
 ## 2026-06-28 — PM 全局收尾核对 + GitHub 推送确认
 
 - 本次角色：产品架构师(PM)

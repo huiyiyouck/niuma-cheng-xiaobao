@@ -4,11 +4,11 @@
 
 ## 当前项目状态
 
-- 当前迭代：v0.6
-- 当前模式：标准迭代
-- 当前阶段：实现完成并已部署生产上线（据 PM 2026-06-30 系统核查订正）— 后端 A+B+C 已实现；前端 React 4 页接真实 API；左中右布局 + 三页 UI 精修 + 管理页交互修复 + `display_positions` 软删除约束 bug 修复均完成；v0.6 收口决策（AI 处理默认不放开、X/Twitter raw item 直接生成可展示新闻、新增 `0007_backfill_x_direct_display` 回填迁移）已落地。**生产已于 2026-06-28 完成去软链接化隔离部署**：`news-api` 自 06-28 16:25 active（隔离目录 `/srv/niuma-news/prod/server`）；前端 06-28 16:17 已构建部署到真实目录 `/var/www/news.huiyiyou.cloud`（引用 `index-Ufw1OiMD.js`）；生产 `.env` 未设 `ENABLE_AI_PROCESSING`，走代码默认 false，AI 处理保持关闭。**DevOps 补登（2026-07-01 据生产实况核查）**：① 前后端全隔离已 verify——后端隔离运行 `/srv/niuma-news/{prod,test}/server`（去 `ExecStartPre migrate`，因生产库 schema 由 db:push 建、drizzle 元数据脱轨），前端真实目录 `/var/www/{news,test}`（canary 实证 build 不污染线上）；② 迁移 0006（DROP display_positions 残留唯一约束，生产约束 7→6 对齐 test）+ 0007（X 直显回填）已落库；③ 应 Owner 要求已将 `news_test` 业务数据迁移到生产（AI/财经 2 空间 + 4 源 + 7 展示位置 + 154 新闻；worker 持续抓取现增至约 320）；④ X sync 一度因生产 admin token 严格校验返回 403，交研发后开发重新部署修复（前端更新为 `index-Ufw1OiMD.js`，X sync 06-28 16:26 转 200，06-29~07-01 每日自动同步正常）；⑤ 当前 07-01 两服务 active、隔离与迁移数据完好。部署流程固化 `deploy/deploy.sh`；IP 临时入口 115.191.43.79 保留供 test 验证。
-- 阻塞项：无。DevOps 部署补登已于 2026-07-01 完成。待办：PM 执行 v0.6 迭代关闭检查。
-- 下一步入口：PM 执行 v0.6 迭代关闭检查 → 产出 `iterations/v0.6-summary.md` → 关闭 v0.6
+- 当前迭代：无
+- 当前模式：未选择 / 工作台空闲
+- 当前阶段：v0.6 已于 2026-07-04 由 PM 执行迭代关闭检查，**有条件关闭**（条件：测试阶段由 Developer 自测+Owner 验收替代 / AI 处理代码已实现默认不启用 / 设计 R2 摘要与正文不一致实施阶段承接 / drizzle 迁移机制脱轨）。产出物：[`v0.6-summary.md`](iterations/v0.6-summary.md)；知识库沉淀 2 条（AI 能力渐进式上线策略 / 原型驱动前端重构）。
+- 阻塞项：无。
+- 下一步入口：Owner 决定下一步（启动 v0.6.1 相关性迭代 / 其他非迭代任务 / 暂停）
 
 ## 版本列表
 
@@ -19,7 +19,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
-| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | — | 实现完成，已部署生产上线（2026-06-28 去软链接化隔离部署），待 DevOps 补登部署记录 + PM 迭代关闭检查 |
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | [iterations/v0.6-summary.md](iterations/v0.6-summary.md) | ✅ 已完成（有条件关闭 2026-07-04）|
 
 ## 当前 Change Notes
 
@@ -53,6 +53,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-07-04 | PM | v0.6 迭代关闭检查 + 归档摘要 + 知识库沉淀 | ✅ **有条件关闭** — 9 项检查 7 通过 + 2 有条件（测试阶段 Developer 自测+Owner 验收替代 / AI 处理代码已实现默认不启用）；产出 [`v0.6-summary.md`](iterations/v0.6-summary.md)；知识库沉淀 2 条（AI 能力渐进式上线策略 / 原型驱动前端重构）；`v0.6.md` 状态订正为已关闭；INDEX 当前状态推进到「无 / 未选择」 | Owner 决定下一步（启动 v0.6.1 相关性迭代 / 其他任务 / 暂停） |
 | 2026-06-28 | DevOps | v0.6 部署阶段：去软链接化(#142) + 前后端全隔离 + test/生产部署 + 数据迁移 | ✅ 已完成（07-01 据实补登）— 前端 build→rsync 到 `/var/www/{news,test}`（真实目录非软链），后端隔离 `/srv/niuma-news/{prod,test}/server`（systemd WD，去 ExecStartPre migrate，因库 db:push 建元数据脱轨）；canary 实证 build 不污染线上；迁移 0006/0007 落库；应 Owner 要求迁 `news_test` 业务数据入生产（AI/财经 2空间+4源+154新闻，worker 抓取现增至~320）；X sync 一度 403（生产 admin token 严格校验），交研发后开发重新部署修复（前端 `index-Ufw1OiMD.js`，转 200）；备份 `db-pre-v0.6` / `db-pre-migrate`；固化 `deploy/deploy.sh` | PM 执行 v0.6 迭代关闭检查 |
 | 2026-06-30 | PM | v0.6 状态订正：实况与 INDEX 严重不符 | ✅ 已订正 — 系统核查确认 v0.6 已于 2026-06-28 完成去软链接化生产部署（`news-api` active 自 06-28 16:25 / 隔离目录 `/srv/niuma-news/prod` / 前端真实目录 06-28 16:17 / 生产未设 `ENABLE_AI_PROCESSING` 走默认 false），但部署后无人回写：INDEX 仍写「inactive / 待部署」、DevOps 日志停在 06-12 无 06-28 部署记录、v0.6 未走迭代关闭检查。本次按实况订正 INDEX 当前状态 + 版本列表；DevOps 部署工作记录由 Owner 提醒 DevOps 角色补登（PM 不代写他人角色日志） | DevOps 补登 06-28 部署记录；PM 执行 v0.6 迭代关闭检查 |
 | 2026-06-17 | WM | 初始化 coordination 骨架 + 跨项目需求流转机制（需求提报中心）入基线 | ✅ 已完成并更新至 coordination HEAD `499f84e` — Owner 提供 `niuma-cheng-coordination` 仓库；WM 建骨架并推送；截至 2026-06-22，coordination 显示 `ai` 已完成 Bootstrap、已配置 remote、PM（ck）已承接 REQ-001，需求状态为联调中；`news-l1` v1 契约生效中；BCR-001 已回流 xiaobao/ai 下游 | ai PM 启动 v0.1 PRD；xiaobao 继续 v0.6 Owner 验证/部署去软链；跨项目契约变更以 coordination `contracts/news-l1.md` 为先 |

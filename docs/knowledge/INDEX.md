@@ -4,6 +4,8 @@
 
 ## Product（产品）
 
+- [AI 能力渐进式上线策略](product/ai-capability-rollout-strategy.md) — 代码已实现 + 开关默认关闭 + 独立服务承接的渐进式发布模式，含适用/不适用场景（v0.6 AI 处理收口决策沉淀）
+
 ## UI（界面）
 
 ## Architecture（架构）
@@ -17,6 +19,7 @@
 - [外部 Portal 作为真理源的反向同步模式](engineering/external-portal-as-truth-source.md) — 外部平台已有完整管理能力时内部被动同步的架构模式、关键约束、适用与不适用场景（v0.5.1 X 反向同步实战沉淀）
 - [软删除表的唯一约束必须排除 deleted_at](engineering/soft-delete-unique-index.md) — 软删除后允许重建时必须使用 `WHERE deleted_at IS NULL` 的部分唯一索引，避免「列表没有但新增报已存在」
 - [显式空环境变量被 .env 回退覆盖致环境隔离失效](engineering/env-empty-value-fallback-breaks-isolation.md) — `process.env[key] || env[key]` 让空值禁用失效，测试拿生产 X token 抢唯一 stream 连接致持续 429；含告警去重需覆盖 active 状态（2026-06-16 排障沉淀）
+- [原型驱动前端重构：1:1 还原 + mock 先行 + 后端渐进对接](engineering/prototype-driven-frontend-refactor.md) — Figma 原型前端重构的三阶段实施路径（底座+静态还原 → 契约对接 → 交互精修），含原型优先/前端先行/渐进式接后端等关键原则（v0.6 前端重构沉淀）
 
 ## Testing（测试）
 
