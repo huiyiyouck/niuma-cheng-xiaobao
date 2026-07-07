@@ -1,3 +1,52 @@
+## 2026-07-05 — v0.6.1 PRD R1 产出 + 翻译前置方案 + REQ-003 跨项目提报
+
+- 本次角色：产品架构师(PM)
+- 动作：
+  1. 消化 Owner 范围讨论确认意见 → 产出 v0.6.1 PRD R1
+  2. 与 Owner 进一步碰撞：翻译前置（L0 之后、AI 解析之前）作为 xiaobao 侧独立步骤；调用第三方翻译 API 而非 AI 大模型；三层入库架构（raw_items → translations 新表 → processed_news）
+  3. 在 coordination 仓提报 REQ-003：翻译职责从 ai 剥离到 xiaobao + AI 解析集成模式从 HTTP 改数据库契约边界（ai 改轮询 worker + 适配层封装）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1.md`（更新讨论记录 + PRD 阶段门禁 + Git 节点）
+  - `docs/progress/iterations/v0.6.1-prd.md`（新建 R1，后追加：翻译前置 + 三层入库架构 + 状态机扩展到 8 态 + 界面要点重写 + 9 个开放问题 + REQ-003 ID 回填）
+  - `docs/progress/INDEX.md`（当前阶段 + 版本列表 + 最近收尾摘要）
+  - `../niuma-cheng-coordination/REQUESTS.md`（新增 REQ-003 表格行 + 详细节）
+  - `docs/progress/roles/pm-current.md`
+- 结论：
+  - v0.6.1 PRD R1 已产出（含翻译前置 + 三层入库 + 数据库边界），进入 R1 Review 阶段
+  - REQ-003 已提报到 coordination，待 ai · PM 评估承接
+- Owner 确认的 5 个碰撞点：
+  1. ✅ 共享库（schema 归 xiaobao、ai 限定读写范围）
+  2. ✅ L0 归 xiaobao
+  3. ✅ 状态机方向（要求：状态最少化、失败分支+卡死回收、直显类用处理类型字段不进状态机）
+  4. ✅ 轮询 + claim
+  5. ❌ 不同意只展示 AI 处理后的，改为按状态区分展示（富展示 vs 基础展示）
+- Owner 补充的 2 条生态提醒：
+  1. 契约变更走程序：先改 coordination contracts，再改代码，CHANGELOG 记一行；ai 侧改造走公告板提 REQ（已落实为 REQ-003）
+  2. ai 取数做适配层封装，保住多调用方定位（decisions/0002）
+- PM 与 Owner 进一步碰撞确认的产品决策：
+  - 翻译前置为独立步骤（L0 之后、AI 解析之前），xiaobao 侧调第三方翻译 API
+  - 三层入库架构：raw_items（原文）→ translations（翻译，新表）→ processed_news（AI 解析）
+  - 状态机扩展为 8 态：3 个翻译态（待翻译/翻译中/翻译失败）+ 5 个 AI 解析态（待 AI/处理中/成功/可重试失败/最终失败）
+- PRD R1 核心内容：
+  - 迭代目标：数据库契约边界解耦 + 翻译前置（xiaobao 侧）+ AI 异步化（ai 侧）+ 前端展示分层
+  - 6 条用户故事
+  - 16 条验收标准
+  - 范围边界：8 做 / 9 不做
+  - 界面要点：两阶段处理流程 + 卡片展示分层 + 抽屉展示分层 + 状态条 + 监控页全链路统计 + 用户流程映射
+  - 前置依赖：coordination 契约 + REQ-003 + xiaobao 现有能力
+  - 风险 4 项 + 开放问题 9 项
+- 指定 Review 方：Architect / Developer / DevOps（UI 并入 PM 自审，本期 UI 变更轻）
+- 验证证据：
+  - 启动检查：工作区干净，`git pull --rebase` Already up to date.
+  - 已读 coordination：`contracts/news-l1.md` v1（HTTP 模式）、`REQUESTS.md`、`decisions/0002`、`CHANGELOG.md`
+  - 已读现有 schema：`server/src/db/schema.ts`（确认 raw_items 已有 l0_status / l1_status 双字段，processed_news 已有 translation 字段混在 AI 解析表里）
+  - 已在 coordination 仓提报 REQ-003（验证：表格新增一行 + 详细节追加成功）
+  - 本次为文档修改 + 跨仓 coordination 提报，未运行代码测试
+- 下一步：
+  - Architect / Developer / DevOps 分别 Review PRD R1
+  - 等 ai · PM 评估承接 REQ-003
+  - xiaobao 侧出数据库边界契约草稿（coordination contracts/）
+
 ## 2026-06-09 — PM 会话收尾：v0.6 PRD R1 已提交 Review
 
 - 本次角色：产品架构师(PM)

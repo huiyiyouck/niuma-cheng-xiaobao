@@ -4,6 +4,44 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-07-05 — v0.6.1 PRD R1 Architect Review
+
+**本次角色**：架构师
+- 动作：Review（审 PM 的 v0.6.1 PRD R1）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-prd.md`（追加 Architect R1 Review 记录 + Review 状态表更新）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### Review 结论
+- 结论：❌ **需修改**
+- 意见数量：7 条（3 高 / 3 中 / 1 低）
+
+### 高严重度（3 条）
+- #A1 状态字段位置与现有模型冲突 — AC-08 定义的 8 种状态与 `raw_items.l0_status/l1_status` 关系未明确
+- #A2 translations 新表与 `processed_news.translation` 字段冗余 — 同一数据存两处易不一致
+- #A3 processed_news 与 news_positions 写回职责不清 — 直接影响数据库契约边界清晰度
+
+### 中严重度（3 条）
+- #A4 翻译任务与现有 tasks 表关系未定 — 是否复用 tasks 的 claim/locked/attempt 机制
+- #A5 直显类新闻数据流转未定 — 是否需要 processed_news 记录、前端展示数据源
+- #A6 卡死回收与现有机制关系未定 — 是否复用 tasks.locked_at 超时释放机制
+
+### 低严重度（1 条）
+- #A7 score_dimensions/tagsV2 字段命名一致性 — 四维评分和五类标签的字段映射
+
+### 整体评价
+- ✅ 技术可行性：数据库解耦、翻译前置、异步处理三条主线技术上可行，无架构红线
+- ⚠️ 架构缺口：#A1-#A3 三个高严重度问题涉及核心数据模型设计，必须在 PRD R2 中明确
+- ✅ 方向正确：Owner 确认的"数据库为契约边界"方向解决了 HTTP 同步调用的根本问题
+- ✅ schema 权属纪律清晰：AC-11 与 Owner 确认完全对齐
+- ✅ ai 侧适配层要求合理：AC-12 与 Owner 生态层提醒完全对齐
+
+### 收尾
+- 关联迭代：v0.6.1
+- 遗留问题/风险：
+  - 架构师名下 R1 无后续动作
+  - 等待其余 2 方（Developer / DevOps）完成 R1 Review，PM 汇总后产出 R2，届时 Architect 复审
+
 ## 2026-06-13 — v0.6 设计文档翻牌定稿
 
 **本次角色**：架构师

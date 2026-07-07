@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6.1
 - 当前模式：标准迭代
-- 当前阶段：PRD 讨论中（R1 未产出）— Owner 提出核心方向：xiaobao 与 AI 中枢以数据库为契约边界解耦（L0 过滤→入库标记待处理→AI 从库拿做处理→写回库→前端按状态展示），替代原 HTTP 调用模式。PM 提出 5 个碰撞点待讨论（共享库 / L0 归属 / 状态机 / AI 拿数据方式 / 前端展示区分度），讨论完再出 PRD R1。
+- 当前阶段：PRD R1 Review中 — PM 已产出 `v0.6.1-prd.md` R1（数据库契约边界解耦 + 状态机 + 处理类型区分 + 前端展示分层 + 管理侧统计 + 灰度开关），指定 Review 方：Architect / Developer / DevOps
 - 阻塞项：无。
-- 下一步入口：Owner 回复 5 个碰撞点意见 → PM 出 PRD R1
+- 下一步入口：Architect / Developer / DevOps 分别 Review PRD R1 → PM 汇总改 R2
 
 ## 版本列表
 
@@ -20,7 +20,7 @@
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
 | v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | [iterations/v0.6-summary.md](iterations/v0.6-summary.md) | ✅ 已完成（有条件关闭 2026-07-04）|
-| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | 待产出 | — | — | — | PRD 讨论中（R1 前范围讨论） |
+| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | — | — | PRD R1 Review中 |
 
 ## 当前 Change Notes
 
@@ -54,6 +54,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-07-05 | PM | v0.6.1 PRD R1 产出 | ✅ PRD R1 已产出 — Owner 确认 5 个碰撞点 + 2 条生态提醒后，PM 出 R1：数据库契约边界解耦 + 状态机（5 态+失败+卡死回收）+ 处理类型区分（direct/ai）+ 前端展示分层（富展示 vs 基础展示）+ 管理侧 AI 统计 + 灰度开关；指定 Review 方 Architect / Developer / DevOps | Architect / Developer / DevOps 分别 Review PRD R1 |
 | 2026-07-04 | PM | v0.6 迭代关闭检查 + 归档摘要 + 知识库沉淀 → v0.6.1 范围讨论 | ✅ **v0.6 有条件关闭** — 产出 [`v0.6-summary.md`](iterations/v0.6-summary.md)；知识库沉淀 2 条；INDEX 当前状态推进到 v0.6.1。**v0.6.1 启动并进入 PRD 讨论** — Owner 提出数据库契约解耦方向（替代原 HTTP 调用），PM 提出 5 个碰撞点待讨论（共享库 / L0 归属 / 状态机 / AI 拿数据方式 / 前端展示区分度） | Owner 回复碰撞点意见 → PM 出 PRD R1 |
 | 2026-06-28 | DevOps | v0.6 部署阶段：去软链接化(#142) + 前后端全隔离 + test/生产部署 + 数据迁移 | ✅ 已完成（07-01 据实补登）— 前端 build→rsync 到 `/var/www/{news,test}`（真实目录非软链），后端隔离 `/srv/niuma-news/{prod,test}/server`（systemd WD，去 ExecStartPre migrate，因库 db:push 建元数据脱轨）；canary 实证 build 不污染线上；迁移 0006/0007 落库；应 Owner 要求迁 `news_test` 业务数据入生产（AI/财经 2空间+4源+154新闻，worker 抓取现增至~320）；X sync 一度 403（生产 admin token 严格校验），交研发后开发重新部署修复（前端 `index-Ufw1OiMD.js`，转 200）；备份 `db-pre-v0.6` / `db-pre-migrate`；固化 `deploy/deploy.sh` | PM 执行 v0.6 迭代关闭检查 |
 | 2026-06-30 | PM | v0.6 状态订正：实况与 INDEX 严重不符 | ✅ 已订正 — 系统核查确认 v0.6 已于 2026-06-28 完成去软链接化生产部署（`news-api` active 自 06-28 16:25 / 隔离目录 `/srv/niuma-news/prod` / 前端真实目录 06-28 16:17 / 生产未设 `ENABLE_AI_PROCESSING` 走默认 false），但部署后无人回写：INDEX 仍写「inactive / 待部署」、DevOps 日志停在 06-12 无 06-28 部署记录、v0.6 未走迭代关闭检查。本次按实况订正 INDEX 当前状态 + 版本列表；DevOps 部署工作记录由 Owner 提醒 DevOps 角色补登（PM 不代写他人角色日志） | DevOps 补登 06-28 部署记录；PM 执行 v0.6 迭代关闭检查 |
