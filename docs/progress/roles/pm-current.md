@@ -1,3 +1,123 @@
+## 2026-07-12 — v0.6.1 设计 R2 PM 复审
+
+- 本次角色：产品架构师(PM)
+- 动作：
+  1. 逐条验证 PM R1 提出的 7 条意见在 R2 正文中的修改情况
+  2. 检查 R2 新增内容（运维告警 / dry-check / 部署验证 / 占位 processed_news / SECURITY DEFINER / 人工 SQL 迁移）
+  3. 确认 Developer R2 已通过，检查 Developer R1 的 14 条意见关闭情况
+  4. 确认产品范围边界保持，PRD R2 设计阶段承接清单 5 项全部覆盖
+  5. 更新设计文档 Review 状态 + 复审记录 + 迭代记录 + INDEX + PM 日志
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-design.md`（PM R2 复审记录 + 文档状态改为已定稿）
+  - `docs/progress/iterations/v0.6.1.md`（设计阶段门禁 + Git 节点）
+  - `docs/progress/INDEX.md`（当前阶段 + 收尾摘要）
+  - `docs/progress/roles/pm-current.md`
+- PM R2 复审结论：✅ 通过
+  - R1 全部 7 条意见（1高/3中/3低）在 R2 正文中全部关闭
+  - R2 新增内容均符合 PRD 要求
+  - 产品范围边界保持，直显类不丢失保障到位
+  - Developer R1 全部 14 条意见已关闭
+  - DevOps R1 全部 10 条意见已在 R2 关闭，待 DevOps 复审确认
+- 下一步：DevOps 完成 R2 复审 → 设计定稿 → 进入实现阶段
+
+## 2026-07-12 — v0.6.1 设计 R1 PM Review
+
+- 本次角色：产品架构师(PM)
+- 动作：
+  1. Review v0.6.1 设计文档 R1，对照 PRD R2 定稿版逐章检查
+  2. 发现 1 个高严重度阻塞（环境变量命名与 PRD 不一致）+ 3 个中严重度 + 3 个低严重度
+  3. 同步发现 DevOps 也已完成 R1 Review（10 条意见：3高/5中/2低），其中 #D2（环境变量命名）与 PM #PM-1 是同一问题
+  4. 确认 DevOps #D1（触发器权限死锁）是设计级矛盾，PM 支持 SECURITY DEFINER 方案
+  5. 更新设计文档 Review 记录 + 迭代记录 + INDEX + PM 日志
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-design.md`（PM R1 Review 记录写入）
+  - `docs/progress/iterations/v0.6.1.md`（设计阶段门禁状态更新）
+  - `docs/progress/INDEX.md`（当前阶段状态 + 最近收尾摘要）
+  - `docs/progress/roles/pm-current.md`
+- PM R1 Review 结论：🟡 有意见（1 高阻塞 + 3 中 + 3 低）
+  - 高严重度：#PM-1 环境变量命名与 PRD 不一致（`AI_INTEGRATION_MODE` vs `L1_ENGINE` + `ENABLE_AI_PROCESSING`）
+  - 中严重度：#PM-2 `pending` vs `queued` 术语不统一 / #PM-3 管理侧接口重复 / #PM-4 卡片与抽屉展示分层混在一起
+  - 低严重度：#PM-5 排序规则变更 PRD 未提及 / #PM-6 ai_worker 代码归属需明确 / #PM-7 缺产品风险项
+- 设计亮点：
+  - ADR-008 列级 GRANT 权限隔离比 PRD AC-10 要求更严格
+  - 触发器自动关联 news_positions（实时性好于 worker 轮询）
+  - 零停机迁移 + 分批回填风险控制到位
+  - 设计阶段承接清单 #A2-1/#D2-1 已覆盖
+- 与 DevOps 共识：
+  - 环境变量命名必须对齐 PRD（`AI_INTEGRATION_MODE` 是主开关）
+  - 触发器权限死锁必须先解决（推荐 SECURITY DEFINER）
+  - 告警部分需补齐（PRD §7 #O5 明确要求 4 类告警）
+- 下一步：Developer 完成 R1 Review → Architect 汇总三方意见产出设计 R2
+
+## 2026-07-12 — v0.6.1 PRD R2 定稿（三方复审全部通过）
+
+- 本次角色：产品架构师(PM)
+- 动作：
+  1. Architect / Developer / DevOps 三方完成 R2 复审，全部通过
+  2. 修正 Developer 指出的 `level-status.ts` 路径笔误（`server/src/api/` → `server/src/api/routes/`）
+  3. 新增「设计阶段承接清单」，把三方复审的 5 项中低严重度观察项转入设计阶段承接
+  4. 补全 R2 修改记录表格（21 条意见逐条标注来源、严重度、处理结果、修改位置）
+  5. 更新迭代记录 / INDEX / PM 日志
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-prd.md`（R2 定稿：修笔误 + 设计阶段承接清单 + R2 修改记录补全）
+  - `docs/progress/iterations/v0.6.1.md`（更新 PRD 阶段门禁 + Git 节点）
+  - `docs/progress/INDEX.md`（更新当前阶段 + 收尾摘要）
+  - `docs/progress/roles/pm-current.md`
+- PRD 定稿结论：
+  - 三方 R2 复审：Architect ✅ / Developer ✅ / DevOps ✅
+  - 高严重度阻塞问题：0 个（7/7 已收口）
+  - 设计阶段承接观察项：5 项（2 中 + 3 低，不阻塞定稿）
+  - 仍开放问题：1 个（直显类 vs AI 类划分规则，待后续迭代明确）
+- 下一步：进入设计阶段，Architect 出设计文档
+
+## 2026-07-12 — v0.6.1 PRD R2 产出：处理全部 21 条 R1 Review 意见
+
+- 本次角色：产品架构师(PM)
+- 动作：
+  1. Architect / Developer / DevOps 三方完成 R1 Review，共 21 条意见（7高/8中/6低）
+  2. PM 全部处理：修改 AC-01/07/08/10/12/15，新增 5 条架构决策（AD-01~05）
+  3. 新增 §6.4 部署协调、§6.5 环境变量增量、§6.6 回滚边界
+  4. 新增 §7 R2 运维事项（连接池/告警/dry-check/迁移脚本/部署验证）
+  5. 补全 §5.10 前端改动清单（9 个文件）+ §5.11 直显类 language
+  6. 追加 R2 修改记录，21 条逐条标注处理结果和修改位置
+  7. 更新迭代记录 / INDEX / PM 日志
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-prd.md`（R2：21 条意见全部处理 + AD-01~05 + 部署协调 + 环境变量 + 回滚边界 + 运维事项 + 前端清单补全）
+  - `docs/progress/iterations/v0.6.1.md`（更新 PRD 阶段门禁 + Git 节点）
+  - `docs/progress/INDEX.md`（更新当前阶段 + 收尾摘要）
+  - `docs/progress/roles/pm-current.md`
+- R2 修改统计：
+  - 高严重度：7/7 全部收口
+  - 中严重度：8/8 全部处理
+  - 低严重度：6/6 全部处理
+  - 仍开放问题：1 个（直显类 vs AI 类划分规则，待后续迭代明确）
+- 下一步：Architect / Developer / DevOps 分别 R2 复审
+
+## 2026-07-12 — v0.6.1 PRD R1 更新：去掉翻译层 + 两层入库 + 前端改动清单
+
+- 本次角色：产品架构师(PM)
+- 动作：
+  1. 代码检查：扫描前端 UI 代码，识别现有 AI 输出字段展示缺口
+  2. 与 Owner 确认新方案：翻译不归 xiaobao，由 ai 侧在深度解析时一并处理（多语言输入→中文输出）
+  3. 更新 PRD R1：去掉翻译层，改为两层入库架构（raw_items → processed_news）+ 5 态状态机 + 前端三层展示（原文 + AI 中文输出 + 标签）
+  4. 更新迭代记录和 PM 日志
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-prd.md`（重写：两层入库 + 5 态状态机 + 前端改动清单 + 代码检查结果）
+  - `docs/progress/iterations/v0.6.1.md`（更新 PRD 阶段门禁 + Git 节点）
+  - `docs/progress/roles/pm-current.md`
+- 代码检查发现：
+  - v0.6 后端已返回的 L1 输出字段（score_dimensions/analysis/context/l1_status）前端基本未展示
+  - 监控页缺少 AI 处理统计（后端 `/global-level-status-counts` 接口已实现但前端未调用）
+  - 新闻卡片和抽屉组件内联在 `NewsPage.tsx`，无独立组件
+- PRD 更新要点：
+  - 去掉翻译独立层，翻译由 ai 侧一并处理
+  - 两层入库：raw_items（原文）→ processed_news（AI 中文输出：摘要+评分+标签+上下文+分析）
+  - 状态机简化为 5 态（待 AI / 处理中 / 成功 / 可重试失败 / 最终失败）
+  - 前端展示：原文展示 + AI 中文输出展示 + 标签展示（三层）
+  - 新增前端改动清单（NewsPage.tsx 卡片状态徽章 + 抽屉状态条 + 四维评分 + AI 分析；MonitoringPage.tsx 新增 AI 统计 Tab；AppSidebar.tsx 补充 AI 指标）
+- REQ-003 需手动更新（coordination 仓不在工作目录）：移除"翻译职责从 ai 剥离"，保留"AI 解析从 HTTP 改数据库边界"
+- 下一步：Architect / Developer / DevOps 分别 Review 更新后的 PRD R1
+
 ## 2026-07-05 — v0.6.1 PRD R1 产出 + 翻译前置方案 + REQ-003 跨项目提报
 
 - 本次角色：产品架构师(PM)

@@ -40,7 +40,10 @@ export async function levelStatusRoutes(app: FastifyInstance): Promise<void> {
          COUNT(*) FILTER (WHERE l1_status = 'completed')::int AS completed,
          COUNT(*) FILTER (WHERE l0_status = 'skipped')::int AS skipped,
          COUNT(*) FILTER (WHERE l1_status = 'retryable_failed')::int AS retryable_failed,
-         COUNT(*) FILTER (WHERE l1_status = 'final_failed')::int AS final_failed
+         COUNT(*) FILTER (WHERE l1_status = 'final_failed')::int AS final_failed,
+         COUNT(*) FILTER (WHERE process_type = 'ai' AND l1_status = 'queued')::int AS pending,
+         COUNT(*) FILTER (WHERE process_type = 'ai' AND l1_status = 'processing')::int AS processing,
+         COUNT(*) FILTER (WHERE process_type = 'ai')::int AS total_ai
        FROM raw_items`,
     );
 
@@ -49,6 +52,9 @@ export async function levelStatusRoutes(app: FastifyInstance): Promise<void> {
       skipped: row?.skipped ?? 0,
       retryable_failed: row?.retryable_failed ?? 0,
       final_failed: row?.final_failed ?? 0,
+      pending: row?.pending ?? 0,
+      processing: row?.processing ?? 0,
+      total_ai: row?.total_ai ?? 0,
       window_started_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
     });
   });

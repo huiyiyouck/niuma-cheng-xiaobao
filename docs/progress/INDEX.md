@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6.1
 - 当前模式：标准迭代
-- 当前阶段：PRD R1 Review中 — PM 已产出 `v0.6.1-prd.md` R1（数据库契约边界解耦 + 状态机 + 处理类型区分 + 前端展示分层 + 管理侧统计 + 灰度开关），指定 Review 方：Architect / Developer / DevOps
+- 当前阶段：实现 R1 — 设计文档已定稿（PM/Developer/DevOps R2 全部通过）
 - 阻塞项：无。
-- 下一步入口：Architect / Developer / DevOps 分别 Review PRD R1 → PM 汇总改 R2
+- 下一步入口：Developer 启动实现 R1
 
 ## 版本列表
 
@@ -20,7 +20,7 @@
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
 | v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | [iterations/v0.6-summary.md](iterations/v0.6-summary.md) | ✅ 已完成（有条件关闭 2026-07-04）|
-| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | — | — | PRD R1 Review中 |
+| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | [iterations/v0.6.1-design.md](iterations/v0.6.1-design.md) | — | 实现 R1 |
 
 ## 当前 Change Notes
 
@@ -54,7 +54,15 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
-| 2026-07-05 | PM | v0.6.1 PRD R1 产出 | ✅ PRD R1 已产出 — Owner 确认 5 个碰撞点 + 2 条生态提醒后，PM 出 R1：数据库契约边界解耦 + 状态机（5 态+失败+卡死回收）+ 处理类型区分（direct/ai）+ 前端展示分层（富展示 vs 基础展示）+ 管理侧 AI 统计 + 灰度开关；指定 Review 方 Architect / Developer / DevOps | Architect / Developer / DevOps 分别 Review PRD R1 |
+| 2026-07-12 | Architect | v0.6.1 设计文档翻牌定稿 | ✅ **设计已定稿** — PM/Developer/DevOps 三方 R2 复审全部通过，设计阶段架构师工作闭环完成 | Developer 启动实现 R1 |
+| 2026-07-12 | PM | v0.6.1 设计 R2 PM 复审 | ✅ **通过** — PM R1 全部 7 条意见（1高/3中/3低）在 R2 正文中全部关闭。R2 新增内容（运维告警 / dry-check / 部署验证 / 占位 processed_news / SECURITY DEFINER / 人工 SQL 迁移）均符合 PRD 要求。产品范围边界保持，直显类不丢失保障到位，PRD R2 设计阶段承接清单 5 项全部覆盖。Developer 已 ✅通过。 | DevOps 完成 R2 复审 → 设计定稿 → 进入实现阶段 |
+| 2026-07-12 | Architect | v0.6.1 设计 R2 修订 | ✅ **R2 已产出** — 三方 R1 Review 共 28 条意见（8高/13中/7低）全部关闭。关键修正：SECURITY DEFINER 触发器解决权限死锁 / 占位 processed_news 解决查询排除 / GRANT 修正 4 处列错误 / AI_INTEGRATION_MODE 对齐 PRD / 人工 SQL 替代 drizzle-kit / CTE 批量 UPDATE / 新增运维告警 + dry-check + 部署验证清单 | PM / Developer / DevOps 三方 R2 复审 |
+| 2026-07-12 | PM | v0.6.1 设计 R1 PM Review | 🟡 **有意见** — 1 条高严重度阻塞（#PM-1 环境变量命名与 PRD 不一致，`AI_INTEGRATION_MODE` vs `L1_ENGINE` + `ENABLE_AI_PROCESSING`，与 DevOps #D2 同一问题）+ 3 中（状态术语 `pending/queued` 不统一 / 管理侧接口重复 / 卡片抽屉展示分层混淆）+ 3 低（排序规则 PRD 未提 / ai_worker 归属需明确 / 缺产品风险）。设计亮点：列级 GRANT 比 PRD 更严 / 触发器自动关联 / 零停机迁移分批回填。 | Developer 完成 R1 Review → Architect 汇总三方意见产出设计 R2 |
+| 2026-07-12 | DevOps | v0.6.1 设计 R1 DevOps Review | ❌ **需修改** — 10 条意见（3高/5中/2低）：#D1 触发器权限死锁（ai_worker 写 processed_news 触发 news_positions INSERT 但无权限）/ #D2 环境变量命名与 PRD 不一致且缺项 / #D3 运维告警完全缺失 / #D4 drizzle 迁移与生产现状冲突 / #D5 部署协调时序不够详细 / #D6 连接池配置不明确 / #D7 dry-check 清单缺失 / #D8 GRANT USAGE ON SCHEMA public 可能泄露默认权限 / #D9 部署验证清单缺失 / #D10 回滚步骤可更详细 | PM / Developer 分别 Review → Architect 汇总产出设计 R2 |
+| 2026-07-12 | PM | v0.6.1 PRD R2 定稿 | ✅ **PRD R2 已定稿** — Architect/Developer/DevOps 三方 R2 复审全部通过（21/21 条意见全部处理，7高/8中/6低）；修正 level-status.ts 路径笔误；新增「设计阶段承接清单」5 项观察项（不阻塞定稿） | 进入设计阶段，Architect 出设计文档 |
+| 2026-07-12 | DevOps | v0.6.1 PRD R1 DevOps Review | ❌ 需修改 — 10 条意见（3高/4中/3低）：#O1 共享库权限边界部署侧实施路径缺失（需新建 ai_worker 用户 + GRANT 限定表/列） / #O2 灰度切换数据一致性与回滚路径未定（PM 开放问题 5 明确待 DevOps 定，需三选一） / #O3 ai worker 部署模式变更对 xiaobao 部署侧影响未评估（ai-hub.ts 处理策略+部署时序+过渡期） / #O4 数据库连接资源 / #O5 运维侧监控告警缺位 / #O6 环境变量增量三处同步 / #O7 回滚无回头路边界 / #O8-#O10 dry-check+迁移+协调清单。与 Architect 视角错开（架构设计 vs 部署落地） | PM 汇总 3 方 R1 意见产出 PRD R2 |
+| 2026-07-12 | PM | v0.6.1 PRD R1 更新 | ✅ PRD R1 已更新 — 代码检查发现 v0.6 后端 AI 输出字段前端未展示；与 Owner 确认翻译不归 xiaobao（由 ai 侧一并处理）；更新为两层入库架构（raw_items → processed_news）+ 5 态状态机 + 前端三层展示（原文+AI中文输出+标签）+ 前端改动清单；指定 Review 方 Architect / Developer / DevOps | Architect / Developer / DevOps 分别 Review PRD R1 |
+| 2026-07-05 | PM | v0.6.1 PRD R1 产出 | ✅ PRD R1 已产出 — Owner 确认 5 个碰撞点 + 2 条生态提醒后，PM 出 R1：数据库契约边界解耦 + 状态机（5 态+失败+卡死回收）+ 处理类型区分（direct/ai）+ 前端展示分层（富展示 vs 基础展示）+ 管理侧 AI 统计 + 灰度开关 | Architect / Developer / DevOps 分别 Review PRD R1 |
 | 2026-07-04 | PM | v0.6 迭代关闭检查 + 归档摘要 + 知识库沉淀 → v0.6.1 范围讨论 | ✅ **v0.6 有条件关闭** — 产出 [`v0.6-summary.md`](iterations/v0.6-summary.md)；知识库沉淀 2 条；INDEX 当前状态推进到 v0.6.1。**v0.6.1 启动并进入 PRD 讨论** — Owner 提出数据库契约解耦方向（替代原 HTTP 调用），PM 提出 5 个碰撞点待讨论（共享库 / L0 归属 / 状态机 / AI 拿数据方式 / 前端展示区分度） | Owner 回复碰撞点意见 → PM 出 PRD R1 |
 | 2026-06-28 | DevOps | v0.6 部署阶段：去软链接化(#142) + 前后端全隔离 + test/生产部署 + 数据迁移 | ✅ 已完成（07-01 据实补登）— 前端 build→rsync 到 `/var/www/{news,test}`（真实目录非软链），后端隔离 `/srv/niuma-news/{prod,test}/server`（systemd WD，去 ExecStartPre migrate，因库 db:push 建元数据脱轨）；canary 实证 build 不污染线上；迁移 0006/0007 落库；应 Owner 要求迁 `news_test` 业务数据入生产（AI/财经 2空间+4源+154新闻，worker 抓取现增至~320）；X sync 一度 403（生产 admin token 严格校验），交研发后开发重新部署修复（前端 `index-Ufw1OiMD.js`，转 200）；备份 `db-pre-v0.6` / `db-pre-migrate`；固化 `deploy/deploy.sh` | PM 执行 v0.6 迭代关闭检查 |
 | 2026-06-30 | PM | v0.6 状态订正：实况与 INDEX 严重不符 | ✅ 已订正 — 系统核查确认 v0.6 已于 2026-06-28 完成去软链接化生产部署（`news-api` active 自 06-28 16:25 / 隔离目录 `/srv/niuma-news/prod` / 前端真实目录 06-28 16:17 / 生产未设 `ENABLE_AI_PROCESSING` 走默认 false），但部署后无人回写：INDEX 仍写「inactive / 待部署」、DevOps 日志停在 06-12 无 06-28 部署记录、v0.6 未走迭代关闭检查。本次按实况订正 INDEX 当前状态 + 版本列表；DevOps 部署工作记录由 Owner 提醒 DevOps 角色补登（PM 不代写他人角色日志） | DevOps 补登 06-28 部署记录；PM 执行 v0.6 迭代关闭检查 |

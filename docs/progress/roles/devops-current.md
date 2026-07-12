@@ -2,6 +2,62 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-07-12 — v0.6.1 PRD R1 DevOps Review
+
+> 角色：DevOps；模式：标准迭代 PRD 阶段 R1 Review。
+
+### 触发
+
+v0.6.1 PRD R1 PM 已产出（2026-07-12 更新版），指定 Review 方 Architect / Developer / DevOps。Architect 已完成 R1（❌ 需修改 5 条），Owner 切到 DevOps 完成 Review。PM 在开放问题 5 明确标注"灰度切换策略待 DevOps Review 后确定"。
+
+### 执行
+
+1. 读 `runtime.md` + `INDEX.md` + `role-devops.md` + `devops-current.md`（确认 v0.6 部署经验与既有技术债）+ `devops-corrections.md`（强制全读，1 条：不越界改代码）+ `v0.6.1.md` + `v0.6.1-prd.md` 全文 + Architect R1 Review 段。
+2. 基线参考据 devops-current.md 07-01 补登：两服务 active、生产 worker 抓取约 320 条、隔离与去软链完好、既有技术债——生产/测试库 drizzle 迁移元数据脱轨（两 unit 去 ExecStartPre migrate）。
+3. 按 DevOps 视角逐段核验 PRD 对部署方式、环境变量、云服务、发布风险、回滚条件五个边界的覆盖情况。
+4. 严守 DevOps 视角边界：不重复审 Architect #A1-#A5（状态字段/写回职责/数据流转/卡死回收/字段命名的架构设计），仅在影响部署落地时标注配套方向。
+
+### 产出
+
+**结论**：❌ **需修改**。10 条意见（3 高 / 4 中 / 3 低）。详见 `iterations/v0.6.1-prd.md` DevOps R1 段。
+
+| # | 严重度 | 主题 | 与其他角色关系 |
+|---|---|---|---|
+| #O1 | 高 | 共享库权限边界部署侧实施路径缺失（AC-10 落地：新建 ai_worker 用户 + GRANT 限定表/列） | 独立视角（Architect #A2 同源但关注边界清晰度，DevOps 关注 GRANT 范围） |
+| #O2 | 高 | 灰度切换数据一致性与回滚路径未定（PM 开放问题 5 明确待 DevOps 定） | 独立视角 |
+| #O3 | 高 | ai worker 部署模式变更对 xiaobao 部署侧影响未评估（ai-hub.ts 策略+部署时序+过渡期） | 独立视角 |
+| #O4 | 中 | 数据库连接资源与连接池配置 | 独立视角 |
+| #O5 | 中 | 运维侧监控告警缺位（进程/队列/卡死回收/最终失败） | 部分同源 Architect #A4（卡死回收设计 vs 回收告警） |
+| #O6 | 中 | 环境变量增量清单与三处同步流程 | 独立视角（v0.5.1 部署经验承接） |
+| #O7 | 中 | 回滚路径与无回头路边界 | 独立视角 |
+| #O8 | 低 | 上线前 dry-check 命令清单 | 独立视角 |
+| #O9 | 低 | 数据库迁移脚本与备份策略（drizzle 元数据脱轨技术债处理） | 独立视角 |
+| #O10 | 低 | 部署时序与跨项目协调验证清单 | 独立视角 |
+
+### 边界守住
+
+- 严格控制在"部署方式、环境变量、云服务、发布风险、回滚条件"五个边界。
+- 10 条意见全部基于"作为 DevOps 如何把这套集成模式切换上线"视角 + v0.6 部署经验（去软链/隔离/drizzle 元数据脱轨）+ v0.5.1 部署经验（env 三处同步/dry-check）。
+- 不复审状态字段策略（Architect #A1）、写回职责架构（Architect #A2）、数据流转（Architect #A3）、卡死回收设计（Architect #A4）、字段命名（Architect #A5）、xiaobao 侧改造工程量（Developer 域）。
+- 不预设项目级聚合判断（是否进 R2 / 是否定稿）—— 由 PM/Owner 决定。
+- PM 开放问题 5"灰度切换策略待 DevOps Review 后确定"是 DevOps 必须回应的，#O2 给出三选一推荐方案。
+
+### 同步动作
+
+- 更新 `v0.6.1-prd.md` Review 状态表（DevOps 待 Review → ❌ 需修改）+ Review 记录区域追加 DevOps R1 段（约 40 行意见表 + 整体评价 + 不阻塞观察）。
+- 更新 `v0.6.1.md` PRD R1 行：3 方 Review 结果填入 + 阶段状态改为「R1 Review完成（3/3方已Review）」+ Git 关键节点追加 Review 完成行。
+- 更新 `INDEX.md` 当前状态：阶段 → "PRD R1 Review完成（3/3方已Review）" + 下一步入口 → "PM 汇总 3 方 R1 意见产出 PRD R2"；版本列表 v0.6.1 状态更新；最近收尾摘要表追加本次记录。
+
+### 下一步入口
+
+PM 汇总 3 方 R1 意见（Architect 5 条 + Developer + DevOps 10 条）产出 PRD R2。#O2 灰度策略三选一推荐方案①（先全量切数据库模式，HTTP 客户端代码保留但默认不调用）供 PM 参考。
+
+### DevOps 日志容量观察
+
+current 当前 8 条（追加本次后），约 530 行，超过 `context-policy.md` 300 行阈值。下次会话开始时优先评估将最旧 2026-06-07 两条移入 `devops-archive.md`。
+
+---
+
 ## 2026-06-28 — v0.6 部署阶段：#142 去软链接化 + 前后端全隔离 + test/生产上线
 
 > 角色：DevOps；模式：标准迭代 部署阶段（Owner「你是运维」→「去除软连接」→「进行部署：test/生产、与开发隔离、打包部署」）。

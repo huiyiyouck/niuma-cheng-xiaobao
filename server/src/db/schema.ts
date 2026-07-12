@@ -150,6 +150,7 @@ export const sourceStates = pgTable(
 // ── raw_items ─────────────────────────────────────────────
 // v0.5: 移除 channel_space_id，新增 fetched_at
 // v0.6: 新增 L0/L1 状态字段（ADR-002 双字段独立）
+// v0.6.1: 新增 process_type 字段（ADR-007），区分 direct/ai 处理类型
 export const rawItems = pgTable(
   "raw_items",
   {
@@ -174,6 +175,8 @@ export const rawItems = pgTable(
     l1Attempt: integer("l1_attempt").notNull().default(0),
     l1NextRetryAt: timestamp("l1_next_retry_at", { withTimezone: true }),
     l1ProcessedAt: timestamp("l1_processed_at", { withTimezone: true }),
+    // v0.6.1 处理类型：direct（直显）/ ai（AI 处理）
+    processType: varchar("process_type", { length: 20 }).notNull().default("ai"),
   },
   (table) => [
     unique("uq_raw_items_source_item").on(table.sourceId, table.sourceItemId),
@@ -182,6 +185,10 @@ export const rawItems = pgTable(
     // v0.6 L0/L1 队列索引
     sql`CREATE INDEX IF NOT EXISTS ix_raw_items_l0_queue ON raw_items(l0_status, l1_status, published_at) WHERE l0_status = 'passed' AND l1_status = 'not_started'`,
     sql`CREATE INDEX IF NOT EXISTS ix_raw_items_l1_queue ON raw_items(l1_status, l1_next_retry_at, published_at) WHERE l1_status IN ('queued', 'retryable_failed')`,
+    // v0.6.1 AI 待处理队列索引（供 ai_worker 轮询 claim）
+    sql`CREATE INDEX IF NOT EXISTS ix_raw_items_ai_queue ON raw_items(l1_status, published_at) WHERE process_type = 'ai' AND l1_status IN ('queued', 'retryable_failed')`,
+    // v0.6.1 直显类快速查询索引
+    sql`CREATE INDEX IF NOT EXISTS ix_raw_items_direct_published ON raw_items(source_id, published_at DESC) WHERE process_type = 'direct'`,
   ],
 );
 

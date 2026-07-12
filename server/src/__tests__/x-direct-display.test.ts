@@ -72,7 +72,8 @@ describe("X/Twitter direct display", () => {
   it("queues ordinary process tasks for new X raw items while AI processing is disabled", async () => {
     const { taskTypeForNewRawItem } = await import("../worker/dispatcher.ts");
 
-    expect(taskTypeForNewRawItem("x_twitter")).toBe("process");
-    expect(taskTypeForNewRawItem("rss")).toBe("process");
+    // v0.6.1: taskTypeForNewRawItem 改为读 process_type（#DD9 修复）
+    expect(taskTypeForNewRawItem("direct")).toBe("process");
+    expect(taskTypeForNewRawItem("ai")).toBe("process"); // AI 关闭时 ai 也走 process
   });
 });

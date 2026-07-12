@@ -19,11 +19,29 @@ const BACKOFF_CONFIG: Record<string, { maxAttempts: number; backoff: number[] }>
   process: { maxAttempts: 5, backoff: [10, 20, 40, 80, 160] },
   l0_classify: { maxAttempts: 3, backoff: [60, 300, 900] },
   l1_process:  { maxAttempts: 3, backoff: [60, 300, 900] },
+  l1_ai_process: { maxAttempts: 3, backoff: [60, 300, 900] },
   // #D11：不创建 l1_retry task，手动重试走 l1_process + metadata
 };
 
-export function taskTypeForNewRawItem(sourceType: string): "process" | "l0_classify" {
-  if (sourceType === "x_twitter" && config.aiProcessingEnabled) return "l0_classify";
+/**
+ * v0.6.1: 根据 source_type 判断 process_type
+ * - x_twitter: ai（需 L0 过滤 + AI 深度解析）
+ * - 其余: direct（直显）
+ * 当 AI 开关关闭时，x_twitter 也走 direct
+ */
+export function determineProcessType(sourceType: string): "direct" | "ai" {
+  if (sourceType === "x_twitter" && config.aiProcessingEnabled) return "ai";
+  return "direct";
+}
+
+/**
+ * v0.6.1: 根据 process_type 返回 task type
+ * - direct → process（直显处理）
+ * - ai + database 模式 → l0_classify（L0 过滤后创建 l1_ai_process task）
+ * - ai + http 模式 → l0_classify（L0 过滤后走内建 L1 / AI Hub HTTP）
+ */
+export function taskTypeForNewRawItem(processType: string): "process" | "l0_classify" {
+  if (processType === "ai" && config.aiProcessingEnabled) return "l0_classify";
   return "process";
 }
 
@@ -88,6 +106,8 @@ async function requeueTask(conn: PoolClient, task: any, lastError: string, error
     // 达到重试上限 → 终态
     if (task.type === "l1_process") {
       await setL1FinalFailed(conn, task, lastError, errorKind);
+    } else if (task.type === "l1_ai_process") {
+      await setL1FinalFailed(conn, task, lastError, errorKind);
     } else if (task.type === "l0_classify") {
       await setL0Failed(conn, task, lastError);
     }
@@ -107,9 +127,9 @@ async function requeueTask(conn: PoolClient, task: any, lastError: string, error
   );
 
   // 同步更新 raw_items 重试字段
-  if ((task.type === "l0_classify" || task.type === "l1_process") && task.raw_item_id) {
+  if ((task.type === "l0_classify" || task.type === "l1_process" || task.type === "l1_ai_process") && task.raw_item_id) {
     const field = task.type === "l0_classify" ? "l0_status" : "l1_status";
-    const retryField = task.type === "l1_process" ? "l1_next_retry_at" : null;
+    const retryField = (task.type === "l1_process" || task.type === "l1_ai_process") ? "l1_next_retry_at" : null;
     if (retryField) {
       await conn.query(
         `UPDATE raw_items SET ${retryField} = now() + make_interval(secs => $2) WHERE id = $1`,
@@ -177,9 +197,10 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
 
   let newRawIds: string[] = [];
   for (const item of items) {
+    const processType = determineProcessType(row.source_type);
     const { rows: [inserted] } = await conn.query(
-      `INSERT INTO raw_items(source_id, source_item_id, source_item_url, published_at, content, fetched_at)
-       VALUES($1, $2, $3, $4, $5::jsonb, now())
+      `INSERT INTO raw_items(source_id, source_item_id, source_item_url, published_at, content, fetched_at, process_type)
+       VALUES($1, $2, $3, $4, $5::jsonb, now(), $6)
        ON CONFLICT (source_id, source_item_id) DO NOTHING
        RETURNING id`,
       [
@@ -188,15 +209,17 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
         item.url || null,
         item.published_at || null,
         JSON.stringify(item.content || {}),
+        processType,
       ],
     );
     if (inserted) {
       newRawIds.push(inserted.id);
-      const taskType = taskTypeForNewRawItem(row.source_type);
+      const taskType = taskTypeForNewRawItem(processType);
+      const maxAttempts = BACKOFF_CONFIG[taskType]?.maxAttempts ?? 5;
       await conn.query(
-        `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, created_at, updated_at)
-         VALUES($1, $2, $3, 'queued', 0, now(), now(), now())`,
-        [taskType, row.source_id, inserted.id],
+        `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, max_attempts, created_at, updated_at)
+         VALUES($1, $2, $3, 'queued', 0, now(), $4, now(), now())`,
+        [taskType, row.source_id, inserted.id, maxAttempts],
       );
     }
   }
@@ -298,6 +321,8 @@ export async function workerLoop(
         } else if (taskType === "l0_classify" && task.raw_item_id) {
           await connQuery(client, `UPDATE raw_items SET l0_status = 'failed', l0_error = $2, l0_processed_at = now() WHERE id = $1`, [task.raw_item_id, err.message]);
         } else if (taskType === "l1_process" && task.raw_item_id) {
+          await connQuery(client, `UPDATE raw_items SET l1_status = 'final_failed', l1_error = $2, l1_processed_at = now() WHERE id = $1`, [task.raw_item_id, err.message]);
+        } else if (taskType === "l1_ai_process" && task.raw_item_id) {
           await connQuery(client, `UPDATE raw_items SET l1_status = 'final_failed', l1_error = $2, l1_processed_at = now() WHERE id = $1`, [task.raw_item_id, err.message]);
         }
         await finishTask(client, task.id, "failed", err.message);

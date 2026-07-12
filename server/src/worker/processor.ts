@@ -7,8 +7,11 @@ import { processLLM } from "./llm.ts";
 const log = workerLogger;
 
 /**
- * v0.5: 处理 raw_item 后，查找该 Source 的所有启用 display_position，
- * 对每个 position 创建 news_positions 记录，更新 source_states
+ * v0.6.1: 处理 raw_item 后，创建 processed_news。
+ * 触发器自动关联 news_positions（SECURITY DEFINER），不再手动创建。
+ * - direct 类：直显内容，l1_status = completed
+ * - ai 类（database 模式）：创建占位 processed_news（原文标题/摘要），l1_status = queued
+ * - ai 类（http 模式）：走内建 LLM 处理，l1_status = completed
  */
 export async function processOne(conn: PoolClient, task: any): Promise<void> {
   const rawItemId = task.raw_item_id;
@@ -18,6 +21,7 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
 
   const { rows: [row] } = await conn.query(
     `SELECT ri.id, ri.source_id, ri.source_item_url, ri.published_at, ri.content,
+            ri.process_type,
             s.type AS source_type, s.identity AS source_identity
      FROM raw_items ri
      JOIN sources s ON s.id = ri.source_id
@@ -27,8 +31,36 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
   if (!row) throw new Error("raw_item not found");
 
   const content = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
+  const processType = row.process_type || "direct";
 
-  // v0.6 收口：AI 未显式启用时，抓取内容先直显；X/Twitter 始终直显，AI 处理后续交给独立中枢。
+  // v0.6.1: AI 类 + database 模式 → 创建占位 processed_news，等待 ai_worker 处理
+  if (processType === "ai" && config.aiIntegrationMode === "database") {
+    const direct = buildDirectNews(row.source_type, content);
+    await conn.query(
+      `INSERT INTO processed_news(
+         raw_item_id, title, summary, language, source_refs, published_at,
+         bullets, tags, entities, importance_score, created_at)
+       VALUES($1, $2, $3, $4, $5::jsonb, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10, now())
+       ON CONFLICT (raw_item_id) DO NOTHING`,
+      [
+        rawItemId,
+        direct.title,
+        direct.summary,
+        "zh",
+        JSON.stringify({ url: row.source_item_url, source_id: String(row.source_id) }),
+        row.published_at || null,
+        JSON.stringify([]),
+        JSON.stringify(direct.tags || []),
+        JSON.stringify(direct.entities || []),
+        0,
+      ],
+    );
+    // l1_status 由 dispatcher 创建 task 时同步设置，此处不重复
+    log.info("NEWS AI PLACEHOLDER raw_item_id=%s title=%s", rawItemId, direct.title.slice(0, 80));
+    return;
+  }
+
+  // direct 类 或 ai 类 http 模式：原有处理逻辑
   let title: string;
   let summary: string;
   let bullets: string[] = [];
@@ -36,7 +68,7 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
   let entities: any[] = [];
   let importanceScore = 0;
 
-  if (shouldDirectDisplay(row.source_type)) {
+  if (shouldDirectDisplay(processType)) {
     const direct = buildDirectNews(row.source_type, content);
     title = direct.title;
     summary = direct.summary;
@@ -64,6 +96,7 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
   }
 
   // 插入 processed_news（ON CONFLICT raw_item_id 去重）
+  // 触发器自动创建 news_positions，不再手动关联（#DD10 修复）
   const { rows: [inserted] } = await conn.query(
     `INSERT INTO processed_news(
        raw_item_id, title, summary, language, source_refs, published_at,
@@ -87,30 +120,11 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
 
   if (inserted) {
     log.info("NEWS CREATED id=%s title=%s", inserted.id, String(inserted.title).slice(0, 80));
-
-    // 查找该 Source 的所有启用 display_position
-    const { rows: positions } = await conn.query(
-      `SELECT id FROM display_positions
-       WHERE source_id = $1 AND enabled = true AND deleted_at IS NULL`,
-      [row.source_id],
-    );
-
-    // 对每个 position 创建 news_positions 记录
-    for (const pos of positions) {
-      await conn.query(
-        `INSERT INTO news_positions(news_id, position_id)
-         VALUES($1, $2)
-         ON CONFLICT (news_id, position_id) DO NOTHING`,
-        [inserted.id, pos.id],
-      );
-    }
-
-    log.info("NEWS FAN-OUT news_id=%s positions=%d", inserted.id, positions.length);
   } else {
     log.debug("NEWS DEDUPED raw_item_id=%s", rawItemId);
   }
 
-  if (shouldDirectDisplay(row.source_type)) {
+  if (shouldDirectDisplay(processType)) {
     await conn.query(
       `UPDATE raw_items
        SET l0_status = 'skipped',
@@ -124,8 +138,9 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
   }
 }
 
-function shouldDirectDisplay(sourceType: string): boolean {
-  return sourceType === "x_twitter" || sourceType === "jin10_flash" || !config.aiProcessingEnabled;
+/** v0.6.1: shouldDirectDisplay 改为读 process_type（#DD9 修复） */
+function shouldDirectDisplay(processType: string): boolean {
+  return processType === "direct";
 }
 
 function buildDirectNews(sourceType: string, content: Record<string, unknown>) {

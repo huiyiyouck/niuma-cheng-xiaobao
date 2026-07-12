@@ -4,6 +4,138 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-07-12 — v0.6.1 设计文档翻牌定稿
+
+**本次角色**：架构师
+- 动作：定稿翻牌（设计文档产出方的最终收口）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-design.md`（文档状态：待Review → 已定稿）
+  - `docs/progress/iterations/v0.6.1.md`（当前阶段 → 实现 R1）
+  - `docs/progress/INDEX.md`（当前阶段 + 版本列表）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### 翻牌内容
+- 文档状态：待Review → **已定稿（PM / Developer / DevOps R2 复审全部通过）**
+- 定稿时间：2026-07-12
+- 设计阶段架构师工作闭环：PRD R2 复审 ✅ → 设计 R1 产出 ✅ → R2 汇总修订 ✅ → 翻牌定稿 ✅
+
+### 收尾
+- 关联迭代：v0.6.1
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - 下一步：切换到 Developer 启动实现阶段 R1
+
+## 2026-07-12 — v0.6.1 设计文档 R2 修订
+
+**本次角色**：架构师
+- 动作：修改（响应 PM / Developer / DevOps 三方设计 R1 Review 共 28 条意见）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-design.md`（R2 全量重写，28 条意见全部关闭）
+  - `docs/progress/iterations/v0.6.1.md`（设计阶段门禁 R1→R2 + Git 关键节点）
+  - `docs/progress/INDEX.md`（当前阶段 → 设计 R2 Review 中）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### R2 修订要点
+
+**高严重度 8 条全部关闭**：
+1. #PM-1/#DD4/#D2 灰度开关命名 → 统一用 `AI_INTEGRATION_MODE=database|http`，废弃 `L1_ENGINE=ai_worker`
+2. #D1 触发器权限死锁 → `SECURITY DEFINER` + `SET search_path = public, pg_temp`
+3. #DD1 `processed_news` 无 `updated_at` → 移除 ON CONFLICT 中的 `updated_at`
+4. #DD2 tasks GRANT 缺 `updated_at` → GRANT UPDATE 列表追加
+5. #DD3 AI 处理中新闻查询排除 → 占位 processed_news 模式（AI 类入库时创建）
+6. #DD5 `raw_items.language` 不存在 → 从 GRANT 移除（language 在 processed_news 上）
+7. #DD6 `processed_news_id_seq` 不存在 → 移除序列权限（uuid 主键）
+8. #D3 运维告警缺失 → 新增 §7.3 运维告警章节（4 类告警 + 阈值）
+
+**中严重度 13 条全部关闭**：queued/pending 映射 / 扩展现有接口 / 卡片抽屉分层 / 人工 SQL / 5 步部署时序 / 连接池配置 / dry-check / REVOKE CREATE / env 对齐 / 列表 SQL / shouldDirectDisplay / 触发器去重 / l1_status 同步
+
+**低严重度 7 条全部关闭**：排序规则 / 参考实现标注 / 产品风险 / 部署验证清单 / 回滚细节 / CTE 批量 UPDATE / max_attempts=3
+
+### 关键技术修正
+- 触发器函数改用 `SECURITY DEFINER` 解决 ai_worker 无 news_positions INSERT 权限的死锁
+- AI 类入库时创建占位 `processed_news`（原文标题/摘要），ai_worker 完成后 UPDATE 覆盖
+- 迁移路径从 drizzle-kit 改为人工 SQL（v0.6 生产经验确认元数据脱轨）
+- 分批 UPDATE 改用 CTE 包装（PostgreSQL 不支持 UPDATE ... LIMIT）
+
+### 收尾
+- 关联迭代：v0.6.1
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - 等待 PM / Developer / DevOps 三方 R2 复审
+
+## 2026-07-12 — v0.6.1 设计文档 R1 产出
+
+**本次角色**：架构师
+- 动作：设计（Architect 产出 v0.6.1 设计文档 R1）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-design.md`（新建，R1 待 Review）
+  - `docs/progress/iterations/v0.6.1.md`（更新阶段门禁：UI 跳过 + 设计阶段 R1）
+  - `docs/progress/INDEX.md`（更新当前阶段为设计 R1 Review 中）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### 设计要点
+- **核心变化**：AI 处理从 HTTP 同步调用改为数据库契约边界异步解耦
+- **ADR-006**：AI 处理改数据库契约，xiaobao 仅标记状态不做 AI 调用
+- **ADR-007**：新增 `raw_items.process_type`（direct/ai），不新增表
+- **ADR-008**：新增 `ai_worker` 数据库角色 + 列级 GRANT，schema 权属归 xiaobao
+- **ADR-009**：AI 失败走 tasks 退避重试，内建 L1 保留兜底
+- **ADR-010**：前端展示按 process_type + l1_status 分层，不新增接口
+
+### 关键技术决策
+- `l1_status` 枚举与 v0.6 完全兼容，无需修改（5 态已满足）
+- `processed_news` 表无 DDL 变更，现有字段完全满足需求
+- `news_positions` 关联用 AFTER INSERT 触发器，不增加 worker 复杂度
+- 内建 L1（builtin/agent）保留兜底，`ai-hub.ts` 标记废弃但不删除
+- 零停机迁移：ADD COLUMN + 分批回填 + 触发器，全量可回滚
+
+### Review 安排
+- 指定 Review 方：PM / Developer / DevOps（3 方）
+- Architect 不自评，等待三方 Review 结果
+
+### 收尾
+- 关联迭代：v0.6.1
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - 等待 PM / Developer / DevOps 完成设计 R1 Review
+
+## 2026-07-12 — v0.6.1 PRD R2 复审
+
+**本次角色**：架构师
+- 动作：复审（审 PM 的 v0.6.1 PRD R2）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1-prd.md`（追加 Architect R2 复审记录 + Review 状态表更新）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### 复审结论
+- 结论：✅ **通过**
+- R1 五条意见核验：5/5 全部完全关闭
+
+### R1 意见关闭情况
+- #A1(高) 状态字段策略 → AD-01 扩展现有 l0_status/l1_status，✅完全关闭
+- #A2(高) 写回职责 → AD-02 ai 只写状态+processed_news，news_positions 由 xiaobao 触发写，✅完全关闭
+- #A3(中) 直显类数据流转 → AD-03 直显类也创建 processed_news，✅完全关闭
+- #A4(中) 卡死回收机制 → AD-04 复用 tasks.locked_at + reclaimStaleTick，✅完全关闭
+- #A5(低) 字段映射 → AD-05 scoreDimensions/tagsV2 明确，✅完全关闭
+
+### R2 架构重大变化评估
+R2 取消翻译前置层（三层→两层入库），翻译由 AI 在深度解析时一并处理。评估为**正面简化**：少一层、少一张表、少一套状态、不引入翻译 API、GRANT 范围更小。
+
+### R2 新增内容评估
+- AC-10 权限隔离方案：✅ 优秀（PostgreSQL GRANT 硬隔离）
+- §6.4 部署协调：✅ 5 步时序清晰
+- §6.5 环境变量增量：✅ 6 个 env 覆盖完整
+- §6.6 回滚边界：✅ 无不可回滚改动
+- §7 运维事项：✅ 全部覆盖
+
+### 观察（不阻塞）
+- #A2-1(低) process_type 默认值 `ai` 与现有 X/Twitter 直显数据兼容性，设计阶段补迁移 SQL
+
+### 收尾
+- 关联迭代：v0.6.1
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - 等待 Developer / DevOps 完成 R2 复审，PM 汇总后定稿
+
 ## 2026-07-05 — v0.6.1 PRD R1 Architect Review
 
 **本次角色**：架构师

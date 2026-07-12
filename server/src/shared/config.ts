@@ -86,7 +86,14 @@ export const config = {
 
   // v0.6 L0/L1 LLM（fallback 到 openaiModel 由 callLLM 处理）
   // v0.6 收口默认不放开 AI 处理：X/Twitter 等抓取内容先直显；后续 AI 中枢接管后再显式启用。
-  aiProcessingEnabled: getBool("ENABLE_AI_PROCESSING", false),
+  // v0.6.1: ENABLE_AI_PROCESSING 废弃，由 AI_INTEGRATION_MODE 替代（兼容读取：true 等价于 database）
+  aiProcessingEnabled: getBool("ENABLE_AI_PROCESSING", false) || get("AI_INTEGRATION_MODE", "http") === "database",
+  // v0.6.1 AI 集成模式：database（数据库契约异步）/ http（HTTP 同步，灰度回退）
+  aiIntegrationMode: get("AI_INTEGRATION_MODE", "http"),
+  // v0.6.1 AI 卡死回收超时阈值（秒）
+  aiStaleTimeoutMs: getInt("AI_STALE_TIMEOUT_MS", 600000),
+  // v0.6.1 AI 最大重试次数
+  aiMaxRetries: getInt("AI_MAX_RETRIES", 3),
   l0LlmModel: get("L0_LLM_MODEL", "gpt-4o-mini"),
   l1LlmModel: get("L1_LLM_MODEL", "gpt-4o-mini"),
   llmL0MaxRetries: getInt("LLM_L0_MAX_RETRIES", 3),

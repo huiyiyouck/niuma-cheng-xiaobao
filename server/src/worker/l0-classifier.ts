@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import { config } from "../shared/config.ts";
 import { workerLogger } from "../shared/logger.ts";
 import { classifyL0LLM } from "./llm.ts";
 import type { L0Input } from "./llm.ts";
@@ -153,19 +154,26 @@ export async function classifyL0(conn: PoolClient, task: any): Promise<void> {
     return;
   }
 
-  // 3. 通过 → 创建 l1_process task
+  // 3. 通过 → 创建 L1 task + 同步 l1_status（#DD12 修复）
+  // v0.6.1: database 模式下创建 l1_ai_process task，由 ai_worker 外部处理
+  //         http 模式下创建 l1_process task，由内建 L1 / AI Hub HTTP 处理
+  const l1TaskType = config.aiIntegrationMode === "database" ? "l1_ai_process" : "l1_process";
+  const l1MaxAttempts = config.aiIntegrationMode === "database" ? config.aiMaxRetries : 3;
+
   await conn.query(
-    `UPDATE raw_items SET l0_status = 'passed', l0_label = $2, l0_processed_at = now() WHERE id = $1`,
+    `UPDATE raw_items SET l0_status = 'passed', l0_label = $2, l0_processed_at = now(),
+         l1_status = 'queued'
+     WHERE id = $1`,
     [rawItemId, l0Result.label],
   );
 
   await conn.query(
-    `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, created_at, updated_at)
-     VALUES('l1_process', $1, $2, 'queued', 0, now(), now(), now())`,
-    [row.source_id, rawItemId],
+    `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, max_attempts, created_at, updated_at)
+     VALUES($1, $2, $3, 'queued', 0, now(), $4, now(), now())`,
+    [l1TaskType, row.source_id, rawItemId, l1MaxAttempts],
   );
 
-  log.info("L0 PASSED raw_item_id=%s label=%s", rawItemId, l0Result.label);
+  log.info("L0 PASSED raw_item_id=%s label=%s l1_task=%s", rawItemId, l0Result.label, l1TaskType);
 }
 
 function classifyL0ErrorKind(err: Error): string {

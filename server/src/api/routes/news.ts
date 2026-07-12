@@ -61,7 +61,8 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
 
     const { rows } = await pool.query(
       `SELECT * FROM (
-         SELECT DISTINCT ON (pn.id) pn.*, s.display_name AS source_name, s.id AS source_id
+         SELECT DISTINCT ON (pn.id) pn.*, ri.l1_status, ri.process_type,
+                s.display_name AS source_name, s.id AS source_id
          FROM processed_news pn
          JOIN news_positions np ON np.news_id = pn.id
          JOIN display_positions dp ON dp.id = np.position_id
@@ -96,7 +97,7 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
   });
 }
 
-// ── 列表项输出（v0.6 扩展：score_total、tags_v2、source）────
+// ── 列表项输出（v0.6.1 扩展：process_type、l1_status）────
 
 function newsToOut(r: any) {
   return {
@@ -115,6 +116,9 @@ function newsToOut(r: any) {
     },
     score_total: r.score_total != null ? Number(r.score_total) : null,
     tags_v2: asDict(r.tags_v2) || null,
+    // v0.6.1：处理类型和 L1 状态（前端展示分层用）
+    process_type: r.process_type || null,
+    l1_status: r.l1_status || null,
     // v0.5 兼容字段
     language: r.language,
     source_refs: asDict(r.source_refs),
