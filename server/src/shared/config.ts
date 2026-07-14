@@ -89,7 +89,8 @@ export const config = {
   // v0.6.1: ENABLE_AI_PROCESSING 废弃，由 AI_INTEGRATION_MODE 替代（兼容读取：true 等价于 database）
   aiProcessingEnabled: getBool("ENABLE_AI_PROCESSING", false) || get("AI_INTEGRATION_MODE", "http") === "database",
   // v0.6.1 AI 集成模式：database（数据库契约异步）/ http（HTTP 同步，灰度回退）
-  aiIntegrationMode: get("AI_INTEGRATION_MODE", "http"),
+  // PRD §6.5 默认 database（#PM-IMPL-5/#A4 修复）
+  aiIntegrationMode: get("AI_INTEGRATION_MODE", "database"),
   // v0.6.1 AI 卡死回收超时阈值（秒）
   aiStaleTimeoutMs: getInt("AI_STALE_TIMEOUT_MS", 600000),
   // v0.6.1 AI 最大重试次数

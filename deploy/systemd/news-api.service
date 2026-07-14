@@ -9,7 +9,7 @@ Type=simple
 User=root
 WorkingDirectory=/root/Project/niuma-cheng-xiaobao/server
 EnvironmentFile=/root/Project/niuma-cheng-xiaobao/server/.env
-ExecStartPre=/usr/bin/npx drizzle-kit migrate
+# 数据库迁移走人工 SQL（deploy.sh 中执行），不使用 drizzle-kit
 ExecStart=/usr/bin/npx tsx src/index.ts
 Restart=always
 RestartSec=5

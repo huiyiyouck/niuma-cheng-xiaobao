@@ -1,4 +1,7 @@
--- v0.6.1 DDL only (no role creation, for test DB)
+-- v0.6.1 DDL only（不含角色创建和 GRANT，用于测试库和 deploy.sh 迁移）
+-- 用途说明：
+--   本文件：DDL + 索引 + 触发器，用于测试环境（不需要 ai_worker 角色）和 deploy.sh 自动迁移
+--   v0.6.1_ai_contract.sql：完整版，含 DDL + 触发器 + ai_worker 角色 + 列级 GRANT + REVOKE + 数据回填 + 回滚脚本，用于生产环境
 ALTER TABLE raw_items
   ADD COLUMN IF NOT EXISTS process_type varchar(20) NOT NULL DEFAULT 'ai';
 

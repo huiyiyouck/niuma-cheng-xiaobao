@@ -10,8 +10,8 @@ const log = workerLogger;
  * v0.6.1: 处理 raw_item 后，创建 processed_news。
  * 触发器自动关联 news_positions（SECURITY DEFINER），不再手动创建。
  * - direct 类：直显内容，l1_status = completed
- * - ai 类（database 模式）：创建占位 processed_news（原文标题/摘要），l1_status = queued
  * - ai 类（http 模式）：走内建 LLM 处理，l1_status = completed
+ * - ai 类（database 模式）：占位在 l0-classifier.ts 中创建，此处不处理
  */
 export async function processOne(conn: PoolClient, task: any): Promise<void> {
   const rawItemId = task.raw_item_id;
@@ -32,33 +32,6 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
 
   const content = typeof row.content === "string" ? JSON.parse(row.content) : row.content;
   const processType = row.process_type || "direct";
-
-  // v0.6.1: AI 类 + database 模式 → 创建占位 processed_news，等待 ai_worker 处理
-  if (processType === "ai" && config.aiIntegrationMode === "database") {
-    const direct = buildDirectNews(row.source_type, content);
-    await conn.query(
-      `INSERT INTO processed_news(
-         raw_item_id, title, summary, language, source_refs, published_at,
-         bullets, tags, entities, importance_score, created_at)
-       VALUES($1, $2, $3, $4, $5::jsonb, $6, $7::jsonb, $8::jsonb, $9::jsonb, $10, now())
-       ON CONFLICT (raw_item_id) DO NOTHING`,
-      [
-        rawItemId,
-        direct.title,
-        direct.summary,
-        "zh",
-        JSON.stringify({ url: row.source_item_url, source_id: String(row.source_id) }),
-        row.published_at || null,
-        JSON.stringify([]),
-        JSON.stringify(direct.tags || []),
-        JSON.stringify(direct.entities || []),
-        0,
-      ],
-    );
-    // l1_status 由 dispatcher 创建 task 时同步设置，此处不重复
-    log.info("NEWS AI PLACEHOLDER raw_item_id=%s title=%s", rawItemId, direct.title.slice(0, 80));
-    return;
-  }
 
   // direct 类 或 ai 类 http 模式：原有处理逻辑
   let title: string;
@@ -108,7 +81,7 @@ export async function processOne(conn: PoolClient, task: any): Promise<void> {
       rawItemId,
       title,
       summary,
-      "zh",
+      detectLanguage(title || summary),
       JSON.stringify({ url: row.source_item_url, source_id: String(row.source_id) }),
       row.published_at || null,
       JSON.stringify(bullets),
@@ -181,4 +154,10 @@ function textOf(value: unknown): string {
 
 function truncateTitle(text: string): string {
   return text.length > 80 ? `${text.slice(0, 77)}...` : text;
+}
+
+/** 简单语言检测：含中文字符则 zh，否则 en（#PM-IMPL-3 修复） */
+function detectLanguage(text: string): string {
+  if (/[\u4e00-\u9fff]/.test(text)) return "zh";
+  return "en";
 }

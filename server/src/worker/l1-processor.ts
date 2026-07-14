@@ -219,23 +219,7 @@ export async function processL1(conn: PoolClient, task: any): Promise<void> {
     log.info("L1 COMPLETED raw_item_id=%s news_id=%s title=%s score=%.1f",
       rawItemId, inserted.id, String(inserted.title).slice(0, 80), scoreTotal);
 
-    // 查找该 Source 的所有 display_position 并 fan-out
-    const { rows: positions } = await conn.query(
-      `SELECT id FROM display_positions
-       WHERE source_id = $1 AND enabled = true AND deleted_at IS NULL`,
-      [row.source_id],
-    );
-
-    for (const pos of positions) {
-      await conn.query(
-        `INSERT INTO news_positions(news_id, position_id)
-         VALUES($1, $2)
-         ON CONFLICT (news_id, position_id) DO NOTHING`,
-        [inserted.id, pos.id],
-      );
-    }
-
-    log.info("L1 FAN-OUT news_id=%s positions=%d", inserted.id, positions.length);
+    // news_positions 由触发器 trg_processed_news_auto_link 自动创建
   } else {
     // 去重：该 raw_item 已有 processed_news，更新为 completed
     await conn.query(
