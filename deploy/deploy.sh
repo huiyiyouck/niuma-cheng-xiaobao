@@ -39,15 +39,18 @@ deploy_one() { # name www run svc port
 
   # v0.6.1: 数据库迁移检查（#DO-2 修复）
   # 迁移脚本有 IF NOT EXISTS 保护，幂等执行安全
+  # node -e 需在 server/ 目录下执行以找到 pg 模块
   local migrate_sql="$run/server/db/scripts/v0.6.1_ddl_only.sql"
   if [ -f "$migrate_sql" ]; then
     echo "  检查数据库迁移..."
+    # 加载 .env 中的 DATABASE_URL
+    set -a; source "$run/server/.env" 2>/dev/null || true; set +a
     # 检查 process_type 列是否已存在
     local col_exists
-    col_exists=$(node -e "const{Pool}=require('pg');const p=new Pool({connectionString:process.env.DATABASE_URL});p.query(\"SELECT 1 FROM information_schema.columns WHERE table_name='raw_items' AND column_name='process_type'\").then(r=>{console.log(r.rows.length);p.end()}).catch(()=>{console.log(0);p.end()})" 2>/dev/null || echo 0)
+    col_exists=$(cd "$run/server" && node -e "const{Pool}=require('pg');const p=new Pool({connectionString:process.env.DATABASE_URL});p.query(\"SELECT 1 FROM information_schema.columns WHERE table_name='raw_items' AND column_name='process_type'\").then(r=>{console.log(r.rows.length);p.end()}).catch(()=>{console.log(0);p.end()})" 2>/dev/null || echo 0)
     if [ "$col_exists" = "0" ]; then
       echo "  执行数据库迁移 v0.6.1..."
-      node -e "const{Pool}=require('pg');const fs=require('fs');const p=new Pool({connectionString:process.env.DATABASE_URL});const sql=fs.readFileSync('$migrate_sql','utf-8');p.query(sql).then(()=>{console.log('  迁移完成');p.end()}).catch(e=>{console.error('  迁移失败:',e.message);p.end();process.exit(1)})"
+      cd "$run/server" && node -e "const{Pool}=require('pg');const fs=require('fs');const p=new Pool({connectionString:process.env.DATABASE_URL});const sql=fs.readFileSync('$migrate_sql','utf-8');p.query(sql).then(()=>{console.log('  迁移完成');p.end()}).catch(e=>{console.error('  迁移失败:',e.message);p.end();process.exit(1)})"
     else
       echo "  迁移已执行，跳过"
     fi
