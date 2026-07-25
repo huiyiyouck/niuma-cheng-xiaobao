@@ -24,7 +24,34 @@ type NewsItem = {
   entities: string[];
   fullContent?: string;
   originalUrl?: string;
+  // v0.6.1 展示分层（PRD R2 §5.3-§5.6）
+  processType: "direct" | "ai" | null;
+  l1Status: string | null;
+  l1Error: string | null;
+  scoreDimensions: Record<string, number> | null;
+  analysis: string | null;
+  context: string[];
 };
+
+// v0.6.1 展示状态：direct 直显 / rich 富展示（AI 已解析）/ 其余为基础展示态
+type DisplayState = "direct" | "rich" | "pending" | "processing" | "failed_retry" | "failed_final";
+
+function displayState(n: NewsItem): DisplayState {
+  if (n.processType === "direct") return "direct";
+  switch (n.l1Status) {
+    case "processing": return "processing";
+    case "retryable_failed": return "failed_retry";
+    case "final_failed": return "failed_final";
+    case "not_started":
+    case "pending":
+    case "queued": return "pending";
+    default: return "rich"; // completed / 旧数据（无状态字段）按富展示兜底
+  }
+}
+
+const isFailedState = (s: DisplayState) => s === "failed_retry" || s === "failed_final";
+// 基础展示态（待解析/解析中/失败）：不展示评分、AI 摘要、标签
+const isBasicState = (s: DisplayState) => s === "pending" || s === "processing" || isFailedState(s);
 
 // 评分徽章配色：四档，低分用红色警示，避免灰底与卡片背景混淆
 function scoreBadgeCls(score: number): string {
@@ -54,6 +81,19 @@ function mapNews(n: any): NewsItem {
   const entities = rawEntities
     .map((e: any) => (typeof e === "string" ? e : (e?.name ?? "")))
     .filter((s: string) => !!s);
+  // context 后端为 jsonb 数组，元素可能是字符串或对象，规范化为字符串数组
+  const rawContext = Array.isArray(n.context) ? n.context : [];
+  const context = rawContext
+    .map((c: any) => (typeof c === "string" ? c : (c?.text ?? c?.content ?? "")))
+    .filter((s: string) => !!s);
+  // score_dimensions 规范化：只保留有限数值项，空对象视为无数据
+  let dims: Record<string, number> | null = null;
+  if (n.score_dimensions && typeof n.score_dimensions === "object" && !Array.isArray(n.score_dimensions)) {
+    const entries = Object.entries(n.score_dimensions)
+      .map(([k, v]: [string, any]) => [k, Number(v)] as const)
+      .filter(([, v]) => Number.isFinite(v));
+    if (entries.length > 0) dims = Object.fromEntries(entries);
+  }
   return {
     id: String(n.id),
     title: n.title ?? "",
@@ -66,8 +106,22 @@ function mapNews(n: any): NewsItem {
     entities,
     fullContent: n.content ?? n.full_content ?? n.body ?? undefined,
     originalUrl: n.url ?? n.original_url ?? undefined,
+    processType: n.process_type ?? null,
+    l1Status: n.l1_status ?? null,
+    l1Error: n.l1_error ?? null,
+    scoreDimensions: dims,
+    analysis: n.analysis ?? null,
+    context,
   };
 }
+
+// 四维评分 key → 中文标签（PRD AD-05：timeliness/impact/confidence/clarity）
+const DIMENSION_LABELS: Record<string, string> = {
+  timeliness: "时效性",
+  impact: "影响力",
+  confidence: "可信度",
+  clarity: "清晰度",
+};
 
 // Centered container used by the frozen top sections
 function CenterWrap({ children, className }: { children: React.ReactNode; className?: string }) {
@@ -142,7 +196,14 @@ export function NewsPage() {
     try {
       const full: any = await getNews(news.id);
       // 仅当用户仍停留在这条新闻时才回写，避免关闭/切换后异步补全又把面板弹回来
-      setSelectedNews((cur) => (cur?.id === news.id ? { ...news, ...mapNews(full) } : cur));
+      // 详情缺失的分层字段（旧版后端兼容）不覆盖列表已知值
+      const mapped = mapNews(full);
+      setSelectedNews((cur) => (cur?.id === news.id ? {
+        ...news, ...mapped,
+        processType: mapped.processType ?? news.processType,
+        l1Status: mapped.l1Status ?? news.l1Status,
+        l1Error: mapped.l1Error ?? news.l1Error,
+      } : cur));
     } catch { /* 保留列表项数据 */ }
   }
 
@@ -155,6 +216,8 @@ export function NewsPage() {
   }, [selectedNews]);
 
   const visibleNews = newsList.filter((n) => n.score >= minScore[0]);
+  // 抽屉当前新闻的展示状态（§5.5 分层）
+  const selSt = selectedNews ? displayState(selectedNews) : null;
 
   return (
     <div className="h-full flex flex-col">
@@ -299,7 +362,9 @@ export function NewsPage() {
                 <p className="text-sm text-muted-foreground">该频道暂无新闻</p>
               </div>
             ) : (
-              visibleNews.map((news) => (
+              visibleNews.map((news) => {
+              const st = displayState(news);
+              return (
               <div
                 key={news.id}
                 onClick={() => openNews(news)}
@@ -315,12 +380,25 @@ export function NewsPage() {
                     <div className="flex items-start gap-3 mb-2">
                       <h3 className="flex-1 font-semibold leading-snug">{news.title}</h3>
                       <div className="flex items-center gap-1.5 shrink-0">
+                        {/* 状态徽章（§5.4）：待解析/解析中角标；富展示态显示评分；直显/失败无角标 */}
+                        {st === "pending" && (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium border border-border text-muted-foreground">
+                            待解析
+                          </span>
+                        )}
+                        {st === "processing" && (
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 animate-pulse">
+                            解析中
+                          </span>
+                        )}
+                        {st === "rich" && (
                         <span className={cn(
                           "px-2 py-0.5 rounded text-xs font-medium",
                           scoreBadgeCls(news.score)
                         )}>
                           {news.score}
                         </span>
+                        )}
                         <ChevronRight className={cn(
                           "h-4 w-4 text-muted-foreground transition-transform",
                           selectedNews?.id === news.id && "rotate-90 text-primary"
@@ -346,6 +424,8 @@ export function NewsPage() {
                       <span>{news.time}</span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{news.summary}</p>
+                    {/* 基础展示态不展示标签/实体（§5.3），数据本身也为空 */}
+                    {!isBasicState(st) && (
                     <div className="flex flex-wrap gap-1.5">
                       {news.tags.map((tag) => (
                         <span key={tag} className={cn("px-2 py-0.5 text-xs rounded font-medium", tagColor(tag))}>{tag}</span>
@@ -354,10 +434,22 @@ export function NewsPage() {
                         <span key={entity} className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded font-medium">{entity}</span>
                       ))}
                     </div>
+                    )}
+                    {/* 失败态：卡片底部低调小字，hover 看失败原因（§5.4） */}
+                    {isFailedState(st) && (
+                      <div
+                        className="mt-1 text-xs text-muted-foreground/70 inline-flex items-center gap-1"
+                        title={news.l1Error || "AI 解析失败"}
+                      >
+                        <AlertTriangle className="h-3 w-3" />
+                        AI 解析失败{st === "failed_retry" ? "，将自动重试" : ""}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-              ))
+              );
+              })
             )}
           </div>
         </div>
@@ -374,12 +466,14 @@ export function NewsPage() {
               <div className="flex-1 pr-4">
                 {selectedNews && (
                   <div className="flex items-center gap-2 mb-2">
+                    {selSt === "rich" && (
                     <span className={cn(
                       "px-2 py-0.5 rounded text-xs font-medium",
                       scoreBadgeCls(selectedNews.score)
                     )}>
                       评分 {selectedNews.score}
                     </span>
+                    )}
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                       {selectedNews.channel}
                     </span>
@@ -397,11 +491,29 @@ export function NewsPage() {
 
             {/* Body */}
             <div className="flex-1 overflow-auto p-5 space-y-5">
-              {selectedNews && (
+              {selectedNews && selSt && (
                 <>
+                  {/* 状态条（§5.6）：直显类不展示 */}
+                  {selSt !== "direct" && (
+                    <div className="flex items-center gap-2 text-xs rounded-md bg-muted/50 px-3 py-2">
+                      <span className="text-green-600 font-medium">✓ L0 通过</span>
+                      <span className="text-muted-foreground/50">→</span>
+                      {selSt === "rich" && <span className="text-green-600 font-medium">✓ AI 解析完成</span>}
+                      {(selSt === "pending" || selSt === "processing") && (
+                        <span className="text-blue-600 font-medium animate-pulse">⏳ AI 解析中</span>
+                      )}
+                      {isFailedState(selSt) && (
+                        <span className="text-muted-foreground font-medium">
+                          ✕ AI 解析失败{selSt === "failed_retry" ? "（将自动重试）" : ""}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1.5"><Clock className="h-3.5 w-3.5" />{selectedNews.time}</span>
-                    <span className="flex items-center gap-1.5"><BarChart2 className="h-3.5 w-3.5" />评分 {selectedNews.score}</span>
+                    {selSt === "rich" && (
+                      <span className="flex items-center gap-1.5"><BarChart2 className="h-3.5 w-3.5" />评分 {selectedNews.score}</span>
+                    )}
                     {!selectedNews.source.removed ? (
                       <Link to={`/sources/${selectedNews.source.id}`} className="flex items-center gap-1.5 hover:text-foreground hover:underline">
                         <Building2 className="h-3.5 w-3.5" />{selectedNews.source.name}
@@ -410,10 +522,29 @@ export function NewsPage() {
                       <span className="flex items-center gap-1.5 opacity-50"><Building2 className="h-3.5 w-3.5" />来源已移除</span>
                     )}
                   </div>
+                  {/* 解析中提示（§5.5 待 AI / AI 解析中） */}
+                  {(selSt === "pending" || selSt === "processing") && (
+                    <div className="flex items-center gap-2 text-sm text-blue-800 bg-blue-50 border border-blue-100 rounded-md px-3 py-2.5">
+                      <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                      AI 深度解析中，预计 1~2 分钟完成，刷新后查看结果
+                    </div>
+                  )}
+                  {/* 失败原因摘要（§5.5 AI 解析失败） */}
+                  {isFailedState(selSt) && selectedNews.l1Error && (
+                    <div className="text-sm text-muted-foreground bg-muted/50 border border-border rounded-md px-3 py-2.5">
+                      <span className="font-medium">失败原因：</span>
+                      <span className="break-all">{selectedNews.l1Error.slice(0, 300)}</span>
+                    </div>
+                  )}
+                  {selectedNews.summary && (
                   <div>
-                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">摘要</h3>
+                    {/* 基础展示态下 summary 即原文摘录（processed_news 占位记录），标题按内容命名 */}
+                    <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                      {isBasicState(selSt) ? "原文" : "摘要"}
+                    </h3>
                     <p className="text-sm leading-relaxed text-foreground/80">{selectedNews.summary}</p>
                   </div>
+                  )}
                   {selectedNews.fullContent && (
                     <div>
                       <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">正文</h3>
@@ -422,6 +553,52 @@ export function NewsPage() {
                       </div>
                     </div>
                   )}
+                  {/* 四维评分明细（§5.5 富展示态，AD-05） */}
+                  {selSt === "rich" && selectedNews.scoreDimensions && (
+                    <div>
+                      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                        <BarChart2 className="h-3.5 w-3.5" />四维评分
+                      </h3>
+                      <div className="space-y-2">
+                        {Object.entries(selectedNews.scoreDimensions).map(([key, val]) => {
+                          const num = Number(val);
+                          if (!Number.isFinite(num)) return null;
+                          return (
+                            <div key={key} className="flex items-center gap-3">
+                              <span className="text-sm text-muted-foreground w-14 shrink-0">{DIMENSION_LABELS[key] ?? key}</span>
+                              <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-primary rounded-full"
+                                  style={{ width: `${Math.max(0, Math.min(10, num)) * 10}%` }}
+                                />
+                              </div>
+                              <span className="text-sm font-medium tabular-nums w-8 text-right">{num}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                  {/* AI 分析（§5.5 富展示态） */}
+                  {selSt === "rich" && selectedNews.analysis && (
+                    <div>
+                      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">AI 分析</h3>
+                      <div className="text-sm leading-relaxed text-foreground/80 space-y-3">
+                        {selectedNews.analysis.split("\n\n").map((para, i) => <p key={i}>{para}</p>)}
+                      </div>
+                    </div>
+                  )}
+                  {/* 背景补全（§5.5 富展示态） */}
+                  {selSt === "rich" && selectedNews.context.length > 0 && (
+                    <div>
+                      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">背景补全</h3>
+                      <ul className="text-sm leading-relaxed text-foreground/80 space-y-1.5 list-disc pl-4">
+                        {selectedNews.context.map((c, i) => <li key={i}>{c}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {/* 标签与实体：基础展示态不展示（§5.5），为空时也不占位 */}
+                  {!isBasicState(selSt) && (selectedNews.tags.length > 0 || selectedNews.entities.length > 0) && (
                   <div>
                     <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
                       <Tag className="h-3.5 w-3.5" />标签与实体
@@ -435,6 +612,7 @@ export function NewsPage() {
                       ))}
                     </div>
                   </div>
+                  )}
                 </>
               )}
             </div>

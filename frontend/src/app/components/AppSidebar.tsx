@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router";
-import { Newspaper, Settings, Activity, TrendingUp, FileText, Radio, FolderOpen, FlaskConical } from "lucide-react";
+import { Newspaper, Settings, Activity, TrendingUp, FileText, Radio, FolderOpen, FlaskConical, Sparkles, Loader2 } from "lucide-react";
 import { cn } from "../lib/utils";
-import { getSpaceStats, getGlobalStats } from "../lib/api";
+import { getSpaceStats, getGlobalStats, getGlobalLevelStatusCounts } from "../lib/api";
 
 type Space = { id: string; name: string };
 
@@ -59,13 +59,18 @@ export function AppSidebar({ spaces, unreadCount }: { spaces: Space[]; unreadCou
   useEffect(() => {
     let alive = true;
     const p = browseActive && activeSpaceId ? getSpaceStats(activeSpaceId) : getGlobalStats();
-    p.then((g: any) => {
+    // v0.6.1 §5.10：底部统计补 AI 指标（待处理/处理中）；AI 统计失败不影响基础统计
+    Promise.all([p, getGlobalLevelStatusCounts().catch(() => null)]).then(([g, ai]: [any, any]) => {
       if (!alive) return;
       setStats([
         { label: "今日新增", value: String(g.today_new ?? 0), icon: TrendingUp },
         { label: "总新闻", value: String(g.total_news ?? 0), icon: FileText },
         { label: "启用信息源", value: String(g.active_sources ?? 0), icon: Radio },
         { label: "频道数", value: String(g.channel_count ?? 0), icon: FolderOpen },
+        ...(ai ? [
+          { label: "AI 待处理", value: String(ai.pending ?? 0), icon: Sparkles },
+          { label: "AI 处理中", value: String(ai.processing ?? 0), icon: Loader2 },
+        ] : []),
       ]);
     }).catch(() => {});
     return () => { alive = false; };

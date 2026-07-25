@@ -11,6 +11,7 @@ import {
 import {
   listAlerts, updateAlertStatus, batchUpdateAlertStatus,
   listLogs, getLogsConfig,
+  getGlobalLevelStatusCounts, type GlobalLevelStatusCounts,
 } from "../lib/api";
 
 type AlertSeverity = "high" | "medium" | "low";
@@ -123,7 +124,7 @@ const LOG_ROW_CLASS: Record<LogLevel, string> = {
 };
 
 export function MonitoringPage() {
-  const [mainTab, setMainTab] = useState<"alerts" | "logs">("alerts");
+  const [mainTab, setMainTab] = useState<"alerts" | "logs" | "ai">("alerts");
   const [showHandled, setShowHandled] = useState(false);
   const [expandedLog, setExpandedLog] = useState<string | null>(null);
 
@@ -139,6 +140,12 @@ export function MonitoringPage() {
   // 高亮跳转状态：告警→日志时设这两个，日志列表用它定位/染色
   const [highlightWindow, setHighlightWindow] = useState<{ from: string; to: string } | null>(null);
   const highlightRowRef = useRef<HTMLTableRowElement | null>(null);
+
+  // v0.6.1 AI 处理概览（§5.7）
+  const [aiCounts, setAiCounts] = useState<GlobalLevelStatusCounts | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(false);
+  const [aiReloadTick, setAiReloadTick] = useState(0);
 
   // 一键处理「确认中」 loading
   const [batchAcking, setBatchAcking] = useState(false);
@@ -177,6 +184,15 @@ export function MonitoringPage() {
   }
 
   useEffect(() => { loadAlerts(); }, [showHandled]);
+  useEffect(() => {
+    if (mainTab !== "ai") return;
+    setAiLoading(true);
+    setAiError(false);
+    getGlobalLevelStatusCounts()
+      .then((c) => setAiCounts(c))
+      .catch(() => { setAiCounts(null); setAiError(true); })
+      .finally(() => setAiLoading(false));
+  }, [mainTab, aiReloadTick]);
   useEffect(() => {
     if (mainTab !== "logs") return;
     loadLogs();
@@ -284,6 +300,17 @@ export function MonitoringPage() {
               )}
             >
               日志
+            </button>
+            <button
+              onClick={() => setMainTab("ai")}
+              className={cn(
+                "pb-3 border-b-2 transition-colors",
+                mainTab === "ai"
+                  ? "border-primary text-primary font-medium"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              )}
+            >
+              AI 处理概览
             </button>
           </div>
         </div>
@@ -435,7 +462,7 @@ export function MonitoringPage() {
               )}
             </div>
           </div>
-        ) : (
+        ) : mainTab === "logs" ? (
           <div className="p-6">
             {/* 高亮跳转提示条 — 告警关联模式 */}
             {highlightWindow && (
@@ -619,6 +646,45 @@ export function MonitoringPage() {
                   </tbody>
                 </table>
               </div>
+            )}
+          </div>
+        ) : (
+          /* v0.6.1 AI 处理概览（§5.7）：数字卡片网格 */
+          <div className="p-6">
+            {aiLoading ? (
+              <Loading />
+            ) : aiError || !aiCounts ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <AlertTriangle className="h-10 w-10 text-destructive/50 mb-3" />
+                <p className="text-sm text-muted-foreground mb-4">AI 处理统计加载失败，请重试</p>
+                <button
+                  onClick={() => setAiReloadTick((t) => t + 1)}
+                  className="px-3 py-1.5 rounded-md text-sm border border-border hover:bg-accent"
+                >
+                  重试
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl">
+                  {[
+                    { label: "待处理", value: aiCounts.pending, cls: "text-amber-600" },
+                    { label: "处理中", value: aiCounts.processing, cls: "text-blue-600" },
+                    { label: "已完成（累计）", value: aiCounts.completed, cls: "text-green-600" },
+                    { label: "可重试失败（累计）", value: aiCounts.retryable_failed, cls: "text-amber-600" },
+                    { label: "最终失败（累计）", value: aiCounts.final_failed, cls: "text-red-600" },
+                    { label: "AI 类新闻总数", value: aiCounts.total_ai, cls: "text-foreground" },
+                  ].map((c) => (
+                    <div key={c.label} className="bg-card border border-border rounded-lg shadow-sm p-4">
+                      <div className="text-sm text-muted-foreground">{c.label}</div>
+                      <div className={cn("mt-1 text-2xl font-semibold tabular-nums", c.cls)}>{c.value}</div>
+                    </div>
+                  ))}
+                </div>
+                <p className="mt-4 text-xs text-muted-foreground">
+                  「待处理 / 处理中」为当前队列实时状态，其余为全量累计口径。
+                </p>
+              </>
             )}
           </div>
         )}

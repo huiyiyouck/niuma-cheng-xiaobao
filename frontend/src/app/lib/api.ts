@@ -159,6 +159,39 @@ export async function listSpaceSources(spaceId: UUID, channelId?: UUID | null): 
 }
 
 // ── News 新闻 ─────────────────────────────────────────────
+// v0.6.1 展示分层契约（对齐后端 newsToOut / newsDetailToOut）
+export type ProcessType = "direct" | "ai";
+export type L1Status =
+  | "not_started" | "queued" | "processing" | "completed"
+  | "retryable_failed" | "final_failed" | "skipped";
+
+export interface NewsOut {
+  id: UUID;
+  title: string;
+  summary: string | null;
+  published_at: string | null;
+  source: { id: UUID | null; name: string | null };
+  score_total: number | null;
+  tags_v2: unknown;
+  process_type: ProcessType | null;
+  l1_status: L1Status | null;
+  l1_error: string | null;
+  language: string | null;
+  tags: string[];
+  entities: unknown[];
+  importance_score: number;
+  created_at: string | null;
+  [key: string]: unknown; // v0.5 兼容扁平字段
+}
+
+export interface NewsDetailOut extends NewsOut {
+  score_dimensions: Record<string, number> | null; // timeliness/impact/confidence/clarity
+  analysis: string | null;
+  context: unknown[];
+  translation: unknown;
+  l0_status: string | null;
+}
+
 export function listNews(spaceId: UUID, opts?: { page?: number; page_size?: number; channel_id?: string; source_id?: string; sort?: string; search?: string }) {
   const qs = new URLSearchParams();
   qs.set("space_id", spaceId);
@@ -168,9 +201,23 @@ export function listNews(spaceId: UUID, opts?: { page?: number; page_size?: numb
   if (opts?.source_id) qs.set("source_id", opts.source_id);
   if (opts?.sort) qs.set("sort", opts.sort);
   if (opts?.search) qs.set("search", opts.search);
-  return requestJson(`/v1/news?${qs.toString()}`);
+  return requestJson<NewsOut[]>(`/v1/news?${qs.toString()}`);
 }
-export const getNews = (id: UUID) => requestJson(`/v1/news/${id}`);
+export const getNews = (id: UUID) => requestJson<NewsDetailOut>(`/v1/news/${id}`);
+
+// ── AI 处理统计（v0.6.1 §5.7 监控页 AI 概览）──────────────
+export interface GlobalLevelStatusCounts {
+  completed: number;
+  skipped: number;
+  retryable_failed: number;
+  final_failed: number;
+  pending: number;
+  processing: number;
+  total_ai: number;
+  window_started_at: string;
+}
+export const getGlobalLevelStatusCounts = () =>
+  requestJson<GlobalLevelStatusCounts>("/v1/global-level-status-counts");
 
 // ── Stats 统计 ────────────────────────────────────────────
 export const getSpaceStats = (spaceId: UUID) => requestJson(`/v1/stats?space_id=${spaceId}`);

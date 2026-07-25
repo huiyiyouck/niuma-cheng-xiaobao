@@ -61,7 +61,7 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
 
     const { rows } = await pool.query(
       `SELECT * FROM (
-         SELECT DISTINCT ON (pn.id) pn.*, ri.l1_status, ri.process_type,
+         SELECT DISTINCT ON (pn.id) pn.*, ri.l1_status, ri.process_type, ri.l1_error,
                 s.display_name AS source_name, s.id AS source_id
          FROM processed_news pn
          JOIN news_positions np ON np.news_id = pn.id
@@ -85,7 +85,7 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
     const { news_id } = req.params as { news_id: string };
     const { rows: [row] } = await pool.query(
       `SELECT pn.*, s.display_name AS source_name, s.id AS source_id,
-              ri.l0_status, ri.l1_status
+              ri.l0_status, ri.l1_status, ri.process_type, ri.l1_error
        FROM processed_news pn
        JOIN raw_items ri ON ri.id = pn.raw_item_id
        JOIN sources s ON s.id = ri.source_id
@@ -119,6 +119,7 @@ function newsToOut(r: any) {
     // v0.6.1：处理类型和 L1 状态（前端展示分层用）
     process_type: r.process_type || null,
     l1_status: r.l1_status || null,
+    l1_error: r.l1_error || null,
     // v0.5 兼容字段
     language: r.language,
     source_refs: asDict(r.source_refs),
@@ -152,6 +153,8 @@ function newsDetailToOut(r: any) {
     tags_v2: asDict(r.tags_v2) || null,
     l0_status: r.l0_status || null,
     l1_status: r.l1_status || null,
+    process_type: r.process_type || null,
+    l1_error: r.l1_error || null,
     // v0.5 兼容
     language: r.language,
     source_refs: asDict(r.source_refs),
