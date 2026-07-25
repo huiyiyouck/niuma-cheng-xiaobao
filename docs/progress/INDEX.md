@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6.1
 - 当前模式：标准迭代
-- 当前阶段：实现 R3（前端展示层）已完成（2026-07-25 Developer，commit `0c733c5`）— 迭代关闭检查登记的 5 项前端待办全部实现并完成可视化自测，详见 [v0.6.1.md「实现阶段遗留」节](iterations/v0.6.1.md)进展记录
-- 阻塞项：无。待办：PM / Architect / DevOps 三方 Review 实现 R3（含 3 条已知偏差裁定，Owner 订正：不走 PM 单方验收）→ 通过后 DevOps 部署测试/生产
-- 下一步入口：三方 Review 实现 R3 → DevOps 部署 → PM 重新执行迭代关闭检查（收尾）
+- 当前阶段：实现 R3（前端展示层）Review 中 — Developer 已完成实现（commit `0c733c5`）；DevOps ✅通过（无部署阻塞）/ Architect ⚠️有条件通过（9条：1高/4中/4低）/ PM 待 Review，详见 [v0.6.1.md Review 记录](iterations/v0.6.1.md)
+- 阻塞项：无。待办：① PM 完成 R3 Review 并裁定 4 项口径（#A-R3-2 retryable_failed 展示 / #A-R3-4 手动重试按钮 / #A-R3-5 抽屉正文与外链 / #A-R3-8 直显类标签）② Developer 修 #A-R3-1（`l1_error` 内部异常原文经公开接口外泄，**部署前必修**）③ 通过后 DevOps 部署测试/生产
+- 下一步入口：PM R3 Review → Developer 修高严重度 → DevOps 部署 → PM 重新执行迭代关闭检查（收尾）
 
 ## 版本列表
 
@@ -54,6 +54,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-07-25 | Architect | v0.6.1 实现 R3（前端展示层）Architect Review | ⚠️ **有条件通过**（9 条：1高/4中/4低）— 高：`l1_error` 内部异常原文经**公开** GET `/v1/news` 透传到前台（`admin-guard.ts` GET 不鉴权，写入源是 `dispatcher.ts` 的 `err.message`），PRD §5.5 要的是「摘要」非原文，部署前必修。中：`retryable_failed` 被展示为「解析失败」与设计 §5.1 定稿相反（该状态仍在待重试队列）/ 监控页 AI 概览三卡无 `process_type='ai'` 过滤、混入直显类计数（直显类被 `processor.ts` 写成 `l1_status='completed'`，自测 completed=154=total_ai 属巧合掩盖）/ 设计明文要求的管理员手动重试按钮未实现且未登记 / PRD §5.5 各态要求的「正文+外链」恒不渲染（后端从不返回 content/url）。低 4 条：不存在的 `case "pending"` / `default` 兜底为富展示过于激进 / 直显类标签口径 PRD 自相冲突 / 契约类型不可校验（`frontend` 无 tsconfig，`vite build` 不做类型检查）。独立复跑 `tsc --noEmit` + `vite build` 均通过。Developer 3 条已知偏差全部同意。 | PM 完成 R3 Review + 裁定 4 项 → Developer 修 #A-R3-1 → DevOps 部署 |
 | 2026-07-25 | PM | v0.6.1 迭代关闭检查 | ❌ **不可关闭** — 9 项门禁 8 项通过，第 2 项核查发现 **PRD R2 §5.10 前端展示分层未实现**（`NewsPage.tsx` 仍为 v0.6 老样，`api.ts` 缺 `l1_status/process_type/score_dimensions/analysis/context` 字段类型）；后端契约解耦+异步链路完整上线，实现阶段三方 Review 漏审前端。已登记前端待办清单入迭代记录。 | Developer（前端会话）实现前端展示层 → PM 验收 → 重跑关闭检查 |
 | 2026-07-15 | Architect | v0.6.1 实现 R2 Architect 复审 | ✅ **通过** — R1 1 条高严重度阻塞全部关闭（#A1 占位 processed_news 移至 l0-classifier + dead code 清理干净），3 条低严重度中 2 条关闭（#A2 fan-out 移除 / #A4 默认值对齐），#A3 reclaim 优化保留为后续迭代建议不阻塞。PM 5 条意见全部独立复核确认关闭。 | 迭代收尾归档 |
 | 2026-07-12 | PM | v0.6.1 设计 R2 PM 复审 | ✅ **通过** — PM R1 全部 7 条意见（1高/3中/3低）在 R2 正文中全部关闭。R2 新增内容（运维告警 / dry-check / 部署验证 / 占位 processed_news / SECURITY DEFINER / 人工 SQL 迁移）均符合 PRD 要求。产品范围边界保持，直显类不丢失保障到位，PRD R2 设计阶段承接清单 5 项全部覆盖。Developer 已 ✅通过。 | DevOps 完成 R2 复审 → 设计定稿 → 进入实现阶段 |

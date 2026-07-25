@@ -4,6 +4,41 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-07-25 — v0.6.1 实现 R3（前端展示层）Architect Review
+
+**本次角色**：架构师
+- 动作：Review（对 Developer 前端展示分层实现 commit `0c733c5` 做实现 R3 架构师 Review，三方之一）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1.md`（追加 Architect R3 Review 记录 + 实现阶段门禁 R3 行 Review 结果登记）
+  - `docs/progress/INDEX.md`（当前阶段 + 待办推进）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### 结论
+⚠️ **有条件通过**（9 条：1 高 / 4 中 / 4 低）。条件：#A-R3-1 部署前必修；#A-R3-2/#A-R3-3 建议同批修；#A-R3-4/#A-R3-5 提请 PM 裁定。
+
+### 独立发现（经代码事实核查，非文档推断）
+- **#A-R3-1（高）** `l1_error` 内部异常原文经**公开** GET `/v1/news`(`:id`) 透传到前台（`admin-guard.ts` L20-28 GET 不鉴权），写入源是 `dispatcher.ts` 的 `err.message`，database 模式下内容还由外部 ai_worker 写。PRD §5.5 要的是「失败原因摘要」，不是异常原文。→ 后端按 `last_error_kind` 归一化，原文留管理侧。
+- **#A-R3-3（中）** 监控页「AI 处理概览」六卡口径混用：`completed/retryable_failed/final_failed` 三卡无 `process_type='ai'` 过滤，而 `processor.ts` L100-108 把**直显类也写成 `l1_status='completed'`** → AI 面板混入直显计数。Developer 自测的 `completed=154=total_ai` 是测试环境巧合，掩盖了失真。
+- **#A-R3-5（中）** PRD §5.5 各态要求的「正文（原文）」「查看原文外链」恒不渲染——后端 `newsToOut/newsDetailToOut` 从不返回 `content`/`url`，`processed_news` 也无正文列，前端 `fullContent/originalUrl` 恒 undefined。基础展示态受影响最大（该态无 AI 摘要）。v0.6 跨版本遗留。
+
+### 与定稿文档的偏差
+- **#A-R3-2（中）** `retryable_failed` 被实现为「解析失败」，设计 §5.1 定稿把它归入「处理中占位 → 解析中」；该状态实际仍在 `ix_raw_items_ai_queue` 待重试队列内，展示「✕失败」误导用户。
+- **#A-R3-4（中）** 设计 §5.1 改造清单第 3 条「失败降级 + 管理员手动重试按钮」未实现**且未登记偏差**。
+
+### 低严重度 4 条
+`displayState()` 存在库内不存在的 `case "pending"`；`default` 兜底为 `rich` 过于激进（建议白名单只认 `completed`）；`isBasicState()` 不含 `direct` 致直显类仍显示 tags（PRD §5.3 内部口径自相冲突，须 PM 收口）；`NewsOut` 的 `[key: string]: unknown` + `frontend` 无 `tsconfig.json`（build 仅 `vite build` 不做类型检查）使新增契约类型不可校验。
+
+### 独立验证
+`server npx tsc --noEmit` 0 错误 ✅ / `frontend npm run build` 通过 ✅（复跑确认 Developer 自测证据属实；但发现 `vite build` 不含类型检查，"build 通过"不等于类型无误）
+
+### Developer 3 条已知偏差裁定
+全部 ✅ 同意（今日口径延后 / language 标签依赖已降级前置 / 「待解析」角标按 AC-04 从严实现优于 §5.4 表格）。
+
+### 下一步
+PM 完成 R3 Review + 裁定 4 项 → Developer 修 #A-R3-1（部署门禁）→ DevOps 部署 → PM 重跑迭代关闭检查。
+
+---
+
 ## 2026-07-15 — v0.6.1 实现 R2 Architect 复审
 
 **本次角色**：架构师
