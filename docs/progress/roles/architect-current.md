@@ -4,6 +4,76 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-07-15 — v0.6.1 实现 R2 Architect 复审
+
+**本次角色**：架构师
+- 动作：复审（对 Developer v0.6.1 实现 R2 修复进行架构师 R2 复审）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1.md`（追加 Architect R2 Review 记录 + 实现阶段门禁状态更新）
+  - `docs/progress/INDEX.md`（当前阶段 → 实现 R2 已定稿 + 最近收尾摘要）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### 复审结论
+✅ **通过**（高严重度 1/1 全部关闭，低严重度 2/3 关闭，1 条保留为优化建议不阻塞）
+
+### R1 意见关闭验证
+
+**高严重度（1/1 关闭）**：
+- #A1 占位 `processed_news` 创建位置错误 → ✅ 移至 `l0-classifier.ts` L0 通过后，`processor.ts` dead code 已清理，数据流三路出口均验证正确
+
+**低严重度（2/3 关闭，1 条保留）**：
+- #A2 `l1-processor.ts` 手动 fan-out → ✅ 已移除，触发器覆盖
+- #A3 `reclaim.ts` 回收同步 SQL 优化 → ⚠️ 未修改，保留为后续迭代优化建议（不阻塞）
+- #A4 `config.ts` 默认值不一致 → ✅ 已改为 `database`，对齐 PRD §6.5
+
+### PM 意见独立复核
+5/5 条全部确认关闭（#PM-IMPL-1 高 + #PM-IMPL-2~5 低）
+
+### 收尾
+- 关联迭代：v0.6.1
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - 未关闭的低严重度项：#A3（reclaim.ts 优化），建议后续迭代处理
+  - DevOps 未关闭项：#DO-4/5/6/7（告警/OnFailure/连接池/回滚文档），不阻塞
+  - 下一步：迭代收尾归档
+
+## 2026-07-12 — v0.6.1 实现 R1 Architect Review
+
+**本次角色**：架构师
+- 动作：Review（对 Developer v0.6.1 实现 R1 进行架构师 Review）
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1.md`（追加 Architect R1 Review 记录 + 实现阶段门禁状态更新）
+  - `docs/progress/INDEX.md`（当前阶段 → 实现 R1 Review 中 + 最近收尾摘要）
+  - `docs/progress/roles/architect-current.md`（本文）
+
+### Review 结论
+❌ **需修改**（1 个高严重度阻塞 + 1 个新发现低严重度 + 确认 PM 的 4 个低严重度）
+
+### Review 要点
+
+**高严重度（1 条阻塞）**：
+- #A1 占位 `processed_news` 创建位置错误（dead code）。数据流追踪确认：AI+database 模式下 task 走 `l0_classify → l1_ai_process`，不经过 `processOne` 函数。占位创建代码在 `processor.ts` L34-61 是 dead code。应在 `l0-classifier.ts` L0 通过后创建。与 PM #PM-IMPL-1 同一根因独立确认。
+
+**低严重度（3 条）**：
+- #A2 `l1-processor.ts` L228-235 仍保留手动 `news_positions` fan-out（与 PM #PM-IMPL-4 同一问题）
+- #A3 `reclaim.ts` 回收同步 SQL 可优化精确度（架构师独立发现，用 RETURNING 替代全表扫描）
+- #A4 `config.ts` 默认值 `"http"` 与 PRD 不一致（与 PM #PM-IMPL-5 同一问题）
+
+**已正确实现**（14 项 ADR 落地全部确认）：
+- ADR-006~010 全部正确落地
+- SECURITY DEFINER 触发器 + 列级 GRANT + REVOKE CREATE 完整
+- dispatcher 分流 + l1_ai_process task + max_attempts=3 + reclaim 回收同步
+- SQL 迁移完整（DDL + 索引 + 触发器 + GRANT + 数据回填 + 回滚脚本）
+
+### PM 意见核验
+5/5 条全部确认成立（#PM-IMPL-1 高 / #PM-IMPL-2~5 低）
+
+### 收尾
+- 关联迭代：v0.6.1
+- 遗留问题/风险：
+  - 架构师名下无未完成事项
+  - 等待 DevOps 完成 R1 Review → Developer R2 修复
+
 ## 2026-07-12 — v0.6.1 设计文档翻牌定稿
 
 **本次角色**：架构师

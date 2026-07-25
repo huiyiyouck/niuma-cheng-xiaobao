@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6.1
 - 当前模式：标准迭代
-- 当前阶段：实现 R1 — 设计文档已定稿（PM/Developer/DevOps R2 全部通过）
-- 阻塞项：无。
-- 下一步入口：Developer 启动实现 R1
+- 当前阶段：实现阶段未完成 — 后端契约解耦/异步链路已上线，**前端展示层（PRD R2 §5.10）未实现**（2026-07-25 迭代关闭检查发现，实现阶段三方 Review 漏审前端）
+- 阻塞项：前端展示分层未实现（状态徽章 / 四维评分 / AI 分析 / 直显·AI 分层），详见 [v0.6.1.md「实现阶段遗留」节](iterations/v0.6.1.md)
+- 下一步入口：Developer（前端会话）实现前端展示层 → PM 对照 PRD R2 §5.10 验收 → 重新执行迭代关闭检查
 
 ## 版本列表
 
@@ -20,7 +20,7 @@
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
 | v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | [iterations/v0.6-summary.md](iterations/v0.6-summary.md) | ✅ 已完成（有条件关闭 2026-07-04）|
-| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | [iterations/v0.6.1-design.md](iterations/v0.6.1-design.md) | — | 实现 R1 |
+| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | [iterations/v0.6.1-design.md](iterations/v0.6.1-design.md) | — | 实现中（后端已上线，前端展示层待补） |
 
 ## 当前 Change Notes
 
@@ -54,7 +54,8 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
-| 2026-07-12 | Architect | v0.6.1 设计文档翻牌定稿 | ✅ **设计已定稿** — PM/Developer/DevOps 三方 R2 复审全部通过，设计阶段架构师工作闭环完成 | Developer 启动实现 R1 |
+| 2026-07-25 | PM | v0.6.1 迭代关闭检查 | ❌ **不可关闭** — 9 项门禁 8 项通过，第 2 项核查发现 **PRD R2 §5.10 前端展示分层未实现**（`NewsPage.tsx` 仍为 v0.6 老样，`api.ts` 缺 `l1_status/process_type/score_dimensions/analysis/context` 字段类型）；后端契约解耦+异步链路完整上线，实现阶段三方 Review 漏审前端。已登记前端待办清单入迭代记录。 | Developer（前端会话）实现前端展示层 → PM 验收 → 重跑关闭检查 |
+| 2026-07-15 | Architect | v0.6.1 实现 R2 Architect 复审 | ✅ **通过** — R1 1 条高严重度阻塞全部关闭（#A1 占位 processed_news 移至 l0-classifier + dead code 清理干净），3 条低严重度中 2 条关闭（#A2 fan-out 移除 / #A4 默认值对齐），#A3 reclaim 优化保留为后续迭代建议不阻塞。PM 5 条意见全部独立复核确认关闭。 | 迭代收尾归档 |
 | 2026-07-12 | PM | v0.6.1 设计 R2 PM 复审 | ✅ **通过** — PM R1 全部 7 条意见（1高/3中/3低）在 R2 正文中全部关闭。R2 新增内容（运维告警 / dry-check / 部署验证 / 占位 processed_news / SECURITY DEFINER / 人工 SQL 迁移）均符合 PRD 要求。产品范围边界保持，直显类不丢失保障到位，PRD R2 设计阶段承接清单 5 项全部覆盖。Developer 已 ✅通过。 | DevOps 完成 R2 复审 → 设计定稿 → 进入实现阶段 |
 | 2026-07-12 | Architect | v0.6.1 设计 R2 修订 | ✅ **R2 已产出** — 三方 R1 Review 共 28 条意见（8高/13中/7低）全部关闭。关键修正：SECURITY DEFINER 触发器解决权限死锁 / 占位 processed_news 解决查询排除 / GRANT 修正 4 处列错误 / AI_INTEGRATION_MODE 对齐 PRD / 人工 SQL 替代 drizzle-kit / CTE 批量 UPDATE / 新增运维告警 + dry-check + 部署验证清单 | PM / Developer / DevOps 三方 R2 复审 |
 | 2026-07-12 | PM | v0.6.1 设计 R1 PM Review | 🟡 **有意见** — 1 条高严重度阻塞（#PM-1 环境变量命名与 PRD 不一致，`AI_INTEGRATION_MODE` vs `L1_ENGINE` + `ENABLE_AI_PROCESSING`，与 DevOps #D2 同一问题）+ 3 中（状态术语 `pending/queued` 不统一 / 管理侧接口重复 / 卡片抽屉展示分层混淆）+ 3 低（排序规则 PRD 未提 / ai_worker 归属需明确 / 缺产品风险）。设计亮点：列级 GRANT 比 PRD 更严 / 触发器自动关联 / 零停机迁移分批回填。 | Developer 完成 R1 Review → Architect 汇总三方意见产出设计 R2 |

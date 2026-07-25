@@ -1,3 +1,46 @@
+## 2026-07-25 — v0.6.1 迭代关闭检查：不可关闭（前端展示层未实现）
+
+- 本次角色：产品架构师(PM)
+- 触发：Owner 要求查看 v0.6.1 迭代状态并确认是否收尾
+- 动作：
+  1. 执行迭代关闭检查 9 项门禁
+  2. 第 8 项后端能力废弃核查：前端零引用 `ENABLE_AI_PROCESSING/AI_INTEGRATION_MODE/l0_classify/l1_ai_process/process_type` ✅
+  3. 第 2 项核查发现高严重度缺口：PRD R2 §5.10「前端三层展示」在 `NewsPage.tsx` 完全未实现，`api.ts` 缺 `l1_status/process_type/score_dimensions/analysis/context` 字段类型
+  4. 根因：实现阶段 PM/Architect/DevOps 三方 Review 意见全部集中后端，漏审前端展示层（PRD 定「UI 变更轻并入 PM 自审」，PM 自审未核查前端实现）
+  5. 向 Owner 报告缺口 + 三个方向；Owner 决定：不关闭，登记前端待办备注，另开前端会话实现
+  6. 登记缺口与前端待办清单入迭代记录 + 更新 INDEX 状态/下一步入口 + PM 日志
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1.md`（新增「实现阶段遗留：前端展示层未实现」节 + 概览当前阶段订正）
+  - `docs/progress/INDEX.md`（当前阶段/阻塞项/下一步入口 + 版本列表状态 + 最近收尾摘要）
+  - `docs/progress/roles/pm-current.md`
+- 关闭检查结论：❌ **不可关闭**（1 项高严重度缺口未闭合）
+- 代码事实核查证据：
+  - `grep l1_status/process_type/score_dimensions/analysis/context frontend/src/app/lib/api.ts` → 零命中
+  - `NewsPage.tsx` 卡片/抽屉仅展示单一 `score` + `summary` + `fullContent`，无状态徽章/四维评分/AI分析/直显·AI分层
+  - 后端 `news.ts` 已返回 `l1_status/process_type`（实现 R1 #DD8），前端未接
+- 本次为文档修改，未运行代码测试
+- 附带发现（仅记录，未擅自修改）：
+  - `docs/progress/iterations/v0.6-summary.md` 为空文件，但 INDEX 版本列表标 v0.6「已完成（有条件关闭）」并链接它 —— v0.6 收尾 summary 疑似未落盘，待 Owner 决定是否补
+- 下一步：Developer（前端会话）按迭代记录待办清单实现前端展示层 → PM 对照 PRD R2 §5.10 验收 → 重新执行迭代关闭检查 → 收尾归档
+
+## 2026-07-14 — v0.6.1 实现 R1 PM Review
+
+- 本次角色：产品架构师(PM)
+- 动作：
+  1. Review Developer R1 代码实现，对照 PRD R2 + 设计 R2 逐项核查 9 个关键文件
+  2. 发现 1 个高严重度阻塞：占位 `processed_news` 创建逻辑放错位置（dead code），AI 类 database 模式下 L0 通过后新闻不可见，违反 AC-01 和 AC-06
+  3. 发现 4 个低严重度：`.env.example` 未同步 / language 硬编码 "zh" / l1-processor 手动 fan-out 未移除 / config 默认值偏差
+  4. 确认 17 项实现已正确覆盖 PRD 和设计要求
+  5. 更新迭代记录 + INDEX + PM 日志
+- 涉及文档：
+  - `docs/progress/iterations/v0.6.1.md`（PM R1 Review 记录 + 阶段门禁状态）
+  - `docs/progress/INDEX.md`（当前阶段 + 阻塞项）
+  - `docs/progress/roles/pm-current.md`
+- PM R1 Review 结论：❌ 需修改（1 高阻塞 + 4 低）
+  - 高：#PM-IMPL-1 占位 `processed_news` 创建逻辑放在 `processor.ts` L37-61（dead code），应移到 `l0-classifier.ts` L155-174
+  - 低：#PM-IMPL-2 `.env.example` 未同步 / #PM-IMPL-3 language 硬编码 / #PM-IMPL-4 l1-processor 手动 fan-out / #PM-IMPL-5 config 默认值偏差
+- 下一步：Architect / DevOps 完成 R1 Review → Developer 修复 → R2 Review
+
 ## 2026-07-12 — v0.6.1 设计 R2 PM 复审
 
 - 本次角色：产品架构师(PM)
