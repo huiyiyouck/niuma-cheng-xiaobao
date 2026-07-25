@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6.1
 - 当前模式：标准迭代
-- 当前阶段：实现 R3（前端展示层）Review 中 — Developer 已完成实现（commit `0c733c5`）；DevOps ✅通过（无部署阻塞）/ Architect ⚠️有条件通过（9条：1高/4中/4低）/ PM 待 Review，详见 [v0.6.1.md Review 记录](iterations/v0.6.1.md)
-- 阻塞项：无。待办：① PM 完成 R3 Review 并裁定 4 项口径（#A-R3-2 retryable_failed 展示 / #A-R3-4 手动重试按钮 / #A-R3-5 抽屉正文与外链 / #A-R3-8 直显类标签）② Developer 修 #A-R3-1（`l1_error` 内部异常原文经公开接口外泄，**部署前必修**）③ 通过后 DevOps 部署测试/生产
-- 下一步入口：PM R3 Review → Developer 修高严重度 → DevOps 部署 → PM 重新执行迭代关闭检查（收尾）
+- 当前阶段：实现 R3 三方 Review 完成 — DevOps ✅通过 / Architect ⚠️有条件通过（9条：1高/4中/4低）/ PM ⚠️有条件通过（2026-07-25，1低 + 裁定 Architect 提请 4 项），R3 不定稿 → 进入 Developer R4 修复轮，详见 [v0.6.1.md Review 记录](iterations/v0.6.1.md)
+- 阻塞项：无。待办：Developer R4 同批修复 6 项 — ① #A-R3-1 `l1_error` 公开接口外泄（高，**部署前必修**）② #A-R3-2 retryable_failed 归入「解析中」（PM 已裁定方案①）③ #A-R3-3 监控 AI Tab 三卡加 AI 口径过滤 ④ #A-R3-5 详情补正文/源链接 ⑤ #PM-R3-1 api.ts 四维类型 key 对齐 AD-05 ⑥ #A-R3-6/7 顺手修。#A-R3-4 重试按钮已裁定延期；#A-R3-8 直显来源标签保留（PM 已收口）
+- 下一步入口：Developer R4 修复 → PM/Architect 复核 → DevOps 部署 → PM 重新执行迭代关闭检查（收尾）
 
 ## 版本列表
 
@@ -54,6 +54,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-07-25 | PM | v0.6.1 实现 R3 PM Review（前端展示层） | ⚠️ **有条件通过** — 本地 dev 代理测试后端可视化验收：侧栏 AI 指标/抽屉状态条/监控 AI Tab ✅；四维/分析/背景补全代码正确但存量数据全空,端到端验证依赖 ai 侧 REQ-003 worker（不构成 xiaobao 阻塞,关闭时记遗留）。PM 独立发现 #PM-R3-1（api.ts 四维类型 key 错 3 个,低）。裁定 Architect 提请 4 项：#A-R3-2 采纳方案①回归设计 / #A-R3-4 延期至 ai worker 上线后 / #A-R3-5 纳入同批修复 / #A-R3-8 保留直显来源标签（口径收口）。三方 Review 收齐,R3 不定稿。 | Developer R4 同批修复 6 项 → PM/Architect 复核 → DevOps 部署 |
 | 2026-07-25 | Architect | v0.6.1 实现 R3（前端展示层）Architect Review | ⚠️ **有条件通过**（9 条：1高/4中/4低）— 高：`l1_error` 内部异常原文经**公开** GET `/v1/news` 透传到前台（`admin-guard.ts` GET 不鉴权，写入源是 `dispatcher.ts` 的 `err.message`），PRD §5.5 要的是「摘要」非原文，部署前必修。中：`retryable_failed` 被展示为「解析失败」与设计 §5.1 定稿相反（该状态仍在待重试队列）/ 监控页 AI 概览三卡无 `process_type='ai'` 过滤、混入直显类计数（直显类被 `processor.ts` 写成 `l1_status='completed'`，自测 completed=154=total_ai 属巧合掩盖）/ 设计明文要求的管理员手动重试按钮未实现且未登记 / PRD §5.5 各态要求的「正文+外链」恒不渲染（后端从不返回 content/url）。低 4 条：不存在的 `case "pending"` / `default` 兜底为富展示过于激进 / 直显类标签口径 PRD 自相冲突 / 契约类型不可校验（`frontend` 无 tsconfig，`vite build` 不做类型检查）。独立复跑 `tsc --noEmit` + `vite build` 均通过。Developer 3 条已知偏差全部同意。 | PM 完成 R3 Review + 裁定 4 项 → Developer 修 #A-R3-1 → DevOps 部署 |
 | 2026-07-25 | PM | v0.6.1 迭代关闭检查 | ❌ **不可关闭** — 9 项门禁 8 项通过，第 2 项核查发现 **PRD R2 §5.10 前端展示分层未实现**（`NewsPage.tsx` 仍为 v0.6 老样，`api.ts` 缺 `l1_status/process_type/score_dimensions/analysis/context` 字段类型）；后端契约解耦+异步链路完整上线，实现阶段三方 Review 漏审前端。已登记前端待办清单入迭代记录。 | Developer（前端会话）实现前端展示层 → PM 验收 → 重跑关闭检查 |
 | 2026-07-15 | Architect | v0.6.1 实现 R2 Architect 复审 | ✅ **通过** — R1 1 条高严重度阻塞全部关闭（#A1 占位 processed_news 移至 l0-classifier + dead code 清理干净），3 条低严重度中 2 条关闭（#A2 fan-out 移除 / #A4 默认值对齐），#A3 reclaim 优化保留为后续迭代建议不阻塞。PM 5 条意见全部独立复核确认关闭。 | 迭代收尾归档 |

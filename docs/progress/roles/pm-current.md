@@ -1,3 +1,27 @@
+## 2026-07-25 — v0.6.1 实现 R3 PM Review（前端展示层）：有条件通过
+
+- 本次角色：产品架构师(PM)
+- 触发：Owner 通知 Developer 已完成前端展示层实现（commit `0c733c5`），要求 PM Review；Owner 已订正流程为 PM/Architect/DevOps 三方 Review（此前 Developer 代写的「PM ✅」已作废，本次为首次真实 PM R3 Review）
+- 动作：
+  1. 代码核查 R3 全部 5 个文件（api.ts / NewsPage / MonitoringPage / AppSidebar / news.ts）对齐 PRD R2 §5.3-§5.11
+  2. 可视化验收：发现测试环境跑旧构建（部署本就排在三方 Review 后，符合流程）；改用本地 dev server（Developer 遗留进程，代理测试后端真实数据）实测
+  3. API 数据核查定性：测试环境 23 条新闻全部 completed 但 score_dimensions/analysis/context 全空（v0.6 存量数据），四维/分析区块无法端到端可视验证，属数据侧空缺非前端缺陷
+  4. 独立发现 #PM-R3-1：api.ts 四维评分 TS 类型 key 与 AD-05 不符（importance/relevance/credibility 应为 impact/confidence/clarity），运行时不受影响（NewsPage 用 Object.entries + 正确映射），低严重度
+  5. 阅读 Architect R3 全部 9 条意见，对提请 PM 的 4 项作出裁定
+  6. 追加 PM R3 Review 章节入迭代记录 + 更新 R3 门禁行/概览/INDEX/PM 日志
+- 裁定结果：
+  - #A-R3-2：采纳方案①，retryable_failed 归入「解析中」（用户无需感知重试机制，避免误导性「失败」）
+  - #A-R3-4：手动重试按钮延期至 ai worker 上线后迭代（生产尚无失败态，无使用场景）
+  - #A-R3-5：正文/外链纳入同批修复（改动量小，趁 #A-R3-1 必修同批）
+  - #A-R3-8：保留直显类来源标签（§5.3「不展示标签」指 AI 语义标签，口径由 PM 收口）
+- 结论：⚠️ 有条件通过。三方 R3 Review 收齐（DevOps ✅ / Architect ⚠️ / PM ⚠️），R3 不定稿，进入 Developer R4 修复轮（同批 6 项，#A-R3-1 部署前必修）
+- 验证证据：
+  - 本地 dev（localhost:5173 → test 后端）：侧栏「AI 待处理/AI 处理中」✅ / 抽屉状态条「✓ L0 通过 → ✓ AI 解析完成」✅ / 监控「AI 处理概览」六卡 + 口径说明 ✅
+  - `curl /v1/news?space_id=…`：23 条 l1_status=completed、process_type=ai，四维字段 0 条有值
+  - `curl /v1/global-level-status-counts`：completed 154 = total_ai 154（Architect #A-R3-3 指出的口径巧合，PM 确认属实）
+- 本次为 Review 文档追加，未修改任何产出正文（P0 红线遵守）
+- 下一步：Developer R4 修复 → PM/Architect 复核 → DevOps 部署 → PM 重新执行迭代关闭检查
+
 ## 2026-07-25 — v0.6.1 迭代关闭检查：不可关闭（前端展示层未实现）
 
 - 本次角色：产品架构师(PM)
