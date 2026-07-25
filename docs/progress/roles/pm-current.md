@@ -1,3 +1,18 @@
+## 2026-07-25 — REQ-003 ai 侧承接回应：O-1 定案方案 A + 契约订正 v1.1 + R-5 交付 + R-1~R-4 转办
+
+- 本次角色：产品架构师(PM)
+- 触发：Owner 告知 ai 侧已承接 REQ-003 并有待 xiaobao 回应项，要求查看共同文档（coordination）
+- 跨仓红线检查：coordination 位置 `../niuma-cheng-coordination`（remote 匹配），`git pull --rebase` Already up to date，工作区干净
+- ai 侧提出：O-1（P0，`score_total` 归属与三处真源冲突，阻塞 ai PRD 定稿）/ O-5（P2 枚举重复）/ R-1~R-5 就绪度确认
+- PM 回应：
+  1. **O-1 定案方案 A**（`score_total` 归 xiaobao）：代码事实核查 `l1-processor.ts:171` `calcScoreTotal(score_dimensions)` 现即 xiaobao 加权写入；HTTP 契约/ai 业务边界/契约变更纪律第 5 条三处真源一致。属契约起草笔误非边界变更，PM 权限内定案（维持 Owner 既定边界），无需 Owner 新决策
+  2. **契约订正 v1 → v1.1**：职责边界表 + processed_news 字段表 + 状态行 + O-5 枚举合并；CHANGELOG 记行（非 breaking）
+  3. **R-5 全量交付**：x_twitter/rss/jin10_flash 三类 content 字段表 + 缺失兜底 + sources.config 按 type 字段 + renderForLLM 参照指引（均自写入路径代码提取）；真实样例指路 ai 凭 SELECT 自取或 DevOps 附送
+  4. **R-1/R-2 事实引用**：迁移含角色+GRANT 已在测试/生产执行（迭代部署留痕），正式 verify 转 DevOps，PM 不代下 DevOps 结论
+  5. **R-3/R-4 转办 DevOps/Owner**：R-4 PM 产品意见倾向造数脚本（选项①），反对临时放开 INSERT（选项③违背最小权限）
+- 涉及文档：coordination `contracts/news-l1-db.md`（v1.1）/ `CHANGELOG.md` / `communications/REQ-003-db-boundary-async.md`（回应 + 待跟进表）/ `REQUESTS.md`（状态行 + 详细节）；xiaobao `INDEX.md`（转办待办）/ 本日志
+- 下一步：ai 侧解除 P0 阻塞继续 v0.2 PRD Review；xiaobao DevOps 会话接 R-1~R-4 转办项回帖 coordination
+
 ## 2026-07-25 — v0.6.1 实现 R3 PM Review（前端展示层）：有条件通过
 
 - 本次角色：产品架构师(PM)
