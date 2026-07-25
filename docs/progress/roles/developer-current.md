@@ -6,6 +6,24 @@
 
 ---
 
+## 2026-07-25 — v0.6.1 实现 R3：前端展示分层（迭代关闭检查遗留）
+
+- 本次角色：全栈开发（Developer）；模式：标准迭代 v0.6.1 实现阶段 R3
+- 背景：PM 2026-07-25 迭代关闭检查发现 PRD R2 §5.10 前端展示分层未实现（实现 R1/R2 三方 Review 全部集中在后端，漏审前端），登记 5 项前端待办叫停关闭
+- 已实现（commit `0c733c5`，base `12e2d46`）：
+  - `api.ts`：`NewsOut`/`NewsDetailOut` 契约类型 + `getGlobalLevelStatusCounts()`
+  - `NewsPage.tsx` 卡片：待解析/解析中角标、失败态底部小字（hover 原因）、基础展示态隐藏评分与标签
+  - `NewsPage.tsx` 抽屉：状态条 + 四维评分条形图 + AI 分析 + 背景补全 + 解析中提示 + 失败原因摘要；直显类无状态条；详情合并对旧版后端缺字段做防覆盖
+  - `MonitoringPage.tsx`：「AI 处理概览」Tab 六卡片网格 + 失败重试态
+  - `AppSidebar.tsx`：底部统计补 AI 待处理/处理中（失败静默降级）
+  - 后端 `news.ts`：详情补 `process_type`、列表/详情补 `l1_error`（PRD §5.4/§5.5 失败原因与分层判断依赖）
+- 自测证据：server tsc 0 错误；frontend build 通过；本地 dev 以 `VITE_API_PROXY_TARGET=https://test.huiyiyou.cloud` 连测试环境，用临时状态模拟（已移除）逐一截图核对 6 种展示态 + 监控 AI Tab（真实数据 completed=154）+ 侧栏指标；移除模拟后真实数据回归正常
+- 已知偏差 3 条（今日/累计口径、language 原文标签依赖后端、待解析角标从严按 AC-04）已登记迭代记录，提请 PM 验收裁定
+- 另：按 last-out 惯例代提 PM 迭代关闭检查 + Architect 实现 R2 复审遗留文档（commit `5905f19`）
+- 下一步：PM 对照 PRD R2 §5.10 验收 → DevOps 部署测试/生产 → PM 重跑迭代关闭检查
+
+---
+
 ## 2026-07-01 — AI news-l1 跨项目联调入口 + KB search 契约对齐
 
 - 本次角色：全栈开发（Developer）；模式：非迭代跨项目联调任务（coordination `REQ-001`）

@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6.1
 - 当前模式：标准迭代
-- 当前阶段：实现阶段未完成 — 后端契约解耦/异步链路已上线，**前端展示层（PRD R2 §5.10）未实现**（2026-07-25 迭代关闭检查发现，实现阶段三方 Review 漏审前端）
-- 阻塞项：前端展示分层未实现（状态徽章 / 四维评分 / AI 分析 / 直显·AI 分层），详见 [v0.6.1.md「实现阶段遗留」节](iterations/v0.6.1.md)
-- 下一步入口：Developer（前端会话）实现前端展示层 → PM 对照 PRD R2 §5.10 验收 → 重新执行迭代关闭检查
+- 当前阶段：实现 R3（前端展示层）已完成（2026-07-25 Developer，commit `0c733c5`）— 迭代关闭检查登记的 5 项前端待办全部实现并完成可视化自测，详见 [v0.6.1.md「实现阶段遗留」节](iterations/v0.6.1.md)进展记录
+- 阻塞项：无。待办：PM 对照 PRD R2 §5.10 验收前端展示层（含 3 条已知偏差裁定）；验收通过后交 DevOps 部署测试/生产
+- 下一步入口：PM 验收前端展示层 → DevOps 部署 → PM 重新执行迭代关闭检查
 
 ## 版本列表
 
@@ -20,7 +20,7 @@
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
 | v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | [iterations/v0.6-summary.md](iterations/v0.6-summary.md) | ✅ 已完成（有条件关闭 2026-07-04）|
-| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | [iterations/v0.6.1-design.md](iterations/v0.6.1-design.md) | — | 实现中（后端已上线，前端展示层待补） |
+| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | [iterations/v0.6.1-design.md](iterations/v0.6.1-design.md) | — | 实现 R3 完成（后端已上线，前端展示层已补，待 PM 验收） |
 
 ## 当前 Change Notes
 
