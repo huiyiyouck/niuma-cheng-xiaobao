@@ -18,9 +18,10 @@
   - `AppSidebar.tsx`：底部统计补 AI 待处理/处理中（失败静默降级）
   - 后端 `news.ts`：详情补 `process_type`、列表/详情补 `l1_error`（PRD §5.4/§5.5 失败原因与分层判断依赖）
 - 自测证据：server tsc 0 错误；frontend build 通过；本地 dev 以 `VITE_API_PROXY_TARGET=https://test.huiyiyou.cloud` 连测试环境，用临时状态模拟（已移除）逐一截图核对 6 种展示态 + 监控 AI Tab（真实数据 completed=154）+ 侧栏指标；移除模拟后真实数据回归正常
-- 已知偏差 3 条（今日/累计口径、language 原文标签依赖后端、待解析角标从严按 AC-04）已登记迭代记录，提请 PM 验收裁定
+- 已知偏差 3 条（今日/累计口径、language 原文标签依赖后端、待解析角标从严按 AC-04）已登记迭代记录，提请 Review 时裁定
 - 另：按 last-out 惯例代提 PM 迭代关闭检查 + Architect 实现 R2 复审遗留文档（commit `5905f19`）
-- 下一步：PM 对照 PRD R2 §5.10 验收 → DevOps 部署测试/生产 → PM 重跑迭代关闭检查
+- Owner 订正流程：R3 不走 PM 单方验收，与 R1/R2 一致走三方 Review（已记 corrections，Review 方登记已订正）
+- 下一步：PM / Architect / DevOps 三方 Review 实现 R3 → DevOps 部署测试/生产 → PM 重跑迭代关闭检查（收尾）
 
 ---
 
