@@ -137,6 +137,7 @@ export async function zeroNewMonitorTick(conn: PoolClient): Promise<void> {
     );
     if (exists) continue;
 
+    // zero_new 用 info 级：并非每个源每天都必然有新内容，仅作提示不作告警（Owner 2026-07-26）
     await createAlert(
       conn,
       sourceId,
@@ -144,6 +145,8 @@ export async function zeroNewMonitorTick(conn: PoolClient): Promise<void> {
       "zero_new",
       `信息源 ${r.source_name} 在 ${config.defaultZeroNewHours}h 内无新内容`,
       { source_id: sourceId, last_success_at: r.last_success_at?.toISOString?.() ?? null },
+      "source",
+      "info",
     );
   }
 }
