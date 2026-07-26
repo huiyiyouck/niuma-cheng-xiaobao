@@ -6,6 +6,23 @@
 
 ---
 
+## 2026-07-26 — v0.6.1 实现 R4：三方 R3 Review 同批修复
+
+- 本次角色：全栈开发（Developer）；模式：标准迭代 v0.6.1 实现阶段 R4（修复轮）
+- 背景：R3 三方 Review 收齐（DevOps ✅ / Architect ⚠️1高4中4低 / PM ⚠️1低+裁定4项），PM 给出同批修复清单 6 项
+- 已修复（commit `5ab883f`，base `0c733c5`）：
+  - #A-R3-1（高）：`l1_error` 原文仅对带有效 x-admin-token 的请求返回；公开接口经 `publicL1Error()` 归一化为分类文案。**TDD 红灯抓到真 bug**：`ETIMEDOUT` 小写不含 `timeout` 子串，分类漏判，补 `etimedout` 关键字后 6/6 绿
+  - #A-R3-2：`retryable_failed` 归入「解析中」（PM 方案①），`failed_retry` 状态删除
+  - #A-R3-3：`level-status.ts` 新增 `ai_completed`/`ai_retryable_failed`/`ai_final_failed`（AI 口径），原全量字段保留兼容；监控 Tab 改用 ai_* 并做 `??` 兜底兼容旧后端
+  - #A-R3-5：详情接口补 `raw_items.content` 原文提取（`rawContentText()` 覆盖 x/rss/jin10 字段优先级）+ `source_item_url`；抽屉正文与 summary 相同时去重
+  - #A-R3-6/7：删 `pending` 幽灵分支；`displayState` 白名单兜底（未知状态→待解析；`l1Status`+`processType` 均为 null 的旧数据保持富展示）
+  - #A-R3-8：注释按 PM 裁定修正（直显类保留来源标识标签）
+- **#PM-R3-1 经核实不成立**：api.ts 类型注释本为 AD-05 四维，不存在指控的 `importance/relevance/credibility` key；按意见意图改为显式 `ScoreDimensions` 接口（Review 意见先核实再实现，不盲改）
+- 自测证据：server tsc 0 错误；新增单测 `news-public-error.test.ts` 6/6（本地可跑，纯函数不依赖 DB）；frontend build 通过；本地 dev 模拟自测 retryable→解析中、final_failed 失败态、未知状态兜底；真实数据回归 23 卡片正常
+- 下一步：PM + Architect 复核 R4 → DevOps 部署（前后端一起）→ PM 重跑迭代关闭检查
+
+---
+
 ## 2026-07-25 — v0.6.1 实现 R3：前端展示分层（迭代关闭检查遗留）
 
 - 本次角色：全栈开发（Developer）；模式：标准迭代 v0.6.1 实现阶段 R3

@@ -6,9 +6,9 @@
 
 - 当前迭代：v0.6.1
 - 当前模式：标准迭代
-- 当前阶段：实现 R3 三方 Review 完成 — DevOps ✅通过 / Architect ⚠️有条件通过（9条：1高/4中/4低）/ PM ⚠️有条件通过（2026-07-25，1低 + 裁定 Architect 提请 4 项），R3 不定稿 → 进入 Developer R4 修复轮，详见 [v0.6.1.md Review 记录](iterations/v0.6.1.md)
-- 阻塞项：无。待办：Developer R4 同批修复 6 项 — ① #A-R3-1 `l1_error` 公开接口外泄（高，**部署前必修**）② #A-R3-2 retryable_failed 归入「解析中」（PM 已裁定方案①）③ #A-R3-3 监控 AI Tab 三卡加 AI 口径过滤 ④ #A-R3-5 详情补正文/源链接 ⑤ #PM-R3-1 api.ts 四维类型 key 对齐 AD-05 ⑥ #A-R3-6/7 顺手修。#A-R3-4 重试按钮已裁定延期；#A-R3-8 直显来源标签保留（PM 已收口）。**跨项目转办（REQ-003，DevOps 会话接）**：① R-1/R-2 正式确认 ai_worker GRANT 与迁移在测试库就绪（PM 已引用部署留痕，需逐列 verify 回帖 coordination）② R-3 共享库凭据注入渠道（口令不入仓）③ R-4 测试库造数方案（PM 倾向造数脚本）④ 随 R-1/R-2 附 content jsonb 脱敏样例每类 1-2 条
-- 下一步入口：Developer R4 修复 → PM/Architect 复核 → DevOps 部署 → PM 重新执行迭代关闭检查（收尾）
+- 当前阶段：实现 R4 修复完成（2026-07-26 Developer，commit `5ab883f`）— 三方 R3 同批修复清单 6 项全部处理：① #A-R3-1 `l1_error` 公开接口归一化（含新增单测 6/6）② #A-R3-2 retryable_failed 归入「解析中」③ #A-R3-3 监控 AI Tab 改用后端新增 ai_* 口径字段 ④ #A-R3-5 详情补正文/源链接并落地抽屉渲染 ⑤ #PM-R3-1 核实不成立（类型注释本正确），改为显式 `ScoreDimensions` 类型 ⑥ #A-R3-6/7 幽灵分支删除 + 白名单兜底。详见 [v0.6.1.md 实现阶段 R4 行](iterations/v0.6.1.md)
+- 阻塞项：无。待办：PM + Architect 复核 R4（DevOps 零部署阻塞维持）。**跨项目转办（REQ-003，DevOps 会话接）**：① R-1/R-2 正式确认 ai_worker GRANT 与迁移在测试库就绪（PM 已引用部署留痕，需逐列 verify 回帖 coordination）② R-3 共享库凭据注入渠道（口令不入仓）③ R-4 测试库造数方案（PM 倾向造数脚本）④ 随 R-1/R-2 附 content jsonb 脱敏样例每类 1-2 条
+- 下一步入口：PM/Architect 复核 R4 → DevOps 部署 → PM 重新执行迭代关闭检查（收尾）
 
 ## 版本列表
 
