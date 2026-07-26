@@ -12,12 +12,14 @@ Owner 反馈：监控里「信息源 X 在 24h 内无新内容」（`zero_new`�
 
 - `server/src/worker/monitor.ts` `zeroNewMonitorTick`：`createAlert` 显式传 `severity="info"`（原走默认 `warning`，前端映射为「中」黄色；`info` 前端映射「低」蓝色提示）。commit `fd69479`。
 - 存量数据：测试库执行 `UPDATE alerts SET severity='info' WHERE type='zero_new' AND severity <> 'info'`，降级 164 条。
+- 侧栏角标口径（Owner 追加）：`/v1/alerts/unread-count` 加 `severity <> 'info'` 过滤——角标只计 warning 及以上，提示级不占未读数。commit `c8f391c`。
 
 ## 验证
 
 - `server` tsc 0 错误
 - 测试环境已部署（`deploy.sh test`，`news-api-test` active / health 200）
 - 浏览器实测：监控页 zero_new 告警全部显示为「低」蓝色 info 样式
+- 角标：`/v1/alerts/unread-count` 返回 `{"count":0}`（108 条活跃告警全为 info 级），侧栏红色角标不再显示
 
 ## 遗留（交 DevOps 生产部署时执行）
 
