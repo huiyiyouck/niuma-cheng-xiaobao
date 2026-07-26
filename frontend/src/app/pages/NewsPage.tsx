@@ -34,24 +34,26 @@ type NewsItem = {
 };
 
 // v0.6.1 展示状态：direct 直显 / rich 富展示（AI 已解析）/ 其余为基础展示态
-type DisplayState = "direct" | "rich" | "pending" | "processing" | "failed_retry" | "failed_final";
+type DisplayState = "direct" | "rich" | "pending" | "processing" | "failed_final";
 
 function displayState(n: NewsItem): DisplayState {
   if (n.processType === "direct") return "direct";
   switch (n.l1Status) {
-    case "processing": return "processing";
-    case "retryable_failed": return "failed_retry";
+    case "completed": return "rich";
     case "final_failed": return "failed_final";
+    case "processing":
+    // #A-R3-2（PM 裁定方案①）：retryable_failed 仍在待重试队列，对用户呈现「解析中」
+    case "retryable_failed": return "processing";
     case "not_started":
-    case "pending":
     case "queued": return "pending";
-    default: return "rich"; // completed / 旧数据（无状态字段）按富展示兜底
+    // #A-R3-7 白名单兜底：未知/缺失状态按待解析处理，避免异常数据误显富展示；
+    // 无状态字段的旧数据（process_type 为 null 的 v0.5/v0.6 存量）保持富展示
+    default: return n.l1Status == null && n.processType == null ? "rich" : "pending";
   }
 }
 
-const isFailedState = (s: DisplayState) => s === "failed_retry" || s === "failed_final";
-// 基础展示态（待解析/解析中/失败）：不展示评分、AI 摘要、标签
-const isBasicState = (s: DisplayState) => s === "pending" || s === "processing" || isFailedState(s);
+// 基础展示态（待解析/解析中/最终失败）：不展示评分、AI 摘要、AI 语义标签
+const isBasicState = (s: DisplayState) => s === "pending" || s === "processing" || s === "failed_final";
 
 // 评分徽章配色：四档，低分用红色警示，避免灰底与卡片背景混淆
 function scoreBadgeCls(score: number): string {
@@ -424,7 +426,7 @@ export function NewsPage() {
                       <span>{news.time}</span>
                     </div>
                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{news.summary}</p>
-                    {/* 基础展示态不展示标签/实体（§5.3），数据本身也为空 */}
+                    {/* 基础展示态不展示 AI 语义标签（§5.3）；直显类保留来源标识标签（PM R3 裁定 #A-R3-8） */}
                     {!isBasicState(st) && (
                     <div className="flex flex-wrap gap-1.5">
                       {news.tags.map((tag) => (
@@ -435,14 +437,14 @@ export function NewsPage() {
                       ))}
                     </div>
                     )}
-                    {/* 失败态：卡片底部低调小字，hover 看失败原因（§5.4） */}
-                    {isFailedState(st) && (
+                    {/* 最终失败态：卡片底部低调小字，hover 看失败原因（§5.4；#A-R3-2 可重试失败不展示失败） */}
+                    {st === "failed_final" && (
                       <div
                         className="mt-1 text-xs text-muted-foreground/70 inline-flex items-center gap-1"
                         title={news.l1Error || "AI 解析失败"}
                       >
                         <AlertTriangle className="h-3 w-3" />
-                        AI 解析失败{st === "failed_retry" ? "，将自动重试" : ""}
+                        AI 解析失败
                       </div>
                     )}
                   </div>
@@ -502,10 +504,8 @@ export function NewsPage() {
                       {(selSt === "pending" || selSt === "processing") && (
                         <span className="text-blue-600 font-medium animate-pulse">⏳ AI 解析中</span>
                       )}
-                      {isFailedState(selSt) && (
-                        <span className="text-muted-foreground font-medium">
-                          ✕ AI 解析失败{selSt === "failed_retry" ? "（将自动重试）" : ""}
-                        </span>
+                      {selSt === "failed_final" && (
+                        <span className="text-muted-foreground font-medium">✕ AI 解析失败</span>
                       )}
                     </div>
                   )}
@@ -529,8 +529,8 @@ export function NewsPage() {
                       AI 深度解析中，预计 1~2 分钟完成，刷新后查看结果
                     </div>
                   )}
-                  {/* 失败原因摘要（§5.5 AI 解析失败） */}
-                  {isFailedState(selSt) && selectedNews.l1Error && (
+                  {/* 失败原因摘要（§5.5 AI 解析失败；公开接口已由后端归一化为分类文案 #A-R3-1） */}
+                  {selSt === "failed_final" && selectedNews.l1Error && (
                     <div className="text-sm text-muted-foreground bg-muted/50 border border-border rounded-md px-3 py-2.5">
                       <span className="font-medium">失败原因：</span>
                       <span className="break-all">{selectedNews.l1Error.slice(0, 300)}</span>
@@ -545,7 +545,8 @@ export function NewsPage() {
                     <p className="text-sm leading-relaxed text-foreground/80">{selectedNews.summary}</p>
                   </div>
                   )}
-                  {selectedNews.fullContent && (
+                  {/* 正文（原文，#A-R3-5）：基础展示态下占位 summary 即原文，相同则不重复渲染 */}
+                  {selectedNews.fullContent && selectedNews.fullContent !== selectedNews.summary && (
                     <div>
                       <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">正文</h3>
                       <div className="text-sm leading-relaxed text-foreground/80 space-y-3">
@@ -597,7 +598,7 @@ export function NewsPage() {
                       </ul>
                     </div>
                   )}
-                  {/* 标签与实体：基础展示态不展示（§5.5），为空时也不占位 */}
+                  {/* 标签与实体：基础展示态不展示 AI 语义标签（§5.5）；直显类保留来源标识（#A-R3-8），为空时不占位 */}
                   {!isBasicState(selSt) && (selectedNews.tags.length > 0 || selectedNews.entities.length > 0) && (
                   <div>
                     <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">

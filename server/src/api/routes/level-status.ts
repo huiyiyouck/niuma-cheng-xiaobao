@@ -43,7 +43,10 @@ export async function levelStatusRoutes(app: FastifyInstance): Promise<void> {
          COUNT(*) FILTER (WHERE l1_status = 'final_failed')::int AS final_failed,
          COUNT(*) FILTER (WHERE process_type = 'ai' AND l1_status = 'queued')::int AS pending,
          COUNT(*) FILTER (WHERE process_type = 'ai' AND l1_status = 'processing')::int AS processing,
-         COUNT(*) FILTER (WHERE process_type = 'ai')::int AS total_ai
+         COUNT(*) FILTER (WHERE process_type = 'ai')::int AS total_ai,
+         COUNT(*) FILTER (WHERE process_type = 'ai' AND l1_status = 'completed')::int AS ai_completed,
+         COUNT(*) FILTER (WHERE process_type = 'ai' AND l1_status = 'retryable_failed')::int AS ai_retryable_failed,
+         COUNT(*) FILTER (WHERE process_type = 'ai' AND l1_status = 'final_failed')::int AS ai_final_failed
        FROM raw_items`,
     );
 
@@ -55,6 +58,11 @@ export async function levelStatusRoutes(app: FastifyInstance): Promise<void> {
       pending: row?.pending ?? 0,
       processing: row?.processing ?? 0,
       total_ai: row?.total_ai ?? 0,
+      // #A-R3-3: AI 口径三项（原 completed/retryable_failed/final_failed 为全量口径含直显类，
+      // 保留兼容 SourceDetail 等既有调用；监控页 AI 概览改用本组字段）
+      ai_completed: row?.ai_completed ?? 0,
+      ai_retryable_failed: row?.ai_retryable_failed ?? 0,
+      ai_final_failed: row?.ai_final_failed ?? 0,
       window_started_at: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
     });
   });

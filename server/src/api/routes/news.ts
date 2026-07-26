@@ -1,7 +1,23 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { pool } from "../../db/pool.ts";
 import { asDict } from "../../shared/utils.ts";
+import { config } from "../../shared/config.ts";
 import { NewsQuery } from "../schemas/index.ts";
+
+// #A-R3-1: /v1/news 是公开接口，l1_error 原文（LLM/HTTP/DB 原始异常）只对管理员返回；
+// 公开请求归一化为错误分类文案（PRD §5.5 要求的是「失败原因摘要」）
+function isAdminReq(req: FastifyRequest): boolean {
+  return !!config.adminToken && (req.headers["x-admin-token"] as string) === config.adminToken;
+}
+
+export function publicL1Error(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw) return null;
+  const m = raw.toLowerCase();
+  if (m.includes("timeout") || m.includes("timed out") || m.includes("etimedout") || m.includes("abort")) return "AI 解析超时";
+  if (m.includes("json") || m.includes("parse") || m.includes("schema")) return "AI 输出格式异常";
+  if (m.includes("fetch") || m.includes("econn") || m.includes("socket") || m.includes("network") || m.includes("http")) return "AI 服务暂时不可用";
+  return "AI 解析失败";
+}
 
 export async function newsRoutes(app: FastifyInstance): Promise<void> {
   // ── 新闻列表（通过 news_positions JOIN + DISTINCT 去重）─
@@ -76,7 +92,8 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
       params,
     );
 
-    return reply.send(rows.map(newsToOut));
+    const admin = isAdminReq(req);
+    return reply.send(rows.map((r) => newsToOut(r, admin)));
   });
 
   // ── 新闻详情（v0.6 扩展：完整 NewsDetail 结构）─────────
@@ -85,7 +102,8 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
     const { news_id } = req.params as { news_id: string };
     const { rows: [row] } = await pool.query(
       `SELECT pn.*, s.display_name AS source_name, s.id AS source_id,
-              ri.l0_status, ri.l1_status, ri.process_type, ri.l1_error
+              ri.l0_status, ri.l1_status, ri.process_type, ri.l1_error,
+              ri.content AS raw_content, ri.source_item_url
        FROM processed_news pn
        JOIN raw_items ri ON ri.id = pn.raw_item_id
        JOIN sources s ON s.id = ri.source_id
@@ -93,13 +111,22 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
       [news_id],
     );
     if (!row) return reply.status(404).send({ detail: "news not found" });
-    return reply.send(newsDetailToOut(row));
+    return reply.send(newsDetailToOut(row, isAdminReq(req)));
   });
+}
+
+// #A-R3-5: 从 raw_items.content(jsonb) 提取原文文本（§5.5 抽屉「正文（原文）」）
+// 字段优先级覆盖 x_twitter(text) / rss(content/summary) / jin10_flash(summary/introduction)
+function rawContentText(content: unknown): string | null {
+  if (!content || typeof content !== "object") return null;
+  const c = content as Record<string, unknown>;
+  const t = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  return t(c.text) || t(c.content) || t(c.summary) || t(c.introduction) || null;
 }
 
 // ── 列表项输出（v0.6.1 扩展：process_type、l1_status）────
 
-function newsToOut(r: any) {
+function newsToOut(r: any, admin = false) {
   return {
     id: r.id,
     title: r.title,
@@ -119,7 +146,7 @@ function newsToOut(r: any) {
     // v0.6.1：处理类型和 L1 状态（前端展示分层用）
     process_type: r.process_type || null,
     l1_status: r.l1_status || null,
-    l1_error: r.l1_error || null,
+    l1_error: admin ? (r.l1_error || null) : publicL1Error(r.l1_error),
     // v0.5 兼容字段
     language: r.language,
     source_refs: asDict(r.source_refs),
@@ -133,7 +160,7 @@ function newsToOut(r: any) {
 
 // ── 详情输出（完整 NewsDetail，§3.2 契约）────────────────────
 
-function newsDetailToOut(r: any) {
+function newsDetailToOut(r: any, admin = false) {
   return {
     id: r.id,
     title: r.title,
@@ -154,7 +181,10 @@ function newsDetailToOut(r: any) {
     l0_status: r.l0_status || null,
     l1_status: r.l1_status || null,
     process_type: r.process_type || null,
-    l1_error: r.l1_error || null,
+    l1_error: admin ? (r.l1_error || null) : publicL1Error(r.l1_error),
+    // #A-R3-5: 原文与源链接（§5.5 抽屉「正文（原文）」+「查看原文」）
+    content: rawContentText(r.raw_content),
+    original_url: r.source_item_url || null,
     // v0.5 兼容
     language: r.language,
     source_refs: asDict(r.source_refs),

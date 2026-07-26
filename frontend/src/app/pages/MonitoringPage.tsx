@@ -670,9 +670,9 @@ export function MonitoringPage() {
                   {[
                     { label: "待处理", value: aiCounts.pending, cls: "text-amber-600" },
                     { label: "处理中", value: aiCounts.processing, cls: "text-blue-600" },
-                    { label: "已完成（累计）", value: aiCounts.completed, cls: "text-green-600" },
-                    { label: "可重试失败（累计）", value: aiCounts.retryable_failed, cls: "text-amber-600" },
-                    { label: "最终失败（累计）", value: aiCounts.final_failed, cls: "text-red-600" },
+                    { label: "已完成（累计）", value: aiCounts.ai_completed ?? aiCounts.completed, cls: "text-green-600" },
+                    { label: "可重试失败（累计）", value: aiCounts.ai_retryable_failed ?? aiCounts.retryable_failed, cls: "text-amber-600" },
+                    { label: "最终失败（累计）", value: aiCounts.ai_final_failed ?? aiCounts.final_failed, cls: "text-red-600" },
                     { label: "AI 类新闻总数", value: aiCounts.total_ai, cls: "text-foreground" },
                   ].map((c) => (
                     <div key={c.label} className="bg-card border border-border rounded-lg shadow-sm p-4">
@@ -682,7 +682,7 @@ export function MonitoringPage() {
                   ))}
                 </div>
                 <p className="mt-4 text-xs text-muted-foreground">
-                  「待处理 / 处理中」为当前队列实时状态，其余为全量累计口径。
+                  「待处理 / 处理中」为当前队列实时状态；已完成 / 失败三项为 AI 类累计口径（不含直显类）。
                 </p>
               </>
             )}

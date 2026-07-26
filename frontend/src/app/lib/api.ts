@@ -184,12 +184,22 @@ export interface NewsOut {
   [key: string]: unknown; // v0.5 兼容扁平字段
 }
 
+// AD-05 四维评分 key（与后端/ai 侧契约一致）
+export interface ScoreDimensions {
+  timeliness?: number;
+  impact?: number;
+  confidence?: number;
+  clarity?: number;
+}
+
 export interface NewsDetailOut extends NewsOut {
-  score_dimensions: Record<string, number> | null; // timeliness/impact/confidence/clarity
+  score_dimensions: ScoreDimensions | null;
   analysis: string | null;
   context: unknown[];
   translation: unknown;
   l0_status: string | null;
+  content: string | null; // 原文（raw_items.content 提取，§5.5 抽屉正文）
+  original_url: string | null;
 }
 
 export function listNews(spaceId: UUID, opts?: { page?: number; page_size?: number; channel_id?: string; source_id?: string; sort?: string; search?: string }) {
@@ -207,13 +217,16 @@ export const getNews = (id: UUID) => requestJson<NewsDetailOut>(`/v1/news/${id}`
 
 // ── AI 处理统计（v0.6.1 §5.7 监控页 AI 概览）──────────────
 export interface GlobalLevelStatusCounts {
-  completed: number;
+  completed: number;          // 全量口径（含直显类）
   skipped: number;
-  retryable_failed: number;
-  final_failed: number;
+  retryable_failed: number;   // 全量口径
+  final_failed: number;       // 全量口径
   pending: number;
   processing: number;
   total_ai: number;
+  ai_completed: number;       // #A-R3-3: AI 口径（process_type='ai'）
+  ai_retryable_failed: number;
+  ai_final_failed: number;
   window_started_at: string;
 }
 export const getGlobalLevelStatusCounts = () =>
