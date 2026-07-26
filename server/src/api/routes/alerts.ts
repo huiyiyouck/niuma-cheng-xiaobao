@@ -153,8 +153,9 @@ export async function alertsRoutes(app: FastifyInstance): Promise<void> {
   // ── 未处理数量（顶栏角标）─────────────────────────────
 
   app.get("/alerts/unread-count", async (_req: FastifyRequest, reply: FastifyReply) => {
+    // 角标只计 warning 及以上：info 级（如 zero_new）是提示不是告警，不占未读数（Owner 2026-07-26）
     const { rows: [row] } = await pool.query(
-      "SELECT COUNT(*)::int AS count FROM alerts WHERE status = 'active'",
+      "SELECT COUNT(*)::int AS count FROM alerts WHERE status = 'active' AND severity <> 'info'",
     );
     return reply.send({ count: row?.count ?? 0 });
   });
