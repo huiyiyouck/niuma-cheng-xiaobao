@@ -1,3 +1,17 @@
+## 2026-07-27 — REQ-003 契约缺项分派回应：PM 4 项答毕（C-10 定案不引入 sentiment，契约 v1.2）
+
+- 本次角色：产品架构师(PM)
+- 触发：Owner 通知 ai 侧在沟通文档留言待澄清；ai 侧 2026-07-26 转达契约缺项 C-1~C-10（4 条阻塞其 PRD 定稿）并按角色分派，PM 名下 4 项（含 1 阻塞）
+- 跨仓红线检查：coordination `git pull --rebase` Already up to date，工作区干净
+- PM 4 项回应：
+  1. **C-10 产品半（阻塞）→ 定案不引入 `sentiment`**：代码核查前后端 sentiment 零消费；HTTP 契约 v1 L133 真源即 `processing`。定性为 PM 起草 DB 契约笔误（与 O-1 同类，认账）。tags_v2 回归 `{domain,entity,event,content_type,processing}`，契约订正 v1.1→v1.2 + CHANGELOG 记行。sentiment 登记后续迭代候选（届时先改 HTTP 契约）。**C-10 整条闭合**（Architect 半随之消解），ai 阻塞余 C-2/C-3/C-5 三条
+  2. **C-7 → `language` 固定 `'zh'`**（news-l1 输出契约即中文输出，产出语种非原文语种）；id 生成留 Architect 随 C-3 答
+  3. **Q-2 → 知悉并接受** context 恒空（前端条件渲染零副作用；承诺写入迭代关闭已知限制，不当质量问题回流）
+  4. **Q-6 → 近期不接入** rss/jin10_flash 到 AI 链路；同意 ai 验收分层；将来接入时提报新联调
+- Architect 转办：C-2/C-3/C-5（阻塞）+ C-4/C-1/Q-1/Q-3/Q-4/Q-5/C-8/C-9 已登记 xiaobao INDEX 待办
+- 涉及文档：coordination `contracts/news-l1-db.md`（v1.2）/ `CHANGELOG.md` / `communications/REQ-003-db-boundary-async.md`（回帖 + 待跟进表 6b/6e）；xiaobao `INDEX.md` / 本日志
+- 下一步：Owner 开 Architect 会话清 C-2/C-3/C-5（ai 侧提示其中两条只需查代码照实补文档）；DevOps 生产部署照旧
+
 ## 2026-07-26 — v0.6.1 实现 R4 PM 复核：通过（含 #PM-R3-1 误报公开撤回）
 
 - 本次角色：产品架构师(PM)
