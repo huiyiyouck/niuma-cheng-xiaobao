@@ -4,6 +4,36 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-07-26 — v0.6.1 实现 R4（R3 同批修复）Architect 复核
+
+**本次角色**：架构师
+- 动作：复核（对 Developer R4 修复 commit `5ab883f` 做条件闭环复核）
+- 涉及文档：`v0.6.1.md`（追加 Architect R4 复核 + 门禁 R4 行登记）/ `INDEX.md` / 本文
+
+### 结论
+✅ **通过** — R3 六项修复全部关闭；新增 2 中 3 低，均不阻塞定稿，其中 2 项转为部署前核实。
+
+### 关闭验证要点
+- **#A-R3-1（高）关闭**：`publicL1Error()` 四分支**全部返回常量**，无任何位置把 raw 拼进返回值（逐分支核对）；`isAdminReq()` 在 token 未配置时返回 false → 降级为全部归一化，失败方向指向安全侧；单测含对 IP/主机名/路径的 `not.toContain` 断言，红灯（ETIMEDOUT 不含 timeout 子串）是真实分类漏洞，属有效 TDD。
+- **#A-R3-5 去重逻辑核对**：x_twitter 占位 summary 取 `content.text` 全文不截断，与 `rawContentText` 同源同值 → 不会出现两段重复正文；富展示态「AI 摘要 + 原文正文」并存符合 PRD §5.5。
+- **#A-R3-3 向后兼容正确**：新增 `ai_*` 三字段而保留原全量字段，SourceDetail 既有调用不受影响。
+- **#PM-R3-1 独立核实 Developer 判断正确**：`git show 0c733c5:api.ts` L188 注释本就是 AD-05 四维，PM 指控不成立；改为显式 `ScoreDimensions` 是合理的意图承接。
+
+### 新增 5 条（均为 R4 修复引入或首次激活，非 R3 遗留）
+- **#A-R4-1（中）** 响应随请求头变化却无 `Cache-Control: private`/`Vary`；仓库内无 nginx 配置，若链路有 proxy_cache，admin 原文响应被缓存后投给公开用户会让 #A-R3-1 整体失效 → 建议直接加一行响应头（比核实还便宜）。
+- **#A-R4-2（中）** `isAdminReq()` 只验 token，不看 IP 白名单与 `ADMIN_REQUIRE_BOTH`（默认 false，等价；若生产为 true 则是绕过双因子的旁路）；且鉴权语义两处独立实现会漂移 → 抽公共函数 + 请 DevOps 核实生产取值。
+- **#A-R4-3（低）** 外链 href 取自抓取数据未做 `^https?://` 协议白名单，R3 时该字段恒 undefined，本轮首次激活该渲染路径。
+- **#A-R4-4（低）** 白名单兜底可能让存量非 completed 数据显示**永不消失的「待解析」角标** → 给了部署前 verify SQL。
+- **#A-R4-5（低）** `ai_* ?? 全量` 兜底 + 「不含直显类」固定文案，在前后端版本不同步时产生错误标注。
+
+### 流程口径提示
+按 `standard-iteration-quick.md` §9-10「不进 R4」的字面口径本轮已越线；实质上 R3 的修复清单是三方已达成一致的确定项而非未收敛争议，故按条件闭环修复轮处理。已在 Review 说明中提请 Owner 知悉：R4 后如再需改动走 Change Note，不开 R5。
+
+### 下一步
+PM 复核 R4 → DevOps 部署（带 3 项核实：nginx proxy_cache / ADMIN_REQUIRE_BOTH / #A-R4-4 verify SQL）→ PM 重跑迭代关闭检查。
+
+---
+
 ## 2026-07-25 — v0.6.1 实现 R3（前端展示层）Architect Review
 
 **本次角色**：架构师
