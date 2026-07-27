@@ -8,8 +8,20 @@
 - 当前模式：标准迭代
 - 当前阶段：实现 R4 复核通过（PM ✅ / Architect ✅，2026-07-26）— 实现阶段收口。同批修复 6 项全关闭（#PM-R3-1 经 git 历史定案为 PM 误报，已撤回并记入 pm-corrections）。详见 [v0.6.1.md PM R4 复核章节](iterations/v0.6.1.md)
 - R4 复核进展：**Architect ✅通过（2026-07-26）** — R3 六项修复全部关闭（含高严重度 #A-R3-1，61/61 单测通过）；新增 2中3低不阻塞定稿。**给 DevOps 的部署前核实 3 项**：① nginx 是否启用 `proxy_cache`（#A-R4-1，响应随 admin 头变化却无 `Cache-Control: private`，有缓存则 #A-R3-1 修复会失效）② 生产 `.env` 的 `ADMIN_REQUIRE_BOTH` 取值（#A-R4-2，若 `true` 则 `isAdminReq` 只验 token 构成绕过 IP 白名单的旁路，升级为必修）③ 跑 #A-R4-4 verify SQL 确认无「永久待解析」存量数据。详见 [v0.6.1.md Architect R4 复核](iterations/v0.6.1.md)
-- 阻塞项：无。**DevOps 生产部署已完成（2026-07-27）**：`deploy.sh both` 至 `2c20da6`，Architect R4 三项核实全过（#A-R4-1 无 proxy_cache / #A-R4-2 `ADMIN_REQUIRE_BOTH=false` / #A-R4-4 verify 0 行），公网首页/bundle/API 字段验证通过（详见 v0.6.1.md 部署就绪检查）。**跨项目转办（REQ-003）**：DevOps 侧 R-1~R-5 已全部就绪交付（2026-07-25 DevOps 回帖），余凭据经安全渠道交付 ai（Owner）+ 两项届时前置（生产 GRANT / 造数补跑）。**新转办（Architect 会话接，2026-07-27）**：ai 侧契约缺项 **C-2（tasks.status 枚举表）/ C-3（processed_news INSERT vs UPDATE + 幂等键 + score_total 补算时机 + id 生成）/ C-5（AI 类入库必建 task 是非题）三条阻塞 ai PRD 定稿**，另 C-4/C-1/Q-1/Q-3/Q-4/Q-5/C-8/C-9 八项中低优先级同答（详见 coordination 沟通文档 2026-07-26 分派索引；PM 名下 4 项已于 2026-07-27 答毕，C-10 整条闭合，契约已订正 v1.2）
-- 下一步入口：PM 重新执行迭代关闭检查（收尾；遗留记 ai 侧 worker 未上线致富展示端到端未验）
+- 阻塞项：无。**DevOps 生产部署已完成（2026-07-27）**：`deploy.sh both` 至 `2c20da6`，Architect R4 三项核实全过（#A-R4-1 无 proxy_cache / #A-R4-2 `ADMIN_REQUIRE_BOTH=false` / #A-R4-4 verify 0 行），公网首页/bundle/API 字段验证通过（详见 v0.6.1.md 部署就绪检查）。**跨项目转办（REQ-003）**：DevOps 侧 R-1~R-5 已全部就绪交付（2026-07-25 DevOps 回帖），余凭据经安全渠道交付 ai（Owner）+ 两项届时前置（生产 GRANT / 造数补跑）。**REQ-003 Architect 名下已全部答毕（2026-07-27，coordination `6678d19`）**：C-2/C-3/C-5 三条阻塞闭合（C-3 推翻 ai「ai INSERT」推断 → 维持 xiaobao 占位 INSERT + ai UPDATE，理由 AC-01/AC-06）+ C-4/C-1/C-8/C-9/Q-1/Q-3/Q-4/Q-5 八项同答，契约订正至 **v1.3**。加上 PM 本日闭合的 C-10，**ai 侧 4 条阻塞项全部解除**。
+- **答复 REQ-003 期间查出的 xiaobao 侧待办（2026-07-27 Architect，已对 ai 侧承诺，须落地）**：
+
+| # | 事项 | 归属 | 优先级 |
+|---|------|------|--------|
+| 1 | **GRANT 追加 3 列**：`tasks` UPDATE + `run_after`（缺此列 ai 退避完全失效）、`raw_items` SELECT + `source_item_url`（rss/x 原文链接）+ `l0_label`（L0 分类结果，消除 ai 侧 `domain_tags` 恒空）。测试库先行，上生产前同步；执行后契约升 v1.4 | DevOps | **高（唯一卡 ai 侧）** |
+| 2 | **`x-stream-manager` 入库路径未适配 v0.6.1**：`x-stream-manager.ts:95` INSERT 不带 `process_type`（用列默认 `'ai'`，未调 `determineProcessType`），`:110` 硬建 `process` task（非 `taskTypeForNewRawItem`）→ 条目绕开 L0 + ai_worker 链路走 v0.6 旧 `processLLM`，且 `l1_status` 停在 `not_started` → **前端显示「待解析」但实际已处理完**。当前生产未显现（DevOps R4 verify 0 行佐证 x-stream 近期无新条目），**X Stream 一恢复入库即显现** | Developer | **高（潜伏）** |
+| 3 | `l0-classifier` 置 `queued` + 建 task 包进显式事务（当前无 BEGIN/COMMIT，毫秒级黑洞窗口，已向 ai 承诺修） | Developer | 中 |
+| 4 | 占位行 `published_at` 写 `raw_items.published_at`（当前写死 NULL 致列表沉底）+ `language` 统一为 `'zh'`（当前写原文语种，与 PM 定的列语义冲突） | Developer | 中 |
+| 5 | `score_total` database 路径补算触发点（`calcScoreTotal` 只挂在 `l1-processor.ts:171` HTTP 路径，ai 写回后该列恒 NULL） | PM 决策 → Developer | 中 |
+| 6 | `max_attempts` 双真源订正（`BACKOFF_CONFIG` 硬编码 3 vs `tasks.max_attempts` 取 `AI_MAX_RETRIES`） | Developer | 低 |
+| 7 | 手动重试接口支持 `l1_ai_process`（`l1-tasks.ts:24` 硬判定只允许 `l1_process`，与设计 §3.3 不符；同 R3 #A-R3-4） | Developer | 低 |
+
+- 下一步入口：PM 重新执行迭代关闭检查（收尾；遗留记 ai 侧 worker 未上线致富展示端到端未验 + 上表 7 项）
 
 ## 版本列表
 

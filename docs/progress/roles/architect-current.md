@@ -4,6 +4,34 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-07-27 — REQ-003 跨项目：答复 ai 侧契约缺项（Architect 名下 11 项）+ 契约订正 v1.3
+
+**本次角色**：架构师（跨项目协作，非迭代）
+- 动作：答复 coordination `communications/REQ-003` 中分派给 Architect 的 3 条阻塞 + 8 项中低优先级；订正 `contracts/news-l1-db.md` 至 v1.3
+- 落档：coordination `6678d19`（沟通文档 + 契约 + CHANGELOG）；xiaobao INDEX 登记 7 项待办
+- 仓位置依据：`project-context.md` 的 `coordination_root=../niuma-cheng-coordination`，答复前确认与 origin/main 同步
+
+### 三条阻塞的结论
+- **C-2** `tasks.status` 穷举实现后确认只有 4 值（queued/running/succeeded/failed），给出与 `l1_status` 的四时点对应表。
+- **C-3 推翻 ai 侧推断**：ai 推「ai INSERT」（依据触发器 INSERT 后触发的语义，推理本身正确），但与 AC-01/AC-06「L0 通过后立即可见」的产品硬约束冲突——占位行是该约束的落地手段（实现 R2 #A1 修复的产物）。结论维持「xiaobao 占位 INSERT + ai UPDATE」，并澄清 ai 担心的「排序位先按空值排一次」不成立（`news_positions` 不存排序键，排序按 `published_at` 查询时实时算）。
+- **C-5 诚实答「几乎必然但非原子」**：dispatcher 全程无 BEGIN/COMMIT（grep 确认），置 queued 与建 task 之间有毫秒级窗口，未给干净的「是」，承诺加事务。
+
+### 纠正 ai 侧 3 条前提，其中 2 条根因在我方
+- **C-9**：我方契约写了**不存在的 `tasks.metadata` 列**，导致 ai 推出「关联只能走 jsonb 表达式、可能全表扫」。实际 `raw_item_id` 是一级 uuid + FK，走主键。
+- **C-4**：ai 判断「退避完全失效」正确，但根因不是 claim SQL 缺条件，而是**我方 GRANT 漏了 `run_after` 列**——ai 无法写退避时间，置 queued 后立即被重领。
+- **Q-4**：rss「无原文链接」不成立——链接在 `raw_items.source_item_url` 列（`rss.ts:40` `url: entry.link`），只是没 GRANT。ai 可撤回「从 tweet_id 构造 URL」的适配层要求。
+
+### 自我纠错（重要）
+初次核查时用 `grep | head` 被截断，误判「`score_total` 补算逻辑在代码中根本不存在」并已写入帖子。落契约前复核发现 `calcScoreTotal` **存在**（`l1-processor.ts:13`），随即更正帖子为准确表述：**函数存在，但唯一调用点在 `l1-processor.ts:171`（HTTP/内建 L1 路径），database 模式无触发点**。教训：向外部项目上报「我方缺陷」前必须二次核实，`| head` 截断是这次的直接原因。已记入 [architect-corrections.md](architect-corrections.md)。
+
+### 顺带查出的 xiaobao 侧潜伏缺陷
+`x-stream-manager.ts:95/110` 入库路径未适配 v0.6.1：不带 `process_type`（用列默认 `'ai'`）、硬建 `process` task → 绕开 L0 与 ai_worker 链路走旧 `processLLM`，且 `l1_status` 停在 `not_started` → 前端显示「待解析」而实际已处理完。当前生产未显现（DevOps R4 verify 0 行），X Stream 一恢复入库即显现。已登记 INDEX 待办第 2 项。
+
+### 契约 v1.3（第一批：纯事实订正）
+删 `metadata` + 补 4 列 / status 枚举与时点对应 / claim SQL 补 `run_after` 退避条件 / `processed_news` 写入方式与 `id`、`published_at` / `score_total` 缺口标注 / `l1_status` 枚举时点订正。第二批（GRANT 三列、`needs_context` 补列、`score_total` 时机）待 DevOps 执行与 PM 拍板后升 v1.4。
+
+---
+
 ## 2026-07-26 — v0.6.1 实现 R4（R3 同批修复）Architect 复核
 
 **本次角色**：架构师
