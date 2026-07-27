@@ -670,9 +670,10 @@ export function MonitoringPage() {
                   {[
                     { label: "待处理", value: aiCounts.pending, cls: "text-amber-600" },
                     { label: "处理中", value: aiCounts.processing, cls: "text-blue-600" },
-                    { label: "已完成（累计）", value: aiCounts.ai_completed ?? aiCounts.completed, cls: "text-green-600" },
-                    { label: "可重试失败（累计）", value: aiCounts.ai_retryable_failed ?? aiCounts.retryable_failed, cls: "text-amber-600" },
-                    { label: "最终失败（累计）", value: aiCounts.ai_final_failed ?? aiCounts.final_failed, cls: "text-red-600" },
+                    // #A-R4-5: 不回退全量口径——字段缺失（旧后端）时显示「—」，避免数字与「不含直显类」文案不符
+                    { label: "已完成（累计）", value: aiCounts.ai_completed ?? "—", cls: "text-green-600" },
+                    { label: "可重试失败（累计）", value: aiCounts.ai_retryable_failed ?? "—", cls: "text-amber-600" },
+                    { label: "最终失败（累计）", value: aiCounts.ai_final_failed ?? "—", cls: "text-red-600" },
                     { label: "AI 类新闻总数", value: aiCounts.total_ai, cls: "text-foreground" },
                   ].map((c) => (
                     <div key={c.label} className="bg-card border border-border rounded-lg shadow-sm p-4">

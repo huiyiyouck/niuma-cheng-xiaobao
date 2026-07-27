@@ -10,6 +10,20 @@ function clientIp(request: FastifyRequest): string {
   return request.ip;
 }
 
+// 管理员鉴权判定：token +（可选 ADMIN_REQUIRE_BOTH）IP 白名单；未配 token 时退化为纯 IP 白名单。
+// 供 adminGuard 门禁与 news.ts l1_error 差异化返回共用，避免鉴权语义两处独立实现漂移（#A-R4-2）
+export function isAdminAuthenticated(request: FastifyRequest): boolean {
+  if (config.adminToken) {
+    const token = (request.headers["x-admin-token"] as string) || "";
+    if (token !== config.adminToken) return false;
+    if (!config.adminRequireBoth) return true;
+  }
+  const allowed = new Set(
+    config.adminAllowedIps.split(",").map((s) => s.trim()).filter(Boolean),
+  );
+  return allowed.has("*") || allowed.has(clientIp(request));
+}
+
 export async function adminGuard(
   request: FastifyRequest,
   reply: FastifyReply,
@@ -27,25 +41,8 @@ export async function adminGuard(
 
   if (!isAlertsPath && !isAdminPath && !isNonGetWrite && !isAdminGetPath) return;
 
-  // Token 验证
-  if (config.adminToken) {
-    const token = (request.headers["x-admin-token"] as string) || "";
-    if (token !== config.adminToken) {
-      apiLogger.warn("Auth 403: %s %s (token mismatch)", method, path);
-      return reply.status(403).send({ detail: "forbidden" });
-    }
-    if (!config.adminRequireBoth) return;
-  }
-
-  // IP 白名单
-  const allowed = new Set(
-    config.adminAllowedIps.split(",").map((s) => s.trim()).filter(Boolean),
-  );
-  if (!allowed.has("*")) {
-    const ip = clientIp(request);
-    if (!allowed.has(ip)) {
-      apiLogger.warn("Auth 403: %s %s (IP not allowed: %s)", method, path, ip);
-      return reply.status(403).send({ detail: "forbidden" });
-    }
+  if (!isAdminAuthenticated(request)) {
+    apiLogger.warn("Auth 403: %s %s (admin auth failed, ip=%s)", method, path, clientIp(request));
+    return reply.status(403).send({ detail: "forbidden" });
   }
 }

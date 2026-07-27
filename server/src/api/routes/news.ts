@@ -1,14 +1,12 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
 import { pool } from "../../db/pool.ts";
 import { asDict } from "../../shared/utils.ts";
-import { config } from "../../shared/config.ts";
+import { isAdminAuthenticated } from "../middleware/admin-guard.ts";
 import { NewsQuery } from "../schemas/index.ts";
 
 // #A-R3-1: /v1/news 是公开接口，l1_error 原文（LLM/HTTP/DB 原始异常）只对管理员返回；
-// 公开请求归一化为错误分类文案（PRD §5.5 要求的是「失败原因摘要」）
-function isAdminReq(req: FastifyRequest): boolean {
-  return !!config.adminToken && (req.headers["x-admin-token"] as string) === config.adminToken;
-}
+// 公开请求归一化为错误分类文案（PRD §5.5 要求的是「失败原因摘要」）。
+// 鉴权判定复用 admin-guard 公共函数，避免语义两处独立实现漂移（#A-R4-2）
 
 export function publicL1Error(raw: unknown): string | null {
   if (typeof raw !== "string" || !raw) return null;
@@ -92,7 +90,7 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
       params,
     );
 
-    const admin = isAdminReq(req);
+    const admin = isAdminAuthenticated(req);
     return reply.send(rows.map((r) => newsToOut(r, admin)));
   });
 
@@ -111,7 +109,7 @@ export async function newsRoutes(app: FastifyInstance): Promise<void> {
       [news_id],
     );
     if (!row) return reply.status(404).send({ detail: "news not found" });
-    return reply.send(newsDetailToOut(row, isAdminReq(req)));
+    return reply.send(newsDetailToOut(row, isAdminAuthenticated(req)));
   });
 }
 

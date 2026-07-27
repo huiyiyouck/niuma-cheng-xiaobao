@@ -107,7 +107,11 @@ function mapNews(n: any): NewsItem {
     tags,
     entities,
     fullContent: n.content ?? n.full_content ?? n.body ?? undefined,
-    originalUrl: n.url ?? n.original_url ?? undefined,
+    // #A-R4-3: source_item_url 是抓取的第三方数据，只放行 http(s)，防 javascript: 协议点击型 XSS
+    originalUrl: (() => {
+      const u = n.url ?? n.original_url;
+      return typeof u === "string" && /^https?:\/\//i.test(u) ? u : undefined;
+    })(),
     processType: n.process_type ?? null,
     l1Status: n.l1_status ?? null,
     l1Error: n.l1_error ?? null,
