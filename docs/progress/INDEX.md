@@ -10,10 +10,10 @@
 - 阻塞项：无
 - 近期待办（非迭代通道，见 [v0.6.1-summary.md §关闭遗留清单](iterations/v0.6.1-summary.md)）：
   - ~~#1 GRANT 追加 3 列~~ ✅ **已完成**（2026-07-27 DevOps，test+prod 双库对称 + verify 通过，coordination 回帖 `f72616d`；契约已随之升 **v1.4**（权限矩阵照实补齐）。ai 侧 C-6 行锁实测前置全齐——凭据由 ai DevOps 同机直读，无需 Owner 转交）
-  - **#2 x-stream-manager 适配 v0.6.1**（Developer，高·潜伏，X Stream 恢复前必修，建议下次开工即修；#3/#4/#6 同批顺手）
+  - ~~#2 x-stream-manager 适配 v0.6.1 + #3/#4/#6~~ ✅ **已完成**（2026-07-27 Developer，commit `744d20a`，单测 65/65 + 测试环境已部署稳定；生产随下次 DevOps 部署，见 [ad-hoc 记录](ad-hoc/2026-07-27-bugfix-xstream-v061-adapt.md)）
   - #5 score_total 补算触发点 + #7 重试接口（ai v0.2 联调启动时，#5 需 PM 先拍触发方式）
 - 跨项目在途：REQ-003 ai 侧 v0.2 开发中（xiaobao 侧 4 条阻塞已全数解除，契约 v1.3）；凭据经安全渠道交付 ai 由 Owner 完成；ai 联调/上生产时的届时前置见 coordination 待跟进表
-- 下一步入口：Owner 拍板——① 开 Developer 会话清 #2 批（非迭代 Bugfix，唯一近期高优先级）② 启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合；另挂 PM/Architect 域小项：Q-1 needs_context 表态 / language 列表述对齐 / score_total database 补算 #5）
+- 下一步入口：Owner 拍板——启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合；另挂 PM/Architect 域小项：Q-1 needs_context 表态 / language 列表述对齐 / score_total database 补算 #5）。遗留 #1/#2 批均已清，生产侧仅剩把 `744d20a` 随下次部署带上
 
 ## 版本列表
 
@@ -36,6 +36,7 @@
 
 | 日期 | 模式 | 记录 | 状态 | 下一步 |
 |------|------|------|------|--------|
+| 2026-07-27 | Bugfix | [x-stream 入库适配 v0.6.1（遗留 #2 批含 #3/#4/#6）](ad-hoc/2026-07-27-bugfix-xstream-v061-adapt.md) | ✅ 代码完成（`744d20a`）+ 单测 65/65 + 测试环境部署，服务稳定 | 生产随下次 DevOps 部署；X Stream 恢复后观察首条 `tweet ingested type=` 日志确认分流 |
 | 2026-07-26 | 小改任务 | [zero_new 告警降级为 info 提示](ad-hoc/2026-07-26-task-zero-new-alert-severity.md) | ✅ 代码完成（`fd69479`）+ 测试环境部署验证（存量 164 条已降级，监控页显示「低」蓝色提示） | 生产随 v0.6.1 R4 的 DevOps 部署上线，届时执行记录内的存量降级 SQL |
 | 2026-07-01 | Cross-project Integration | [AI news-l1 跨项目联调入口与契约对齐](ad-hoc/2026-07-01-ai-news-l1-integration-debug.md) | ✅ 端到端联调完成 + Owner 抽样验收通过 + coordination 留痕 — xiaobao 侧已完成并部署测试环境（前端 `/debug/ai` + 后端 `/v1/ai-debug/news-l1-runs` + AI Hub 客户端 + `/v1/kb-search`）；4 条成功用例覆盖主链路/KB 命中/KB 空结果；单条耗时 74-79s；四维评分/五类标签/摘要/翻译产出符合 v1 契约；coordination `f2702f3` 已同步推进 REQ-001 至「验收中/待关闭」 | ai 侧执行 v0.1 迭代关闭检查（联调证据已齐）；后续 ai 优化 KB 空结果语义（非阻塞）；生产启用 AI 处理另走 DevOps 发布 |
 | 2026-06-08 | Bugfix | [X Stream fetch failed 误告警 + 断流漏收补偿](ad-hoc/2026-06-08-bugfix-x-stream-fetch-failed-alert.md) | ✅ 已完成并临时部署 — `x-stream-manager.ts` 将 `fetch failed` / socket reset / timeout / undici transient errors 归类为长连接常规重连路径；追加确认 `scheduler.ts` 误排除 `x_twitter`，已接回 timeline 补偿调度；部署时清理残留手工 Node 进程并恢复 systemd active；日志确认 `X STREAM connected`；已按原型创建 AI/财经空间、8 个频道和 4 个 X Source 展示位置，补偿抓取已生成新闻 | Owner 浏览器验证 AI/财经空间新闻展示；后续如需多位置投放，需修正 `display_positions` 唯一索引 |

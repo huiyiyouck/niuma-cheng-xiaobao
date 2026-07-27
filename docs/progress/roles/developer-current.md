@@ -6,6 +6,21 @@
 
 ---
 
+## 2026-07-27 — 清 v0.6.1 关闭遗留 #2 批（x-stream 适配 + #3/#4/#6，非迭代 Bugfix）
+
+- 本次角色：全栈开发（Developer）；模式：非迭代 Bugfix（v0.6.1 关闭遗留清单，Owner 指令开工）
+- 已修复（commit `744d20a`，详见 [ad-hoc 记录](../ad-hoc/2026-07-27-bugfix-xstream-v061-adapt.md)）：
+  - #2（高·潜伏）：x-stream-manager 入库对齐 v0.6.1——写 `process_type` + `taskTypeForNewRawItem()` 分流建 task + `max_attempts`（原固定建 `process`，X Stream 恢复后 ai 类将假「待解析」）
+  - #3（中）：l0-classifier 占位 + 置 queued + 建 task 包显式事务，消除 queued 无 task 黑洞窗口
+  - #4（中）：占位行 `published_at` 写真值（原 NULL 沉底）；`language` 按契约 C-7 固定 'zh'，移除孤儿 `detectLanguage`
+  - #6（低）：新增 `maxAttemptsForTaskType()` 单一真源（`l1_ai_process` 尊重 `AI_MAX_RETRIES`），`requeueTask` 以 `tasks.max_attempts` 行内值判终态
+- 验证：tsc 0 错误；全量单测 65/65（隧道 → `news_vitest`）；测试环境部署后服务单次启动稳定（l0-classifier↔dispatcher 循环引用运行时无问题）
+- 端到端受限项：X Stream 当前未推送，恢复后观察首条 `X STREAM tweet ingested ... type=` 日志确认分流生效
+- summary 遗留清单 #2/#3/#4/#6 已标 ✅；INDEX 近期待办与非迭代工作表已更新
+- 下一步：生产随下次 DevOps 部署带上 `744d20a`；Owner 可启动下一迭代规划
+
+---
+
 ## 2026-07-27 — 处理 DevOps 登记的 R4 代码遗留 3 项（跨任务待办）
 
 - 本次角色：全栈开发（Developer）；模式：非迭代小改（DevOps 生产部署后登记 INDEX 跨任务待办，Owner 指派开发修）
