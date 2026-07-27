@@ -20,6 +20,8 @@
 - [软删除表的唯一约束必须排除 deleted_at](engineering/soft-delete-unique-index.md) — 软删除后允许重建时必须使用 `WHERE deleted_at IS NULL` 的部分唯一索引，避免「列表没有但新增报已存在」
 - [显式空环境变量被 .env 回退覆盖致环境隔离失效](engineering/env-empty-value-fallback-breaks-isolation.md) — `process.env[key] || env[key]` 让空值禁用失效，测试拿生产 X token 抢唯一 stream 连接致持续 429；含告警去重需覆盖 active 状态（2026-06-16 排障沉淀）
 - [原型驱动前端重构：1:1 还原 + mock 先行 + 后端渐进对接](engineering/prototype-driven-frontend-refactor.md) — Figma 原型前端重构的三阶段实施路径（底座+静态还原 → 契约对接 → 交互精修），含原型优先/前端先行/渐进式接后端等关键原则（v0.6 前端重构沉淀）
+- [链路改造必须先枚举全部写入路径](engineering/enumerate-all-write-paths-on-pipeline-change.md) — 以目标表为锚点反查全部写入者并列对照表进设计文档；四轮 Review 未抓住 x-stream 旁路漏改的教训（v0.6.1 关闭检查沉淀）
+- [跨项目契约起草：字段表逐字段对照真源](engineering/contract-drafting-field-level-verification.md) — 契约字段表禁止凭记忆写，每行指向可核查真源 + grep 两侧实际消费；O-1/C-10 两次 P0 契约冲突的教训（v0.6.1 REQ-003 沉淀）
 
 ## Testing（测试）
 

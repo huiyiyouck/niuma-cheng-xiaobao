@@ -1,3 +1,25 @@
+## 2026-07-27 — v0.6.1 迭代关闭检查 + 收尾归档：有条件关闭
+
+- 本次角色：产品架构师(PM)
+- 触发：Owner 问「这期迭代是否完整跑完、可否收尾」
+- 关闭检查（9 项）：
+  1. 阶段状态一致 ⚠️→已订正（迭代记录概览/INDEX 版本列表两处过期留痕）
+  2. 各阶段结论齐备 ✅：PRD R2 定稿 / 设计 R2 定稿 / 实现 R1→R4（R4 复核 PM✅+Architect✅）/ Developer 自测 61/61 / 部署检查（测试+生产 R4，Architect 三项核实全过）/ **Owner 验收 ✅通过（2026-07-27 当场确认，已落归档节真源）**
+  3. 阻塞项 ✅：迭代级无；7 项对 ai 承诺待办经 Owner 确认挂遗留清单（每项带归属+触发时机）
+  4-6. INDEX 已更新 / 无关键阻塞 / Change Note 为零 ✅
+  7. summary 已产出 + 知识库沉淀 2 条 ✅
+  8. 后端能力废弃（ENABLE_AI_PROCESSING）前端零引用 ✅（R3 核查有据）
+  9. 元信息无变更，跳过台账 ✅
+- PM 独立证据：生产 API 实测 health 200 / ai_* 三字段 / 列表含 process_type/l1_status/l1_error 归一化
+- Owner 两项拍板：验收通过；遗留处置经解释「每项去处与时机」后按挂遗留关闭执行
+- 产出：
+  - `iterations/v0.6.1-summary.md`（新建：交付/流程教训/已知限制 3 项/遗留 7 项带时机/Git 节点）
+  - `iterations/v0.6.1.md`（归档节填写 + 概览关闭态）
+  - `INDEX.md`（当前迭代→无 / 版本列表 v0.6.1 ✅已完成 + summary 链接 / 收尾摘要行 / 近期待办非迭代通道化）
+  - `docs/knowledge/`：新增 2 条（enumerate-all-write-paths-on-pipeline-change / contract-drafting-field-level-verification）+ INDEX 索引
+- 旧账提示：v0.6-summary.md 至今空文件（2026-07-25 已发现，本次再次登记），建议 Owner 安排补写
+- 下一步入口：Owner 拍板——清 #1（DevOps）/#2 批（Developer 非迭代 Bugfix）或启动下一迭代（候选输入：sentiment / 相关性深化 / ai v0.2 联调配合）
+
 ## 2026-07-27 — REQ-003 契约缺项分派回应：PM 4 项答毕（C-10 定案不引入 sentiment，契约 v1.2）
 
 - 本次角色：产品架构师(PM)

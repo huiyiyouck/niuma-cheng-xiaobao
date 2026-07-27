@@ -4,24 +4,16 @@
 
 ## 当前项目状态
 
-- 当前迭代：v0.6.1
-- 当前模式：标准迭代
-- 当前阶段：实现 R4 复核通过（PM ✅ / Architect ✅，2026-07-26）— 实现阶段收口。同批修复 6 项全关闭（#PM-R3-1 经 git 历史定案为 PM 误报，已撤回并记入 pm-corrections）。详见 [v0.6.1.md PM R4 复核章节](iterations/v0.6.1.md)
-- R4 复核进展：**Architect ✅通过（2026-07-26）** — R3 六项修复全部关闭（含高严重度 #A-R3-1，61/61 单测通过）；新增 2中3低不阻塞定稿。**给 DevOps 的部署前核实 3 项**：① nginx 是否启用 `proxy_cache`（#A-R4-1，响应随 admin 头变化却无 `Cache-Control: private`，有缓存则 #A-R3-1 修复会失效）② 生产 `.env` 的 `ADMIN_REQUIRE_BOTH` 取值（#A-R4-2，若 `true` 则 `isAdminReq` 只验 token 构成绕过 IP 白名单的旁路，升级为必修）③ 跑 #A-R4-4 verify SQL 确认无「永久待解析」存量数据。详见 [v0.6.1.md Architect R4 复核](iterations/v0.6.1.md)
-- 阻塞项：无。**DevOps 生产部署已完成（2026-07-27）**：`deploy.sh both` 至 `2c20da6`，Architect R4 三项核实全过（#A-R4-1 无 proxy_cache / #A-R4-2 `ADMIN_REQUIRE_BOTH=false` / #A-R4-4 verify 0 行），公网首页/bundle/API 字段验证通过（详见 v0.6.1.md 部署就绪检查）。**跨项目转办（REQ-003）**：DevOps 侧 R-1~R-5 已全部就绪交付（2026-07-25 DevOps 回帖），余凭据经安全渠道交付 ai（Owner）+ 两项届时前置（生产 GRANT / 造数补跑）。**REQ-003 Architect 名下已全部答毕（2026-07-27，coordination `6678d19`）**：C-2/C-3/C-5 三条阻塞闭合（C-3 推翻 ai「ai INSERT」推断 → 维持 xiaobao 占位 INSERT + ai UPDATE，理由 AC-01/AC-06）+ C-4/C-1/C-8/C-9/Q-1/Q-3/Q-4/Q-5 八项同答，契约订正至 **v1.3**。加上 PM 本日闭合的 C-10，**ai 侧 4 条阻塞项全部解除**。
-- **答复 REQ-003 期间查出的 xiaobao 侧待办（2026-07-27 Architect，已对 ai 侧承诺，须落地）**：
-
-| # | 事项 | 归属 | 优先级 |
-|---|------|------|--------|
-| 1 | **GRANT 追加 3 列**：`tasks` UPDATE + `run_after`（缺此列 ai 退避完全失效）、`raw_items` SELECT + `source_item_url`（rss/x 原文链接）+ `l0_label`（L0 分类结果，消除 ai 侧 `domain_tags` 恒空）。测试库先行，上生产前同步；执行后契约升 v1.4 | DevOps | **高（唯一卡 ai 侧）** |
-| 2 | **`x-stream-manager` 入库路径未适配 v0.6.1**：`x-stream-manager.ts:95` INSERT 不带 `process_type`（用列默认 `'ai'`，未调 `determineProcessType`），`:110` 硬建 `process` task（非 `taskTypeForNewRawItem`）→ 条目绕开 L0 + ai_worker 链路走 v0.6 旧 `processLLM`，且 `l1_status` 停在 `not_started` → **前端显示「待解析」但实际已处理完**。当前生产未显现（DevOps R4 verify 0 行佐证 x-stream 近期无新条目），**X Stream 一恢复入库即显现** | Developer | **高（潜伏）** |
-| 3 | `l0-classifier` 置 `queued` + 建 task 包进显式事务（当前无 BEGIN/COMMIT，毫秒级黑洞窗口，已向 ai 承诺修） | Developer | 中 |
-| 4 | 占位行 `published_at` 写 `raw_items.published_at`（当前写死 NULL 致列表沉底）+ `language` 统一为 `'zh'`（当前写原文语种，与 PM 定的列语义冲突） | Developer | 中 |
-| 5 | `score_total` database 路径补算触发点（`calcScoreTotal` 只挂在 `l1-processor.ts:171` HTTP 路径，ai 写回后该列恒 NULL） | PM 决策 → Developer | 中 |
-| 6 | `max_attempts` 双真源订正（`BACKOFF_CONFIG` 硬编码 3 vs `tasks.max_attempts` 取 `AI_MAX_RETRIES`） | Developer | 低 |
-| 7 | 手动重试接口支持 `l1_ai_process`（`l1-tasks.ts:24` 硬判定只允许 `l1_process`，与设计 §3.3 不符；同 R3 #A-R3-4） | Developer | 低 |
-
-- 下一步入口：PM 重新执行迭代关闭检查（收尾；遗留记 ai 侧 worker 未上线致富展示端到端未验 + 上表 7 项）
+- 当前迭代：无（v0.6.1 已于 2026-07-27 有条件关闭）
+- 当前模式：未选择
+- 当前阶段：空闲 — v0.6.1 已关闭（Owner 验收通过 + 9 项关闭检查 + summary 落档），等待 Owner 决定下一步
+- 阻塞项：无
+- 近期待办（非迭代通道，见 [v0.6.1-summary.md §关闭遗留清单](iterations/v0.6.1-summary.md)）：
+  - **#1 GRANT 追加 3 列**（DevOps，高，ai 侧 DB 实测前/本周内；执行后契约升 v1.4）
+  - **#2 x-stream-manager 适配 v0.6.1**（Developer，高·潜伏，X Stream 恢复前必修，建议下次开工即修；#3/#4/#6 同批顺手）
+  - #5 score_total 补算触发点 + #7 重试接口（ai v0.2 联调启动时，#5 需 PM 先拍触发方式）
+- 跨项目在途：REQ-003 ai 侧 v0.2 开发中（xiaobao 侧 4 条阻塞已全数解除，契约 v1.3）；凭据经安全渠道交付 ai 由 Owner 完成；ai 联调/上生产时的届时前置见 coordination 待跟进表
+- 下一步入口：Owner 拍板——① 开 Developer 会话清 #2 批（非迭代 Bugfix）② 开 DevOps 会话清 #1（几分钟）③ 启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合）
 
 ## 版本列表
 
@@ -33,7 +25,7 @@
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
 | v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | [iterations/v0.6-summary.md](iterations/v0.6-summary.md) | ✅ 已完成（有条件关闭 2026-07-04）|
-| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | [iterations/v0.6.1-design.md](iterations/v0.6.1-design.md) | — | 实现 R3 完成（后端已上线，前端展示层已补，待 PM 验收） |
+| v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | [iterations/v0.6.1-design.md](iterations/v0.6.1-design.md) | [iterations/v0.6.1-summary.md](iterations/v0.6.1-summary.md) | ✅ 已完成（有条件关闭 2026-07-27）|
 
 ## 当前 Change Notes
 
@@ -68,6 +60,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-07-27 | PM | v0.6.1 迭代关闭检查 + 收尾归档 | ✅ **有条件关闭** — Owner 验收通过；9 项检查：生产实测（health 200 / ai_* 字段 / 列表新字段）+ 各阶段结论齐备（PRD R2 / 设计 R2 / 实现 R4 复核 2/2 / 自测 61/61 / 部署三项核实）+ 后端废弃前端零引用 + 无元信息变更。遗留 7 项带归属与触发时机落档 summary（#1 GRANT / #2 x-stream 潜伏高危为非迭代通道近期项）；已知限制 3 项双侧留痕。知识库沉淀 2 条（写入路径普查 / 契约字段级对照）。**顺带发现旧账：v0.6-summary.md 至今为空文件，建议 Owner 安排补写** | Owner 拍板：清 #1/#2 或启动下一迭代 |
 | 2026-07-26 | PM | v0.6.1 实现 R4 PM 复核 | ✅ **通过** — 逐项 diff + 单测复跑 6/6 + 测试环境实测（真实 pending 队列 5 条：待解析卡片/抽屉正文/查看原文/无失败字样全过；ai_* 口径字段返回正确）。6 项全关闭；**#PM-R3-1 经 `git show` 定案为 PM 误报，公开撤回**，根因（污染工具输出被残留引用）记入 pm-corrections。R4 复核 2/2 方通过，实现阶段收口。 | DevOps 生产部署（含 #A-R4-1/2 核实）→ PM 迭代关闭检查 |
 | 2026-07-26 | Architect | v0.6.1 实现 R4（R3 同批修复）复核 | ✅ **通过** — R3 六项全关闭：高严重度 #A-R3-1 `publicL1Error()` 四分支全部返回常量、无 raw 拼接，token 未配置时降级为全部归一化（失败方向安全），单测含 IP/主机名/路径 `not.toContain` 断言；#A-R3-5 去重逻辑经核对不会出现重复正文（x_twitter 占位 summary 与原文同源同值）；#A-R3-3 保留原字段向后兼容正确；#PM-R3-1 独立核实 Developer「不成立」判断属实（`0c733c5:api.ts` L188 注释本就是 AD-05 四维）。独立复跑 tsc 0 错误 + vitest **61/61** + build 通过。新增 2中3低（响应无 `Cache-Control: private` 可能被中间缓存旁路 / `isAdminReq` 不看 `ADMIN_REQUIRE_BOTH` 与 adminGuard 分叉 / 外链 href 无协议白名单 / 白名单兜底可能产生永久「待解析」角标 / `ai_* ?? 全量` 兜底与固定文案冲突），均不阻塞，前两条转部署前核实。流程提示：按 §9-10 字面口径「不进 R4」，本轮属 R3 条件闭环修复轮，如再需改动建议走 Change Note 不开 R5。 | PM 复核 R4 → DevOps 部署（带 3 项核实）→ PM 迭代关闭检查 |
 | 2026-07-25 | PM | v0.6.1 实现 R3 PM Review（前端展示层） | ⚠️ **有条件通过** — 本地 dev 代理测试后端可视化验收：侧栏 AI 指标/抽屉状态条/监控 AI Tab ✅；四维/分析/背景补全代码正确但存量数据全空,端到端验证依赖 ai 侧 REQ-003 worker（不构成 xiaobao 阻塞,关闭时记遗留）。PM 独立发现 #PM-R3-1（api.ts 四维类型 key 错 3 个,低）。裁定 Architect 提请 4 项：#A-R3-2 采纳方案①回归设计 / #A-R3-4 延期至 ai worker 上线后 / #A-R3-5 纳入同批修复 / #A-R3-8 保留直显来源标签（口径收口）。三方 Review 收齐,R3 不定稿。 | Developer R4 同批修复 6 项 → PM/Architect 复核 → DevOps 部署 |
