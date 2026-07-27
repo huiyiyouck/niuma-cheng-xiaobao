@@ -8,8 +8,8 @@
 - 当前模式：标准迭代
 - 当前阶段：实现 R4 复核通过（PM ✅ / Architect ✅，2026-07-26）— 实现阶段收口。同批修复 6 项全关闭（#PM-R3-1 经 git 历史定案为 PM 误报，已撤回并记入 pm-corrections）。详见 [v0.6.1.md PM R4 复核章节](iterations/v0.6.1.md)
 - R4 复核进展：**Architect ✅通过（2026-07-26）** — R3 六项修复全部关闭（含高严重度 #A-R3-1，61/61 单测通过）；新增 2中3低不阻塞定稿。**给 DevOps 的部署前核实 3 项**：① nginx 是否启用 `proxy_cache`（#A-R4-1，响应随 admin 头变化却无 `Cache-Control: private`，有缓存则 #A-R3-1 修复会失效）② 生产 `.env` 的 `ADMIN_REQUIRE_BOTH` 取值（#A-R4-2，若 `true` 则 `isAdminReq` 只验 token 构成绕过 IP 白名单的旁路，升级为必修）③ 跑 #A-R4-4 verify SQL 确认无「永久待解析」存量数据。详见 [v0.6.1.md Architect R4 复核](iterations/v0.6.1.md)
-- 阻塞项：无。待办：DevOps 生产部署（部署前核实 Architect R4 两项：#A-R4-1 缓存头 / #A-R4-2 ADMIN_REQUIRE_BOTH）。**跨项目转办（REQ-003）**：DevOps 侧 R-1~R-5 已全部就绪交付（2026-07-25 DevOps 回帖），余凭据经安全渠道交付 ai（Owner）+ 两项届时前置（生产 GRANT / 造数补跑）。**新转办（Architect 会话接，2026-07-27）**：ai 侧契约缺项 **C-2（tasks.status 枚举表）/ C-3（processed_news INSERT vs UPDATE + 幂等键 + score_total 补算时机 + id 生成）/ C-5（AI 类入库必建 task 是非题）三条阻塞 ai PRD 定稿**，另 C-4/C-1/Q-1/Q-3/Q-4/Q-5/C-8/C-9 八项中低优先级同答（详见 coordination 沟通文档 2026-07-26 分派索引；PM 名下 4 项已于 2026-07-27 答毕，C-10 整条闭合，契约已订正 v1.2）
-- 下一步入口：DevOps 生产部署 → PM 重新执行迭代关闭检查（收尾；遗留记 ai 侧 worker 未上线致富展示端到端未验）
+- 阻塞项：无。**DevOps 生产部署已完成（2026-07-27）**：`deploy.sh both` 至 `2c20da6`，Architect R4 三项核实全过（#A-R4-1 无 proxy_cache / #A-R4-2 `ADMIN_REQUIRE_BOTH=false` / #A-R4-4 verify 0 行），公网首页/bundle/API 字段验证通过（详见 v0.6.1.md 部署就绪检查）。**跨项目转办（REQ-003）**：DevOps 侧 R-1~R-5 已全部就绪交付（2026-07-25 DevOps 回帖），余凭据经安全渠道交付 ai（Owner）+ 两项届时前置（生产 GRANT / 造数补跑）。**新转办（Architect 会话接，2026-07-27）**：ai 侧契约缺项 **C-2（tasks.status 枚举表）/ C-3（processed_news INSERT vs UPDATE + 幂等键 + score_total 补算时机 + id 生成）/ C-5（AI 类入库必建 task 是非题）三条阻塞 ai PRD 定稿**，另 C-4/C-1/Q-1/Q-3/Q-4/Q-5/C-8/C-9 八项中低优先级同答（详见 coordination 沟通文档 2026-07-26 分派索引；PM 名下 4 项已于 2026-07-27 答毕，C-10 整条闭合，契约已订正 v1.2）
+- 下一步入口：PM 重新执行迭代关闭检查（收尾；遗留记 ai 侧 worker 未上线致富展示端到端未验）
 
 ## 版本列表
 
