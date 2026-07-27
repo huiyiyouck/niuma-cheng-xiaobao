@@ -11,6 +11,7 @@
 - 复核结论：✅ 通过。R4 复核 2/2 方（PM/Architect），实现阶段收口
 - 涉及文档：`v0.6.1.md`（PM R4 复核章节 + R4 门禁行 + 概览）/ `INDEX.md` / `pm-corrections.md`（新增 1 条）/ 本日志
 - 下一步：DevOps 生产部署（部署前核实 Architect #A-R4-1 缓存头 / #A-R4-2 ADMIN_REQUIRE_BOTH）→ PM 重新执行迭代关闭检查（遗留记：ai worker 未上线致富展示端到端未验）
+- **留痕订正（2026-07-27）**：PM R4 复核章节与 R4 门禁行 PM 结论实际随 commit `d7e41d8`（message 为 Architect 复核）入库——并行 Architect 会话提交时将 PM 工作区未提交修改一并扫入，commit 归属与内容不符；`b6c149b` 为 PM 复核配套提交（INDEX/日志/纠错）。内容双方均无异议，不改写历史，仅此说明。流程风险已报 Owner：同机多会话并行操作同一 git 工作区时，`git add` 范围须限定本会话触碰的文件。
 
 ## 2026-07-25 — REQ-003 ai 侧承接回应：O-1 定案方案 A + 契约订正 v1.1 + R-5 交付 + R-1~R-4 转办
 
