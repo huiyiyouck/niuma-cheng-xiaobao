@@ -9,11 +9,11 @@
 - 当前阶段：空闲 — v0.6.1 已关闭（Owner 验收通过 + 9 项关闭检查 + summary 落档），等待 Owner 决定下一步
 - 阻塞项：无
 - 近期待办（非迭代通道，见 [v0.6.1-summary.md §关闭遗留清单](iterations/v0.6.1-summary.md)）：
-  - **#1 GRANT 追加 3 列**（DevOps，高，ai 侧 DB 实测前/本周内；执行后契约升 v1.4）
+  - ~~#1 GRANT 追加 3 列~~ ✅ **已完成**（2026-07-27 DevOps，test+prod 双库对称 + verify 通过，coordination 回帖 `f72616d`；契约已随之升 **v1.4**（权限矩阵照实补齐）。ai 侧 C-6 行锁实测前置全齐——凭据由 ai DevOps 同机直读，无需 Owner 转交）
   - **#2 x-stream-manager 适配 v0.6.1**（Developer，高·潜伏，X Stream 恢复前必修，建议下次开工即修；#3/#4/#6 同批顺手）
   - #5 score_total 补算触发点 + #7 重试接口（ai v0.2 联调启动时，#5 需 PM 先拍触发方式）
 - 跨项目在途：REQ-003 ai 侧 v0.2 开发中（xiaobao 侧 4 条阻塞已全数解除，契约 v1.3）；凭据经安全渠道交付 ai 由 Owner 完成；ai 联调/上生产时的届时前置见 coordination 待跟进表
-- 下一步入口：Owner 拍板——① 开 Developer 会话清 #2 批（非迭代 Bugfix）② 开 DevOps 会话清 #1（几分钟）③ 启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合）
+- 下一步入口：Owner 拍板——① 开 Developer 会话清 #2 批（非迭代 Bugfix，唯一近期高优先级）② 启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合；另挂 PM/Architect 域小项：Q-1 needs_context 表态 / language 列表述对齐 / score_total database 补算 #5）
 
 ## 版本列表
 
