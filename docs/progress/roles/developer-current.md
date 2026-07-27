@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-07-27 — 处理 DevOps 登记的 R4 代码遗留 3 项（跨任务待办）
+
+- 本次角色：全栈开发（Developer）；模式：非迭代小改（DevOps 生产部署后登记 INDEX 跨任务待办，Owner 指派开发修）
+- 已修复（commit `a3e8e53` + 单测 `6d5c0ed`）：
+  - #A-R4-3（P1）：`NewsPage.tsx` `originalUrl` 只放行 `/^https?:\/\//i`——`source_item_url` 是抓取的第三方数据，防 `javascript:` 协议点击型 XSS
+  - #A-R4-2（P2）：抽公共 `isAdminAuthenticated()` 入 `admin-guard.ts`（token +（可选 REQUIRE_BOTH）IP 白名单），`adminGuard` 与 `news.ts` 共用，消除鉴权语义两处独立实现；补纯函数单测 4/4（既有测试 app 不挂 guard，重构原本零覆盖）
+  - #A-R4-5（P2）：监控 AI Tab 去掉 `ai_* ?? 全量` 兜底，字段缺失显「—」
+- 验证：server tsc 0 错误；全量单测 65/65（61+4，SSH 隧道 15432 → 服务器 `news_vitest` 隔离库）；frontend build 通过；测试环境已部署（`deploy.sh test`，bundle `index-NDtxdLR7.js`），公网冒烟通过
+- 插曲：冒烟时验证门禁误在测试库创建了空间 `x` / `guard-test`（测试站 nginx 会注入 admin token、测试后端未配 token 走 IP 白名单，均为既有设计非回归），已当场删除，空间恢复为 AI/财经
+- INDEX 跨任务待办三行已标 ✅；生产环境代码随下次 DevOps 部署上线
+- 下一步：PM 重跑 v0.6.1 迭代关闭检查（三项遗留已清，无 Developer 阻塞）
+
+---
+
 ## 2026-07-26 — v0.6.1 实现 R4：三方 R3 Review 同批修复
 
 - 本次角色：全栈开发（Developer）；模式：标准迭代 v0.6.1 实现阶段 R4（修复轮）
