@@ -3,6 +3,7 @@ import { config } from "../shared/config.ts";
 import { workerLogger } from "../shared/logger.ts";
 import { classifyL0LLM } from "./llm.ts";
 import type { L0Input } from "./llm.ts";
+import { maxAttemptsForTaskType } from "./dispatcher.ts";
 
 const log = workerLogger;
 
@@ -93,7 +94,7 @@ export async function classifyL0(conn: PoolClient, task: any): Promise<void> {
   if (!rawItemId) throw new Error("missing raw_item_id");
 
   const { rows: [row] } = await conn.query(
-    `SELECT ri.id, ri.source_id, ri.content, ri.content_hash, ri.source_item_url,
+    `SELECT ri.id, ri.source_id, ri.content, ri.content_hash, ri.source_item_url, ri.published_at,
             s.type AS source_type, s.identity, s.domain_tags, s.attention_level
      FROM raw_items ri
      JOIN sources s ON s.id = ri.source_id
@@ -154,53 +155,57 @@ export async function classifyL0(conn: PoolClient, task: any): Promise<void> {
     return;
   }
 
-  // 3. 通过 → database 模式下先创建占位 processed_news（#PM-IMPL-1/#A1 修复）
-  //    确保前端查询 JOIN processed_news 不会排除 AI 处理中的新闻（AC-01/AC-06）
-  if (config.aiIntegrationMode === "database") {
-    const direct = extractPlaceholderNews(row.source_type, content);
-    await conn.query(
-      `INSERT INTO processed_news(
-         raw_item_id, title, summary, language, source_refs, published_at,
-         bullets, tags, entities, importance_score, created_at)
-       VALUES($1, $2, $3, $4, $5::jsonb, NULL, $6::jsonb, $7::jsonb, $8::jsonb, 0, now())
-       ON CONFLICT (raw_item_id) DO NOTHING`,
-      [
-        rawItemId,
-        direct.title,
-        direct.summary,
-        direct.language,
-        JSON.stringify({ source_id: String(row.source_id) }),
-        JSON.stringify([]),
-        JSON.stringify(direct.tags || []),
-        JSON.stringify([]),
-      ],
-    );
-    log.info("L0 PLACEHOLDER raw_item_id=%s title=%s", rawItemId, direct.title.slice(0, 80));
-  }
-
-  // 4. 创建 L1 task + 同步 l1_status（#DD12 修复）
-  // v0.6.1: database 模式下创建 l1_ai_process task，由 ai_worker 外部处理
-  //         http 模式下创建 l1_process task，由内建 L1 / AI Hub HTTP 处理
+  // 3+4. 通过 → 占位 processed_news（database 模式，#PM-IMPL-1/#A1）+ 置 queued + 建 L1 task。
+  // 遗留 #3：三步包显式事务——若置 queued 后建 task 前崩溃，该条将永远 queued 无 task 不被处理
   const l1TaskType = config.aiIntegrationMode === "database" ? "l1_ai_process" : "l1_process";
-  const l1MaxAttempts = config.aiIntegrationMode === "database" ? config.aiMaxRetries : 3;
+  await conn.query("BEGIN");
+  try {
+    if (config.aiIntegrationMode === "database") {
+      const direct = extractPlaceholderNews(row.source_type, content);
+      // 遗留 #4：published_at 写 raw_items 真值（原 NULL 致列表按时间排序沉底）；
+      // language 固定 'zh'（契约 news-l1-db C-7：该列为产出内容语种，非原文语种）
+      await conn.query(
+        `INSERT INTO processed_news(
+           raw_item_id, title, summary, language, source_refs, published_at,
+           bullets, tags, entities, importance_score, created_at)
+         VALUES($1, $2, $3, 'zh', $4::jsonb, $5, $6::jsonb, $7::jsonb, $8::jsonb, 0, now())
+         ON CONFLICT (raw_item_id) DO NOTHING`,
+        [
+          rawItemId,
+          direct.title,
+          direct.summary,
+          JSON.stringify({ source_id: String(row.source_id) }),
+          row.published_at ?? null,
+          JSON.stringify([]),
+          JSON.stringify(direct.tags || []),
+          JSON.stringify([]),
+        ],
+      );
+      log.info("L0 PLACEHOLDER raw_item_id=%s title=%s", rawItemId, direct.title.slice(0, 80));
+    }
 
-  await conn.query(
-    `UPDATE raw_items SET l0_status = 'passed', l0_label = $2, l0_processed_at = now(),
-         l1_status = 'queued'
-     WHERE id = $1`,
-    [rawItemId, l0Result.label],
-  );
+    await conn.query(
+      `UPDATE raw_items SET l0_status = 'passed', l0_label = $2, l0_processed_at = now(),
+           l1_status = 'queued'
+       WHERE id = $1`,
+      [rawItemId, l0Result.label],
+    );
 
-  await conn.query(
-    `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, max_attempts, created_at, updated_at)
-     VALUES($1, $2, $3, 'queued', 0, now(), $4, now(), now())`,
-    [l1TaskType, row.source_id, rawItemId, l1MaxAttempts],
-  );
+    await conn.query(
+      `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, max_attempts, created_at, updated_at)
+       VALUES($1, $2, $3, 'queued', 0, now(), $4, now(), now())`,
+      [l1TaskType, row.source_id, rawItemId, maxAttemptsForTaskType(l1TaskType)],
+    );
+    await conn.query("COMMIT");
+  } catch (err) {
+    await conn.query("ROLLBACK");
+    throw err;
+  }
 
   log.info("L0 PASSED raw_item_id=%s label=%s l1_task=%s", rawItemId, l0Result.label, l1TaskType);
 }
 
-/** 从 raw_items.content 提取占位标题/摘要（AI 处理前的基础展示） */
+/** 从 raw_items.content 提取占位标题/摘要（AI 处理前的基础展示；language 由调用方按契约 C-7 固定 'zh'） */
 function extractPlaceholderNews(sourceType: string, content: Record<string, unknown>) {
   if (sourceType === "x_twitter") {
     const text = textOf(content.text);
@@ -208,7 +213,6 @@ function extractPlaceholderNews(sourceType: string, content: Record<string, unkn
     return {
       title: truncateTitle(text) || (username ? `@${username}` : "X/Twitter"),
       summary: text,
-      language: detectLanguage(text),
       tags: ["X/Twitter"],
     };
   }
@@ -218,7 +222,6 @@ function extractPlaceholderNews(sourceType: string, content: Record<string, unkn
   return {
     title: title || truncateTitle(summary) || "未命名新闻",
     summary,
-    language: detectLanguage(title || summary),
     tags: [],
   };
 }
@@ -229,12 +232,6 @@ function textOf(value: unknown): string {
 
 function truncateTitle(text: string): string {
   return text.length > 80 ? `${text.slice(0, 77)}...` : text;
-}
-
-/** 简单语言检测：含中文字符则 zh，否则 en */
-function detectLanguage(text: string): string {
-  if (/[\u4e00-\u9fff]/.test(text)) return "zh";
-  return "en";
 }
 
 function classifyL0ErrorKind(err: Error): string {

@@ -1,6 +1,7 @@
 import { pool } from "../db/pool.ts";
 import { config } from "../shared/config.ts";
 import { workerLogger } from "../shared/logger.ts";
+import { determineProcessType, taskTypeForNewRawItem, maxAttemptsForTaskType } from "./dispatcher.ts";
 
 const log = workerLogger;
 
@@ -91,9 +92,12 @@ export class XStreamManager {
         referenced_tweets: tweet.referenced_tweets || [],
       };
 
+      // 遗留 #2：入库路径与 dispatcher 对齐 v0.6.1——写 process_type 并按分流建对应 task，
+      // 不再固定建 'process'（旧路径致 ai 类 l1_status 停 not_started、前端假「待解析」）
+      const processType = determineProcessType("x_twitter");
       const { rows: [inserted] } = await pool.query(
-        `INSERT INTO raw_items(source_id, source_item_id, source_item_url, published_at, content, fetched_at)
-         VALUES($1, $2, $3, $4, $5::jsonb, now())
+        `INSERT INTO raw_items(source_id, source_item_id, source_item_url, published_at, content, fetched_at, process_type)
+         VALUES($1, $2, $3, $4, $5::jsonb, now(), $6)
          ON CONFLICT (source_id, source_item_id) DO NOTHING
          RETURNING id`,
         [
@@ -102,16 +106,18 @@ export class XStreamManager {
           username ? `https://x.com/${username}/status/${tweetId}` : null,
           publishedAt || null,
           JSON.stringify(content),
+          processType,
         ],
       );
 
       if (inserted) {
+        const taskType = taskTypeForNewRawItem(processType);
         await pool.query(
-          `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, created_at, updated_at)
-           VALUES('process', $1, $2, 'queued', 0, now(), now(), now())`,
-          [source.id, inserted.id],
+          `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, max_attempts, created_at, updated_at)
+           VALUES($1, $2, $3, 'queued', 0, now(), $4, now(), now())`,
+          [taskType, source.id, inserted.id, maxAttemptsForTaskType(taskType)],
         );
-        log.debug("X STREAM tweet ingested source=%s tweet_id=%s", source.id, tweetId);
+        log.debug("X STREAM tweet ingested source=%s tweet_id=%s type=%s", source.id, tweetId, taskType);
       }
     } catch (err: any) {
       log.error("X STREAM handle tweet error: %s", err.message);

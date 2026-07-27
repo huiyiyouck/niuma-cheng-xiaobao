@@ -45,6 +45,15 @@ export function taskTypeForNewRawItem(processType: string): "process" | "l0_clas
   return "process";
 }
 
+/**
+ * 遗留 #6：max_attempts 单一真源——建 task 时统一经此函数取值写入 tasks.max_attempts，
+ * l1_ai_process 尊重 AI_MAX_RETRIES 配置，其余走 BACKOFF_CONFIG；重试判定以行内值为准
+ */
+export function maxAttemptsForTaskType(taskType: string): number {
+  if (taskType === "l1_ai_process") return config.aiMaxRetries;
+  return BACKOFF_CONFIG[taskType]?.maxAttempts ?? 5;
+}
+
 // ── 构建 fetcher 配置 ────────────────────────────────────────
 
 function buildFetchConfig(
@@ -100,7 +109,9 @@ async function finishTask(conn: PoolClient, taskId: string, status: string, last
 async function requeueTask(conn: PoolClient, task: any, lastError: string, errorKind?: string): Promise<void> {
   const attempt = parseInt(task.attempt || "0");
   const cfg = BACKOFF_CONFIG[task.type] || BACKOFF_CONFIG.process;
-  const maxAttempts = cfg.maxAttempts;
+  // 遗留 #6：以 tasks.max_attempts 行内值为准（建 task 时写入），BACKOFF_CONFIG 仅作缺省兜底
+  const rowMax = Number(task.max_attempts);
+  const maxAttempts = Number.isFinite(rowMax) && rowMax > 0 ? rowMax : cfg.maxAttempts;
 
   if (maxAttempts > 0 && attempt >= maxAttempts) {
     // 达到重试上限 → 终态
@@ -215,7 +226,7 @@ async function fetchAndIngest(conn: PoolClient, task: any): Promise<void> {
     if (inserted) {
       newRawIds.push(inserted.id);
       const taskType = taskTypeForNewRawItem(processType);
-      const maxAttempts = BACKOFF_CONFIG[taskType]?.maxAttempts ?? 5;
+      const maxAttempts = maxAttemptsForTaskType(taskType);
       await conn.query(
         `INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, max_attempts, created_at, updated_at)
          VALUES($1, $2, $3, 'queued', 0, now(), $4, now(), now())`,
