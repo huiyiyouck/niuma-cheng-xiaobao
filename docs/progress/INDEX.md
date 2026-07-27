@@ -6,10 +6,10 @@
 
 - 当前迭代：v0.6.1
 - 当前模式：标准迭代
-- 当前阶段：实现 R4 修复完成（2026-07-26 Developer，commit `5ab883f`）— 三方 R3 同批修复清单 6 项全部处理：① #A-R3-1 `l1_error` 公开接口归一化（含新增单测 6/6）② #A-R3-2 retryable_failed 归入「解析中」③ #A-R3-3 监控 AI Tab 改用后端新增 ai_* 口径字段 ④ #A-R3-5 详情补正文/源链接并落地抽屉渲染 ⑤ #PM-R3-1 核实不成立（类型注释本正确），改为显式 `ScoreDimensions` 类型 ⑥ #A-R3-6/7 幽灵分支删除 + 白名单兜底。详见 [v0.6.1.md 实现阶段 R4 行](iterations/v0.6.1.md)
+- 当前阶段：实现 R4 复核通过（PM ✅ / Architect ✅，2026-07-26）— 实现阶段收口。同批修复 6 项全关闭（#PM-R3-1 经 git 历史定案为 PM 误报，已撤回并记入 pm-corrections）。详见 [v0.6.1.md PM R4 复核章节](iterations/v0.6.1.md)
 - R4 复核进展：**Architect ✅通过（2026-07-26）** — R3 六项修复全部关闭（含高严重度 #A-R3-1，61/61 单测通过）；新增 2中3低不阻塞定稿。**给 DevOps 的部署前核实 3 项**：① nginx 是否启用 `proxy_cache`（#A-R4-1，响应随 admin 头变化却无 `Cache-Control: private`，有缓存则 #A-R3-1 修复会失效）② 生产 `.env` 的 `ADMIN_REQUIRE_BOTH` 取值（#A-R4-2，若 `true` 则 `isAdminReq` 只验 token 构成绕过 IP 白名单的旁路，升级为必修）③ 跑 #A-R4-4 verify SQL 确认无「永久待解析」存量数据。详见 [v0.6.1.md Architect R4 复核](iterations/v0.6.1.md)
-- 阻塞项：无。待办：PM 复核 R4（Architect ✅已完成，DevOps 零部署阻塞维持）。**跨项目转办（REQ-003，DevOps 会话接）**：① R-1/R-2 正式确认 ai_worker GRANT 与迁移在测试库就绪（PM 已引用部署留痕，需逐列 verify 回帖 coordination）② R-3 共享库凭据注入渠道（口令不入仓）③ R-4 测试库造数方案（PM 倾向造数脚本）④ 随 R-1/R-2 附 content jsonb 脱敏样例每类 1-2 条
-- 下一步入口：PM 复核 R4 → DevOps 部署（带 3 项核实）→ PM 重新执行迭代关闭检查（收尾）
+- 阻塞项：无。待办：DevOps 生产部署（部署前核实 Architect R4 两项：#A-R4-1 缓存头 / #A-R4-2 ADMIN_REQUIRE_BOTH）。**跨项目转办（REQ-003，DevOps 会话接）**：① R-1/R-2 正式确认 ai_worker GRANT 与迁移在测试库就绪（PM 已引用部署留痕，需逐列 verify 回帖 coordination）② R-3 共享库凭据注入渠道（口令不入仓）③ R-4 测试库造数方案（PM 倾向造数脚本）④ 随 R-1/R-2 附 content jsonb 脱敏样例每类 1-2 条
+- 下一步入口：DevOps 生产部署 → PM 重新执行迭代关闭检查（收尾；遗留记 ai 侧 worker 未上线致富展示端到端未验）
 
 ## 版本列表
 
@@ -56,6 +56,7 @@
 
 | 日期 | 角色 | 工作 | 结论 | 下一步入口 |
 |------|------|------|------|------------|
+| 2026-07-26 | PM | v0.6.1 实现 R4 PM 复核 | ✅ **通过** — 逐项 diff + 单测复跑 6/6 + 测试环境实测（真实 pending 队列 5 条：待解析卡片/抽屉正文/查看原文/无失败字样全过；ai_* 口径字段返回正确）。6 项全关闭；**#PM-R3-1 经 `git show` 定案为 PM 误报，公开撤回**，根因（污染工具输出被残留引用）记入 pm-corrections。R4 复核 2/2 方通过，实现阶段收口。 | DevOps 生产部署（含 #A-R4-1/2 核实）→ PM 迭代关闭检查 |
 | 2026-07-26 | Architect | v0.6.1 实现 R4（R3 同批修复）复核 | ✅ **通过** — R3 六项全关闭：高严重度 #A-R3-1 `publicL1Error()` 四分支全部返回常量、无 raw 拼接，token 未配置时降级为全部归一化（失败方向安全），单测含 IP/主机名/路径 `not.toContain` 断言；#A-R3-5 去重逻辑经核对不会出现重复正文（x_twitter 占位 summary 与原文同源同值）；#A-R3-3 保留原字段向后兼容正确；#PM-R3-1 独立核实 Developer「不成立」判断属实（`0c733c5:api.ts` L188 注释本就是 AD-05 四维）。独立复跑 tsc 0 错误 + vitest **61/61** + build 通过。新增 2中3低（响应无 `Cache-Control: private` 可能被中间缓存旁路 / `isAdminReq` 不看 `ADMIN_REQUIRE_BOTH` 与 adminGuard 分叉 / 外链 href 无协议白名单 / 白名单兜底可能产生永久「待解析」角标 / `ai_* ?? 全量` 兜底与固定文案冲突），均不阻塞，前两条转部署前核实。流程提示：按 §9-10 字面口径「不进 R4」，本轮属 R3 条件闭环修复轮，如再需改动建议走 Change Note 不开 R5。 | PM 复核 R4 → DevOps 部署（带 3 项核实）→ PM 迭代关闭检查 |
 | 2026-07-25 | PM | v0.6.1 实现 R3 PM Review（前端展示层） | ⚠️ **有条件通过** — 本地 dev 代理测试后端可视化验收：侧栏 AI 指标/抽屉状态条/监控 AI Tab ✅；四维/分析/背景补全代码正确但存量数据全空,端到端验证依赖 ai 侧 REQ-003 worker（不构成 xiaobao 阻塞,关闭时记遗留）。PM 独立发现 #PM-R3-1（api.ts 四维类型 key 错 3 个,低）。裁定 Architect 提请 4 项：#A-R3-2 采纳方案①回归设计 / #A-R3-4 延期至 ai worker 上线后 / #A-R3-5 纳入同批修复 / #A-R3-8 保留直显来源标签（口径收口）。三方 Review 收齐,R3 不定稿。 | Developer R4 同批修复 6 项 → PM/Architect 复核 → DevOps 部署 |
 | 2026-07-25 | Architect | v0.6.1 实现 R3（前端展示层）Architect Review | ⚠️ **有条件通过**（9 条：1高/4中/4低）— 高：`l1_error` 内部异常原文经**公开** GET `/v1/news` 透传到前台（`admin-guard.ts` GET 不鉴权，写入源是 `dispatcher.ts` 的 `err.message`），PRD §5.5 要的是「摘要」非原文，部署前必修。中：`retryable_failed` 被展示为「解析失败」与设计 §5.1 定稿相反（该状态仍在待重试队列）/ 监控页 AI 概览三卡无 `process_type='ai'` 过滤、混入直显类计数（直显类被 `processor.ts` 写成 `l1_status='completed'`，自测 completed=154=total_ai 属巧合掩盖）/ 设计明文要求的管理员手动重试按钮未实现且未登记 / PRD §5.5 各态要求的「正文+外链」恒不渲染（后端从不返回 content/url）。低 4 条：不存在的 `case "pending"` / `default` 兜底为富展示过于激进 / 直显类标签口径 PRD 自相冲突 / 契约类型不可校验（`frontend` 无 tsconfig，`vite build` 不做类型检查）。独立复跑 `tsc --noEmit` + `vite build` 均通过。Developer 3 条已知偏差全部同意。 | PM 完成 R3 Review + 裁定 4 项 → Developer 修 #A-R3-1 → DevOps 部署 |

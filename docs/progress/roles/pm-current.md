@@ -1,3 +1,17 @@
+## 2026-07-26 — v0.6.1 实现 R4 PM 复核：通过（含 #PM-R3-1 误报公开撤回）
+
+- 本次角色：产品架构师(PM)
+- 触发：Owner 通知 R4 修复完成（commit `5ab883f`），要求 PM 复核；Architect 已先行复核 ✅（新增 2中3低不阻塞）
+- 动作：
+  1. 逐项 diff 核查同批修复 6 项（news.ts / level-status.ts / NewsPage / MonitoringPage / api.ts / 新增单测）
+  2. **#PM-R3-1 用 `git show 0c733c5:api.ts` 对历史版本定案：PM 误报**——R3 版本注释本为 AD-05 四维，从不存在错误 key；根因是 R3 会话被污染的工具输出被残留引用。公开撤回，教训记入 `pm-corrections.md`（新规则：污染轮次派生事实全部作废，Review 意见须逐条干净取证）
+  3. 复跑验证：单测 news-public-error 6/6 ✅、server tsc 0 错误 ✅
+  4. 测试环境（Owner 已要求 Developer 部署 R4）实测：`/global-level-status-counts` 返回 ai_* 三字段 ✅、详情返回 content 原文 + original_url ✅、无 token 请求 l1_error 归一化 ✅
+  5. 可视化验收（借 REQ-003 R-4 造数的真实队列）：侧栏「AI 待处理 5」、财经空间 5 条「待解析」卡片（角标/无评分/无 AI 标签）、抽屉（L0 通过状态条 + 正文 + 查看原文 + 全页无失败字样）——R3 时缺数据未验的 pending 基础展示态本轮实测闭环
+- 复核结论：✅ 通过。R4 复核 2/2 方（PM/Architect），实现阶段收口
+- 涉及文档：`v0.6.1.md`（PM R4 复核章节 + R4 门禁行 + 概览）/ `INDEX.md` / `pm-corrections.md`（新增 1 条）/ 本日志
+- 下一步：DevOps 生产部署（部署前核实 Architect #A-R4-1 缓存头 / #A-R4-2 ADMIN_REQUIRE_BOTH）→ PM 重新执行迭代关闭检查（遗留记：ai worker 未上线致富展示端到端未验）
+
 ## 2026-07-25 — REQ-003 ai 侧承接回应：O-1 定案方案 A + 契约订正 v1.1 + R-5 交付 + R-1~R-4 转办
 
 - 本次角色：产品架构师(PM)
