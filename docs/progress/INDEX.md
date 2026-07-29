@@ -15,7 +15,9 @@
 - 跨项目在途：REQ-003 ai 侧 v0.2 开发中（xiaobao 侧 4 条阻塞已全数解除，契约 v1.3）；凭据经安全渠道交付 ai 由 Owner 完成；ai 联调/上生产时的届时前置见 coordination 待跟进表
 - 跨项目转办（REQ-003，2026-07-28 ai 三件事）：
   - **测试队列不可领 → DevOps（最高，阻塞 ai 冒烟）**：seed 脚本未建 `l1_ai_process` task 行，ai 按契约只 claim tasks 领不到 5 条预置数据。处置：为现有 5 条补建 task 行 + 修 `seed_ai_queue_test.sql`（PM 倾向双管齐下）；顺带可把 `744d20a` 一起部署
-  - **C-14 `l0_label` 语义 → Architect（高）**：实测该列只有 `direct_display` 一值，非领域分类结果；需答完整取值域 + 是否另有分类列 + 写进契约字段说明（PM 产品面口径已回帖：领域分类暂无规划）
+  - ~~**C-14 `l0_label` 语义 → Architect**~~ ✅ **已答毕**（2026-07-28，coordination `bb530e9`，契约升 **v1.5**）：`l0_label` 是**处理决策标记**（完整取值域 `direct_display` / 三个 `*_candidate` / 规则跳过原因 / `llm_skip`，已入契约），**非**领域分类。**关键发现：`L1Input.domain_tags` 的真源是 `sources.domain_tags`**（源级静态标签 → `l1-processor.ts:243` → `ai-hub.ts:45`），与 L0 无关——**我方 v1.3 答 C-1 时的「L0 分类结果存在 l0_label」是错的，已公开撤回**；DevOps 已执行 `GRANT SELECT (domain_tags, attention_level) ON sources`，ai 侧 `domain_tags` 恒空问题**彻底解决**（无需列为已知限制，优于 PM 预设的「暂无规划」条件口径）。同帖答 C-11（`priority` 数值大 = 优先）/ C-12（退避越界取末值）/ C-13（`source_item_url` 不保证协议前缀 + 幂等前提登记）/ task 创建链路 / KB token 鉴权。
+  - **⚠️ 同帖两处断言过时已发更正**（coordination `bb530e9`）：C-5 事务与 C-12 `max_attempts` 读列**均已由 `744d20a` 落地**，我沿用上一轮代码记忆误报为「待订正」。已记入 [architect-corrections.md](roles/architect-corrections.md)（同一根因第三次：未按当前 HEAD 核实就下断言）。
+  - **新增待办 → Developer（中）**：`news_test` 8 条 `l0_classify` 任务全部 `failed`，L0 链路从未成功跑通——这是「两库 `l0_label` 只有 `direct_display` 一值」的直接原因，也影响 ai 冒烟数据的真实性（补建的 task 行同构可用，但 L0 本身没验证过）
 - 下一步入口：Owner 拍板——① 开 DevOps 会话清「测试队列不可领」（ai 唯一被卡动作，顺带部署 `744d20a`）② Architect 会话答 C-14（连同 Q-1 needs_context / language 表述对齐一并）③ 启动下一迭代规划（候选输入：sentiment / 相关性深化 / ai v0.2 联调配合；PM 域小项 #5 score_total 补算届时拍）
 
 ## 版本列表

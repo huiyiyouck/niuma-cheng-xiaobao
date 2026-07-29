@@ -4,6 +4,31 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-07-28 — REQ-003：答 C-11~C-14 + 撤回上轮 `l0_label` 错误结论 + 契约 v1.5
+
+**本次角色**：架构师（跨项目协作，非迭代）
+- 落档：coordination `bb530e9`（含 DevOps last-out 代提的 `96a52be`）；xiaobao INDEX + 纠错记录
+
+### 核心：撤回上轮 C-1 的错误结论，找到 `domain_tags` 真源
+上轮我答「L0 分类结果存在 `raw_items.l0_label`，GRANT 该列即可消除 `domain_tags` 恒空」——**错的**，害 ai 白 GRANT 一列并改了 PRD（CN-004）。本轮追完整取数链路：
+
+```
+sources.domain_tags (schema.ts:67) → l1-processor.ts:243/257-278 → ai-hub.ts:45 → HTTP 请求体
+```
+
+**`L1Input.domain_tags` 从来不是 L0 产物，是信息源级静态标签**；`l0_label` 是处理决策标记（取值域：`direct_display` / `normal_candidate` / `high_priority_candidate` / `needs_context_candidate` / 规则跳过原因 / `llm_skip`）。GRANT `sources.domain_tags` 后 ai 侧与 HTTP 模式**完全等价**，不必列为已知限制——比 PM 同日给的「暂无规划」条件口径结果更好（PM 指的是 L0 动态分类能力，与源级静态标签不矛盾，已在帖中说明避免两个说法打架）。DevOps 当日即执行了 GRANT。
+
+### 其余答复
+C-11 `priority` 数值大 = 优先（`ORDER BY priority DESC, created_at ASC`）/ C-12 退避越界 `Math.min` 取末值 / C-13 `source_item_url` **不保证**协议前缀（x_twitter 两路径构造完整 URL，rss/jin10 原样透传源数据）+ 同意登记 `raw_item_id` 唯一约束为 ai 幂等前提 / `l1_ai_process` 由 `l0-classifier` 在 L0 通过后且仅 `database` 模式创建、type 字面量确认 / `/v1/kb-search` 是 POST 走 `adminGuard` 需 token。
+
+### 自我纠错（第三次同根因）
+帖子 push 后按当前 HEAD 复核，发现 C-5「非同一事务、有毫秒窗口」与 C-12「应用层不读 `max_attempts` 列」**两处引用的是上一轮会话的代码记忆**，而 Developer 已于 `744d20a` 修复两者。已发更正帖 + 同步契约两段。教训写进 corrections：**多角色并行仓里跨会话的代码记忆一律作废，对外断言落笔前必须按当前 HEAD 重新核实**——尤其是自己上一轮登记为「待办」的项，它极可能已被别人清掉。
+
+### 新登记
+`news_test` 8 条 `l0_classify` 全 `failed`（L0 链路从未跑通，是两库 `l0_label` 只有一个值的直接原因）→ Developer 待查。
+
+---
+
 ## 2026-07-27 — REQ-003 跨项目：答复 ai 侧契约缺项（Architect 名下 11 项）+ 契约订正 v1.3
 
 **本次角色**：架构师（跨项目协作，非迭代）
