@@ -2,17 +2,16 @@
 
 > 长期摘要、当前关注点和常见风险。启动时与 `developer-current.md` 一并读取。
 > 旧条目原文见 `developer-archive.md`。
-> 最近一次更新：2026-06-15（v0.6 前端联调精修与管理页交互修复收尾分层归档）
+> 最近一次更新：2026-07-29（v0.6.1 关闭后收尾分层归档）
 
 ---
 
-## 当前状态（2026-06-15）
+## 当前状态（2026-07-29）
 
-- **当前迭代**：v0.6（实现阶段联调精修中）
-  - 后端 A+B+C 已实现，前端 React 4 页接真实 API；test 环境已通过 IP 入口 `http://115.191.43.79` 临时验证（nginx 80 default_server 指 test 独立目录）
-  - 本次 Developer 连续提交 8 个本地 commit：左中右布局、三页 UI 精修、管理页乐观更新/拖拽/toast/Loading、源详情展示位置反馈、`display_positions` 软删除后无法重加迁移修复
-  - test 库已手动 DROP 历史残留唯一约束并实测添加位置 409 → 成功；生产部署需跑 `0006_drop_dp_channel_unique`
-- **v0.5 状态**：已关闭（2026-06-09 PM 有条件关闭），无 Developer 遗留代码任务
+- **当前迭代**：无 — v0.6.1 已于 2026-07-27 有条件关闭（数据库契约异步 AI 处理集成 + 前端展示分层），v0.6 已于 07-04 关闭
+- **Developer 无在途代码任务**：v0.6.1 关闭遗留 #2 批（x-stream 适配 + #3/#4/#6）与 R4 三项低严重度均已清（commit `744d20a` / `a3e8e53`）；遗留 #5/#7 挂「ai v0.2 联调启动时」触发
+- **待部署**：`744d20a`（x-stream 批）已在测试环境，生产随下次 DevOps 部署带上；X Stream 恢复推送后观察首条 `tweet ingested type=` 日志确认分流
+- **测试基建**：本地无 PG，全量单测经 SSH 隧道 `ssh -L 15432:localhost:5432 zijie` 连服务器 `news_vitest` 隔离库（`.env.test` 已配）；前端可视化自测用 `VITE_API_PROXY_TARGET=https://test.huiyiyou.cloud npm run dev` 连测试环境真实数据
 - **跨任务待办（Developer 归属）**：OpenClaw L1 Agent 化技术验证已完成，但按 2026-06-28 Owner 收口决策，v0.6 不放开 AI 处理；当前生产策略为 `ENABLE_AI_PROCESSING=false`，X/Twitter raw item 直接展示，AI 处理后续交独立 AI 中枢；UI 组件库专项/左中右专项已在本次以最小实现落地，后续可继续抽组件
 
 ## 角色定位回顾
