@@ -13,7 +13,10 @@
   - ~~#2 x-stream-manager 适配 v0.6.1 + #3/#4/#6~~ ✅ **已完成**（2026-07-27 Developer，commit `744d20a`，单测 65/65 + 测试环境已部署稳定；生产随下次 DevOps 部署，见 [ad-hoc 记录](ad-hoc/2026-07-27-bugfix-xstream-v061-adapt.md)）
   - #5 score_total 补算触发点 + #7 重试接口（ai v0.2 联调启动时，#5 需 PM 先拍触发方式）
 - 跨项目在途：REQ-003 ai 侧 v0.2 开发中（xiaobao 侧 4 条阻塞已全数解除，契约 v1.3）；凭据经安全渠道交付 ai 由 Owner 完成；ai 联调/上生产时的届时前置见 coordination 待跟进表
-- 下一步入口：Owner 拍板——启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合；另挂 PM/Architect 域小项：Q-1 needs_context 表态 / language 列表述对齐 / score_total database 补算 #5）。遗留 #1/#2 批均已清，生产侧仅剩把 `744d20a` 随下次部署带上
+- 跨项目转办（REQ-003，2026-07-28 ai 三件事）：
+  - **测试队列不可领 → DevOps（最高，阻塞 ai 冒烟）**：seed 脚本未建 `l1_ai_process` task 行，ai 按契约只 claim tasks 领不到 5 条预置数据。处置：为现有 5 条补建 task 行 + 修 `seed_ai_queue_test.sql`（PM 倾向双管齐下）；顺带可把 `744d20a` 一起部署
+  - **C-14 `l0_label` 语义 → Architect（高）**：实测该列只有 `direct_display` 一值，非领域分类结果；需答完整取值域 + 是否另有分类列 + 写进契约字段说明（PM 产品面口径已回帖：领域分类暂无规划）
+- 下一步入口：Owner 拍板——① 开 DevOps 会话清「测试队列不可领」（ai 唯一被卡动作，顺带部署 `744d20a`）② Architect 会话答 C-14（连同 Q-1 needs_context / language 表述对齐一并）③ 启动下一迭代规划（候选输入：sentiment / 相关性深化 / ai v0.2 联调配合；PM 域小项 #5 score_total 补算届时拍）
 
 ## 版本列表
 
