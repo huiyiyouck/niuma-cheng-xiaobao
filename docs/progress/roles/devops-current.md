@@ -2,6 +2,28 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-07-27~30 — v0.6.1 生产部署 + REQ-003 数据库边界 DevOps 全系列（跨会话汇总）
+
+> 角色：DevOps；模式：标准迭代部署 + 跨项目协作（REQ-003）。本条汇总一系列工作，逐项详情见 coordination `communications/REQ-003-db-boundary-async.md` 与本项目 INDEX。
+
+### v0.6.1 生产部署（07-27）
+- `deploy.sh both` → `2c20da6`，Architect R4 三项核实全过（#A-R4-1 无 proxy_cache / #A-R4-2 `ADMIN_REQUIRE_BOTH=false` / #A-R4-4 verify 0 行）；新 bundle `index-BFek7phs.js`，公网/API 字段验证通过。R4 代码遗留 3 项（#A-R4-3 外链 XSS / #A-R4-5 / #A-R4-2）登记 INDEX 跨任务待办转 Developer。
+
+### REQ-003 DevOps 交付（07-25~30）
+- **ai_worker 角色 + 列级 GRANT**：`v0.6.1_ai_contract.sql` 执行到 `news_test` + 生产 `news`（postgres 超级用户，news 无 CREATEROLE），逐列对齐契约 + 端到端连库 + 越权拦截验证。
+- **多轮 GRANT 增补**：契约 v1.3 三列（`source_item_url`/`l0_label` SELECT + `run_after` UPDATE）、C-14 `sources`（`domain_tags`/`attention_level` SELECT），test+prod 双库对称。
+- **造数脚本**：`seed_ai_queue_test.sql` 初版只 reset raw_items 未建 task（ai 领不到），修正为同步建 `l1_ai_process` task；补建 5 条 queued 供冒烟。
+- **L0 链路修复**：`news_test` 8 条 `l0_classify` 全 failed，根因 LLM key 失效（401）+ `L0_LLM_MODEL` 默认 `gpt-4o-mini` 撞 endpoint（400）；改用 OpenClaw `volcengine-plan` provider + `deepseek-v4-flash`，端到端验证 L0 `succeeded`（`l0_label=high_priority_candidate`、自动建 `l1_ai_process` task）。8 条原 failed 保留现场。
+- **澄清/纠错**：契约「四处不一致」系我误读参照源（撤回）；`run_after` UPDATE 伪确认点撤回；C-6 `processing` 笔误更正（`tasks.status` 后端用 `running`，与 C-2/ai 一致无分叉）。C-6 行锁在列级 GRANT 下可行（DevOps 佐证 + ai 并发验证闭合）；KB token 定方案 A（同机直连免 token）。
+
+### 遗留（待推进）
+- **生产 LLM provider**：生产 key 同失效，生产 AI 关闭故无当前影响；生产上 AI/L0 前需定 provider + 更新生产 `.env`。
+- **domain_tags 预期类型**：`sources` 2 array + 2 `{}`（脏数据），预期语义待 Architect 落契约 §sources；定后 DevOps 归一（`{}`→`[]`）+ 造非空冒烟条目。
+- **L0 model 选型**：test 暂用 `deepseek-v4-flash`，Owner 可调（volcengine 网关多 model）。
+
+### 下一步入口
+DevOps 无独立主动待办；等 Architect 定 domain_tags 预期 → DevOps 归一+造数；生产上 AI 前定 provider。
+
 ## 2026-07-12 — v0.6.1 PRD R1 DevOps Review
 
 > 角色：DevOps；模式：标准迭代 PRD 阶段 R1 Review。
