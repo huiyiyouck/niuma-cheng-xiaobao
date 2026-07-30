@@ -4,6 +4,26 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-07-30 — 数据库超时配置方案（非迭代）+ 答 ai 三问 + 契约 v1.6/v1.7
+
+**本次角色**：架构师（跨项目协作 + 非迭代技术方案）
+- 产出：[ad-hoc/2026-07-30-spike-db-timeout-config.md](../ad-hoc/2026-07-30-spike-db-timeout-config.md)；coordination 契约 v1.6→v1.7（`b2c581e`）
+
+### 答 ai 三问（v1.6）
+`locked_by` 无格式约束、我方回收不读其内容——但**发现一个 ai 看不到的坑**：我方 reclaim 除改 `tasks` 外还会把 `raw_items.l1_status` 从 `processing` 同步回 `queued`（`reclaim.ts:26-35`），ai 自愈回收若只改 tasks 会留下「前端显示解析中但任务在排队」的不一致。已要求其同事务改两列。另确认「处理中」我方读 `running`（`reclaim.ts:12,19`），并把 `tasks.status='running'` vs `raw_items.l1_status='processing'` 的字面量差异写成契约专节——`tasks` 无 CHECK 约束，写错不报错但卡死回收永不触发。`domain_tags` 定性为「预期数组，`{}` 系 `schema.ts:67` 默认值误写」。
+
+### 数据库超时方案（v1.7，Owner 指定「契约 + ad-hoc」落点、全套四项）
+核查发现**数据库层此前没有任何超时**（`pool.ts` 只有连接池 `idleTimeoutMillis`，PG 会话级三项全走默认）。共享库后最要紧的链路：ai 若在事务内等 LLM（240s 预算），连接 `idle in transaction` 持行锁 → 我方 reclaim 被阻塞 → 而我方无 `lock_timeout` 会无限等待 → **回收机制整体挂住**。
+方案：硬约束「claim 事务与处理分离」+ 四项取值（30s/60s/5s/10s）+ 对 ai 用 `ALTER ROLE` 在库层强制（零配置、绕不过，与 GRANT 同属权属方边界控制）。执行前须 ai 确认事务边界，否则会表现为连接莫名断开。
+
+### 写方案时回头核出契约三处错误（我方自己写的）
+`§卡死回收机制`：① 「扫描 `processing`」→ 实际 `tasks.status='running'`（**我方契约自己踩了刚写进契约的那个字面量坑**）；② 「回收为 `retryable_failed`」→ 实际回到 `queued`；③ **「阈值 1800 秒」系起草臆定，代码默认 600s**——ai 多轮引用的「贵方 1800s 回收」全部源自此处，我上一帖还跟着用了这个数字。已请 DevOps 核实 env 实际值回填。
+
+### 教训延续
+这次是**主动回头核**才发现的（写超时方案需要确认回收窗口量级关系 → 顺手核 `reclaim.ts` → 发现三处不符）。corrections 里那条「按当前 HEAD 核实」正在起作用，但覆盖面要再扩一层：**不只核自己要答的那几行，凡引用到的契约段落都要核**。
+
+---
+
 ## 2026-07-28 — REQ-003：答 C-11~C-14 + 撤回上轮 `l0_label` 错误结论 + 契约 v1.5
 
 **本次角色**：架构师（跨项目协作，非迭代）
