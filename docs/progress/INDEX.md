@@ -56,6 +56,20 @@
 | 2 | **#5 score_total 轮询补算**：挂 worker tick（与 reclaim 同节奏），条件 `l1_status='completed' AND score_dimensions IS NOT NULL AND score_total IS NULL`，公式复用 `calcScoreTotal`（**单一真源，禁止在 SQL 里重写公式**）（契约 v1.9 PM 已拍轮询方案） | ✅ 决策已清，照办 |
 | 3 | **#7 手动重试接口支持 `l1_ai_process`**：`l1-tasks.ts:24` 放开硬判定（v0.6.1 遗留 #7 / R3 #A-R3-4） | 无决策项，照办 |
 
+#### → ai v0.2 上生产里程碑（开 prod AI 的前置链，三环齐备才能点火）
+
+开 prod AI（`database` 模式）不是单个开关，是一条跨角色前置链——**三环齐备才能安全点火，缺一即埋雷**（prod 4 源全 `x_twitter`，X Stream 一恢复即「推文不直显」）：
+
+| 环 | 内容 | 归属 | 状态 |
+|---|------|------|------|
+| ① | prod L0 provider（volcengine，xiaobao L0 用） | DevOps | ✅ **已备**（2026-08-01 任务 1，直连验证 200，未点火） |
+| ② | **prod ai worker 部署 + ai 侧 L1 有效 provider** | **ai 侧**（ai v0.2 上生产） | ❌ **未做——关键缺环** |
+| ③ | prod flip `AI_INTEGRATION_MODE=database`（对齐 test / v0.6.1 设计） | DevOps | ⏸ 待 ①② 齐；单切即开 AI 埋雷，见 coordination 待跟进 16 / `f5d032f` |
+| ④ | Developer 三项（needs_context 迁移〔ai 写回前必须落地〕/ #5 score_total 补算 / #7 重试接口） | Developer | 见上「→ Developer」区，绑 ai v0.2 联调 |
+| 点火后 | 端到端联调（coordination 待跟进 7）：raw → L0 → `l1_ai_process` → ai claim → 写回 `completed` | 双侧 | 待 ①②③④ |
+
+> **点火时序**：①（已备）→ ②（ai 上 prod worker + provider）→ ④（Developer 落 needs_context 等）→ ③（DevOps flip `database`，最后一步）→ 端到端联调。**任一环未齐，prod AI 开关不得打开。**
+
 #### → Owner（你）
 
 - 启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合）——PM 建议等 ai v0.2 联调打通、富展示真实点亮后再定主题
