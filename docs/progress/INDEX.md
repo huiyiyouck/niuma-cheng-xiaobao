@@ -11,7 +11,7 @@
 - 近期待办（非迭代通道，见 [v0.6.1-summary.md §关闭遗留清单](iterations/v0.6.1-summary.md)）：
   - ~~#1 GRANT 追加 3 列~~ ✅ **已完成**（2026-07-27 DevOps，test+prod 双库对称 + verify 通过，coordination 回帖 `f72616d`；契约已随之升 **v1.4**（权限矩阵照实补齐）。ai 侧 C-6 行锁实测前置全齐——凭据由 ai DevOps 同机直读，无需 Owner 转交）
   - ~~#2 x-stream-manager 适配 v0.6.1 + #3/#4/#6~~ ✅ **已完成**（2026-07-27 Developer，commit `744d20a`，单测 65/65 + 测试环境已部署稳定；生产随下次 DevOps 部署，见 [ad-hoc 记录](ad-hoc/2026-07-27-bugfix-xstream-v061-adapt.md)）
-  - #5 score_total 补算触发点 + #7 重试接口（ai v0.2 联调启动时，#5 需 PM 先拍触发方式）
+  - #5 score_total 补算（✅ PM 已拍：轮询方案，契约 v1.9）+ #7 重试接口 + **needs_context 列迁移**（Q-1 定案新增，`ALTER TABLE processed_news ADD COLUMN needs_context boolean`，须在 ai 写回联调前落地）→ 三项 Developer 同批，ai v0.2 联调启动时
 - 跨项目在途：REQ-003 ai 侧 v0.2 开发中（xiaobao 侧 4 条阻塞已全数解除，契约 v1.3）；凭据经安全渠道交付 ai 由 Owner 完成；ai 联调/上生产时的届时前置见 coordination 待跟进表
 - 跨项目转办（REQ-003，2026-07-28 ai 三件事）：
   - ~~**测试队列不可领 → DevOps（最高）**：seed 脚本未建 task 行……双管齐下~~ → ✅ **已闭合（旧账，2026-08-01 核实）**：seed 脚本 07-28 已订正会幂等建 `l1_ai_process` task，当前 news_test 6 条 queued task 全可领、0 孤儿；`744d20a` 亦已随本日部署上 prod。双管早已落地，此为未销旧账
@@ -33,7 +33,7 @@
 | v0.3 | [iterations/v0.3.md](iterations/v0.3.md) | 无（纯迁移） | 无 | [iterations/v0.3-tech-eval.md](iterations/v0.3-tech-eval.md) | — | 已完成 |
 | v0.4 | [iterations/v0.4.md](iterations/v0.4.md) | [iterations/v0.4-prd.md](iterations/v0.4-prd.md) | [iterations/v0.4-ui-spec.md](iterations/v0.4-ui-spec.md) | [iterations/v0.4-design.md](iterations/v0.4-design.md) | [iterations/v0.4-summary.md](iterations/v0.4-summary.md) | ✅ 已完成（有条件关闭 2026-05-31）|
 | v0.5 | [iterations/v0.5.md](iterations/v0.5.md) | [iterations/v0.5-prd.md](iterations/v0.5-prd.md) | [iterations/v0.5-ui-spec.md](iterations/v0.5-ui-spec.md) | [iterations/v0.5-design.md](iterations/v0.5-design.md) | [iterations/v0.5-summary.md](iterations/v0.5-summary.md) | ✅ 已完成（有条件关闭 2026-06-09）|
-| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | [iterations/v0.6-summary.md](iterations/v0.6-summary.md) | ✅ 已完成（有条件关闭 2026-07-04）|
+| v0.6 | [iterations/v0.6.md](iterations/v0.6.md) | [iterations/v0.6-prd.md](iterations/v0.6-prd.md) | [iterations/v0.6-ui-spec.md](iterations/v0.6-ui-spec.md) | [iterations/v0.6-design.md](iterations/v0.6-design.md) | [iterations/v0.6-summary.md](iterations/v0.6-summary.md) | ✅ 已完成（有条件关闭 2026-07-04；summary 2026-08-01 补写落档）|
 | v0.6.1 | [iterations/v0.6.1.md](iterations/v0.6.1.md) | [iterations/v0.6.1-prd.md](iterations/v0.6.1-prd.md) | — | [iterations/v0.6.1-design.md](iterations/v0.6.1-design.md) | [iterations/v0.6.1-summary.md](iterations/v0.6.1-summary.md) | ✅ 已完成（有条件关闭 2026-07-27）|
 
 ## 当前 Change Notes

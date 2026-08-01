@@ -1,3 +1,16 @@
+## 2026-08-01 — PM 悬案清零：#5 轮询补算拍板 + Q-1 补列定案 + language 订正（契约 v1.9）+ v0.6-summary 补写
+
+- 本次角色：产品架构师(PM)
+- 触发：Owner 指令三连——#5 拍掉、Q-1/language 能拍就拍、v0.6-summary 补上
+- 拍板与产出：
+  1. **#5 score_total database 补算 → 轮询方案**：挂 worker tick，条件 `completed AND dims IS NOT NULL AND score_total IS NULL`，公式复用 `calcScoreTotal` 应用层单一真源（不选触发器：避免公式双真源——max_attempts/1800s 两次漂移教训）；实现随 ai v0.2 联调（Developer，与 #7 同批），决策前置已清
+  2. **Q-1 needs_context → 补列**：ai 已产出的质量信号不丢弃（与 sentiment 不同——无需新增能力），`processed_news.needs_context boolean`；Architect 早已表态架构侧无异议成本极低；ai v0.2 按 v1.9 写入；xiaobao 列迁移登记 Developer 待办（ai 写回联调前落地）；前端消费留后续迭代
+  3. **language 表述 → 认账订正**：我 07-25 帖「原文语种归 raw_items.language」系笔误（该列不存在），原文语种当前不落任何列；契约行补全（占位 xiaobao 写 'zh'，ai 保持）
+  4. **v0.6-summary.md 补写完成**（空文件旧账清账）：依据 v0.6.md 与 INDEX 留痕补齐——交付三主线 / 五方 Review 最大规模实战 / 关闭条件 A~D 及现状回看 / 状态回写失守事件 / Git 节点；标注补写说明不新增当时未记录的结论
+- 契约动作：news-l1-db v1.8 → **v1.9**（三项拍板落档）+ CHANGELOG 记行 + 沟通文档回帖（Q-1 定案 = C-3 欠答项闭合）
+- 涉及文档：coordination 契约/CHANGELOG/沟通文档；xiaobao v0.6-summary.md（新建）/ v0.6.1-summary.md #5 行 / INDEX / 本日志
+- 下一步：PM 名下悬案清零。余 xiaobao 在途：DevOps（生产 LLM 换 volcengine 已拍待执行 + #16 + 6i②）/ Developer（needs_context 列迁移 + #5 实现 + #7,绑 ai v0.2 联调）
+
 ## 2026-07-28 — REQ-003 ai 三件事：PM 答日增量（几十条/天，v0.3 无需前移）+ 两件转办
 
 - 本次角色：产品架构师(PM)
