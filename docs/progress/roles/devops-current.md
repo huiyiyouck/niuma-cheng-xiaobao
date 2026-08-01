@@ -2,6 +2,16 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-01（续）— REQ-003 部署包 test+prod 落地（超时四项 + x-stream + 数组列收口）
+
+> 角色：DevOps；模式：部署。Owner 部署包指令，test 先行、prod 一批。
+
+- **代码 `166fe51`**（含 `744d20a` x-stream 适配批〔prod 前欠〕+ `51927cc` 超时四项 + 数组列收口）经 `deploy.sh test`/`prod`：pull→build→rsync→重启，news-api-test / news-api 均 `active`、health `200`。
+- **`fix_sources_jsonb_array_columns.sql`** 手工 psql test+prod：`domain_tags` + `content_topics` 存量归一（object→数组）+ 默认值 `'{}'`→`'[]'` + 两条 CHECK 约束。**跑前预检**两库两列 jsonb 类型分布确认无 `null`/`string` 等（否则 CHECK 会失败回滚）；两库验证均 默认 `'[]'` / 非数组 0 行 / 2 约束。
+- **§5 超时验证** 两库：以 `pool.ts` 同款 `options=-c` 机制连库 SHOW `30s/1min/5s` + `SET statement_timeout=1s; pg_sleep(2)` 被杀 + 重启后无超时误杀日志 + 近 1h 0 告警。`ai_worker` rolconfig 集群级此前已闭合，未重验。
+- **持续项**：24h `alerts` 无新增超时类告警（观察窗）。
+- 连带销账：INDEX 待办『下次生产部署 DevOps 验证包』标完成；『测试队列不可领』旧账核实闭合（seed 07-28 已订正、当前 6 可领 0 孤儿）。
+
 ## 2026-08-01 — REQ-003 契约 v1.7 阈值回填 + 8100 ai 服务链路排查
 
 > 角色：DevOps；模式：跨项目协作收尾（REQ-003 契约 v1.7 遗留回填）。
