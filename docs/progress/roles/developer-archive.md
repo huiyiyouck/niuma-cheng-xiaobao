@@ -2,7 +2,59 @@
 
 > 旧日志归档。启动时默认不读，按需 grep。
 > 最近条目见 `developer-current.md`；长期摘要和常见风险见 `developer-summary.md`。
-> 归档时间：2026-07-29（v0.6.1 关闭后收尾，2026-06-13 至 06-28 共 10 条移入；上次 2026-06-09）
+> 归档时间：2026-08-01（会话收尾，07-25 / 07-01 两条移入；上次 2026-07-29）
+
+---
+
+## 2026-07-25 — v0.6.1 实现 R3：前端展示分层（迭代关闭检查遗留）
+
+- 本次角色：全栈开发（Developer）；模式：标准迭代 v0.6.1 实现阶段 R3
+- 背景：PM 2026-07-25 迭代关闭检查发现 PRD R2 §5.10 前端展示分层未实现（实现 R1/R2 三方 Review 全部集中在后端，漏审前端），登记 5 项前端待办叫停关闭
+- 已实现（commit `0c733c5`，base `12e2d46`）：
+  - `api.ts`：`NewsOut`/`NewsDetailOut` 契约类型 + `getGlobalLevelStatusCounts()`
+  - `NewsPage.tsx` 卡片：待解析/解析中角标、失败态底部小字（hover 原因）、基础展示态隐藏评分与标签
+  - `NewsPage.tsx` 抽屉：状态条 + 四维评分条形图 + AI 分析 + 背景补全 + 解析中提示 + 失败原因摘要；直显类无状态条；详情合并对旧版后端缺字段做防覆盖
+  - `MonitoringPage.tsx`：「AI 处理概览」Tab 六卡片网格 + 失败重试态
+  - `AppSidebar.tsx`：底部统计补 AI 待处理/处理中（失败静默降级）
+  - 后端 `news.ts`：详情补 `process_type`、列表/详情补 `l1_error`（PRD §5.4/§5.5 失败原因与分层判断依赖）
+- 自测证据：server tsc 0 错误；frontend build 通过；本地 dev 以 `VITE_API_PROXY_TARGET=https://test.huiyiyou.cloud` 连测试环境，用临时状态模拟（已移除）逐一截图核对 6 种展示态 + 监控 AI Tab（真实数据 completed=154）+ 侧栏指标；移除模拟后真实数据回归正常
+- 已知偏差 3 条（今日/累计口径、language 原文标签依赖后端、待解析角标从严按 AC-04）已登记迭代记录，提请 Review 时裁定
+- 另：按 last-out 惯例代提 PM 迭代关闭检查 + Architect 实现 R2 复审遗留文档（commit `5905f19`）
+- Owner 订正流程：R3 不走 PM 单方验收，与 R1/R2 一致走三方 Review（已记 corrections，Review 方登记已订正）
+- 下一步：PM / Architect / DevOps 三方 Review 实现 R3 → DevOps 部署测试/生产 → PM 重跑迭代关闭检查（收尾）
+
+---
+
+## 2026-07-01 — AI news-l1 跨项目联调入口 + KB search 契约对齐
+
+- 本次角色：全栈开发（Developer）；模式：非迭代跨项目联调任务（coordination `REQ-001`）
+- coordination 依据：`/root/Project/niuma-cheng-coordination`；读取并更新 `STATUS.md`、`REQUESTS.md`、`communications/REQ-001-news-l1.md`、`contracts/news-l1.md`、`contracts/kb-search.md`
+- Owner 要求：联调不能只做后端触发；需要前端调试页供验收，选择库内数据后发送给 ai 侧处理，并在页面看到返回；ai 侧提出的库内新闻搜索需求也要完成；联调契约必须定清楚传参、返回格式和数量。
+- 已完成 xiaobao 侧：
+  - 后端新增 AI Hub HTTP 客户端与配置 `AI_HUB_BASE_URL` / `AI_HUB_API_TOKEN` / `AI_HUB_TIMEOUT_MS`
+  - `L1_ENGINE=ai` 时 worker 可复用独立 AI Hub 调用路径
+  - 抽出 raw_item → `L1Input` 构造函数，联调入口与真实业务共用；补齐 `raw_content.url` 映射，符合 ai 侧 link read 规则
+  - 新增 `GET /v1/ai-debug/candidates`、`POST /v1/ai-debug/news-l1-runs`
+  - 新增 ai→xiaobao `POST /v1/kb-search`
+  - 前端新增 `/debug/ai` 页面和侧栏「联调」入口，可搜索/选择新闻、配置工具上限和超时、发送 AI、展示请求/响应 JSON 与结构化结果
+- coordination 已更新：
+  - `contracts/news-l1.md` 补齐 `raw_content` URL 规则、`KbResult`、`tool_summary` 口径、JSON 示例
+  - 新增 `contracts/kb-search.md` v1：`top_n` 默认 5 / 最大 10，返回 `results[]` 的固定结构
+  - 更新 `communications/REQ-001-news-l1.md`、`STATUS.md`、`CHANGELOG.md`
+- 验证：
+  - `cd server && npm run build` 通过
+  - `cd frontend && npm run build` 通过
+  - `cd server && npm test -- src/__tests__/x-direct-display.test.ts` 通过（2 passed）
+- 测试环境部署与收尾：
+  - 已同步后端到 `/srv/niuma-news/test/server/src/`、前端 dist 到 `/var/www/test.huiyiyou.cloud/`，`news-api-test.service` active；`/health`、`/v1/ai-debug/candidates`、`/v1/kb-search` 均 200
+  - ai 服务 `http://127.0.0.1:8100/health` 200，xiaobao 测试后端已可调用 ai
+  - 修复测试站点 nginx `/v1/` 默认超时导致 AI 慢请求 504：已加 `proxy_connect_timeout 10s`、`proxy_send_timeout 240s`、`proxy_read_timeout 240s`，`nginx -t` 通过并 reload
+  - 前端联调页已优化：点击发送后立即展示触发请求和“处理中”响应提示；AI 返回后展示实际 `L1Input` 与完整 `RunResponse`
+- 真实联调验证：
+  - 公网 `POST https://test.huiyiyou.cloud/v1/ai-debug/news-l1-runs` 通过，约 79s 返回 200，`run_id=run_7e626cf5f391`，`status=succeeded`
+  - xiaobao→ai：`run_2a4dbc15f308` succeeded；ai→xiaobao KB 命中：`run_2e0072cba2a3` succeeded 且 `tool_summary.kb_search=1`
+  - KB 空结果时 ai 当前标 `degraded:kb_search_failed`，coordination 已记录为 ai 侧语义优化项
+- 当前状态：xiaobao 侧联调入口完成、测试环境可验收；主链路不再阻塞。下一步由 Owner 在 `/debug/ai` 抽样验收，ai 侧优化 KB 空结果语义
 
 ---
 

@@ -2,17 +2,18 @@
 
 > 长期摘要、当前关注点和常见风险。启动时与 `developer-current.md` 一并读取。
 > 旧条目原文见 `developer-archive.md`。
-> 最近一次更新：2026-07-29（v0.6.1 关闭后收尾分层归档）
+> 最近一次更新：2026-08-01（会话收尾；上次 2026-07-29）
 
 ---
 
-## 当前状态（2026-07-29）
+## 当前状态（2026-08-01）
 
-- **当前迭代**：无 — v0.6.1 已于 2026-07-27 有条件关闭（数据库契约异步 AI 处理集成 + 前端展示分层），v0.6 已于 07-04 关闭
-- **Developer 无在途代码任务**：v0.6.1 关闭遗留 #2 批（x-stream 适配 + #3/#4/#6）与 R4 三项低严重度均已清（commit `744d20a` / `a3e8e53`）；遗留 #5/#7 挂「ai v0.2 联调启动时」触发
-- **待部署**：`744d20a`（x-stream 批）已在测试环境，生产随下次 DevOps 部署带上；X Stream 恢复推送后观察首条 `tweet ingested type=` 日志确认分流
-- **测试基建**：本地无 PG，全量单测经 SSH 隧道 `ssh -L 15432:localhost:5432 zijie` 连服务器 `news_vitest` 隔离库（`.env.test` 已配）；前端可视化自测用 `VITE_API_PROXY_TARGET=https://test.huiyiyou.cloud npm run dev` 连测试环境真实数据
-- **跨任务待办（Developer 归属）**：OpenClaw L1 Agent 化技术验证已完成，但按 2026-06-28 Owner 收口决策，v0.6 不放开 AI 处理；当前生产策略为 `ENABLE_AI_PROCESSING=false`，X/Twitter raw item 直接展示，AI 处理后续交独立 AI 中枢；UI 组件库专项/左中右专项已在本次以最小实现落地，后续可继续抽组件
+- **当前迭代**：无 — v0.6.1 已于 2026-07-27 有条件关闭，等待 Owner 定下一迭代主题（PM 建议等 ai v0.2 联调打通后再定）
+- **Developer 唯一在途：INDEX 任务书三项，绑「ai v0.2 联调启动时，三项同批」触发**（PM 2026-08-01 铺单，决策已全清照办）：① `processed_news` 加 `needs_context boolean` 列迁移（契约 v1.9 Q-1，**须在 ai 写回联调前落地**）② #5 score_total 轮询补算（挂 worker tick，公式复用 `calcScoreTotal` 单一真源）③ #7 手动重试接口放开 `l1_ai_process`（`l1-tasks.ts:24`）
+- **2026-08-01 已清**：数据库超时四项落码（`51927cc`，pool.ts/config.ts，方案 §9 有验证记录）+ `ALTER ROLE` 方案甲核对闭合 + sources 数组列收口（`8d0d0cf`/`166fe51`：domain_tags/content_topics 默认值 `'[]'` + 存量归一 + CHECK 约束）；均已随 DevOps 部署包上 test+prod
+- **Owner 工作方式授权（2026-08-01，长期有效）**：技术决策自己拍、取最稳最冗余方案、留痕不请示（见 memory `owner-delegates-dev-decisions`）
+- **测试基建**：本地无 PG，全量单测经 SSH 隧道 `ssh -L 15432:localhost:5432 zijie` 连服务器 `news_vitest` 隔离库（`.env.test` 已配；该库现已带 sources 两列 CHECK 约束）；前端可视化自测用 `VITE_API_PROXY_TARGET=https://test.huiyiyou.cloud npm run dev` 连测试环境真实数据
+- **多会话并行纪律**：同一工作副本可能有 PM/Architect/DevOps 会话并行操作——开工先 `git pull`，commit 用文件白名单 `git add`（禁 `git add -A`），提交前 `git diff --cached --stat` 核范围
 
 ## 角色定位回顾
 
