@@ -32,6 +32,7 @@
 - **顺带发现（未动，仅登记）**：`schema.ts:69` `content_topics` 有同款问题（语义为数组、默认 `'{}'`，`sources.ts:36` 已有 SQL 层容错）；不在 6i① 范围且不出境给 ai，待 Owner 拍是否顺带清理
 - coordination 6i① 状态已更新（代码侧完成、执行随部署）
 - 下一步：DevOps 下次部署执行脚本（test+prod）并按注释验证
+- **追记（同日，Owner 授权自决后收口升级）**：Owner 明确「技术决策自己拍，方向取最稳最冗余」。据此自决：脚本升级为 `fix_sources_jsonb_array_columns.sql`（原 domain_tags 脚本改名扩展）——① `content_topics` 同款问题一并修（schema.ts 默认值 + 存量归一）② 存量归一从「仅 `{}`」加固为「任意 object → 值数组」（与应用层 `Object.values` 容错同口径）③ 补 **CHECK 约束**两条防再混存（兑现 coordination 已登记的「加类型校验」承诺，此前一直没人落）。验证：vitest 库实跑两遍验幂等 + CHECK 拒写实测（`{}` 插入被拦、默认值路径得 `[]`）+ tsc 0 错误 + 单测 65/65（CHECK 生效下全量回归）。INDEX 部署包 ③ 与 coordination 6i① 引用已同步更新
 
 ---
 

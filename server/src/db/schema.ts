@@ -67,7 +67,8 @@ export const sources = pgTable(
     // 契约 v1.6 定性：语义为数组（'{}' 系误写，等同「未配置」；见 coordination REQ-003 待跟进 6i①）
     domainTags: jsonb("domain_tags").notNull().default(sql`'[]'::jsonb`),
     sourceRole: varchar("source_role", { length: 20 }).notNull().default("other"),
-    contentTopics: jsonb("content_topics").notNull().default(sql`'{}'::jsonb`),
+    // 同 domainTags：语义为数组，'{}' 系误写（收口脚本 db/scripts/fix_sources_jsonb_array_columns.sql）
+    contentTopics: jsonb("content_topics").notNull().default(sql`'[]'::jsonb`),
     attentionLevel: varchar("attention_level", { length: 20 }).notNull().default("regular"),
     notes: text("notes"),
     // 抓取配置（全局）
