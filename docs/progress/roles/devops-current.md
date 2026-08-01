@@ -39,11 +39,11 @@
 
 ### 遗留（待推进）
 - **生产 LLM provider**：生产 key 同失效，生产 AI 关闭故无当前影响；生产上 AI/L0 前需定 provider + 更新生产 `.env`。
-- **domain_tags 预期类型**：`sources` 2 array + 2 `{}`（脏数据），预期语义待 Architect 落契约 §sources；定后 DevOps 归一（`{}`→`[]`）+ 造非空冒烟条目。
+- ~~**domain_tags 预期类型**：`sources` 2 array + 2 `{}`（脏数据）……定后 DevOps 归一 + 造数~~ → ✅ **已闭合（2026-08-01）**：Architect 已定型（数组，`{}` 系误写，契约 v1.6/v1.8）；DevOps 已归一 test+prod 存量各 2 个 `{}`→`[]`（0 残留）；非空冒烟条目已有 `303fc961`（`["AI"]`）覆盖。**剩列 DB 默认值迁移**——`schema.ts:68` 代码侧已 `'[]'::jsonb`，但 test/prod 库列 DEFAULT 仍 `'{}'::jsonb`（漂移），转 Developer（见 INDEX 跨任务待办 P2）。
 - **L0 model 选型**：test 暂用 `deepseek-v4-flash`，Owner 可调（volcengine 网关多 model）。
 
 ### 下一步入口
-DevOps 无独立主动待办；等 Architect 定 domain_tags 预期 → DevOps 归一+造数；生产上 AI 前定 provider。
+DevOps 无独立主动待办；~~等 Architect 定 domain_tags 预期 → DevOps 归一+造数~~（已闭合，见遗留）；生产上 AI 前定 provider；`domain_tags` 列默认值迁移已转 Developer（INDEX P2）。
 
 ## 2026-07-12 — v0.6.1 PRD R1 DevOps Review
 
