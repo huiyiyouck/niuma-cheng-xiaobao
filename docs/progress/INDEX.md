@@ -41,13 +41,16 @@
 
 （例行：08-01 部署后的 24h alerts 观察窗到期确认一下即可）
 
-#### → Developer（触发时机：ai v0.2 联调启动时，三项同批）
+#### → Developer（原触发时机：ai v0.2 联调启动 → Owner 2026-08-01 指令提前做掉，三项同批 ✅ 全部完成）
 
-| # | 任务 | 决策状态 |
-|---|------|----------|
-| 1 | **needs_context 列迁移**：`ALTER TABLE processed_news ADD COLUMN needs_context boolean`（契约 v1.9 Q-1 定案；**须在 ai 写回联调前落地**，否则 ai 写入报错算我方违约；processed_news 表级 GRANT 已覆盖，无权限动作） | ✅ 决策已清，照办 |
-| 2 | **#5 score_total 轮询补算**：挂 worker tick（与 reclaim 同节奏），条件 `l1_status='completed' AND score_dimensions IS NOT NULL AND score_total IS NULL`，公式复用 `calcScoreTotal`（**单一真源，禁止在 SQL 里重写公式**）（契约 v1.9 PM 已拍轮询方案） | ✅ 决策已清，照办 |
-| 3 | **#7 手动重试接口支持 `l1_ai_process`**：`l1-tasks.ts:24` 放开硬判定（v0.6.1 遗留 #7 / R3 #A-R3-4） | 无决策项，照办 |
+| # | 任务 | 决策状态 | 完成情况 |
+|---|------|----------|----------|
+| 1 | **needs_context 列迁移**（契约 v1.9 Q-1 定案；**须在 ai 写回联调前落地**；表级 GRANT 已覆盖） | ✅ 决策已清 | ✅ **代码/脚本完成**：schema.ts 补 `needsContext` + 幂等脚本 `server/db/scripts/add_processed_news_needs_context.sql`（vitest 库已实跑两遍验证）；**test/prod 生效随下次 DevOps 部署跑脚本**（见下方部署项） |
+| 2 | **#5 score_total 轮询补算**（挂 worker tick，公式复用 `calcScoreTotal` 单一真源） | ✅ 决策已清 | ✅ **完成**：`l1-processor.ts` 新增 `backfillScoreTotalTick`（条件/上限 200/维度残缺跳过防崩），挂 `worker/index.ts` reclaimLoop 同节奏；TDD 单测 4/4 |
+| 3 | **#7 手动重试接口支持 `l1_ai_process`**（`l1-tasks.ts` 放开硬判定） | 无决策项 | ✅ **完成**：白名单放开 + 新任务建同类型 + `max_attempts` 走 `maxAttemptsForTaskType` 单一真源（尊重 `AI_MAX_RETRIES`）；TDD 单测 2/2 |
+
+> 三项验证：TDD 红→绿（新增 `l1-backfill-retry.test.ts` 6/6）+ tsc 0 错误 + 全量单测 **71/71**。
+> **新增 DevOps 部署项（下次部署带上）**：① 部署本批代码（worker 补算 tick + 重试接口 + schema）② psql 跑 `add_processed_news_needs_context.sql`（test+prod，幂等，验证 SQL 在脚本注释）——**②落地后 ai 写回前置即齐，届时在 coordination 回帖销「列迁移待落地」前置**。
 
 #### → ai v0.2 上生产里程碑（开 prod AI 的前置链，三环齐备才能点火）
 
@@ -58,7 +61,7 @@
 | ① | prod L0 provider（volcengine，xiaobao L0 用） | DevOps | ✅ **已备**（2026-08-01 任务 1，直连验证 200，未点火） |
 | ② | **prod ai worker 部署 + ai 侧 L1 有效 provider** | **ai 侧**（ai v0.2 上生产） | ❌ **未做——关键缺环** |
 | ③ | prod flip `AI_INTEGRATION_MODE=database`（对齐 test / v0.6.1 设计） | DevOps | ⏸ 待 ①② 齐；单切即开 AI 埋雷，见 coordination 待跟进 16 / `f5d032f` |
-| ④ | Developer 三项（needs_context 迁移〔ai 写回前必须落地〕/ #5 score_total 补算 / #7 重试接口） | Developer | 见上「→ Developer」区，绑 ai v0.2 联调 |
+| ④ | Developer 三项（needs_context 迁移〔ai 写回前必须落地〕/ #5 score_total 补算 / #7 重试接口） | Developer | ✅ **代码全部完成**（2026-08-01，71/71）；仅剩 needs_context 脚本随 DevOps 部署在 test/prod 落库 |
 | 点火后 | 端到端联调（coordination 待跟进 7）：raw → L0 → `l1_ai_process` → ai claim → 写回 `completed` | 双侧 | 待 ①②③④ |
 
 > **点火时序**：①（已备）→ ②（ai 上 prod worker + provider）→ ④（Developer 落 needs_context 等）→ ③（DevOps flip `database`，最后一步）→ 端到端联调。**任一环未齐，prod AI 开关不得打开。**
@@ -66,14 +69,14 @@
 #### → Owner（你）
 
 - 启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合）——PM 建议等 ai v0.2 联调打通、富展示真实点亮后再定主题
-- ai v0.2 联调启动时：吱一声开 Developer 会话（上表三项）
+- ~~ai v0.2 联调启动时：吱一声开 Developer 会话（上表三项）~~ ✅ 三项已提前完成（2026-08-01 Owner 指令），联调启动时 xiaobao 侧无待做项
 
 #### 已闭合项（存档，勿重复做）
 
 v0.6.1 关闭遗留 #1（GRANT 3 列）/ #2 批（x-stream 适配+#3/#4/#6，`744d20a` 已上 prod）/ 测试队列不可领（seed 已修，6 条可领）/ C-14（契约 v1.5）/ 6i①（数组列收口+CHECK，08-01 部署生效）/ test LLM provider（volcengine 已跑通）/ PM 三项拍板（#5 方案、Q-1 补列、language 订正，契约 v1.9）/ v0.6-summary 补写。明细见 [v0.6.1-summary.md](iterations/v0.6.1-summary.md) 与 coordination 待跟进表。
 
 - 跨项目在途：REQ-003 ai v0.2 设计阶段 R1 Review 中（xiaobao 侧无被催项；契约当前 **v1.9**）；端到端联调待 ai 实现完成后双侧启动
-- 下一步入口：DevOps 三项已清零（2026-08-01）。xiaobao 侧唯余 **Developer 三项**（绑 ai v0.2 联调启动）+ **Owner 下一迭代规划**；「prod 切 database + prod ai worker + 开 AI 链路」整包 = **ai v0.2 上生产里程碑**，届时 DevOps 一批执行
+- 下一步入口：DevOps 三项与 **Developer 三项均已清零**（2026-08-01）。xiaobao 侧唯余 **Owner 下一迭代规划** + 下次 DevOps 部署两件（本批代码 + needs_context 脚本落 test/prod）；「prod 切 database + prod ai worker + 开 AI 链路」整包 = **ai v0.2 上生产里程碑**，届时 DevOps 一批执行
 
 ## 版本列表
 

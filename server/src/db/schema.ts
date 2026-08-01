@@ -221,6 +221,8 @@ export const processedNews = pgTable(
     scoreTotal: numeric("score_total"),
     scoreDimensions: jsonb("score_dimensions"),
     tagsV2: jsonb("tags_v2"),
+    // v1.9 Q-1 定案（契约）：ai 写入的质量信号「上下文不足、结果存疑」；前端消费留后续迭代
+    needsContext: boolean("needs_context"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [index("ix_processed_news_published").on(table.publishedAt)],

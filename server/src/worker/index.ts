@@ -6,6 +6,7 @@ import { schedulerTick } from "./scheduler.ts";
 import { workerLoop } from "./dispatcher.ts";
 import { zeroNewMonitorTick } from "./monitor.ts";
 import { reclaimStaleTick } from "./reclaim.ts";
+import { backfillScoreTotalTick } from "./l1-processor.ts";
 import { xStreamManager } from "./x-stream-manager.ts";
 import { xRuleSyncer } from "./x-rule-sync.ts";
 import { EnvHttpProxyAgent, ProxyAgent, setGlobalDispatcher } from "undici";
@@ -102,6 +103,8 @@ async function reclaimLoop(stopSignal: AbortSignal): Promise<void> {
       const client = await dbPool.connect();
       try {
         await reclaimStaleTick(client);
+        // 遗留 #5（契约 v1.9）：与 reclaim 同节奏补算 ai 写回后缺失的 score_total
+        await backfillScoreTotalTick(client);
       } finally {
         client.release();
       }

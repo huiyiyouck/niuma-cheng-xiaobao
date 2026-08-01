@@ -23,6 +23,41 @@ function calcScoreTotal(dims: L1Output["score_dimensions"]): number {
   return final;
 }
 
+// ── score_total 轮询补算（遗留 #5，契约 v1.9）────────────────
+// database 模式下 ai 只写 score_dimensions，score_total 由我方按同一公式补算；
+// 挂 worker reclaim tick 同节奏执行，公式复用 calcScoreTotal 单一真源（不进 DB 触发器）。
+
+function isValidDims(d: unknown): d is L1Output["score_dimensions"] {
+  const dims = d as Record<string, { score?: unknown }> | null;
+  return !!dims && ["timeliness", "impact", "confidence", "clarity"]
+    .every((k) => typeof dims[k]?.score === "number");
+}
+
+export async function backfillScoreTotalTick(conn: PoolClient): Promise<void> {
+  const { rows } = await conn.query(
+    `SELECT pn.id, pn.score_dimensions
+     FROM processed_news pn
+     JOIN raw_items ri ON ri.id = pn.raw_item_id
+     WHERE ri.l1_status = 'completed'
+       AND pn.score_dimensions IS NOT NULL
+       AND pn.score_total IS NULL
+     LIMIT 200`,
+  );
+  for (const row of rows) {
+    const dims = typeof row.score_dimensions === "string"
+      ? JSON.parse(row.score_dimensions)
+      : row.score_dimensions;
+    if (!isValidDims(dims)) {
+      log.warn("SCORE BACKFILL skip id=%s score_dimensions 结构不完整", row.id);
+      continue;
+    }
+    await conn.query(
+      `UPDATE processed_news SET score_total = $1 WHERE id = $2 AND score_total IS NULL`,
+      [calcScoreTotal(dims), row.id],
+    );
+  }
+}
+
 // ── 阶段 1：库内相关新闻检索（ILIKE）─────────────────────────
 
 export async function kbSearch(conn: PoolClient, rawItemId: string, sourceId: string): Promise<Array<{ title: string; summary: string }>> {

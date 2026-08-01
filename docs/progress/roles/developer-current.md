@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-08-01 — 任务书三项提前完成（needs_context 迁移 + #5 补算 + #7 重试，非迭代任务）
+
+- 本次角色：全栈开发（Developer）；模式：非迭代任务（INDEX 任务书三项，原绑 ai v0.2 联调触发，Owner 指令提前做掉；三项同批）
+- 已完成（TDD：先写 `l1-backfill-retry.test.ts` 6 例红灯 → 实现 → 6/6 绿）：
+  - **任务 1 needs_context**：schema.ts `processedNews` 补 `needsContext: boolean`（可空）+ 幂等脚本 `add_processed_news_needs_context.sql`（vitest 库实跑两遍验证：boolean/可空）；test/prod 落库随下次 DevOps 部署（时序红线：须在 ai 写回联调前生效）
+  - **任务 2 #5 补算**：`l1-processor.ts` 新增 `backfillScoreTotalTick`——条件按契约 v1.9（completed + 有维度 + total 空）、LIMIT 200、维度残缺跳过并 warn（防 ai 写回脏数据崩 tick）、公式复用 `calcScoreTotal` 单一真源；挂 `worker/index.ts` reclaimLoop（与 reclaim 同节奏 30s）
+  - **任务 3 #7 重试**：`l1-tasks.ts` 白名单放开 `l1_ai_process`；新任务建**同类型**（原实现硬编码 `l1_process`）+ `max_attempts` 改走 `maxAttemptsForTaskType`（尊重 `AI_MAX_RETRIES`，原硬编码 3）
+- 验证：新测试 6/6（含公式值断言 10.0、复位断言、拒绝路径）；tsc 0 错误；全量单测 **71/71**
+- 交接 DevOps（下次部署两件）：① 部署本批代码 ② psql 跑 needs_context 脚本（test+prod）——②落库后在 coordination 回帖销契约 v1.9 的「列迁移待落地」前置
+- 顺带发现（未动）：`calcScoreTotal` 的日志格式串用 `%.2f/%.1f` 但 logger 不支持该占位符，输出参数错位（纯日志显示问题，计算正确、单测断言过）；留待后续顺手修
+- 下一步：ai v0.2 联调启动时 xiaobao 侧已无待做项；等 DevOps 部署落库
+
+---
+
 ## 2026-08-01 — 数据库超时四项落码（超时方案待办 #3，非迭代任务）
 
 - 本次角色：全栈开发（Developer）；模式：非迭代任务（[超时方案](../ad-hoc/2026-07-30-spike-db-timeout-config.md) §6 待办 #3，前置已由 §8.4 全清，Owner 指令开工）
