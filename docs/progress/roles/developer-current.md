@@ -21,6 +21,20 @@
 
 ---
 
+## 2026-08-01 — coordination 6i①：`sources.domain_tags` 列默认值修复（非迭代小改）
+
+- 本次角色：全栈开发（Developer）；模式：非迭代小改（coordination REQ-003 待跟进 6i① 落地项，Owner 指令开工）
+- 已落码：
+  - `schema.ts:67`：`domainTags` 列默认值 `'{}'::jsonb` → `'[]'::jsonb`（契约 v1.6 定性：预期类型是数组，`{}` 系误写）
+  - 新增幂等迁移脚本 `server/db/scripts/fix_sources_domain_tags_default.sql`：`ALTER COLUMN SET DEFAULT` + 存量 `{}` 归一 `[]` + 注释内验证 SQL；test/prod 执行归 DevOps 随下次部署（已入 INDEX 部署包待办 ③）
+- 排查确认：全代码库无任何路径显式写 `{}` 到该列（zod 层新建源默认 `[]`），列默认值是唯一来源，改默认即断根
+- 验证：隔离库 `news_vitest` 实跑脚本两遍（验幂等）——新默认值 `'[]'::jsonb` ✓ / 非数组行数 0 ✓；tsc 0 错误；全量单测 65/65
+- **顺带发现（未动，仅登记）**：`schema.ts:69` `content_topics` 有同款问题（语义为数组、默认 `'{}'`，`sources.ts:36` 已有 SQL 层容错）；不在 6i① 范围且不出境给 ai，待 Owner 拍是否顺带清理
+- coordination 6i① 状态已更新（代码侧完成、执行随部署）
+- 下一步：DevOps 下次部署执行脚本（test+prod）并按注释验证
+
+---
+
 ## 2026-07-27 — 清 v0.6.1 关闭遗留 #2 批（x-stream 适配 + #3/#4/#6，非迭代 Bugfix）
 
 - 本次角色：全栈开发（Developer）；模式：非迭代 Bugfix（v0.6.1 关闭遗留清单，Owner 指令开工）
