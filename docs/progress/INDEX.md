@@ -4,25 +4,64 @@
 
 ## 当前项目状态
 
-- 当前迭代：无（v0.6.1 已于 2026-07-27 有条件关闭）
+- 当前迭代：无（v0.6.1 已于 2026-07-27 有条件关闭，[归档摘要](iterations/v0.6.1-summary.md)）
 - 当前模式：未选择
-- 当前阶段：空闲 — v0.6.1 已关闭（Owner 验收通过 + 9 项关闭检查 + summary 落档），等待 Owner 决定下一步
+- 当前阶段：空闲 — 项目级无阻塞；在途工作全部收拢为下方「角色待办任务书」，各角色开工照单执行
 - 阻塞项：无
-- 近期待办（非迭代通道，见 [v0.6.1-summary.md §关闭遗留清单](iterations/v0.6.1-summary.md)）：
-  - ~~#1 GRANT 追加 3 列~~ ✅ **已完成**（2026-07-27 DevOps，test+prod 双库对称 + verify 通过，coordination 回帖 `f72616d`；契约已随之升 **v1.4**（权限矩阵照实补齐）。ai 侧 C-6 行锁实测前置全齐——凭据由 ai DevOps 同机直读，无需 Owner 转交）
-  - ~~#2 x-stream-manager 适配 v0.6.1 + #3/#4/#6~~ ✅ **已完成**（2026-07-27 Developer，commit `744d20a`，单测 65/65 + 测试环境已部署稳定；生产随下次 DevOps 部署，见 [ad-hoc 记录](ad-hoc/2026-07-27-bugfix-xstream-v061-adapt.md)）
-  - #5 score_total 补算（✅ PM 已拍：轮询方案，契约 v1.9）+ #7 重试接口 + **needs_context 列迁移**（Q-1 定案新增，`ALTER TABLE processed_news ADD COLUMN needs_context boolean`，须在 ai 写回联调前落地）→ 三项 Developer 同批，ai v0.2 联调启动时
-- 跨项目在途：REQ-003 ai 侧 v0.2 开发中（xiaobao 侧 4 条阻塞已全数解除，契约 v1.3）；凭据经安全渠道交付 ai 由 Owner 完成；ai 联调/上生产时的届时前置见 coordination 待跟进表
-- 跨项目转办（REQ-003，2026-07-28 ai 三件事）：
-  - ~~**测试队列不可领 → DevOps（最高）**：seed 脚本未建 task 行……双管齐下~~ → ✅ **已闭合（旧账，2026-08-01 核实）**：seed 脚本 07-28 已订正会幂等建 `l1_ai_process` task，当前 news_test 6 条 queued task 全可领、0 孤儿；`744d20a` 亦已随本日部署上 prod。双管早已落地，此为未销旧账
-  - ~~**C-14 `l0_label` 语义 → Architect**~~ ✅ **已答毕**（2026-07-28，coordination `bb530e9`，契约升 **v1.5**）：`l0_label` 是**处理决策标记**（完整取值域 `direct_display` / 三个 `*_candidate` / 规则跳过原因 / `llm_skip`，已入契约），**非**领域分类。**关键发现：`L1Input.domain_tags` 的真源是 `sources.domain_tags`**（源级静态标签 → `l1-processor.ts:243` → `ai-hub.ts:45`），与 L0 无关——**我方 v1.3 答 C-1 时的「L0 分类结果存在 l0_label」是错的，已公开撤回**；DevOps 已执行 `GRANT SELECT (domain_tags, attention_level) ON sources`，ai 侧 `domain_tags` 恒空问题**彻底解决**（无需列为已知限制，优于 PM 预设的「暂无规划」条件口径）。同帖答 C-11（`priority` 数值大 = 优先）/ C-12（退避越界取末值）/ C-13（`source_item_url` 不保证协议前缀 + 幂等前提登记）/ task 创建链路 / KB token 鉴权。
-  - **⚠️ 同帖两处断言过时已发更正**（coordination `bb530e9`）：C-5 事务与 C-12 `max_attempts` 读列**均已由 `744d20a` 落地**，我沿用上一轮代码记忆误报为「待订正」。已记入 [architect-corrections.md](roles/architect-corrections.md)（同一根因第三次：未按当前 HEAD 核实就下断言）。
-  - ~~新增待办 → Developer~~ → ~~DevOps 排查~~ → ✅ **已解决（2026-07-29 DevOps）**：`news_test` 8 条 `l0_classify` failed 根因两层——① `L0_LLM_MODEL` 默认 `gpt-4o-mini` 撞 endpoint（400）；② `OPENAI_API_KEY` 失效（401，xiaobao 用的 xiaomimimo key 已作废，与 OpenClaw 配置里的 xiaomi key 同源同废）。**收尾**：改用 OpenClaw 配置里有效的 **volcengine-plan** provider（`ark.cn-beijing.volces.com/api/plan/v3` 聚合网关），test `.env` 换 `OPENAI_BASE_URL/API_KEY` + `L0_LLM_MODEL=deepseek-v4-flash`；**端到端验证通过**——新造 l0_classify task `succeeded`、`l0_status=passed`、`l0_label=high_priority_candidate`、L0 通过自动建 `l1_ai_process` task（正式链路工作、JSON 解析正常）。8 条原 failed 现场保留未动。⚠️ **遗留（待 Owner）**：生产 `news` 库 LLM key 同失效，但生产 AI 默认关闭、当前无影响；生产上 AI/L0 前需定生产 LLM provider（换 volcengine 或续有效 xiaomimimo key）并更新生产 `.env`
-- 下一步入口（2026-08-01 更新）：
-  - **✅ Owner 已拍（2026-08-01）：生产 LLM provider 换 volcengine，对齐测试库同款配置**（不续 xiaomimimo key）→ **转 DevOps 执行**：生产 `/srv/niuma-news/prod/server/.env` 照 test 配置换 `OPENAI_BASE_URL`（volcengine-plan 聚合网关 `ark.cn-beijing.volces.com/api/plan/v3`）+ `OPENAI_API_KEY`（volcengine 有效 key，同机 OpenClaw 配置内有）+ `L0_LLM_MODEL=deepseek-v4-flash`；验证方式照 2026-07-29 test 收尾（造一条 l0_classify task → succeeded → l0_label 产出）。注意：生产 AI 开关仍保持关闭，本项只换 provider 不开链路
-  - DevOps 同一会话顺带：#16 prod 集成模式对齐（`AI_INTEGRATION_MODE` http→database + `AI_HUB_BASE_URL` 显式化，勿再指默认 8100）+ 6i② 补 domain_tags 非空冒烟条目
-  - Owner 另拍：启动下一迭代规划（候选：sentiment / 相关性深化 / ai v0.2 联调配合）
-  - ~~测试队列不可领~~、~~C-14~~、~~6i①~~、~~744d20a 上 prod~~ 均已闭合
+
+### 📋 角色待办任务书（2026-08-01 PM 整理，开工前先读这里）
+
+#### → DevOps（一次会话可全清，共 3 项）
+
+**任务 1 · 生产 LLM provider 换 volcengine（Owner 已拍板 2026-08-01，对齐测试库同款）**
+
+| 要素 | 内容 |
+|------|------|
+| 背景 | 生产 `news` 库 LLM key（xiaomimimo）已失效；test 已于 07-29 换 volcengine 端到端跑通。Owner 拍板：生产同款切换，不续旧 key |
+| 操作 | 生产 `/srv/niuma-news/prod/server/.env` 三处：`OPENAI_BASE_URL` → volcengine-plan 聚合网关（`ark.cn-beijing.volces.com/api/plan/v3`，与 test `.env` 同值）；`OPENAI_API_KEY` → volcengine 有效 key（同机 OpenClaw 配置内有，与 test 同源；**key 不入 git 不入文档**）；`L0_LLM_MODEL=deepseek-v4-flash` |
+| 验证 | 照 07-29 test 收尾方式：造一条 `l0_classify` task → `succeeded` + `l0_status=passed` + `l0_label` 产出 |
+| 红线 | **只换 provider，生产 AI 开关（`ENABLE_AI_PROCESSING`）保持关闭**——开链路是另一个 Owner 决策 |
+| 留痕 | DevOps 日志 + 本任务书标 ✅ |
+
+**任务 2 · #16 prod 集成模式对齐（coordination 待跟进 16）**
+
+| 要素 | 内容 |
+|------|------|
+| 背景 | prod `.env` 为 `AI_INTEGRATION_MODE=http` 且 `AI_HUB_BASE_URL` 未显式配置（走默认 `127.0.0.1:8100`——**该端口 ai 侧已于 08-01 停机**）；test 为 `database`。v0.6.1 整套设计只在 database 模式成立 |
+| 操作 | prod `.env`：`AI_INTEGRATION_MODE` → `database`（对齐 test）；`AI_HUB_BASE_URL` 显式化——指 `http://127.0.0.1:8102`（ai v0.2 HTTP 模式，回滚路径用）或显式留空注明，**不再依赖默认值** |
+| 验证 | 重启后 health 200 + 现有功能回归（当前 AI 开关关闭，无行为变化即正确） |
+| 留痕 | **回帖 coordination 待跟进 16**（销行）+ DevOps 日志。顺带核对 news-l1 契约 v1.1 §服务端点表中 xiaobao 侧 `AI_INTEGRATION_MODE` 当前值待回填格 |
+
+**任务 3 · 6i② 补 domain_tags 非空冒烟条目（coordination 待跟进 6i②）**
+
+| 要素 | 内容 |
+|------|------|
+| 背景 | `news_test` 现有待冒烟条目对应 source 的 `domain_tags` 全为空——ai 的「domain_tags 有值」路径直到生产才会第一次执行 |
+| 操作 | 在 `news_test` 给某 source 配 `domain_tags`（如 `["AI"]`，数组格式，6i① CHECK 约束已生效会拦 `{}`），再跑 `seed_ai_queue_test.sql` 补几条该 source 下的待处理条目（脚本已幂等） |
+| 验证 | 新条目 JOIN source 后 `domain_tags` 非空数组；task 行 `queued` 且 `run_after <= now()` 可领 |
+| 留痕 | **回帖 coordination 待跟进 6i②**（销行）+ DevOps 日志 |
+
+（例行：08-01 部署后的 24h alerts 观察窗到期确认一下即可）
+
+#### → Developer（触发时机：ai v0.2 联调启动时，三项同批）
+
+| # | 任务 | 决策状态 |
+|---|------|----------|
+| 1 | **needs_context 列迁移**：`ALTER TABLE processed_news ADD COLUMN needs_context boolean`（契约 v1.9 Q-1 定案；**须在 ai 写回联调前落地**，否则 ai 写入报错算我方违约；processed_news 表级 GRANT 已覆盖，无权限动作） | ✅ 决策已清，照办 |
+| 2 | **#5 score_total 轮询补算**：挂 worker tick（与 reclaim 同节奏），条件 `l1_status='completed' AND score_dimensions IS NOT NULL AND score_total IS NULL`，公式复用 `calcScoreTotal`（**单一真源，禁止在 SQL 里重写公式**）（契约 v1.9 PM 已拍轮询方案） | ✅ 决策已清，照办 |
+| 3 | **#7 手动重试接口支持 `l1_ai_process`**：`l1-tasks.ts:24` 放开硬判定（v0.6.1 遗留 #7 / R3 #A-R3-4） | 无决策项，照办 |
+
+#### → Owner（你）
+
+- 启动下一迭代规划（候选输入：sentiment 能力 / 相关性展示深化 / ai v0.2 联调配合）——PM 建议等 ai v0.2 联调打通、富展示真实点亮后再定主题
+- ai v0.2 联调启动时：吱一声开 Developer 会话（上表三项）
+
+#### 已闭合项（存档，勿重复做）
+
+v0.6.1 关闭遗留 #1（GRANT 3 列）/ #2 批（x-stream 适配+#3/#4/#6，`744d20a` 已上 prod）/ 测试队列不可领（seed 已修，6 条可领）/ C-14（契约 v1.5）/ 6i①（数组列收口+CHECK，08-01 部署生效）/ test LLM provider（volcengine 已跑通）/ PM 三项拍板（#5 方案、Q-1 补列、language 订正，契约 v1.9）/ v0.6-summary 补写。明细见 [v0.6.1-summary.md](iterations/v0.6.1-summary.md) 与 coordination 待跟进表。
+
+- 跨项目在途：REQ-003 ai v0.2 设计阶段 R1 Review 中（xiaobao 侧无被催项；契约当前 **v1.9**）；端到端联调待 ai 实现完成后双侧启动
+- 下一步入口：**DevOps 会话照上方任务书执行**（说「你是 DevOps，按 INDEX 任务书开工」即可）；其余按任务书角色触发
 
 ## 版本列表
 
