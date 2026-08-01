@@ -132,7 +132,7 @@ BEGIN; SELECT 1;  -- 等待 > 60s 后再执行任意语句，期望连接已被�
 |---|------|------|------|
 | 1 | 契约 `news-l1-db.md` 补超时约定 + claim 事务边界硬约束 | Architect | — |
 | 2 | 沟通文档告知 ai 侧，确认其事务边界后再执行 | Architect → ai | #1 |
-| 3 | `pool.ts` + `config.ts` 四项配置落代码 | Developer | #2 确认 |
+| 3 | ~~`pool.ts` + `config.ts` 四项配置落代码~~ ✅ 已完成（2026-08-01 Developer，见 §9） | Developer | #2 确认 |
 | 4 | 服务器执行 `ALTER ROLE ai_worker SET ...`（test 先行，prod 随部署） | DevOps | #2 确认 |
 | 5 | 按 §5 验证并回写本文档 | DevOps | #3 #4 |
 
@@ -189,4 +189,20 @@ ai 按 600s 重算其不变式 `N × (单条预算 + DB上界) < 阈值 × 0.6`�
 
 - ~~#4 服务器执行 `ALTER ROLE ai_worker SET ...`~~ → **转 ai 侧执行**（方案甲），我方仅需在其回帖告知实际写入值后核对。
 - #2「须 ai 确认事务边界」→ ✅ **已解除**（ai Architect 2026-08-01 确认「事务内不含 LLM 调用」）。
-- #3（`pool.ts` + `config.ts` 四项）**前置已清，可直接落**。
+- #3（`pool.ts` + `config.ts` 四项）~~**前置已清，可直接落**~~ → ✅ **已落代码**（2026-08-01 Developer，见 §9）。
+
+## 9. 实施记录（2026-08-01，Developer — 待办 #3）
+
+按 §3.1 取值 / §3.3 方式落码，三处改动：
+
+- `server/src/shared/config.ts`：数据库段新增四项 `getInt` 配置（`DB_STATEMENT_TIMEOUT_MS=30000` / `DB_IDLE_TX_TIMEOUT_MS=60000` / `DB_LOCK_TIMEOUT_MS=5000` / `DB_CONNECT_TIMEOUT_MS=10000`）
+- `server/src/db/pool.ts`：`connectionTimeoutMillis` + `options` 连接参数下发三项会话级超时（按 §3.3 备注，将来引入 PgBouncer 需改回 `SET` 方式）
+- `server/.env.example`：同步四项 env（默认即推荐值）
+
+验证（本地经 SSH 隧道 → `news_vitest`）：
+
+- `tsc --noEmit` 0 错误；全量单测 **65/65**（全部用例经新 pool 配置连真实 PG）
+- 经 pool 实查生效值：`statement_timeout=30s` / `idle_in_transaction_session_timeout=1min` / `lock_timeout=5s` ✅
+- 行为验证：`SET statement_timeout='1s'; SELECT pg_sleep(2)` → `canceling statement due to statement timeout` ✅
+
+**§5 的部署侧验证（test/prod 环境 + `ai_worker` 角色核对 + 24h 告警观察）仍归 DevOps，随下次部署执行**（待办 #5）。

@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-08-01 — 数据库超时四项落码（超时方案待办 #3，非迭代任务）
+
+- 本次角色：全栈开发（Developer）；模式：非迭代任务（[超时方案](../ad-hoc/2026-07-30-spike-db-timeout-config.md) §6 待办 #3，前置已由 §8.4 全清，Owner 指令开工）
+- 已落码（三处，按方案 §3.1 取值 / §3.3 方式原样实现）：
+  - `config.ts`：数据库段新增 `dbStatementTimeoutMs` 30s / `dbIdleTxTimeoutMs` 60s / `dbLockTimeoutMs` 5s / `dbConnectTimeoutMs` 10s（四项 env，沿用 `getInt` 风格）
+  - `pool.ts`：`connectionTimeoutMillis` + `options` 连接参数随建连下发三项会话级超时
+  - `.env.example`：同步四项（默认即推荐值）
+- 验证：tsc 0 错误；全量单测 65/65（隧道 → `news_vitest`，全部用例经新 pool 配置连真实 PG）；经 pool 实查生效值 `30s/1min/5s` 三项全对；行为验证 `pg_sleep(2)` 在 1s 超时下正确报 `canceling statement due to statement timeout`。验证结果已回写方案 §9
+- 部署侧验证（方案 §5：test/prod 环境 + `ai_worker` 角色核对 + 24h 告警观察）仍归 DevOps 随下次部署（待办 #5）
+- 插曲：会话开始时工作区有 architect-corrections.md 未提交变更（+10 行），本会话未动它，提交前该变更已从工作区消失（HEAD 未动）——疑似并行 Architect 会话操作，已报 Owner 知悉
+- 下一步：DevOps 下次部署带上本次改动并按 §5 验证；待 ai 侧回帖 `ALTER ROLE` 实际写入值后核对
+
+---
+
 ## 2026-07-27 — 清 v0.6.1 关闭遗留 #2 批（x-stream 适配 + #3/#4/#6，非迭代 Bugfix）
 
 - 本次角色：全栈开发（Developer）；模式：非迭代 Bugfix（v0.6.1 关闭遗留清单，Owner 指令开工）

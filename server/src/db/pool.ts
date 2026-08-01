@@ -17,6 +17,12 @@ const pool = new pg.Pool({
   ssl: buildSslConfig(),
   max: 10,
   idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: config.dbConnectTimeoutMs,
+  // 会话级超时随连接下发（直连场景可用；若将来引入 PgBouncer 需改为 on('connect') SET 方式）
+  options:
+    `-c statement_timeout=${config.dbStatementTimeoutMs}` +
+    ` -c idle_in_transaction_session_timeout=${config.dbIdleTxTimeoutMs}` +
+    ` -c lock_timeout=${config.dbLockTimeoutMs}`,
 });
 
 pool.on("error", (err) => {

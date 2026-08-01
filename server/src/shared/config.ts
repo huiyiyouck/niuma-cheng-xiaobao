@@ -50,6 +50,12 @@ export const config = {
   // 数据库
   databaseUrl: get("DATABASE_URL", "postgresql://news:news@localhost:5432/news"),
   dbSslVerify: getBool("DB_SSL_VERIFY", true),
+  // 数据库超时四项（共享库场景兜底，取值依据见 ad-hoc/2026-07-30-spike-db-timeout-config.md §3.1）
+  // 注意：不作用于人工 psql 迁移连接（不走 pool），迁移脚本可长时间运行
+  dbStatementTimeoutMs: getInt("DB_STATEMENT_TIMEOUT_MS", 30000),
+  dbIdleTxTimeoutMs: getInt("DB_IDLE_TX_TIMEOUT_MS", 60000),
+  dbLockTimeoutMs: getInt("DB_LOCK_TIMEOUT_MS", 5000),
+  dbConnectTimeoutMs: getInt("DB_CONNECT_TIMEOUT_MS", 10000),
 
   // 服务
   port: getInt("PORT", 8000),
