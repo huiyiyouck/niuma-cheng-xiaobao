@@ -13,7 +13,7 @@
 
 #### → DevOps（一次会话可全清，共 3 项）
 
-**任务 1 · 生产 LLM provider 换 volcengine（Owner 已拍板 2026-08-01，对齐测试库同款）**
+**任务 1 · 生产 LLM provider 换 volcengine（Owner 已拍板 2026-08-01，对齐测试库同款）— ✅ 已完成（2026-08-01 DevOps）**
 
 | 要素 | 内容 |
 |------|------|
@@ -22,6 +22,7 @@
 | 验证 | 照 07-29 test 收尾方式：造一条 `l0_classify` task → `succeeded` + `l0_status=passed` + `l0_label` 产出 |
 | 红线 | **只换 provider，生产 AI 开关（`ENABLE_AI_PROCESSING`）保持关闭**——开链路是另一个 Owner 决策 |
 | 留痕 | DevOps 日志 + 本任务书标 ✅ |
+| ✅ 结果 | **2026-08-01 DevOps 执行**：prod `.env` 对齐 test volcengine（`OPENAI_BASE_URL`/`API_KEY`/`OPENAI_MODEL`/`L0_LLM_MODEL`，备份 `.env.bak-20260801-task1`，未重启）；**红线守住**（`AI_INTEGRATION_MODE=http` 未动、AI 仍关）。**验证改用直连 volcengine**（HTTP 200 + `deepseek-v4-flash` 正常应答）——因 worker 在 `aiProcessingEnabled=false` 下不 claim `l0_classify`（`dispatcher.ts:292`），任务书原「造 l0_classify → succeeded」验法在红线下不可行，直连连通性等效证明 provider 可用。顺带多对齐一处 `OPENAI_MODEL`（原 `mimo-v2.5-pro` 遗留，留在 volcengine 端点不一致） |
 
 **任务 2 · #16 prod 集成模式对齐（coordination 待跟进 16）**
 

@@ -2,6 +2,15 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-01（续2）— 生产 LLM provider 换 volcengine（INDEX 任务书 · 任务 1，备料不点火）
+
+> 角色：DevOps；模式：任务书执行。Owner 拍板生产 LLM 对齐 test 同款。
+
+- prod `/srv/niuma-news/prod/server/.env` LLM 段对齐 test volcengine：`OPENAI_BASE_URL=ark.cn-beijing.volces.com/api/plan/v3` + `OPENAI_API_KEY`（volcengine，同机同源，不入 git）+ `OPENAI_MODEL`/`L0_LLM_MODEL=deepseek-v4-flash`。备份 `.env.bak-20260801-task1`，**未重启**（AI 关、config 不被 running worker 读，下次开 AI 重启加载）。
+- **红线守住**：`AI_INTEGRATION_MODE=http` 未动、`ENABLE_AI_PROCESSING` 未设 → `aiProcessingEnabled=false`，AI 仍关。
+- **验证法偏差（记一笔）**：任务书原定「造 `l0_classify` task → succeeded」在红线下不可行——`dispatcher.ts:292` `if(!task && aiProcessingEnabled)`，AI 关时 worker 不 claim `l0_classify`。改用**直连 volcengine** 发最小 chat completion 验证：HTTP 200、model `deepseek-v4-flash-260425`、正常应答「可用」，等效证明 provider（key/端点/模型）可用。
+- 备料完成，点火（开 AI）仍缺 ai 侧 prod worker 那环（见 #16 / ai v0.2 上生产里程碑）。
+
 ## 2026-08-01（续）— REQ-003 部署包 test+prod 落地（超时四项 + x-stream + 数组列收口）
 
 > 角色：DevOps；模式：部署。Owner 部署包指令，test 先行、prod 一批。
