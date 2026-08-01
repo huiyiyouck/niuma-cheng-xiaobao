@@ -1,93 +1,31 @@
 # PM 工作日志摘要
 
+> 四段式(当前状态 / 长期事实 / 常见风险 / 下一步入口),≤120 行;过程细节见 current/archive。2026-08-01 重写。
+
 ## 当前状态
 
-- 当前迭代：v0.6.1
-- 当前模式：标准迭代
-- 当前阶段：PRD 讨论中（R1 未产出）— Owner 提出数据库契约解耦方向，PM 提出 5 个碰撞点待讨论
-- 阻塞项：无
-- 下一步入口：Owner 回复 5 个碰撞点意见 → PM 出 PRD R1
+- 当前迭代:无。v0.6.1 已于 2026-07-27 有条件关闭(Owner 验收通过),summary 落档;v0.6 summary 亦已补写(2026-08-01)。
+- 项目空闲,xiaobao 侧在途仅两摊:**Developer 三项**(needs_context 列迁移 / #5 score_total 轮询补算 / #7 重试接口,绑 ai v0.2 联调启动)+ **Owner 下一迭代规划**(候选:sentiment / 相关性深化 / ai v0.2 联调配合)。
+- PM / Architect / DevOps 名下待办:零。任务清单真源:INDEX「角色待办任务书」。
 
-## v0.6 关键上下文
+## 长期事实(跨迭代稳定结论)
 
-v0.6 已于 2026-06-09 正式启动，包含三条主线：
+- **产品主线**:多源新闻聚合,direct(直显)/ai(AI 解析)双链路;四维评分(timeliness/impact/confidence/clarity,AD-05)加权 `score_total` 归 xiaobao(`calcScoreTotal`,(T×.25+I×.35+C×.25+X×.15)×2)。
+- **跨项目格局**:AI 解析经 REQ-003 从 HTTP 同步改为数据库契约边界异步(契约 `news-l1-db`,当前 **v1.9**;HTTP 契约 v1.1 留作回滚路径)。schema 权属 xiaobao,ai 只经 `ai_worker` 角色列级权限读写。契约变更纪律:先改 coordination contracts → 两侧代码,CHANGELOG 记行。
+- **关键产品口径(PM 拍定)**:sentiment 不引入(后续候选,先改 HTTP 契约再做);`processed_news.language` 恒 'zh'(产出语种);context 恒空可接受(ai 防编造过滤);retryable_failed 对用户显示「解析中」;直显类保留来源标识标签;needs_context 补列存储、前端消费留后续;rss/jin10_flash 近期不进 AI 链路。
+- **量级口径**:AI 链路日增「几十条/天」,对 ai v0.2 单实例能力(340~920/天)有 5~10 倍余量,v0.3 并发化无需前移;量级跃迁时 PM 承诺提前经沟通文档知会。
+- **「ai v0.2 上生产里程碑」整包**:prod 切 database + 部署 prod ai worker + 有效 LLM provider + 开 AI 链路 + 回滚端点落定——单切任何一项都是延迟地雷,届时 DevOps 一批执行。
+- **已知限制(双侧留痕)**:富展示端到端未验(等 ai worker);生产 LLM 已换 volcengine 备料(AI 开关仍关)。
 
-1. **Figma 原型前端重构**
-   - `/root/news-aggregation-platform` 是本期 UI 重构目标输入。
-   - 不迁入 React 原型；基于现有 Vue3 + TS + Vite 前端落地。
-   - 覆盖全局导航、新闻浏览页、管理页、Source 详情页、告警/日志监控页、添加信息源抽屉、编辑/删除弹窗、统计卡片、空间/频道筛选、信息源库表格。
-   - 正式路径必须接真实后端 API，不保留 mock 数据。
+## 常见风险(PM 已犯过的,详见 pm-corrections)
 
-2. **X 信息 L0/L1 分层处理**
-   - 所有原始信息先入库。
-   - L0 只过滤明显无效内容：空文本/乱码/纯 emoji、纯转发无新增、明显重复、抽奖招聘无关广告、与 Source 主题明显无关、已处理同 URL / 同 tweet id。
-   - L0 通过的 X 信息进入 L1；L1 completed 信息进入新闻流，按原始发布时间倒序展示。
-   - L1 输出四段式抽屉内容：原文中文翻译、相关背景与补全、AI 分析与评价、AI 标签。
-   - 每条 L1 都做库内相关新闻检索；有链接就尝试读取链接；X/Web 搜索按 `needs_context=true` 触发；评论读取本期不做。
-   - 四维评分：时效性 25%、影响力 35%、置信度 25%、可理解度 15%；AI 输出维度分和理由，系统计算综合价值分。
+- 项目状态以 INDEX 为唯一真源,文档内状态字段冲突时以 INDEX 为准。
+- 污染的工具输出及其派生"事实"全部作废,Review 意见逐条干净取证(#PM-R3-1 误报教训)。
+- 契约字段表禁止凭记忆写,逐行指向可核查真源(score_total/tags_v2 两次 P0 往返教训)。
+- PM 任务书只写 what+红线+验收,不写操作步骤;执行角色实机否掉细节时默认执行角色对(#16 任务书两点被否教训)。
 
-3. **空间图标上传**
-   - 支持图片上传、替换、移除。
-   - 保留 emoji / 文本图标能力。
-   - 空间入口和管理页展示上传后的图标。
+## 下一步入口
 
-## v0.6 PRD R1 Review 计划
-
-| Review 方 | 重点 |
-|-----------|------|
-| UI（界面设计师） | Figma 原型落地、新闻流、抽屉、管理页、空间图标上传体验 |
-| Architect（架构师） | L0/L1 数据模型、检索/搜索/链接读取、评分、重试、图片存储 |
-| Developer（开发工程师） | 前后端契约、Vue 重构、Worker/AI 链路、重试实现成本 |
-| Tester（测试工程师） | L0/L1 状态机、失败降级、展示规则、全页面联调验收 |
-| DevOps（运维/部署工程师） | 外部依赖、LLM/搜索成本、超时、上传存储、部署风险 |
-
-R1 五方均已完成且一致需修改。PM 已按 Owner 决策提交 R2，关键收敛为：
-
-- 新闻详情采用右侧抽屉，并补齐 Figma 重生成所需布局描述。
-- 告警和日志本期合并为统一监控页。
-- L0/L1 状态机、错误分类、重试语义和新闻流可见性已补齐。
-- 外部依赖分为必需、条件必需、可选增强；失败按降级处理。
-- Owner 决策：不设置成本上限或预算熔断；不做原始数据治理能力。
-- 空间图标上传不得使用前端构建目录，改以后端持久目录为设计方向。
-- 开发/测试 mock 允许，生产构建禁止引用 mock。
-
-R2 五方复审均为有条件通过。PM 于 2026-06-11 裁定不进入 R3，PRD R2 定稿，剩余条件分流到后续阶段承接：
-
-- UI 方案：信息源新增三路径、统计卡片口径、Source 详情、上传交互、监控页顶导与角标。
-- 设计阶段：前后端契约清单、L0/L1 数据模型、AI 调用策略、错误分类、告警阈值。
-- 测试阶段：AI/前端验收分层、L0 样本集、v0.5 回归基线恢复。
-- DevOps：systemd 日志轮转和部署 handbook 项。
-
-UI 已产出 `v0.6-ui-spec.md` R2 并定稿。PM Review R1 结论为有条件通过，无高严重度阻断；Owner 已确认 #P1：v0.6 全部按 Owner 提供的 UI 原型为主，D8 全屏铺满成立，本条关闭。
-
-设计文档 `v0.6-design.md` R1 已由 Architect 产出。PM Review 结论为有条件通过：设计整体承接 PRD R2 + UI spec R2，未发现重新引入已排除范围；PM 条件项为 L0 `retryable` 前台展示映射、level-status-counts 24h 窗口口径、raw_items/ADR/AC 数量口径和开放问题数量口径。
-
-2026-06-13 PM 裁定设计 R2 不开 R3，按有条件定稿进入实现阶段。裁定依据：四方 R2 复审均为有条件通过，未出现新的产品范围高阻断；R1 高严重度工程/测试硬伤已在 R2 方向上关闭或基本关闭。剩余问题集中在 R2 修改摘要与正文不一致，作为实施/部署阶段显式承接条件：Developer 承接 #D11/#D12，Tester 承接 #T13，DevOps 承接 #O1/#O2/#O3/#O8/#O15，PM 接受 #P3/#P5 作为文档可信度遗留。
-
-## 重要风险
-
-- L1 链路依赖 LLM、搜索、链接读取和库内检索，失败面比 v0.5 更大，需要强状态机和重试机制。
-- AI JSON 输出需要结构化校验，避免污染新闻流。
-- Figma 原型是 React 项目，Vue 落地不能机械迁移组件结构。
-- 空间图标上传涉及文件存储、访问路径、缓存和部署回滚。
-- 本期明确不做 L2、反馈、全屏详情页、前端处理工作流配置和 Source 代理前端配置。
-
-## 历史迭代摘要
-
-- v0.1：完成早期后端、Worker、前端和多轮 Review 闭环。
-- v0.2：完成 Source 重构、前端体验、日志系统和 UI 规范。
-- v0.3：完成 Python FastAPI → Node.js Fastify + TypeScript 纯迁移。
-- v0.4：完成 UI 重构、RSS Fetcher、频道 CRUD、解绑、告警状态、鉴权、搜索和部署闭环；于 2026-05-31 有条件关闭。
-- v0.5：完成信息源资产化重构、X/Twitter 实时监听、告警状态机、业务数据重置和评分方法论 Product Brief；于 2026-06-09 有条件关闭。
-
-## 长期机会
-
-- `docs/knowledge/opportunities/event-timeline-impact-chain-analysis.md`
-  - 将源头新闻、后续发酵和跨空间/频道变化串联为事件时间线与影响链。
-  - 归入后续 L2 / v0.7+ 候选方向，不进入 v0.6 实现范围。
-
-## 日志分层
-
-- 最近记录：`docs/progress/roles/pm-current.md`
-- 历史归档：`docs/progress/roles/pm-archive.md`
-- 纠错记录：`docs/progress/roles/pm-corrections.md`
+- **ai v0.2 联调启动时**:开 Developer 会话做三项(needs_context 列迁移须在 ai 写回前落地);#5 轮询补算方案已拍(worker tick + calcScoreTotal 单一真源),照办即可。
+- **Owner 启动下一迭代**:候选输入已备(sentiment / 相关性深化 / 事件时间线机会池);PM 建议等富展示真实点亮后定主题。
+- 跨项目在途查 coordination `communications/REQ-003-db-boundary-async.md` 待跟进表;xiaobao 侧无被催项。
