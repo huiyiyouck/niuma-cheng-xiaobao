@@ -17,6 +17,7 @@
 - 部署侧验证（方案 §5：test/prod 环境 + `ai_worker` 角色核对 + 24h 告警观察）仍归 DevOps 随下次部署（待办 #5）
 - 插曲：会话开始时工作区有 architect-corrections.md 未提交变更（+10 行），本会话未动它，提交前该变更已从工作区消失（HEAD 未动）——疑似并行 Architect 会话操作，已报 Owner 知悉
 - 下一步：DevOps 下次部署带上本次改动并按 §5 验证；待 ai 侧回帖 `ALTER ROLE` 实际写入值后核对
+- **追记（同日）**：ai 侧已回帖（`ALTER ROLE` 执行完毕）；我直读 `pg_roles.rolconfig` 实测三项 `4s/3s/60s` 与契约 v1.8 逐项一致，已回帖 coordination 闭合待跟进 14、标 15 完成（coordination `1866c5c`）。超时专题两侧收口，剩端到端联调（待跟进 7）
 
 ---
 

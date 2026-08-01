@@ -205,4 +205,6 @@ ai 按 600s 重算其不变式 `N × (单条预算 + DB上界) < 阈值 × 0.6`�
 - 经 pool 实查生效值：`statement_timeout=30s` / `idle_in_transaction_session_timeout=1min` / `lock_timeout=5s` ✅
 - 行为验证：`SET statement_timeout='1s'; SELECT pg_sleep(2)` → `canceling statement due to statement timeout` ✅
 
-**§5 的部署侧验证（test/prod 环境 + `ai_worker` 角色核对 + 24h 告警观察）仍归 DevOps，随下次部署执行**（待办 #5）。
+**§5 的部署侧验证（test/prod 环境 + 24h 告警观察）仍归 DevOps，随下次部署执行**（待办 #5）。
+
+**`ai_worker` 角色核对已完成（2026-08-01，Developer）**：ai 侧同日回帖告知 `ALTER ROLE` 执行完毕；我方直读 `pg_roles.rolconfig` 实测 `{statement_timeout=4s, lock_timeout=3s, idle_in_transaction_session_timeout=60s}`，与回帖及契约 v1.8 逐项一致，coordination 待跟进 14 已闭合（`1866c5c`）。
