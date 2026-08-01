@@ -3,7 +3,7 @@
 - 日期：2026-07-30
 - 模式：Tech Spike / 技术方案（非迭代）
 - 角色：Architect
-- 状态：方案待确认（Owner 已定「契约 + ad-hoc」落点与「全套四项」范围）
+- 状态：**✅ 已完成**（2026-08-01 收尾）—— 方案已确认并落地：xiaobao 侧四项已落码（`pool.ts:20-25` + `config.ts:55-58`，Developer）、ai 侧 `ALTER ROLE` 已按方案甲执行（ai DevOps）。**剩验证（§5）与一项关联的 prod 配置修正**，见 §9
 - 关联：REQ-003 数据库契约边界异步解耦；coordination `contracts/news-l1-db.md`
 - Review 说明：本方案涉及**部署配置**（pool 参数、`ALTER ROLE`）与**跨项目契约**，按 `non-iteration-quick.md` §禁止项与 Review，**邀 DevOps 确认实施侧**（服务器执行 `ALTER ROLE`、env 落地），并**须先告知 ai 侧再执行**（见 §5 风险）。代码改动由 Developer 落。
 
@@ -208,3 +208,37 @@ ai 按 600s 重算其不变式 `N × (单条预算 + DB上界) < 阈值 × 0.6`�
 **§5 的部署侧验证（test/prod 环境 + 24h 告警观察）仍归 DevOps，随下次部署执行**（待办 #5）。
 
 **`ai_worker` 角色核对已完成（2026-08-01，Developer）**：ai 侧同日回帖告知 `ALTER ROLE` 执行完毕；我方直读 `pg_roles.rolconfig` 实测 `{statement_timeout=4s, lock_timeout=3s, idle_in_transaction_session_timeout=60s}`，与回帖及契约 v1.8 逐项一致，coordination 待跟进 14 已闭合（`1866c5c`）。
+
+## 9. 收尾（2026-08-01）
+
+### 9.1 最终状态：已完成（代码与角色配置均已落地，待验证）
+
+| 项 | 状态 | 证据 |
+|---|------|------|
+| xiaobao 侧四项（§3.1） | ✅ **已落码** | `pool.ts:20-25`（`connectionTimeoutMillis` + `options` 下发三项）、`config.ts:55-58`（四个 env，默认值与 §3.1 表一致）。收尾时按当前 HEAD 核实属实 |
+| ai 侧 `ALTER ROLE`（§8.1 方案甲） | ✅ **ai 已执行** | ai DevOps 2026-08-01 回帖告知实际写入值，xiaobao Developer 核对通过并闭合（coordination 待跟进 14） |
+| 契约留痕 | ✅ | `news-l1-db.md` v1.7 新增 §连接与超时约定、v1.8 补方案甲实际值与权属划分 |
+| §5 验证 · 应用侧 | ✅ **已验证** | Developer 2026-08-01：经 pool 实查三项生效值 + 超时行为验证通过；`tsc` 0 错误 + 单测 65/65 |
+| §5 验证 · 部署侧 | ⏳ **未执行** | 服务器上的四条验证 SQL + 24h 告警观察，归 DevOps 随下次部署。**未执行原因**：本次 Architect 会话不做服务器操作 |
+| ai 侧 `rolconfig` 核对 | ✅ **已闭合** | Developer 实测 `rolconfig` 三项与契约 v1.8 逐项一致（coordination `1866c5c`，待跟进 14/15 闭合） |
+
+### 9.2 关联发现（本方案之外，但同源）
+
+ai DevOps 停 `:8100` 时只读核出：**prod 的 `AI_INTEGRATION_MODE=http`，与 test 的 `database` 不一致**，且 `AI_HUB_BASE_URL` 未覆盖、走默认值指向已停端口。
+
+当前无实害（`ENABLE_AI_PROCESSING` 未启用 → 条目全走 `direct` → 走不到 HTTP 调用），属**两层未启用互相掩盖**。但 v0.6.1 整套设计只在 `database` 模式下成立，prod 这份配置即使打开 AI 开关也会走回 v0.6 老路并打到死端口。
+
+已转 DevOps（coordination 待跟进 16）：prod 改 `database` 对齐 test，`AI_HUB_BASE_URL` 显式化。
+
+### 9.3 是否升级为标准迭代
+
+**否**。本方案是配置层加固，无产品范围变更、无新功能，非迭代通道完成即可。
+
+### 9.4 知识沉淀
+
+已提炼 [跨项目协作中的「无保障输入」缺陷模式](../../knowledge/architecture/cross-project-unguarded-input.md)——本方案中 `AI_STALE_TIMEOUT_MS` 升格为契约参数的处置方式，与本迭代其余四次同形状问题一并沉淀为可复用模式。
+
+### 9.5 下一步
+
+1. **DevOps**：跑 §5 四条验证 + prod 配置修正（§9.2）；
+2. **Architect**：待 ai 补服务端点表三格后，落 `news-l1.md` v1.1 与 `news-l1-db.md` 的 `AI_INTEGRATION_MODE` 参数节（coordination 待跟进 17）。

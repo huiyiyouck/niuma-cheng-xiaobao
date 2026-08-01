@@ -11,6 +11,7 @@
 ## Architecture（架构）
 
 - [系统架构概览](architecture/system-architecture.md) — 系统架构、ADR 清单、数据流、扩展点
+- [跨项目协作中的「无保障输入」缺陷模式](architecture/cross-project-unguarded-input.md) — 一个被依赖的输入不被任何机制保证：识别信号、升格为契约参数的处置模式、配套核对纪律（REQ-003 一个迭代内复现 5 次的沉淀）
 
 ## Engineering（工程）
 
