@@ -1,3 +1,15 @@
+## 2026-08-01 — DevOps 任务书三项完成核对：全清 + 任务 2 认账（PM 操作单两点被实机否掉）
+
+- 本次角色：产品架构师(PM)
+- 触发：Owner 通知运维已全部处理，要求重新扫描核对
+- 核对结果（三项全完成）：
+  1. **任务 1 生产 LLM 换 volcengine ✅**：`.env` 对齐 test（备份未重启）、红线守住（AI 仍关）；验证方式合理变通——红线下 worker 不 claim 致原验法不可行，改直连 volcengine 200 + deepseek-v4-flash 应答（等效）；顺带对齐 OPENAI_MODEL 遗留
+  2. **任务 2 #16 ✅（安全解）**：DevOps 否掉任务书两点操作并给实机依据——「切 database」= 误开 prod AI（PM 独立核 `config.ts:96` 确认切即开，任务书红线自相矛盾）；「指 8102」= 跨环境泄漏（8102 系 test 专用实例）。安全解：保持 http + `AI_HUB_BASE_URL=` 显空 fail-fast + 注释路标。**database 对齐转「ai v0.2 上生产里程碑」整包**（prod ai worker + 有效 provider + 切换同批）。**PM 认账**：任务书越位写 how 且未核代码，记 pm-corrections（新规则：任务书只写 what+红线+验收）
+  3. **任务 3 6i② ✅**：补 2 条 `["AI"]` source 冒烟条目 + 重跑 seed，8 queued / 3 条非空 domain_tags，双路径覆盖；coordination `b4a0178` 已销账（DevOps 会话自提交，无需代提）
+- 文档动作：INDEX 任务书三项标结 + 任务 2 认账标注 + 下一步入口更新（DevOps 清零，唯余 Developer 三项 + Owner 迭代规划）；pm-corrections 新增 1 条
+- xiaobao 侧在途全景（核对后）：Developer 三项（needs_context 列迁移 / #5 轮询补算 / #7，绑 ai v0.2 联调）+ Owner 下一迭代规划；DevOps/PM/Architect 名下清零
+- 下一步：等 ai v0.2 联调窗口或 Owner 启动迭代规划
+
 ## 2026-08-01 — PM 悬案清零：#5 轮询补算拍板 + Q-1 补列定案 + language 订正（契约 v1.9）+ v0.6-summary 补写
 
 - 本次角色：产品架构师(PM)

@@ -11,7 +11,7 @@
 
 ### 📋 角色待办任务书（2026-08-01 PM 整理，开工前先读这里）
 
-#### → DevOps（一次会话可全清，共 3 项）
+#### → DevOps（3 项 ✅ **全部完成**，2026-08-01；留档备查）
 
 **任务 1 · 生产 LLM provider 换 volcengine（Owner 已拍板 2026-08-01，对齐测试库同款）— ✅ 已完成（2026-08-01 DevOps）**
 
@@ -24,7 +24,10 @@
 | 留痕 | DevOps 日志 + 本任务书标 ✅ |
 | ✅ 结果 | **2026-08-01 DevOps 执行**：prod `.env` 对齐 test volcengine（`OPENAI_BASE_URL`/`API_KEY`/`OPENAI_MODEL`/`L0_LLM_MODEL`，备份 `.env.bak-20260801-task1`，未重启）；**红线守住**（`AI_INTEGRATION_MODE=http` 未动、AI 仍关）。**验证改用直连 volcengine**（HTTP 200 + `deepseek-v4-flash` 正常应答）——因 worker 在 `aiProcessingEnabled=false` 下不 claim `l0_classify`（`dispatcher.ts:292`），任务书原「造 l0_classify → succeeded」验法在红线下不可行，直连连通性等效证明 provider 可用。顺带多对齐一处 `OPENAI_MODEL`（原 `mimo-v2.5-pro` 遗留，留在 volcengine 端点不一致） |
 
-**任务 2 · #16 prod 集成模式对齐（coordination 待跟进 16）**
+**任务 2 · #16 prod 集成模式对齐 — ✅ 已处置（2026-08-01 DevOps 安全解；⚠️ 本任务书原操作栏两点被实机否掉，PM 确认否点成立）**
+
+> **PM 认账（2026-08-01）**：原操作栏「切 database + AI 开关保持关闭」**自相矛盾**——`config.ts:96` `aiProcessingEnabled = ENABLE_AI_PROCESSING || mode==='database'`，切即开（PM 已独立核代码确认）；「AI_HUB_BASE_URL 指 8102」也错——8102 是 `niuma-ai-http@test` 专用实例，prod 指它破坏环境隔离。两点均系 PM 写操作单未核代码/实机，DevOps 否点正确、安全解正确，已记 pm-corrections。
+> **实际处置（DevOps）**：保持 `http`（AI 稳定关）+ `AI_HUB_BASE_URL=` 显式空中和死端口 8100（fail-fast）+ `.env` 注释路标 + 备份未重启。**prod→database 对齐转「ai v0.2 上生产里程碑」**（须与 prod ai worker + 有效 provider 同批，单切必埋雷——prod 4 源全 x_twitter，X Stream 一恢复即「推文不直显」）。coordination 待跟进 16 已销。
 
 | 要素 | 内容 |
 |------|------|
@@ -63,7 +66,7 @@
 v0.6.1 关闭遗留 #1（GRANT 3 列）/ #2 批（x-stream 适配+#3/#4/#6，`744d20a` 已上 prod）/ 测试队列不可领（seed 已修，6 条可领）/ C-14（契约 v1.5）/ 6i①（数组列收口+CHECK，08-01 部署生效）/ test LLM provider（volcengine 已跑通）/ PM 三项拍板（#5 方案、Q-1 补列、language 订正，契约 v1.9）/ v0.6-summary 补写。明细见 [v0.6.1-summary.md](iterations/v0.6.1-summary.md) 与 coordination 待跟进表。
 
 - 跨项目在途：REQ-003 ai v0.2 设计阶段 R1 Review 中（xiaobao 侧无被催项；契约当前 **v1.9**）；端到端联调待 ai 实现完成后双侧启动
-- 下一步入口：**DevOps 会话照上方任务书执行**（说「你是 DevOps，按 INDEX 任务书开工」即可）；其余按任务书角色触发
+- 下一步入口：DevOps 三项已清零（2026-08-01）。xiaobao 侧唯余 **Developer 三项**（绑 ai v0.2 联调启动）+ **Owner 下一迭代规划**；「prod 切 database + prod ai worker + 开 AI 链路」整包 = **ai v0.2 上生产里程碑**，届时 DevOps 一批执行
 
 ## 版本列表
 
