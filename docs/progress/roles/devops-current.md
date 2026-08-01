@@ -2,6 +2,27 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-01 — REQ-003 契约 v1.7 阈值回填 + 8100 ai 服务链路排查
+
+> 角色：DevOps；模式：跨项目协作收尾（REQ-003 契约 v1.7 遗留回填）。
+
+### 核实 + 回填（`AI_STALE_TIMEOUT_MS`）
+- **背景**：契约 v1.7（coordination `b2c581e`）把卡死回收阈值的实际生效值标为「待 DevOps 核实回填」——契约此前写的 1800s 系起草臆定无依据，代码默认 `600000`（`config.ts:95`），实际值取决于服务器 env。
+- **核实**：直连部署机 `zijie`（`news.huiyiyou.cloud` / 115.191.43.79）grep 两库 `server/.env`：prod 与 test 的 `AI_STALE_TIMEOUT_MS` **均显式设为 `600000`（600s / 10 分钟）**，与代码默认一致，全场无 1800s。
+- **回填**：契约 `news-l1-db.md` 三处（line 275 主 ⚠️ 块 / line 273 卡死阈值行 / line 4 v1.7 版本头 TODO），**不升版本**（完成契约自留的 DevOps 待办，非 Architect 改订）。commit `6209b72` 已 push。
+
+### 8100 ai 服务链路排查
+- **触发**：核实 env 时发现 prod=`AI_INTEGRATION_MODE=http`、test=`database`，两模式对 8100 依赖不同，遂实测。
+- **实测**（zijie）：8100 端口 uvicorn（pid 3026041）在听 `127.0.0.1:8100`；`/health` 返回 `200`（1.2ms），ai 服务健康。prod `.env`：http 模式、**无** `AI_HUB_BASE_URL`、**无** `ENABLE_AI_PROCESSING`；test `.env`：database 模式。
+- **判断**（据 `config.ts:90` `aiProcessingEnabled = getBool("ENABLE_AI_PROCESSING",false) || AI_INTEGRATION_MODE==="database"`）：
+  1. **prod AI 整体关闭**：http 模式且未设 `ENABLE_AI_PROCESSING` → `aiProcessingEnabled=false`，prod 不发起对 8100 的调用（未配 `AI_HUB_BASE_URL` 也无影响）。与既有记录一致（生产 key 失效 / 生产 AI 关闭）。
+  2. **test 走 database 队列**：claim/queue 机制，不走 8100 http 路径。
+  3. 故本次回填的 `600000` 卡死回收阈值**只对 test（database 模式）有效**；prod AI 关闭、且 http 模式本就不触发这套 reclaim。
+  4. 8100 的 ai 服务当前为「常驻热备 / 联调」态：活着但不在任何 prod/test 活跃集成路径上，闲置无害。
+
+### 结论
+契约阈值真源钉死（`600000`，双库一致，已回填 + push）。当前无环境走 8100 http 路径，8100 服务健康但闲置，无需处置、记录在案。生产上 AI 前仍需先定 LLM provider（既有遗留）。
+
 ## 2026-07-27~30 — v0.6.1 生产部署 + REQ-003 数据库边界 DevOps 全系列（跨会话汇总）
 
 > 角色：DevOps；模式：标准迭代部署 + 跨项目协作（REQ-003）。本条汇总一系列工作，逐项详情见 coordination `communications/REQ-003-db-boundary-async.md` 与本项目 INDEX。
