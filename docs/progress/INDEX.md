@@ -27,14 +27,7 @@
 **任务 2 · #16 prod 集成模式对齐 — ✅ 已处置（2026-08-01 DevOps 安全解；⚠️ 本任务书原操作栏两点被实机否掉，PM 确认否点成立）**
 
 > **PM 认账（2026-08-01）**：原操作栏「切 database + AI 开关保持关闭」**自相矛盾**——`config.ts:96` `aiProcessingEnabled = ENABLE_AI_PROCESSING || mode==='database'`，切即开（PM 已独立核代码确认）；「AI_HUB_BASE_URL 指 8102」也错——8102 是 `niuma-ai-http@test` 专用实例，prod 指它破坏环境隔离。两点均系 PM 写操作单未核代码/实机，DevOps 否点正确、安全解正确，已记 pm-corrections。
-> **实际处置（DevOps）**：保持 `http`（AI 稳定关）+ `AI_HUB_BASE_URL=` 显式空中和死端口 8100（fail-fast）+ `.env` 注释路标 + 备份未重启。**prod→database 对齐转「ai v0.2 上生产里程碑」**（须与 prod ai worker + 有效 provider 同批，单切必埋雷——prod 4 源全 x_twitter，X Stream 一恢复即「推文不直显」）。coordination 待跟进 16 已销。
-
-| 要素 | 内容 |
-|------|------|
-| 背景 | prod `.env` 为 `AI_INTEGRATION_MODE=http` 且 `AI_HUB_BASE_URL` 未显式配置（走默认 `127.0.0.1:8100`——**该端口 ai 侧已于 08-01 停机**）；test 为 `database`。v0.6.1 整套设计只在 database 模式成立 |
-| 操作 | prod `.env`：`AI_INTEGRATION_MODE` → `database`（对齐 test）；`AI_HUB_BASE_URL` 显式化——指 `http://127.0.0.1:8102`（ai v0.2 HTTP 模式，回滚路径用）或显式留空注明，**不再依赖默认值** |
-| 验证 | 重启后 health 200 + 现有功能回归（当前 AI 开关关闭，无行为变化即正确） |
-| 留痕 | **回帖 coordination 待跟进 16**（销行）+ DevOps 日志。顺带核对 news-l1 契约 v1.1 §服务端点表中 xiaobao 侧 `AI_INTEGRATION_MODE` 当前值待回填格 |
+> **实际处置（DevOps）**：保持 `http`（AI 稳定关）+ `AI_HUB_BASE_URL=` 显式空中和死端口 8100（fail-fast）+ `.env` 注释路标 + 备份未重启。**prod→database 对齐转「ai v0.2 上生产里程碑」**（须与 prod ai worker + 有效 provider 同批，单切必埋雷——prod 4 源全 x_twitter，X Stream 一恢复即「推文不直显」）。coordination 待跟进 16 已销。（原「操作/验证」操作单含未核代码/实机的错项〔切 database 会开 AI、指 8102 跨环境泄漏〕，已清理；权威处置见上方 PM 认账 note。`AI_INTEGRATION_MODE` 端点表回填归契约端点入表工作，见 coordination Architect 端点表帖。）
 
 **任务 3 · 6i② 补 domain_tags 非空冒烟条目（coordination 待跟进 6i②）— ✅ 已完成（2026-08-01 DevOps）**
 
