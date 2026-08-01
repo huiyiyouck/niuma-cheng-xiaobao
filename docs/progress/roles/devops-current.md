@@ -2,6 +2,14 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-01（续3）— 6i② 冒烟条目收尾（INDEX 任务书 · 任务 3）
+
+> 角色：DevOps；模式：任务书执行。
+
+- `news_test` `["AI"]` source（`8ab58eb2`）补 2 条待处理条目 + 重跑 `seed_ai_queue_test.sql`（psql，`UPDATE 5`/`INSERT 0` 幂等跳过已有 task）。
+- 现 8 条 queued `l1_ai_process`、**3 条挂非空数组 `domain_tags`**（`303fc961`/`43e0a770`/`6aa19d77`=`["AI"]`）、全可领 → 冒烟同时覆盖「有值」+「空值」两路径。
+- 留痕：coordination 待跟进 6i② 已销行、6i 全项闭合（`b4a0178`）；INDEX 任务书任务 3 标 ✅。
+
 ## 2026-08-01（续2）— 生产 LLM provider 换 volcengine（INDEX 任务书 · 任务 1，备料不点火）
 
 > 角色：DevOps；模式：任务书执行。Owner 拍板生产 LLM 对齐 test 同款。

@@ -33,7 +33,7 @@
 | 验证 | 重启后 health 200 + 现有功能回归（当前 AI 开关关闭，无行为变化即正确） |
 | 留痕 | **回帖 coordination 待跟进 16**（销行）+ DevOps 日志。顺带核对 news-l1 契约 v1.1 §服务端点表中 xiaobao 侧 `AI_INTEGRATION_MODE` 当前值待回填格 |
 
-**任务 3 · 6i② 补 domain_tags 非空冒烟条目（coordination 待跟进 6i②）**
+**任务 3 · 6i② 补 domain_tags 非空冒烟条目（coordination 待跟进 6i②）— ✅ 已完成（2026-08-01 DevOps）**
 
 | 要素 | 内容 |
 |------|------|
@@ -41,6 +41,7 @@
 | 操作 | 在 `news_test` 给某 source 配 `domain_tags`（如 `["AI"]`，数组格式，6i① CHECK 约束已生效会拦 `{}`），再跑 `seed_ai_queue_test.sql` 补几条该 source 下的待处理条目（脚本已幂等） |
 | 验证 | 新条目 JOIN source 后 `domain_tags` 非空数组；task 行 `queued` 且 `run_after <= now()` 可领 |
 | 留痕 | **回帖 coordination 待跟进 6i②**（销行）+ DevOps 日志 |
+| ✅ 结果 | **2026-08-01 DevOps 执行**：`["AI"]` source（`8ab58eb2`）补 2 条 + 重跑 `seed_ai_queue_test.sql`（`UPDATE 5`/`INSERT 0` 幂等）；现 8 条 queued、**3 条挂非空数组 `domain_tags`**（`303fc961`/`43e0a770`/`6aa19d77`=`["AI"]`）、全可领，覆盖「有值」+「空值」两路径。coordination 6i② 已销行、6i 全项闭合（`b4a0178`） |
 
 （例行：08-01 部署后的 24h alerts 观察窗到期确认一下即可）
 
