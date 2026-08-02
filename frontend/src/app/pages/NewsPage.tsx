@@ -76,8 +76,23 @@ function fmtAgo(iso?: string): string {
 function mapNews(n: any): NewsItem {
   const sourceId = n.source?.id ?? n.source_id ?? null;
   const sourceName = n.source?.name ?? n.source_display_name ?? "未知来源";
-  // tags_v2 后端可能是 {} 对象（v0.6 空字段），优先用数组形态，否则回退到 v0.5 tags 数组
-  const tags = Array.isArray(n.tags_v2) ? n.tags_v2 : (Array.isArray(n.tags) ? n.tags : []);
+  // tags_v2 契约形态（news-l1 v1.2）是五类 object：{domain, entity, event, content_type, processing}
+  // 展示扁平合并语义四类；processing 是技术标记（engine:/llm:/degraded:*）不进标签 chips，数据链路原样保留
+  // 兼容：历史数组形态直接用；object 扁平为空（如 v0.6 遗留 {}）回退 v0.5 tags 数组
+  const tv = n.tags_v2;
+  let tags: string[];
+  if (Array.isArray(tv)) {
+    tags = tv;
+  } else if (tv && typeof tv === "object") {
+    tags = [...new Set(
+      ["domain", "event", "content_type", "entity"]
+        .flatMap((k) => (Array.isArray((tv as any)[k]) ? (tv as any)[k] : []))
+        .filter((s: any): s is string => typeof s === "string" && !!s),
+    )];
+  } else {
+    tags = [];
+  }
+  if (tags.length === 0 && Array.isArray(n.tags)) tags = n.tags;
   // entities 后端是 [{name, type}, ...] 对象数组，规范化为字符串数组避免 React 渲染对象崩溃
   const rawEntities = Array.isArray(n.entities) ? n.entities : [];
   const entities = rawEntities
@@ -88,11 +103,12 @@ function mapNews(n: any): NewsItem {
   const context = rawContext
     .map((c: any) => (typeof c === "string" ? c : (c?.text ?? c?.content ?? "")))
     .filter((s: string) => !!s);
-  // score_dimensions 规范化：只保留有限数值项，空对象视为无数据
+  // score_dimensions 规范化：契约形态（AD-05）是 {impact: {score, reason}, ...} 嵌套，
+  // 兼容平面数字形态；只保留有限数值项，空对象视为无数据
   let dims: Record<string, number> | null = null;
   if (n.score_dimensions && typeof n.score_dimensions === "object" && !Array.isArray(n.score_dimensions)) {
     const entries = Object.entries(n.score_dimensions)
-      .map(([k, v]: [string, any]) => [k, Number(v)] as const)
+      .map(([k, v]: [string, any]) => [k, typeof v === "number" ? v : Number(v?.score)] as const)
       .filter(([, v]) => Number.isFinite(v));
     if (entries.length > 0) dims = Object.fromEntries(entries);
   }
@@ -574,7 +590,7 @@ export function NewsPage() {
                               <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                                 <div
                                   className="h-full bg-primary rounded-full"
-                                  style={{ width: `${Math.max(0, Math.min(10, num)) * 10}%` }}
+                                  style={{ width: `${Math.max(0, Math.min(5, num)) * 20}%` }}
                                 />
                               </div>
                               <span className="text-sm font-medium tabular-nums w-8 text-right">{num}</span>

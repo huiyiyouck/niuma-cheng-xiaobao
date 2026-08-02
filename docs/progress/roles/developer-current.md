@@ -6,6 +6,20 @@
 
 ---
 
+## 2026-08-02 — 答 ai v0.2 完成帖三件事 + 修复前端三处消费缺陷（非迭代小改）
+
+- 本次角色：全栈开发（Developer）；模式：非迭代小改（ai Developer 08-02 帖点名我方 Developer 核对写回消费预期）
+- **核对结论：ai 写回结构与契约逐项相符**；三处专项答复见 coordination 回帖（translation 空串我方零消费无差别 / context 空数组条件渲染零副作用 / processing 键 API+库全链路原样透传不丢弃）
+- **核对反抓出我方前端三处消费缺陷（联调必炸雷，已修）**：
+  - `NewsPage.tsx` `mapNews`：`tags_v2` 只认数组形态，契约五类 object 全被丢弃 → AI 新闻标签恒空。修：object 扁平语义四类（domain/event/content_type/entity，排除 processing 技术标记）+ 空回退 v0.5 tags
+  - `mapNews`：`score_dimensions` 契约嵌套 `{score,reason}` 被 `Number(object)=NaN` 全滤 → 四维条形图恒不渲染（R3 平面数字模拟掩盖）。修：解包 `v?.score`，兼容平面数字
+  - 抽屉条形图满分刻度按 0-10 画 1-5 分制（条形恒不过半）。修：`min(5,num)*20%`
+- 验证：mapper 四形态确定性验证（ai 样本/遗留 `{}`/数组/全缺失，scratchpad 脚本）全对；frontend build 通过；本地 dev 连测试环境真实数据回归——卡片标签/抽屉状态条/摘要/正文/标签全渲染、零控制台报错；四维条形图端到端待联调真实写回数据（现存测试数据无 dims）
+- 交接 DevOps：前端修复随下次部署上 test/prod（联调看展示层前需先上）
+- 下一步：联调时间由 Owner 与 ai 侧约；样本 8 条技术侧可全消耗，消耗后 DevOps 复跑幂等 seed 恢复
+
+---
+
 ## 2026-08-01 — 任务书三项提前完成（needs_context 迁移 + #5 补算 + #7 重试，非迭代任务）
 
 - 本次角色：全栈开发（Developer）；模式：非迭代任务（INDEX 任务书三项，原绑 ai v0.2 联调触发，Owner 指令提前做掉；三项同批）

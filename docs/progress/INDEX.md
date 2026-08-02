@@ -79,6 +79,7 @@ v0.6.1 关闭遗留 #1（GRANT 3 列）/ #2 批（x-stream 适配+#3/#4/#6，`74
 
 - 跨项目在途：REQ-003 ai v0.2 **已过设计定稿、Developer 开工**（CN-009 三方确认通过，2026-08-01）；契约当前 **v1.11**（08-02 Architect：`needs_context` 语义精确化〔待跟进 19 销〕+ `news-l1` 端点表我方格回填〔待跟进 17 我方动作清零〕+ 20 号 v1.10 复核闭合）；xiaobao 侧无被催项；端到端联调待 ai 实现完成后双侧启动
 - 下一步入口：DevOps/Developer 名下全部清零（含 08-02 部署两件——本批代码 + needs_context 落库，coordination 待跟进 18 已销）。xiaobao 侧唯余 **Owner 下一迭代规划**（kb-search 绑定核对项已同日收敛闭合）；「prod 切 database + prod ai worker + 开 AI 链路」整包 = **ai v0.2 上生产里程碑**，届时 DevOps 一批执行
+- **08-02 增：ai v0.2 实现完成，请我方核对写回消费预期**——Developer 已核对（结构合格）并**修复我方前端三处消费缺陷**（tags_v2 五类 object 未消费 / score_dimensions 嵌套未解包 / 条形图刻度错，联调看展示必炸的雷）；**新增 DevOps 部署项：前端修复随下次部署上 test/prod（端到端联调看展示层前需先上）**。端到端联调待约：样本 8 条技术侧可全消耗（消耗后 DevOps 复跑幂等 seed 恢复），启动时间 Owner 与 ai 侧约
 
 ## 版本列表
 
