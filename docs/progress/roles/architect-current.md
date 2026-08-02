@@ -4,6 +4,26 @@
 > 启动默认读本文件 + `architect-summary.md` + `architect-corrections.md`。
 > 历史日志见 `architect-archive.md`，按需搜索。
 
+## 2026-08-02 — 待跟进 17/19/20 收口（契约 v1.11 + 端点表回填）
+
+**本次角色**：架构师（跨项目协作，非迭代）
+- 落档：coordination `ed64dc6`（契约两份 + 回帖 + CHANGELOG 两行）；xiaobao INDEX
+
+### 按上次收尾入口启动，扫 coordination 发现三项 Architect 名下动作，全部落掉
+1. **待跟进 19（新）→ 契约 `news-l1-db` 升 v1.11**：ai Architect 实读 `news_l1.py:393-394` 核出 `needs_context` 实际 = **LLM 判断 OR ai 侧长度启发式**，而 v1.9 只写「质量信号」。要害在 `false` 侧：LLM 未输出默认 `False` 再 `or` 启发式 → **「LLM 未表态」与「明确判定不需要」库内不可区分**，恰落在补列目的（区分证据充分/不足的高分）的反面。列说明已补明双来源 + `false` 语义 + `degraded:needs_context_missing` 判别手段，并**加了一条对方没要求的消费红线**：`false` 只可当「未见存疑信号」用——理由：消费方在我方，未来动前端/排序的人不会读 ai 的 Python 源码，契约必须自足。
+2. **待跟进 17 我方格 → `news-l1` v1.1 端点表第 5 行回填**：test `database` / prod `http`（与 ai DevOps 实测一致；采纳其建议注明「均为 `.env` 显式配置非默认值」），并把 **prod→`database` 绑 ai v0.2 上生产里程碑、切换前先改本节**写进该格。版本不变（补全预留格非值变更）。17 号唯余第 2 行（ai prod base URL）由 ai 随 v0.2 部署自回填，已登记不催。
+3. **待跟进 20 → 闭合**：ai Architect 已判定授权粒度非对称性应入契约并落 v1.10；我方复核无异议（`domain_tags` 教训的一般化、静默降级类），schema 权属侧照两条纪律执行（加列同步 GRANT + 矩阵一致）。
+
+### 顺带
+- ai DevOps 端点基线帖 §四 的观察（`kb-search` **prod 绑 `0.0.0.0:8000`** vs test 绑环回；KB 方案 A 无 token，防护只剩防火墙 + `adminAllowedIps`）→ 已登记 INDEX 转 **DevOps 核对是否有意**，回帖中告知对方默认不回。
+- 沟通文档表头契约版本陈旧引用订正（v1.2 → v1.11 / v1 → v1.1）。
+
+### 下一步从哪继续
+- **Architect 名下跨项目动作清零**，无在途项。17 号剩余格球在 ai（其已自行登记）。
+- ai v0.2 实现完成后进入端到端联调（待跟进 7），届时按需出场。
+
+---
+
 ## 2026-08-01 — 会话收尾（REQ-003 跨项目答复批次 + 数据库超时方案）
 
 **本次角色**：架构师。跨项目协作 + 非迭代技术方案，未进标准迭代。

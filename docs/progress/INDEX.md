@@ -41,6 +41,8 @@
 
 （例行：08-01 部署后的 24h alerts 观察窗到期确认一下即可）
 
+（新增核对项 2026-08-02，ai DevOps 实查观察转达：`kb-search` **prod 绑 `0.0.0.0:8000`** 而 test 绑 `127.0.0.1:8001`——功能不受影响，但 KB 方案 A 为同机直连 + IP 白名单**无 token**，绑全接口后防护只剩防火墙 + `adminAllowedIps` 两道。请 DevOps 核对是否有意为之；若非有意，建议收敛为 `127.0.0.1`。出处见 coordination REQ-003 08-01 ai DevOps 端点基线帖 §四）
+
 #### → Developer（原触发时机：ai v0.2 联调启动 → Owner 2026-08-01 指令提前做掉，三项同批 ✅ 全部完成）
 
 | # | 任务 | 决策状态 | 完成情况 |
@@ -75,7 +77,7 @@
 
 v0.6.1 关闭遗留 #1（GRANT 3 列）/ #2 批（x-stream 适配+#3/#4/#6，`744d20a` 已上 prod）/ 测试队列不可领（seed 已修，6 条可领）/ C-14（契约 v1.5）/ 6i①（数组列收口+CHECK，08-01 部署生效）/ test LLM provider（volcengine 已跑通）/ PM 三项拍板（#5 方案、Q-1 补列、language 订正，契约 v1.9）/ v0.6-summary 补写。明细见 [v0.6.1-summary.md](iterations/v0.6.1-summary.md) 与 coordination 待跟进表。
 
-- 跨项目在途：REQ-003 ai v0.2 设计阶段 R1 Review 中（xiaobao 侧无被催项；契约当前 **v1.9**）；端到端联调待 ai 实现完成后双侧启动
+- 跨项目在途：REQ-003 ai v0.2 **已过设计定稿、Developer 开工**（CN-009 三方确认通过，2026-08-01）；契约当前 **v1.11**（08-02 Architect：`needs_context` 语义精确化〔待跟进 19 销〕+ `news-l1` 端点表我方格回填〔待跟进 17 我方动作清零〕+ 20 号 v1.10 复核闭合）；xiaobao 侧无被催项；端到端联调待 ai 实现完成后双侧启动
 - 下一步入口：DevOps 三项与 **Developer 三项均已清零**（2026-08-01）。xiaobao 侧唯余 **Owner 下一迭代规划** + 下次 DevOps 部署两件（本批代码 + needs_context 脚本落 test/prod）；「prod 切 database + prod ai worker + 开 AI 链路」整包 = **ai v0.2 上生产里程碑**，届时 DevOps 一批执行
 
 ## 版本列表
