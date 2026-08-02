@@ -2,6 +2,19 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-02 — Developer 三项部署 + needs_context 落库 test+prod + coordination 销待跟进 18
+
+> 角色：DevOps；模式：部署（Owner 指令「部署并回复」）。
+
+- **起因**：Owner 让核对 ai 侧沟通文档「needs_context 列迁移落库…不卡开工，卡联调」一说。核实：coordination REQ-003 待跟进 18 确有此行、描述与实机一致（脚本 `0c01e51` 就绪、两库列确不存在，ssh 实查 count=0）——无需修正，球在我方（落库后回帖销行）。Owner 随即指令部署。
+- **前置检查**：待部署 `166fe51..0c01e51`（16 commits，代码仅 Developer 三项：`l1-tasks.ts`/`schema.ts`/`worker/index.ts`/`l1-processor.ts` + 迁移脚本 + 新测试）；**package.json 无变更**（无依赖风险）；部署机构建源干净。
+- **部署**：`deploy.sh test` 先行 → `news-api-test` active + health 200 + 日志干净（WORKER START 正常）。prod 首跑**被 SSH 瞬断打断在中途**（前端已 rsync、后端未同步、未重启——半完成态，幸本批无前端代码变更无实害）；改 **nohup 脱离会话**重跑 → 完整通过：`news-api` active + health 200，新代码/脚本已同步（`backfillScoreTotalTick` 在位），11:13 重启，日志正常（X STREAM 瞬断重连为已知常态）。
+- **落库**：`add_processed_news_needs_context.sql`（幂等）psql 执行 `news_test` + `news`，两库 `information_schema` 验证 **`needs_context / boolean / nullable=YES`**，与契约 v1.9 一致。
+- **销账**：coordination 回帖（xiaobao DevOps 08-02 帖）+ 待跟进 18 标 ✅（`3df2b40` 已 push）——ai 写回联调前置至此全齐。
+- **例行**：08-01 部署观察窗到期确认——prod/test 36h 内 **0 条**告警（含超时类），窗口干净关闭。
+- **经验（记一笔）**：部署机 SSH 抖动期，长命令一律 `nohup … > log &` 脱离会话跑 + 轮询取结果，避免半完成态；本次半完成态靠「前端 bundle 已新、后端 grep 无新代码、服务未重启」三点交叉核出。
+- **顺办 · kb-search 绑定收敛**（Architect 同日转的核对项）：核实 prod 绑 `0.0.0.0:8000` **非有意**——prod `.env` 缺 `HOST` 走 `config.ts:62` 默认，test 显式回环。补 `HOST=127.0.0.1` + 重启（备份 `.env.bak-20260802-host`）；验证绑回环 + health 200 + 公网 nginx 200。nginx 反代/KB 同机直连均走回环，零影响。
+
 ## 2026-08-01（续3）— 6i② 冒烟条目收尾（INDEX 任务书 · 任务 3）
 
 > 角色：DevOps；模式：任务书执行。
