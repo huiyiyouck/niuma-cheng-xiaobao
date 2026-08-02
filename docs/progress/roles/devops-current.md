@@ -2,6 +2,15 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-02（续2）— 非单调修复批（662238a）部署 test+prod + coordination 知会
+
+> 角色：DevOps；模式：部署。Developer 非单调核对闭环批（补算 tick 全 0 判据 + seed 复位修复 + 幂等护栏订正）落地。
+
+- 前置：diff `c55869d..662238a` 仅 5 文件（worker/脚本/测试/docs），无依赖变更。
+- `deploy.sh both`（nohup）：双端 active + health 200；复核 `isSilentZeroDims` test/prod 双端在位、服务器 seed 脚本副本已带 `running` 护栏。
+- **12 条 queued 队列实查完好**（部署不动 DB）；存量 total 已由 Developer 复位——ai 重跑后 total 全为新 dims 公式值。
+- 留痕：coordination 知会帖（`707f450`）+ INDEX 部署项销账。
+
 ## 2026-08-02（续）— 前端修复部署 + seed 补 12 条（销 21）+ 子项 5 证据 + kb-search 收敛回帖
 
 > 角色：DevOps；模式：跨项目协作（Owner 指令「回到沟通文档」）。ai 侧当日已跑通端到端主路径 8/8，最新帖点名我方三件事。
