@@ -2,6 +2,18 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-02（续）— 前端修复部署 + seed 补 12 条（销 21）+ 子项 5 证据 + kb-search 收敛回帖
+
+> 角色：DevOps；模式：跨项目协作（Owner 指令「回到沟通文档」）。ai 侧当日已跑通端到端主路径 8/8，最新帖点名我方三件事。
+
+- **前端修复部署**：`aa7a05a`（三处 ai 写回消费缺陷）`deploy.sh both`（nohup 脱会话）上 test+prod：双端 active + health 200 + 公网 200，新 bundle `index-CljE8E8S.js`；coordination 知会（ai「等贵方 ③」闭）。销 INDEX「前端修复随下次部署」项。
+- **seed 补 12 条**（ai 请求 8~12，销待跟进 21）：有值源 3 条（`303fc961`/`43e0a770`/`6aa19d77`）定向 reset + 幂等脚本 `N=9`（sed 覆写不动仓内脚本）；验证 queued=12、有值 3、raw/task 一致、全可领。
+- **⚠️ 操作事故与纠偏（记档）**：定向 reset 的 WHERE 写成「按源」，误将有值源全部 57 条历史条目入队（含 54 条既有 completed）。同会话内事务纠偏：54 条删新建 task + 按其 processed_news 恢复 `completed`（`l1_processed_at` 取 processed_news 落库时间近似、`l1_attempt` 置 1）；最终态 12 条与目标一致。窗口数分钟、ai worker 未常驻，无 claim 发生；已在 coordination 帖如实留痕。**教训：reset 类 UPDATE 先 SELECT count 预检命中行数再执行。**
+- **子项 5（ai 不可用不阻塞）证据**：长时段（v0.2 全程 worker 未常驻、两环境正常）+ 当前实查（active/公网 200/alerts 0/无 running 残留）；prod 近 24h 抓取 0 系 X Stream 断流既有问题，如实标注不冒充。建议 ai 销项。
+- **kb-search 绑定收敛回帖**：答 ai 端点基线帖 §四——非有意（`.env` 缺 HOST 走默认），已收敛 127.0.0.1，双环境仅回环可达。
+- **score_total 非单调**：不越权答公式，转 Developer（INDEX 登记 + 帖内声明），连带 ai 的「JOIN tasks 未限定 type」排雷提示。
+- 留痕：coordination `7e6f1b5`（回帖 + 销 21 + 更新 7）。
+
 ## 2026-08-02 — Developer 三项部署 + needs_context 落库 test+prod + coordination 销待跟进 18
 
 > 角色：DevOps；模式：部署（Owner 指令「部署并回复」）。

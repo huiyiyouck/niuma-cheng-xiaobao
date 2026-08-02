@@ -78,8 +78,9 @@
 v0.6.1 关闭遗留 #1（GRANT 3 列）/ #2 批（x-stream 适配+#3/#4/#6，`744d20a` 已上 prod）/ 测试队列不可领（seed 已修，6 条可领）/ C-14（契约 v1.5）/ 6i①（数组列收口+CHECK，08-01 部署生效）/ test LLM provider（volcengine 已跑通）/ PM 三项拍板（#5 方案、Q-1 补列、language 订正，契约 v1.9）/ v0.6-summary 补写。明细见 [v0.6.1-summary.md](iterations/v0.6.1-summary.md) 与 coordination 待跟进表。
 
 - 跨项目在途：REQ-003 ai v0.2 **已过设计定稿、Developer 开工**（CN-009 三方确认通过，2026-08-01）；契约当前 **v1.11**（08-02 Architect：`needs_context` 语义精确化〔待跟进 19 销〕+ `news-l1` 端点表我方格回填〔待跟进 17 我方动作清零〕+ 20 号 v1.10 复核闭合）；xiaobao 侧无被催项；端到端联调待 ai 实现完成后双侧启动
-- 下一步入口：DevOps/Developer 名下全部清零（含 08-02 部署两件——本批代码 + needs_context 落库，coordination 待跟进 18 已销）。xiaobao 侧唯余 **Owner 下一迭代规划**（kb-search 绑定核对项已同日收敛闭合）；「prod 切 database + prod ai worker + 开 AI 链路」整包 = **ai v0.2 上生产里程碑**，届时 DevOps 一批执行
-- **08-02 增：ai v0.2 实现完成，请我方核对写回消费预期**——Developer 已核对（结构合格）并**修复我方前端三处消费缺陷**（tags_v2 五类 object 未消费 / score_dimensions 嵌套未解包 / 条形图刻度错，联调看展示必炸的雷）；**新增 DevOps 部署项：前端修复随下次部署上 test/prod（端到端联调看展示层前需先上）**。端到端联调待约：样本 8 条技术侧可全消耗（消耗后 DevOps 复跑幂等 seed 恢复），启动时间 Owner 与 ai 侧约
+- 下一步入口：DevOps 名下全部清零（含 08-02 两轮部署——Developer 三项 + needs_context 落库〔销 coordination 18〕+ 前端修复 `aa7a05a` 上 test/prod + seed 补 12 条〔销 21〕+ kb-search 绑定收敛）。xiaobao 侧余 **Owner 下一迭代规划** + **Developer 一项转办**（见下）；「prod 切 database + prod ai worker + 开 AI 链路」整包 = **ai v0.2 上生产里程碑**，届时 DevOps 一批执行
+- **08-02 增：ai v0.2 实现完成，请我方核对写回消费预期**——Developer 已核对（结构合格）并**修复我方前端三处消费缺陷**（tags_v2 五类 object 未消费 / score_dimensions 嵌套未解包 / 条形图刻度错，联调看展示必炸的雷）；~~新增 DevOps 部署项：前端修复随下次部署上 test/prod~~ ✅ **已部署（2026-08-02 DevOps，`deploy.sh both`，新 bundle `index-CljE8E8S.js`，已在 coordination 知会 ai 侧）**。端到端联调 ai 侧已跑主路径 8/8 成功；seed 已复补 12 条（含 3 条有值），剩失败重试/卡死回收两项待 ai 执行
+- **📌 08-02 增 · 转 Developer（ai 侧联调反查出，待回帖）**：① **`score_total` 非单调核对**——ai 报同批两条「四维逐维支配却总分更低」（RWA 条 4/3/3/5→2.8 vs 世界杯条 3/3/3/4→6.5），请核对 `calcScoreTotal` 是否有四维之外的输入（如 importance_score/来源惩罚），是缺陷则修，是预期则把附加输入写进契约或回帖注明；② **JOIN 排雷自查**——凡按 `raw_item_id` 关联 `tasks` 的查询（补算 tick、运维 SQL）须带 `type='l1_ai_process'`，否则会读到 v0.6 遗留 task 的状态（ai 侧已实际踩过）。核对结论需回帖 coordination（ai 侧「等贵方」清单第 ① 项）
 
 ## 版本列表
 
