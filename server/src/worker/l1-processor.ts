@@ -33,6 +33,15 @@ function isValidDims(d: unknown): d is L1Output["score_dimensions"] {
     .every((k) => typeof dims[k]?.score === "number");
 }
 
+// LLM 未表态判别（ai 侧 2026-08-02 提示的边界）：上游对缺失 scores 兜底为「结构完整但全 0 且 reason 全空」，
+// 不是结构残缺——若照算会让该条以「真 0 分」沉底。判 reason：全 0 且 reason 全空 = 未表态跳过；
+// 0 分但 reason 非空 = LLM 真实低分，照常补算。
+function isSilentZeroDims(d: L1Output["score_dimensions"]): boolean {
+  const dims = d as unknown as Record<string, { score?: number; reason?: string }>;
+  return ["timeliness", "impact", "confidence", "clarity"]
+    .every((k) => dims[k]?.score === 0 && !(dims[k]?.reason ?? "").trim());
+}
+
 export async function backfillScoreTotalTick(conn: PoolClient): Promise<void> {
   const { rows } = await conn.query(
     `SELECT pn.id, pn.score_dimensions
@@ -49,6 +58,10 @@ export async function backfillScoreTotalTick(conn: PoolClient): Promise<void> {
       : row.score_dimensions;
     if (!isValidDims(dims)) {
       log.warn("SCORE BACKFILL skip id=%s score_dimensions 结构不完整", row.id);
+      continue;
+    }
+    if (isSilentZeroDims(dims)) {
+      log.warn("SCORE BACKFILL skip id=%s 四维全 0 且 reason 全空（LLM 未表态兜底形态，非真实 0 分）", row.id);
       continue;
     }
     await conn.query(

@@ -6,6 +6,22 @@
 
 ---
 
+## 2026-08-02 — score_total 非单调核对闭环 + 全 0 未表态判据（非迭代小改，ai 联调反查转办）
+
+- 本次角色：全栈开发（Developer）；模式：非迭代小改（DevOps 转办：非单调核对 + JOIN 自查；ai 另提全 0 边界）
+- **非单调核对结论（news_test 实证）**：公式无缺陷、无四维外输入——世界杯条 6.5 恰等 `calcScoreTotal` 公式值；RWA 条按现四维应为 7.7，实际 2.8 系 **2026-06-16 builtin `l1_process` 旧值滞留**（任务轨迹为证：该行历史上被 builtin 处理过）。根因链：seed 复用已完成条目重入队 + ai 按契约 O-1 不写 `score_total` + 我方补算只填 NULL → 旧 total 与新 dims 并存
+- **三层修复**：
+  - `seed_ai_queue_test.sql` 新增 1b：重入队时复位 `processed_news.score_total = NULL`（斩断复发——当日新 seed 的 12 条 queued 同样带雷）
+  - `news_test` 存量矫正：ai 触及过的 12 行 total 复位（scratchpad 脚本复用 `backfillScoreTotalTick` 真实代码路径，公式单一真源），均为 queued 待 ai 重跑后由线上 tick 重算
+  - 顺带修 seed 幂等护栏：`status IN ('queued','processing')` → `('queued','running')`（契约 6j：tasks 执行态是 `running`，原护栏对运行中任务不生效，与 ai §四提示同类）
+- **JOIN 排雷自查**：补算 tick 只 join `processed_news⋈raw_items` 不碰 tasks；reclaim 三条 SQL 均带 `type='l1_ai_process'`；重试接口按 task id 精确查——无同类坑
+- **全 0 未表态判据落地**（采纳 ai 建议的 reason 判别）：`backfillScoreTotalTick` 跳过「四维全 0 且 reason 全空」并告警；0 分但 reason 非空照常补算。单测 +2
+- 验证：tsc 0 错误；全量单测 **73/73**；矫正后 news_test 12 行状态自洽（全 queued/NULL）
+- 交接 DevOps：本批（全 0 判据 + seed 修复）随下次部署上 test/prod
+- 下一步：等 ai 重跑 12 条（届时 total 全部按新 dims 落值，非单调不再出现）；展示层核对可随时开始
+
+---
+
 ## 2026-08-02 — 答 ai v0.2 完成帖三件事 + 修复前端三处消费缺陷（非迭代小改）
 
 - 本次角色：全栈开发（Developer）；模式：非迭代小改（ai Developer 08-02 帖点名我方 Developer 核对写回消费预期）

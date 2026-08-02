@@ -20,8 +20,18 @@ WHERE id IN (
   LIMIT :N
 );
 
+-- 1b. 复用已完成条目重处理时复位我方补算列（2026-08-02 非单调核对修复：
+--     旧 score_total 与 ai 重跑后的新 score_dimensions 并存会造成「四维高分却总分低」的非单调残留；
+--     ai 按契约 O-1 不写 score_total，补算只填 NULL，故重入队时必须由本脚本复位）
+UPDATE processed_news
+SET score_total = NULL
+WHERE raw_item_id IN (
+  SELECT id FROM raw_items WHERE l1_status = 'queued' AND process_type = 'ai'
+);
+
 -- 2. 为 queued 的 ai raw_items 补建 l1_ai_process task（无活跃 task 才建，幂等）
 --    max_attempts=3（契约 v1.4 §tasks，AI_MAX_RETRIES 默认）；run_after=now() 即刻可领
+--    活跃态是 'running' 非 'processing'（契约 v1.6 6j：tasks.status='running'，'processing' 是 raw_items 列的值）
 INSERT INTO tasks(type, source_id, raw_item_id, status, priority, run_after, attempt, max_attempts, created_at, updated_at)
 SELECT 'l1_ai_process', ri.source_id, ri.id, 'queued', 0, now(), 0, 3, now(), now()
 FROM raw_items ri
@@ -29,7 +39,7 @@ WHERE ri.l1_status = 'queued' AND ri.process_type = 'ai'
   AND NOT EXISTS (
     SELECT 1 FROM tasks t
     WHERE t.raw_item_id = ri.id AND t.type = 'l1_ai_process'
-      AND t.status IN ('queued', 'processing')
+      AND t.status IN ('queued', 'running')
   );
 
 -- 校验：应有待 ai claim 的 l1_ai_process queued task

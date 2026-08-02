@@ -85,6 +85,36 @@ describe("#5 score_total 轮询补算", () => {
     expect(await scoreTotalOf(news)).toBeNull();
   });
 
+  it("四维全 0 且 reason 全空（LLM 未表态兜底形态）跳过不补算", async () => {
+    const src = await createSource();
+    const raw = await createRawItem(src, "completed");
+    const zero = (k: string) => ({ score: 0, reason: "" });
+    const news = await createNews(raw, {
+      timeliness: zero("t"), impact: zero("i"), confidence: zero("c"), clarity: zero("x"),
+    });
+
+    const conn = await pool.connect();
+    try { await backfillScoreTotalTick(conn); } finally { conn.release(); }
+
+    expect(await scoreTotalOf(news)).toBeNull();
+  });
+
+  it("四维 0 分但 reason 非空（LLM 真实低分）照常补算为 0", async () => {
+    const src = await createSource();
+    const raw = await createRawItem(src, "completed");
+    const zero = { score: 0, reason: "确实毫无价值" };
+    const news = await createNews(raw, {
+      timeliness: zero, impact: zero, confidence: zero, clarity: zero,
+    });
+
+    const conn = await pool.connect();
+    try { await backfillScoreTotalTick(conn); } finally { conn.release(); }
+
+    const v = await scoreTotalOf(news);
+    expect(v).not.toBeNull();
+    expect(Number(v)).toBe(0);
+  });
+
   it("维度结构不完整时跳过该行且不抛错", async () => {
     const src = await createSource();
     const rawBad = await createRawItem(src, "completed");
