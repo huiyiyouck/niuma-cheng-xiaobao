@@ -61,12 +61,12 @@
 | 环 | 内容 | 归属 | 状态 |
 |---|------|------|------|
 | ① | prod L0 provider（volcengine，xiaobao L0 用） | DevOps | ✅ **已备**（2026-08-01 任务 1，直连验证 200，未点火） |
-| ② | **prod ai worker 部署 + ai 侧 L1 有效 provider** | **ai 侧**（ai v0.2 上生产） | ❌ **未做——关键缺环** |
-| ③ | prod flip `AI_INTEGRATION_MODE=database`（对齐 test / v0.6.1 设计） | DevOps | ⏸ 待 ①② 齐；单切即开 AI 埋雷，见 coordination 待跟进 16 / `f5d032f` |
+| ② | **prod ai worker 部署 + ai 侧 L1 有效 provider** | **ai 侧**（ai v0.2 上生产） | ⚠️ **worker 已就位（08-03，`niuma-ai-worker@prod`，127.0.0.1:8103），但 provider 实测挂**——首批 5/5 `llm_process:provider_error`（疑过期 CodingPlan 未更新），coordination 待跟进 22 转 ai DevOps 修复 |
+| ③ | prod flip `AI_INTEGRATION_MODE=database`（对齐 test / v0.6.1 设计） | DevOps | ✅ **已切（2026-08-03 DevOps，Owner 放行）**——备份 `.env.bak-20260803-flip`，`AI_HUB_BASE_URL=8103`（仅回滚用），重启 health 200；claim/重试/回收链路实测全通 |
 | ④ | Developer 三项（needs_context 迁移〔ai 写回前必须落地〕/ #5 score_total 补算 / #7 重试接口） | Developer | ✅ **全部落地**（代码 2026-08-01，71/71；needs_context 列 2026-08-02 已随 DevOps 部署落 test/prod 两库） |
-| 点火后 | 端到端联调（coordination 待跟进 7）：raw → L0 → `l1_ai_process` → ai claim → 写回 `completed` | 双侧 | 待 ①②③④ |
+| 点火后 | 端到端联调（coordination 待跟进 7）：raw → L0 → `l1_ai_process` → ai claim → 写回 `completed` | 双侧 | ⚠️ **prod 首批 5 条实测（08-03）：机械链路全通（秒级 claim/退避/final_failed/0 残留锁），但 ai provider 挂 → 5/5 失败**。等 ai 修 provider（待跟进 22）→ #7 重试接口恢复 5 条 → 视结果放量（积压 115 条） |
 
-> **点火时序**：①（已备）→ ②（ai 上 prod worker + provider）→ ④（Developer 落 needs_context 等）→ ③（DevOps flip `database`，最后一步）→ 端到端联调。**任一环未齐，prod AI 开关不得打开。**
+> **点火时序**：①（已备）→ ②（ai 上 prod worker + provider）→ ④（Developer 落 needs_context 等）→ ③（DevOps flip `database`，最后一步）→ 端到端联调。~~任一环未齐，prod AI 开关不得打开。~~ **08-03 已点火**（Owner 放行）；风险敞口一条：X 断流恢复前 ai 须修完 provider，否则新推文进失败链不直显（已在 coordination 帖知会并催）。
 
 #### → Owner（你）
 

@@ -2,6 +2,16 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-03 — ai v0.2 上生产里程碑点火：prod 切 database + 首批 5 条实测（provider 挂，转 ai）
+
+> 角色：DevOps；模式：里程碑部署（Owner 放行「搭最新的环境」）。ai 侧 08-03 报 prod worker 部署完成（`niuma-ai-worker@prod`，127.0.0.1:8103，RUN_MODE=db），交四件事。
+
+- **前置核对**：8103 `/health` mode=db 空转正常；④ 6i① default `'[]'` + 2 CHECK 已在位（08-01 做过）；③ 补算 tick 已在 prod（08-02 两批）；任务面干净（0 l0/l1 task）——四件事实际只剩 ①②。
+- **切换**：备份 `.env.bak-20260803-flip` → `AI_INTEGRATION_MODE=database` + `AI_HUB_BASE_URL=http://127.0.0.1:8103`（注释：仅回滚生效，顺序见 ai 帖 §五）+ 订正三条过时护栏注释 → 重启 active + health 200。
+- **小批量 5 条**（3 有值源 + 2 空值源，120 条积压全 `process_type=ai`、0 有 processed_news 无复位需求）：ai worker **秒级 claim**，重试退避 → **5/5 `llm_process:provider_error` final_failed**，0 残留锁，raw/task 状态同步正确——**我方链路机械全通，ai prod provider 挂**（其 08-02 自报过期 CodingPlan 归其 DevOps 更新，08-03 部署验证未含真实 LLM 调用）。
+- **处置**：保持 database 不回切（X 断流无自然流量，无实害；回滚预案在手）；coordination 回执帖 + 登记待跟进 22 转 ai DevOps（`a228913`）。修复后用 #7 重试接口恢复 5 条再放量。
+- **风险敞口（挂起监视）**：X 断流恢复前 ai 须修完 provider，否则新推文进失败链不直显；已在帖内催。
+
 ## 2026-08-02（续2）— 非单调修复批（662238a）部署 test+prod + coordination 知会
 
 > 角色：DevOps；模式：部署。Developer 非单调核对闭环批（补算 tick 全 0 判据 + seed 复位修复 + 幂等护栏订正）落地。
