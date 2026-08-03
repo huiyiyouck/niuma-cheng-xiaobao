@@ -2,6 +2,15 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-03（续）— #7 重试 5 条全绿：prod 端到端首批闭环
+
+> 角色：DevOps；模式：跨项目协作收尾。ai 修复 provider（plan 端点 + 有效 key，双环境，待跟进 22 已销）后 Owner 指令重试。
+
+- **#7 手动重试接口**（`POST /v1/l1-tasks/:id/retry`，x-admin-token 本机 curl）5 条全部重建成功——接口生产首用即通（Developer 08-01 落码后首次实战）。
+- **结果 5/5 succeeded**：写回 5 行、`needs_context` 5（均 false）、`score_total` 补算 5（6.8~8.5，tick 生效）、`tags_v2.processing` 无降级标记、0 残留锁。中文标题/摘要/排序区分度正常。
+- **prod 端到端（task → claim → LLM → 写回 → 补算）首批闭环成立**；coordination 回帖（`03347fa`）。
+- 剩余：115 条积压放量节奏待 Owner 拍板（约 8h 排空）；X 断流恢复后的自然流量链路待实战观察。
+
 ## 2026-08-03 — ai v0.2 上生产里程碑点火：prod 切 database + 首批 5 条实测（provider 挂，转 ai）
 
 > 角色：DevOps；模式：里程碑部署（Owner 放行「搭最新的环境」）。ai 侧 08-03 报 prod worker 部署完成（`niuma-ai-worker@prod`，127.0.0.1:8103，RUN_MODE=db），交四件事。
