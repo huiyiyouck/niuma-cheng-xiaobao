@@ -2,6 +2,18 @@
 
 > 最近 10 条工作日志。长期摘要、当前关注点和常见风险见 `devops-summary.md`；旧日志在 `devops-archive.md`。
 
+## 2026-08-03（续2）— 自然链验证全通（Owner 要的通路证明）+ 反查出三个问题
+
+> 角色：DevOps；模式：验证 + 事故处置。Owner 明确验证目标：推文进来 → L0 → 自动 L1 → ai 消费 → 分析结果，全自动通路。
+
+- **验证设计**：X 断流下取 2 条真实积压推文按入库同形建 `l0_classify`（不造假数据、不绕 L0），走全自动链。
+- **第一轮失败 → 根因链**：L0 `fetch failed` → prod `X_PROXY_URL` 使 worker 全局 `ProxyAgent`（`index.ts:18-21`，不认 no_proxy）→ LLM 调境内 volcengine 被强制走 v2ray → **实测 v2ray 出口全死**（x.com/google 经它均 000，进程/端口正常）——**X Stream「断流」大概率同根因**。
+- **处置**：临时摘 `X_PROXY_URL`（备份 `.env.bak-20260803-proxy`，注释留痕恢复条件：v2ray 修 + Developer 代理分流落地）；代理死状态下 X 本就收不到，零损失。
+- **⚠️ 操作事故（已记 corrections）**：摘代理的 cp+sed+restart 被 ssh 抖动重试循环重跑 3 次 → systemd `start-limit-hit` 生产拒启数分钟 → `reset-failed` 恢复。教训：**重试循环只包裹幂等只读命令**。
+- **第二轮全通**：2 条 L0 passed（`needs_context_candidate`，volcengine 直连 walker 路径首验）→ 自动建 L1 → ai succeeded（7.2 / 9.2 分）→ 公网 AI 空间列表可见。**双路径（手工 #7 + 自然链）均闭环。**
+- **顺带反查出**：`/v1/news?sort=score_desc` SQL 错误（外层 ORDER BY 引用子查询内 `pn` 别名，评分排序不可用）→ 转 Developer；v2ray 死出口 → 转 Owner。均登记 INDEX。
+- 现场：prod worker 无代理直连（X 接入等 v2ray 修复）；积压 113 条；放量待 Owner 验完质量拍板。
+
 ## 2026-08-03（续）— #7 重试 5 条全绿：prod 端到端首批闭环
 
 > 角色：DevOps；模式：跨项目协作收尾。ai 修复 provider（plan 端点 + 有效 key，双环境，待跟进 22 已销）后 Owner 指令重试。
